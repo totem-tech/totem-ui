@@ -149,7 +149,7 @@ export default class TaskForm extends Component {
                 {
                     rxValue: new BehaviorSubject(),
                     label: textsCap.title,
-                    maxLength: 160,
+                    maxLength: 80,
                     minLength: 3,
                     name: this.names.title,
                     placeholder: textsCap.titlePlaceholder,
@@ -157,12 +157,12 @@ export default class TaskForm extends Component {
                     type: 'text',
                 },
                 {
+                    // hidden: true, //delete
                     name: this.names.bountyGroup,
                     type: 'group',
                     unstackable: true,
                     inputs: [
                         {
-                            rxValue: new BehaviorSubject(),
                             label: textsCap.bountyLabel,
                             maxLength: 18,
                             min: 0, // allows bounty-free tasks
@@ -170,6 +170,7 @@ export default class TaskForm extends Component {
                             onChange: this.handleBountyChange,
                             onInvalid: this.handleBountyInvalid,
                             placeholder: textsCap.bountyPlaceholder,
+                            rxValue: new BehaviorSubject(),
                             required: true,
                             type: 'number',
                             useInput: true,
@@ -188,14 +189,16 @@ export default class TaskForm extends Component {
                             width: 6,
                         },
                         {
+                            hidden: true,
                             name: this.names.currency,
                             onChange: this.handleBountyChange,
                             rxValue: copyRxSubject(rxSelectedCurrency),
-                            type: 'hidden',
+                            // type: 'hidden',
                         },
                     ]
                 },
                 {
+                    // hidden: true,//delete
                     rxValue: new BehaviorSubject(false),
                     inline: true,
                     label: textsCap.marketplace,
@@ -211,6 +214,7 @@ export default class TaskForm extends Component {
                     type: 'checkbox-group',
                 },
                 {
+                    // hidden: true,//delete
                     rxValue: new BehaviorSubject(),
                     hidden: values => !values[this.names.isMarket],
                     label: textsCap.assignee,
@@ -223,8 +227,8 @@ export default class TaskForm extends Component {
                     type: 'dropdown',
                     validate: this.validateAssignee,
                 },
-
                 {
+                    // hidden: true,//delete
                     name: this.names.dates,
                     title: textsCap.dateForamt,
                     type: 'group',
@@ -567,7 +571,7 @@ export default class TaskForm extends Component {
         newValues = objClean(newValues, Object.values(this.names))
         submitDisabled.unchnaged = JSON.stringify(this.oldValues) === JSON.stringify(newValues)
         this.setState({ submitDisabled })
-    }, 100)
+    }, 300)
 
     handleIsMarketChange = (_, values) => {
         const { inputs } = this.state

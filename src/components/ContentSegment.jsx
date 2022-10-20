@@ -4,7 +4,7 @@ import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-r
 import { unsubscribe } from '../utils/reactHelper'
 import { isSubjectLike, isFn } from '../utils/utils'
 import ErrorBoundary from './CatchReactErrors'
-import Invertible from './Invertible'
+import { InvertibleMemo } from './Invertible'
 import Text from './Text'
 import { toggleFullscreen } from '../services/window'
 
@@ -52,9 +52,7 @@ export default class ContentSegment extends Component {
 	toggleSubHeader = e => {
 		e.preventDefault()
 		e.stopPropagation()
-		this.setState({
-			showSubHeader: !this.state.showSubHeader,
-		})
+		this.setState({ showSubHeader: !this.state.showSubHeader})
 	}
 
 	render() {
@@ -82,12 +80,12 @@ export default class ContentSegment extends Component {
 		const { content, showSubHeader } = this.state
 		const headerText = header || title
 		return !!active && (
-			<Invertible {...{
+			<InvertibleMemo {...{
 				El: Segment,
 				basic: basic,
 				color: color,
 				compact: !!compact,
-				inverted: inverted,
+				inverted,
 				padded: true,
 				style: { ...styles.segment, ...style },
 				vertical: vertical,
@@ -156,7 +154,7 @@ export default class ContentSegment extends Component {
 				<div style={{ padding: contentPadding || 0 }}>
 					<ErrorBoundary>{content}</ErrorBoundary>
 				</div>
-			</Invertible>
+			</InvertibleMemo>
 		)
 	}
 }

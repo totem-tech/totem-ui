@@ -301,7 +301,7 @@ export default class Transfer extends Component {
                     <Reveal {...{
                         content: currency,
                         contentHidden: `${currency} - ${name}`,
-                        style: { whiteSpace: 'pre-wrap'}
+                        // style: { whiteSpace: 'pre-wrap'}
                     }} />
                 ),
                 value: currency,

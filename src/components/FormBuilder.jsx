@@ -17,20 +17,17 @@ import FormInput, { nonValueTypes } from './FormInput'
 import IModal from './Modal'
 import Text from './Text'
 import { translated } from '../services/language'
-import Invertible from './Invertible'
+import { Invertible } from './Invertible'
 import { closeModal } from '../services/modal'
 
-const textsCap = translated(
-	{
-		cancel: 'cancel',
-		close: 'close',
-		submit: 'submit',
-		unexpectedError: 'an unexpected error occured',
-	},
-	true
-)[1]
+const textsCap = translated({
+	cancel: 'cancel',
+	close: 'close',
+	submit: 'submit',
+	unexpectedError: 'an unexpected error occured',
+}, true)[1]
 
-export default class FormBuilder extends Component {
+class FormBuilder extends Component {
 	constructor(props) {
 		super(props)
 
@@ -364,7 +361,7 @@ export default class FormBuilder extends Component {
 			closeText = <Button {...closeProps} />
 		}
 
-		El = El || modal ? 'div' : undefined
+		El = El || (modal ? 'div' : undefined)
 		const FormEl = El || Invertible
 		const isForm = !El || ['form', Form].includes(El)
 		const form = (
@@ -447,7 +444,6 @@ export default class FormBuilder extends Component {
 		)
 	}
 }
-
 FormBuilder.propTypes = {
 	closeOnEscape: PropTypes.bool,
 	closeOnDimmerClick: PropTypes.bool,
@@ -520,6 +516,7 @@ FormBuilder.defaultProps = {
 	submitText: textsCap.submit,
 	size: 'tiny',
 }
+export default React.memo(FormBuilder)
 
 /**
  * @name    fillValues

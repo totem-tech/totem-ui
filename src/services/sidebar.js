@@ -178,15 +178,15 @@ export const sidebarItems = [
         name: gsName,
         title: textsCap.gettingStartedTitle,
     },
-    // {
-    //     anchorStyle: { background: 'deeppink' },
-    //     anchorStyleActive: { background: undefined },
-    //     content: ClaimKAPEXView,
-    //     contentProps: { style: { maxWidth: 600 } },
-    //     icon: 'gift',
-    //     name: 'claim-kapex',
-    //     title: textsCap.claimKapexTitle,
-    // },
+    {
+        anchorStyle: { background: 'deeppink' },
+        anchorStyleActive: { background: undefined },
+        content: ClaimKAPEXView,
+        contentProps: { style: { maxWidth: 600 } },
+        icon: 'gift',
+        name: 'claim-kapex',
+        title: textsCap.claimKapexTitle,
+    },
     {
         content: RewardsView,
         icon: 'gift',
@@ -284,22 +284,6 @@ export const sidebarItems = [
         title: textsCap.financialStatementTitle,
     },
     {
-        // content: () => {
-        //     const [date, setDate] = useState(null)
-
-        //     return (
-        //         <div>
-        //             <div style={{ marginBottom: 15 }}>
-        //                 <FormInput {...{
-        //                     name: 'date',
-        //                     onChange: (_, { value }) => setDate(value),
-        //                     type: 'DateInput',
-        //                 }} />
-        //             </div>
-        //             <CurrencyList date={date} keywords='ibm' />
-        //         </div >
-        //     )
-        // },
         content: AssetFormView,
         icon: 'money bill alternate outline',
         name: 'reference-rates',

@@ -16,24 +16,21 @@ import PartnerForm from '../modules/partner/PartnerForm'
 import { getUser } from '../modules/chat/ChatClient'
 import { useInverted } from '../services/window'
 
-const [texts, textsCap] = translated(
-	{
-		accept: 'accept',
-		close: 'close',
-		identityRequest: 'request identity',
-		identityShare: 'share identity',
-		introduce: 'introduce',
-		or: 'or',
-		partnerAdd: 'add partner',
-		partnerName: 'partner name',
-		partnerUpdate: 'update partner',
-		reject: 'reject',
-		userIdBtnTitle: 'click for more options',
-	},
-	true
-)
+const [texts, textsCap] = translated({
+	accept: 'accept',
+	close: 'close',
+	identityRequest: 'request identity',
+	identityShare: 'share identity',
+	introduce: 'introduce',
+	or: 'or',
+	partnerAdd: 'add partner',
+	partnerName: 'partner name',
+	partnerUpdate: 'update partner',
+	reject: 'reject',
+	userIdBtnTitle: 'click for more options',
+}, true)
 
-export const ButtonAcceptOrReject = React.memo(props => {
+export const ButtonAcceptOrReject = React.memo(function ButtonAcceptOrReject(props) {
 	const {
 		acceptColor,
 		acceptProps,
@@ -105,7 +102,7 @@ ButtonAcceptOrReject.defaultProps = {
  *
  * @returns {Element}
  */
-export const ButtonGroup = React.memo(props => {
+export const ButtonGroup = React.memo(function ButtonGroup(props){
 	const inverted = useInverted()
 	const {
 		buttons,
@@ -121,37 +118,31 @@ export const ButtonGroup = React.memo(props => {
 	const buttonsEl = buttons.map((button, i) =>
 		[
 			or && i > 0 && (
-				<Button.Or
-					{...{
-						key: 'or',
-						onClick: e => e.stopPropagation(),
-						text: orText,
-					}}
-				/>
+				<Button.Or {...{
+					key: 'or',
+					onClick: e => e.stopPropagation(),
+					text: orText,
+				}} />
 			),
-			<Button
-				{...{
-					key: 'btn',
-					...button,
-					disabled: button.disabled || disabled,
-					loading: button.loading || loading,
-					onClick: event => {
-						event.stopPropagation()
-						event.preventDefault()
-						isFn(button.onClick) && button.onClick(event, values[i])
-						isFn(onAction) && onAction(event, values[i])
-					},
-				}}
-			/>,
+			<Button {...{
+				key: 'btn',
+				...button,
+				disabled: button.disabled || disabled,
+				loading: button.loading || loading,
+				onClick: event => {
+					event.stopPropagation()
+					event.preventDefault()
+					isFn(button.onClick) && button.onClick(event, values[i])
+					isFn(onAction) && onAction(event, values[i])
+				},
+			}} />,
 		].filter(Boolean)
 	)
 	return (
-		<El
-			{...objWithoutKeys(
-				{ ...props, children: buttonsEl, inverted },
-				ignoreAttributes
-			)}
-		/>
+		<El {...objWithoutKeys(
+			{ ...props, children: buttonsEl, inverted },
+			ignoreAttributes
+		)} />
 	)
 })
 ButtonGroup.propTypes = {
@@ -193,15 +184,17 @@ ButtonGroup.defaultProps = {
  *
  * @returns {Element}
  */
-export const ButtonGroupOr = props => <ButtonGroup {...props} or={true} />
+export const ButtonGroupOr = function ButtonGroupOr(props) {
+	return <ButtonGroup {...props} or={true} />
+}
 
-export const Reveal = props => {
+export const Reveal = React.memo(function Reveal(props){
 	let {
 		children,
 		content = children,
 		contentHidden,
 		defaultVisible = false,
-		El = 'div',
+		El = 'span',
 		exclusive = true,
 		ignoreAttributes,
 		onClick,
@@ -251,7 +244,7 @@ export const Reveal = props => {
 			},
 		}} />
 	)
-}
+})
 Reveal.propTypes = {
 	// content to show when visible
 	content: PropTypes.any,
@@ -297,8 +290,7 @@ Reveal.defaultProps = {
 	toggleOnMousePresence: true,
 }
 
-// placeholder to potentially use this in the future to make all User IDs clickable and open private chat with user
-export const UserID = React.memo(props => {
+export const UserID = React.memo(function UserId(props) {
 	const {
 		address,
 		El,

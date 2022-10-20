@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 import { objWithoutKeys } from '../utils/utils'
 
-const ButtonDelayed = (props) => {
+function ButtonDelayed (props) {
     const {
         content,
         children,
@@ -58,4 +58,4 @@ ButtonDelayed.defaultProps = {
     ],
 }
 
-export default ButtonDelayed
+export default React.memo(ButtonDelayed)

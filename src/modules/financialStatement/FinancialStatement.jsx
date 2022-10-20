@@ -178,7 +178,6 @@ export const getNestedBalances = (glAccounts = [], address) => {
             ledgerAcNumber,
             true
         )
-        console.log({ allItems })
         return allItems
     }, [])
 }

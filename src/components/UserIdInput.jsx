@@ -47,7 +47,7 @@ const userIdRegex = /^[a-z][a-z0-9]+$/
 // removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
 export const getRawUserID = userId => !isStr(userId) ? '' : userId.trim().replace('@', '').toLowerCase()
 
-export default class UserIdInput extends Component {
+class UserIdInput extends Component {
     constructor(props) {
         super(props)
 
@@ -332,3 +332,4 @@ UserIdInput.defaultProps = {
     multiple: false,
     newUser: false,
 }
+export default React.memo(UserIdInput)

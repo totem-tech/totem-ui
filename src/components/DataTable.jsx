@@ -22,7 +22,7 @@ import {
 	isObj,
 	isDefined,
 } from '../utils/utils'
-import Invertible from './Invertible'
+import { InvertibleMemo } from './Invertible'
 import Message from './Message'
 import Paginator from './Paginator'
 import { translated } from '../services/language'
@@ -491,18 +491,16 @@ export default class DataTable extends Component {
 			emptyMessage = { content: emptyMessage }
 		}
 		return (
-			<Invertible
-				{...{
-					El: Segment,
-					basic: true,
-					className: 'data-table',
-					style: {
-						margin: 0,
-						padding: 0,
-						...style,
-					},
-				}}
-			>
+			<InvertibleMemo {...{
+				El: Segment,
+				basic: true,
+				className: 'data-table',
+				style: {
+					margin: 0,
+					padding: 0,
+					...style,
+				},
+			}} >
 				{this.getTopContent(totalRows, selectedIndexes)}
 
 				<div style={styles.tableContent}>
@@ -510,13 +508,11 @@ export default class DataTable extends Component {
 						<Message {...emptyMessage} />
 					)}
 					{totalRows > 0 && (
-						<Invertible
-							{...{
-								...DataTable.defaultProps.tableProps, // merge when prop supplied
-								...tableProps,
-								El: Table,
-							}}
-						>
+						<InvertibleMemo {...{
+							...DataTable.defaultProps.tableProps, // merge when prop supplied
+							...tableProps,
+							El: Table,
+						}} >
 							<Table.Header>
 								<Table.Row>{headers}</Table.Row>
 							</Table.Header>
@@ -534,10 +530,10 @@ export default class DataTable extends Component {
 									</Table.Row>
 								</Table.Footer>
 							)}
-						</Invertible>
+						</InvertibleMemo>
 					)}
 				</div>
-			</Invertible>
+			</InvertibleMemo>
 		)
 	}
 }

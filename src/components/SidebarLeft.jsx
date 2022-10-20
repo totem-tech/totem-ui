@@ -1,21 +1,20 @@
 import React, { Component, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
-import ContentSegment from './ContentSegment'
-import { isSubjectLike, isFn } from '../utils/utils'
+import { isFn } from '../utils/utils'
 import { translated } from '../services/language'
+import { useRxSubject } from '../services/react'
 import {
 	rxAllInactive, getItem, setActive, setSidebarState,
 	sidebarItems, rxSidebarState, scrollTo, toggleActive, toggleSidebarState
 } from '../services/sidebar'
 import { rxLayout, MOBILE } from '../services/window'
-import { useRxSubject } from '../services/react'
-import { unsubscribe } from '../utils/reactHelper'
+import ContentSegment from './ContentSegment'
 
 const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
 }, true)
-export default function SidebarLeft() {
+function SidebarLeft() {
 	const [allInactive] = useRxSubject(rxAllInactive)
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [sidebarState] = useRxSubject(rxSidebarState)
@@ -27,7 +26,12 @@ export default function SidebarLeft() {
 		<React.Fragment>
 			{
 				// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
-				isMobile && visible && <div style={styles.dimmer} onClick={toggleSidebarState}></div>
+				isMobile && visible && (
+					<div
+						onClick={toggleSidebarState}
+						style={styles.dimmer}
+					/>
+				)
 			}
 			<Sidebar
 				as={Menu}
@@ -72,8 +76,9 @@ export default function SidebarLeft() {
 		</React.Fragment>
 	)
 }
+export default React.memo(SidebarLeft)
 
-export const MainContentItem = props => {
+const _MainContentItem = props => {
 	const { name, rxTrigger } = props
 	const [isMobile] = useRxSubject(rxLayout, layout => layout === MOBILE)
 	const [item] = useRxSubject(rxTrigger, () => getItem(name))
@@ -87,26 +92,25 @@ export const MainContentItem = props => {
 			: '0 15px',
 	}
 
-	return !show
-		? ''
-		: (
-			<div
-				key={name}
-				style={styles.spaceBelow}
-				ref={elementRef}
-				name={name}
-			>
-				<ContentSegment {...item} onClose={name => setActive(name, false)} />
-			</div>
-		)
+	return !show ? '' : (
+		<div
+			key={name}
+			style={styles.spaceBelow}
+			ref={elementRef}
+			name={name}
+		>
+			<ContentSegment {...item} onClose={name => setActive(name, false)} />
+		</div>
+	)
 }
-MainContentItem.propTypes = {
+_MainContentItem.propTypes = {
 	name: PropTypes.string.isRequired,
 	// RxJS subject
 	rxTrigger: PropTypes.object.isRequired,
 }
+export const MainContentItem = React.memo(_MainContentItem)
 
-const SidebarMenuItem = props => {
+const _SidebarMenuItem = props => {
 	let { isMobile, name, rxTrigger, sidebarCollapsed, style } = props
 	const [item, setItem] = useRxSubject(rxTrigger, () => getItem(name))
 	const {
@@ -159,7 +163,7 @@ const SidebarMenuItem = props => {
 			</Menu.Item>
 		)
 }
-SidebarMenuItem.propTypes = {
+_SidebarMenuItem.propTypes = {
 	isMobile: PropTypes.bool.isRequired,
 	name: PropTypes.string.isRequired,
 	// RxJS subject
@@ -167,6 +171,7 @@ SidebarMenuItem.propTypes = {
 	sidebarCollapsed: PropTypes.bool.isRequired,
 	style: PropTypes.object,
 }
+const SidebarMenuItem = React.memo(_SidebarMenuItem)
 
 const styles = {
 	collapsed: {

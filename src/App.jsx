@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { Image, Segment, Sidebar } from 'semantic-ui-react'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
-import Invertible from './components/Invertible'
+import { Invertible } from './components/Invertible'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
@@ -99,7 +99,7 @@ export default function App() {
 				</ErrorBoundary>
 
 				<Sidebar.Pusher
-					as={Invertible.asCallback(Segment)}
+					as={Invertible.asComponent(Segment)}
 					className={className([
 						'main-content',
 						gridClass,

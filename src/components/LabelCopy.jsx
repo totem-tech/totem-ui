@@ -11,7 +11,7 @@ const textsCap = translated({
     copyMsg: 'copy to clipboard',
 }, true)[1]
 
-export default function LabelCopy(props) {
+function LabelCopy(props) {
     const [state, setState] = iUseReducer(null, {
         copied: false,
         open: undefined,
@@ -125,3 +125,4 @@ LabelCopy.defaultProps = {
         'value',
     ],
 }
+export default React.memo(LabelCopy)

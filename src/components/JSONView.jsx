@@ -7,7 +7,7 @@ import LabelCopy from './LabelCopy'
 import { useRxSubject } from '../services/react'
 import { MOBILE, rxLayout } from '../services/window'
 
-export default function JSONView(props) {
+function JSONView(props) {
     const { asEl, data } = props
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [spaces, maxLength, size] = isMobile
@@ -98,3 +98,4 @@ JSONView.propTypes = {
 JSONView.defaultProps = {
     asEl: true,
 }
+export default React.memo(JSONView)

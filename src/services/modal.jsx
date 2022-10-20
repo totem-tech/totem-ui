@@ -17,7 +17,7 @@ const textsCap = translated({
     ok: 'ok',
 }, true)[1]
 
-export const ModalsConainer = () => {
+export const ModalsConainer = React.memo(() => {
     const [modalsArr, setModalsArr] = useState([])
 
     useEffect(() => {
@@ -39,7 +39,7 @@ export const ModalsConainer = () => {
     return modalsArr.map(([id, modalEl]) => (
         <span {...{ key: id, id }}>{modalEl}</span>
     ))
-}
+})
 
 /**
  * 

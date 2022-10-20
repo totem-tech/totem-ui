@@ -59,7 +59,7 @@ const textsCap = translated({
  * const modalId = FAQ.asModal({ questions, exclusive: true })
  * ```
  */
-export default function FAQ(props) {
+function FAQ(props) {
     const { exclusive, modalId, questions = [] } = props
     const defaultActiveIndex = exclusive
         ? questions.findIndex(({ active }) => !!active)
@@ -144,6 +144,7 @@ FAQ.asModal = (faqProps, confirmProps = {}) => {
         // { style: { padding: 0 } },
     )
 }
+export default React.memo(FAQ)
 
 /**
  * @name    questionsToPanels

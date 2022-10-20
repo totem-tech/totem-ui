@@ -2,14 +2,31 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Checkbox } from 'semantic-ui-react'
 import Text from './Text'
-import { className, generateHash, hasValue, isArr, isFn, isObj, objWithoutKeys } from '../utils/utils'
+import {
+    className,
+    generateHash,
+    hasValue,
+    isArr,
+    isFn,
+    isObj,
+    objWithoutKeys,
+} from '../utils/utils'
 
-const excludeKeys = ['inline', 'multiple', 'name', 'options', 'required', 'rxValue', 'type', 'value', 'width']
-
-export default function CheckboxGroup(props) {
-    const { disabled, inline, multiple, name, options, radio, readOnly, rxValue, style } = props
+function CheckboxGroup(props) {
+    const {
+        disabled,
+        ignoreAttributes,
+        inline,
+        multiple,
+        name,
+        options,
+        radio,
+        readOnly,
+        rxValue,
+        style,
+    } = props
     const allowMultiple = !radio && !!multiple
-    const commonProps = objWithoutKeys(props, excludeKeys)
+    const commonProps = objWithoutKeys(props, ignoreAttributes)
     let [value, setValue] = useState(rxValue && rxValue.value || props.value)
 
     rxValue && useEffect(() => {
@@ -100,8 +117,8 @@ export default function CheckboxGroup(props) {
         </div>
     )
 }
-
 CheckboxGroup.propTypes = {
+    ignoreAttributes: PropTypes.array,
     inline: PropTypes.bool,
     multiple: PropTypes.bool, // if true, allows multiple selection
     name: PropTypes.string,
@@ -115,3 +132,18 @@ CheckboxGroup.propTypes = {
     value: PropTypes.any,
     width: PropTypes.number,
 }
+CheckboxGroup.defaultProps = {
+    ignoreAttributes: [
+        'ignoreAttributes',
+        'inline',
+        'multiple',
+        'name',
+        'options',
+        'required',
+        'rxValue',
+        'type',
+        'value',
+        'width',
+    ],
+}
+export default React.memo(CheckboxGroup)

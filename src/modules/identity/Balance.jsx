@@ -73,7 +73,6 @@ export const Balance = props => {
 			<Reveal {...{
 				content: getContent(!showDetailed),
 				contentHidden: getContent(showDetailed),
-				El: 'span',
 				ready: !isLoading,
 				toggleOnClick: true,
 			}} />

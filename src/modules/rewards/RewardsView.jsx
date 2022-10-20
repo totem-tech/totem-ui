@@ -17,56 +17,52 @@ import RewardsProgress from './RewardsProgress'
 import SignupCard from './SignupCard'
 import SocialCard from './SocialCard'
 
-let textsCap = translated(
-	{
-		errIneligibleToMigrate: 'You are not eligible to claim $KAPEX!',
-		migrateRewards: 'claim $KAPEX',
-		notRegistered:
-			'please complete registration in the getting started module',
-		signupDesc: 'reward you received when you signed up',
-		signupHeader: 'signup reward',
-	},
-	true
-)[1]
+const textsCap = translated({
+	errIneligibleToMigrate: 'You are not eligible to claim $KAPEX!',
+	migrateRewards: 'claim $KAPEX',
+	notRegistered: 'please complete registration in the getting started module',
+	signupDesc: 'reward you received when you signed up',
+	signupHeader: 'signup reward',
+}, true)[1]
 
-// invoke without arguments to retrieve saved value
-const cacheEligible = eligible =>
-	storage.cache('rewards', 'KAPEXClaimEligible', eligible) || null
-const cacheSubmitted = submitted =>
-	storage.cache('rewards', 'KAPEXClaimSubmitted', submitted) || null
+// // invoke without arguments to retrieve saved value
+// const cacheEligible = eligible =>
+// 	storage.cache('rewards', 'KAPEXClaimEligible', eligible) || null
+// const cacheSubmitted = submitted =>
+// 	storage.cache('rewards', 'KAPEXClaimSubmitted', submitted) || null
 
 export default function RewardsView(props) {
 	const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
 	const rewards = useRewards()
 	const { socialRewards, signupReward, referralRewards } = rewards
-	const [isLoading, setLoading] = useState(false)
-	const [isEligible, setIsEligible] = useState(cacheEligible())
-	const [claimSubmitted, setClaimSubmitted] = useState(cacheSubmitted())
-	const modalId = 'migrate-rewards'
+	// const [isLoading, setLoading] = useState(false)
+	// const [isEligible, setIsEligible] = useState(cacheEligible())
+	// const [claimSubmitted, setClaimSubmitted] = useState(cacheSubmitted())
+	// const modalId = 'migrate-rewards'
 
-	useEffect(() => {
-		const init = async () => {
-			const eligible =
-				isEligible !== false &&
-				(await chatClient.rewardsClaimKAPEX.promise({
-					checkEligible: true,
-				}))
-			setIsEligible(eligible)
-			cacheEligible(eligible)
-			if (!eligible) return
+	// useEffect(() => {
+	// 	const init = async () => {
+	// 		const eligible =
+	// 			isEligible !== false &&
+	// 			(await chatClient.rewardsClaimKAPEX.promise({
+	// 				checkEligible: true,
+	// 			}))
+	// 		setIsEligible(eligible)
+	// 		cacheEligible(eligible)
+	// 		if (!eligible) return
 
-			const submitted = await chatClient.rewardsClaimKAPEX.promise({
-				checkSubmitted: true,
-			})
-			setClaimSubmitted(submitted)
-			submitted && cacheSubmitted(submitted)
-		}
+	// 		const submitted = await chatClient.rewardsClaimKAPEX.promise({
+	// 			checkSubmitted: true,
+	// 		})
+	// 		setClaimSubmitted(submitted)
+	// 		submitted && cacheSubmitted(submitted)
+	// 	}
 
-		if (isLoggedIn && !claimSubmitted) {
-			setLoading(true)
-			init().finally(() => setLoading(false))
-		}
-	}, [isLoggedIn])
+	// 	if (isLoggedIn && !claimSubmitted) {
+	// 		setLoading(true)
+	// 		init().finally(() => setLoading(false))
+	// 	}
+	// }, [isLoggedIn])
 
 	return !isLoggedIn
 		? <div {...props}>{textsCap.notRegistered}</div>

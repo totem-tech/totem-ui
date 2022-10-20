@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { BehaviorSubject } from 'rxjs'
 import { Button, Divider } from 'semantic-ui-react'
+import { BehaviorSubject } from 'rxjs'
 import { isFn, objWithoutKeys } from '../../utils/utils'
-import FormBuilder, { findInput } from "../../components/FormBuilder"
+import FormBuilder, { findInput } from '../../components/FormBuilder'
+import { InvertibleMemo } from '../../components/Invertible'
 import { randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { unsubscribe, useRxSubject } from "../../services/react"
+import { unsubscribe, useRxSubject } from '../../services/react'
 import { setToast } from '../../services/toast'
 import { convertTo, rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
-import Invertible from '../../components/Invertible'
 
 const textsCap = translated({
     addAsset: 'add',
@@ -326,7 +326,7 @@ function newPortfolioGroup() {
                 width: 2,
                 content: (
                     <div className='action remove-asset'>
-                        <Invertible {...{
+                        <InvertibleMemo {...{
                             El: Button,
                             as: 'div',
                             basic: true,
@@ -357,7 +357,7 @@ function newPortfolioGroup() {
                 width: 2,
                 content: (
                     <div className='action add-asset'>
-                        <Invertible {...{
+                        <InvertibleMemo {...{
                             El: Button,
                             as: 'div',
                             basic: true,

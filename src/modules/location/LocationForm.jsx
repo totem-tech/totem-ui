@@ -11,6 +11,7 @@ import partners from '../partner/partner'
 import { get, remove, set } from './location'
 import { statuses } from '../../components/Message'
 import FormInput from '../../components/FormInput'
+import { Reveal } from '../../components/buttons'
 
 const textsCap = translated(
 	{
@@ -199,13 +200,20 @@ export default class LocationForm extends Component {
 								options: arrSort(
 									storage.countries.map(([_, c]) => ({
 										altspellings: c.altSpellings.join(' '),
-										description: c.name,
+										// description: c.name,
 										flag: !noFlags.includes(c.code)
 											? c.code.toLowerCase()
 											: '',
 										key: c.code,
 										name: c.name,
-										text: c.code,
+										// text: c.code,
+										text: (
+											<Reveal {...{
+												content: c.code,
+												contentHidden: c.name,
+												El: 'span',
+											}} />
+										),
 										value: c.code,
 									})),
 									'text'

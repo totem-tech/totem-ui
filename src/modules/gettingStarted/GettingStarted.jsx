@@ -6,7 +6,7 @@ import storage from '../../utils/storageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
 import { isFn, isValidNumber } from '../../utils/utils'
 // forms and components
-import Invertible from '../../components/Invertible'
+import { InvertibleMemo } from '../../components/Invertible'
 import RestoreBackupForm from './RestoreBackupForm'
 // services
 import { showForm } from '../../services/modal'
@@ -228,19 +228,19 @@ export default function GetingStarted() {
 				{texts.supportChatDesc2}
 				<div>
 					<a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' target='_blank'>
-						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
+						<InvertibleMemo El={Icon} name='twitter' style={styles.appIconStyle} />
 					</a>
 					<a href='https://discord.gg/Vx7qbgn' target='_blank'>
-						<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
+						<InvertibleMemo El={Icon} name='discord' style={styles.appIconStyle} />
 					</a>
 					<a href='https://t.me/totemchat' target='_blank'>
-						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
+						<InvertibleMemo El={Icon} name='telegram' style={styles.appIconStyle} />
 					</a>
 					<a href='https://www.linkedin.com/company/totem-live-accounting' target='_blank'>
-						<Invertible El={Icon} name='linkedin' style={styles.appIconStyle} />
+						<InvertibleMemo El={Icon} name='linkedin' style={styles.appIconStyle} />
 					</a>
 					<a href='https://medium.com/totemlive' target='_blank'>
-						<Invertible {...{
+						<InvertibleMemo {...{
 							dynamicProps: inverted => ({ color: !inverted ? 'black' : undefined }),
 							El: Icon,
 							name: 'medium',
@@ -248,7 +248,7 @@ export default function GetingStarted() {
 						}} />
 					</a>
 					<a href='https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' target='_blank'>
-						<Invertible {...{
+						<InvertibleMemo {...{
 							dynamicProps: inverted => ({
 								className: !inverted ? 'red' : undefined,
 							}),
@@ -258,7 +258,7 @@ export default function GetingStarted() {
 						}} />
 					</a>
 					<a href='https://www.reddit.com/r/totemlive' target='_blank'>
-						<Invertible {...{
+						<InvertibleMemo {...{
 							dynamicProps: inverted => ({
 								style: {
 									...styles.appIconStyle,

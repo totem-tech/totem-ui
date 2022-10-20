@@ -4,7 +4,7 @@ import { className } from '../utils/utils'
 import { useInverted } from '../services/window'
 
 // Invertible modal (since Semantic UI Modal doesn't have inverted property!!!)
-export default React.memo(props => {
+const ModalInvertible = props => {
     const inverted = useInverted()
     props = {
         ...props,
@@ -14,4 +14,5 @@ export default React.memo(props => {
         ]),
     }
     return <Modal {...props} />
-})
+}
+export default React.memo(ModalInvertible)

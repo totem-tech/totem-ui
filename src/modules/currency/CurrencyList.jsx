@@ -5,7 +5,7 @@ import { Icon, Popup } from 'semantic-ui-react'
 import { format } from '../../utils/time'
 import { arrSort, isDate } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
-import Invertible from '../../components/Invertible'
+import { InvertibleMemo } from '../../components/Invertible'
 import TimeSince from '../../components/TimeSince'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
@@ -195,7 +195,7 @@ const getRowData = (unitDisplayed, unitDisplayedROE) => ([_, currency]) => {
     const _statusIndicator = statusCode === 3
         ? icon
         : (
-            <Invertible {...{
+            <InvertibleMemo {...{
                 content: (
                     <div>
                         {textsCap.updated + ' '}

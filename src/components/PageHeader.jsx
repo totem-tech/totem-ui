@@ -49,7 +49,7 @@ const [texts, textsCap] = translated({
 let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
-export default function PageHeader(props) {
+function PageHeader(props) {
 	const [wallets] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, x]) => x))
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [[userId, isLoggedIn]] = useRxSubject(rxIsLoggedIn, isLoggedIn => ([
@@ -90,8 +90,9 @@ PageHeader.propTypes = {
 PageHeader.defaultProps = {
 	logoSrc: 'https://react.semantic-ui.com/images/wireframe/image.png'
 }
+export default React.memo(PageHeader)
 
-const PageHeaderView = props => {
+const PageHeaderView = React.memo(props => {
 	const [open] = useRxSubject(rxIdentityListVisible)
 	const [showTools, setShowTools] = useState(false)
 	const inverted = useInverted()
@@ -279,9 +280,9 @@ const PageHeaderView = props => {
 			/>
 		</div>
 	)
-}
+})
 
-export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
+export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
 	const [timerInProgress] = useRxSubject(rxTimerInProgress)
 	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount)
 	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount)
@@ -397,7 +398,7 @@ export const HeaderMenuButtons = ({ isLoggedIn, isMobile }) => {
 			</Menu.Item>
 		</React.Fragment>
 	)
-}
+})
 
 const styles = {
 	countStyle: {

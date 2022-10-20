@@ -15,7 +15,7 @@ import { translated } from '../../utils/languageHelper'
 import Message, { statuses } from '../../components/Message'
 import { setActive, setActiveExclusive } from '../../services/sidebar'
 import Text from '../../components/Text'
-import Invertible from '../../components/Invertible'
+import { InvertibleMemo } from '../../components/Invertible'
 
 const textsCap = translated({
 	errAlreadySubmitted: 'You have already submitted your claim.',
@@ -168,9 +168,9 @@ export const getTaskList = taskIdentity => {
 			answer: textsCap.checkNotification,
 			answer: getStepList([
 				textsCap.checkNotification,
-				{
-					children: ''
-				},
+				// {
+				// 	children: ''
+				// },
 			]),
 			completed: taskStatus.partnersAdded,
 			question: (
@@ -277,7 +277,7 @@ const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) =
 				}
 				return (
 					<li key={i}>
-						<Invertible {...{
+						<InvertibleMemo {...{
 							...item,
 							basic: true,
 							children: <Text {...{ children }} />,
@@ -407,6 +407,7 @@ export default function ClaimKAPEXView(props) {
 	}, [isRegistered])
 	
 	useEffect(() => {
+		let mounted = true
 		const init = async () => {
 			const doCheckStatus = !submitted && eligible !== false
 			if (!doCheckStatus) return
@@ -425,7 +426,7 @@ export default function ClaimKAPEXView(props) {
 						.promise(true)
 				// store as in-memory cache
 				ClaimKAPEXView.resultCache = result
-				console.log({result})
+				// console.log({result})
 				Object
 					.keys(result)
 					.forEach(key => status[key] = result[key] )
@@ -433,12 +434,13 @@ export default function ClaimKAPEXView(props) {
 				status.error = `${err}`
 			} finally {
 				status.loading = false
-				setStatus(status)		
+				mounted && setStatus(status)		
 			}
 		}
 		!isRegistered
 			? setStatus(status)
 			: init()
+		return () => mounted = false
 	}, [isRegistered, setStatus])
 
 	if (!!message) return <Message {...message} />

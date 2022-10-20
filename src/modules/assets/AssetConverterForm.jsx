@@ -3,12 +3,12 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { arrReverse, deferred, isDefined, isFn } from '../../utils/utils'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
-import { iUseReducer, useRxSubject } from '../../services/react'
+import FormInput from '../../components/FormInput'
 import { translated } from '../../services/language'
-import { convertTo, getCurrencies } from '../currency/currency'
+import { iUseReducer, useRxSubject } from '../../services/react'
 import { setToast } from '../../services/toast'
 import { MOBILE, rxLayout } from '../../services/window'
-import FormInput from '../../components/FormInput'
+import { convertTo, getCurrencies } from '../currency/currency'
 
 const textsCap = translated({
     assetLabel: 'asset',
@@ -164,7 +164,7 @@ export default function AssetConverterForm(props) {
                 const options = currencies.map(({ currency, name, _id }) => ({
                     description: currency,
                     text: name,
-                    value: currency,
+                    value: _id,
                 }))
                 rxCurrencyOptions.next(options)
             })

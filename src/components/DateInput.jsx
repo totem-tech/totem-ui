@@ -58,7 +58,7 @@ const triggerChange = (e, props, valueArr, setValue) => {
     onChange(e, {...props, value: dateStr, invalid})
 }
 
-export default function DateInput(props) {
+function DateInput(props) {
     const {
         clearable,
         disabled,
@@ -238,6 +238,7 @@ DateInput.defaultProps = {
     },
     years,
 }
+export default React.memo(DateInput)
 
 // const demoFormProps = {
 //     header: 'Demoing DateInput',
