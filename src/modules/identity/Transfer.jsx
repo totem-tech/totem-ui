@@ -352,29 +352,24 @@ export default class TransferForm extends Component {
         this.setState({ inputs })
     }
 
-    getTxFeeEl = feeAmount => {
-        const { values } = this.state
-        // const currentSent = values[this.names.currencySent]
-
-        return (
-            <Text El='div' style={{ margin: `${feeAmount ? '-' : ''}15px 0 15px 3px` }}>
-                {feeAmount && (
-                    <Currency {...{
-                        prefix: `${textsCap.includesTxFee} `,
-                        value: feeAmount,
-                        // unitDisplayed: currentSent,
-                    }} />
-                )}
-                <div style={{
-                    fontSize: 32,
-                    paddingTop: !feeAmount ? 0 : 15,
-                    textAlign: 'center',
-                }}>
-                    <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
-                </div>
-            </Text>
-        )
-    }
+    getTxFeeEl = feeAmount => (
+        <Text El='div' style={{ margin: `${feeAmount ? '-' : ''}15px 0 15px 3px` }}>
+            {feeAmount && (
+                <Currency {...{
+                    prefix: `${textsCap.includesTxFee} `,
+                    value: feeAmount,
+                    decimalPlaces: 4,
+                }} />
+            )}
+            <div style={{
+                fontSize: 32,
+                paddingTop: !feeAmount ? 0 : 15,
+                textAlign: 'center',
+            }}>
+                <Icon {...{ name: 'exchange', rotated: 'counterclockwise' }} />
+            </div>
+        </Text>
+    )
 
     handleAmountReceivedChange = deferred(async (_, values) => {
         const amountReceived = values[this.names.amountReceived]
