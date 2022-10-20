@@ -115,10 +115,10 @@ export default class SettingsForm extends Component {
 
         this.timeoutIds = {}
         this.defaultNodeUrl = nodesDefault[0]
-        const nodeUrl = nodes[0] || ''
-        this.defaultNodeUrlChanged = !!nodeUrl && nodeUrl !== nodesDefault[0]
+        this.connectedNodeUrl = nodes[0] || ''
+        this.defaultNodeUrlChanged = this.connectedNodeUrl !== nodesDefault[0]
         const values = {}
-        values[inputNames.nodeUrl] = nodeUrl
+        values[inputNames.nodeUrl] = this.connectedNodeUrl
         this.rxCurrency = copyRxSubject(rxSelectedCurrency)
         this.rxCurrencyOptions = new BehaviorSubject()
         this.state = {
@@ -216,9 +216,9 @@ export default class SettingsForm extends Component {
                 {
                     label: textsCap.nodeUrlLabel,
                     name: inputNames.nodeUrl,
-                    onChange: deferred((_, values) => this.setState({ values }), 100),
+                    onChange: deferred((_, values) => this.setState({ values: {...values} }), 100),
                     type: 'url',
-                    value: nodeUrl || this.defaultNodeUrl,
+                    value: this.connectedNodeUrl || this.defaultNodeUrl,
                 },
                 {
                     content: `${textsCap.kbShortcuts} (K)`,
@@ -330,25 +330,28 @@ export default class SettingsForm extends Component {
         const nodeUrl = values[inputNames.nodeUrl]
         const input = findInput(this.state.inputs, inputNames.nodeUrl)
         input.action = {
-            disabled: !nodeUrl || this.defaultNodeUrl === nodeUrl,
+            disabled: !nodeUrl || [
+                !this.defaultNodeUrlChanged && this.defaultNodeUrl,
+                this.connectedNodeUrl
+            ]
+                .filter(Boolean)
+                .includes(nodeUrl),
             icon: 'check',
             onClick: () => this.handleNodeUrlSubmit(),
         }
-        input.inlineLabel = !this.defaultNodeUrlChanged
-            ? null
-            : {
-                icon: {
-                    className: 'no-margin',
-                    name: 'reply',
-                },
-                title: textsCap.nodeUrlReset,
-                onClick: () => {
-                    const { values } = this.state
-                    values[inputNames.nodeUrl] = ''
-                    this.setState({ values })
-                    this.handleNodeUrlSubmit(true)
-                },
-            }
+        input.inlineLabel = this.defaultNodeUrlChanged && {
+            icon: {
+                className: 'no-margin',
+                name: 'reply',
+            },
+            title: textsCap.nodeUrlReset,
+            onClick: () => {
+                const { values } = this.state
+                values[inputNames.nodeUrl] = ''
+                this.setState({ values })
+                this.handleNodeUrlSubmit(true)
+            },
+        }
         return <FormBuilder {...{ ...this.props, ...this.state }} />
     }
 }
