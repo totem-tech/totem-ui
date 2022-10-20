@@ -296,13 +296,7 @@ export default class Transfer extends Component {
         getCurrencies().then(currencies => {
             this.currencies = currencies
             const options = this.currencies.map(({ currency, name }) => ({
-                // description: (
-                //     <span className='description' style={{ fontSize: '75%' }}>
-                //         {name}
-                //     </span>
-                // ),
                 key: currency,
-                // text: currency,
                 text: (
                     <Reveal {...{
                         content: currency,

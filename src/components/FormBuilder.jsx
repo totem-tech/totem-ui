@@ -536,18 +536,20 @@ export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 	Object.keys(values).forEach(name => {
 		const input = findInput(inputs, name)
 		if (!input) return
-		if (createRxValue && !isSubjectLike(input.rxValue))
+
+		if (createRxValue && !isSubjectLike(input.rxValue)) {
 			input.rxValue = new BehaviorSubject()
+		}
+
 		let { rxValue, type } = input
 		const newValue = values[name]
 		type = (isStr(type) ? type : 'text').toLowerCase()
 
 		if (
-			type !== 'group' &&
-			!forceFill &&
-			(!hasValue(newValue) || hasValue(input.value))
-		)
-			return
+			type !== 'group'
+			&& !forceFill
+			&& (!hasValue(newValue) || hasValue(input.value))
+		) return
 
 		switch (type) {
 			case 'checkbox':
@@ -560,7 +562,9 @@ export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 			default:
 				input.value = newValue
 		}
-		rxValue && rxValue.next(newValue)
+		isSubjectLike(rxValue)
+			&& rxValue.value !== newValue
+			&& rxValue.next(newValue)
 	})
 
 	return inputs

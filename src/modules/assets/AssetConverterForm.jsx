@@ -8,6 +8,7 @@ import { translated } from '../../services/language'
 import { convertTo, getCurrencies } from '../currency/currency'
 import { setToast } from '../../services/toast'
 import { MOBILE, rxLayout } from '../../services/window'
+import FormInput from '../../components/FormInput'
 
 const textsCap = translated({
     assetLabel: 'asset',
@@ -30,10 +31,10 @@ export default function AssetConverterForm(props) {
         labels,
         reverseInputs = false,
         rxDate,
-        rxAmountFrom,
-        rxAmountTo,
-        rxAssetFrom,
-        rxAssetTo,
+        rxAmountFrom = new BehaviorSubject(),
+        rxAmountTo = new BehaviorSubject(),
+        rxAssetFrom = new BehaviorSubject(),
+        rxAssetTo = new BehaviorSubject(),
         submitText
     } = props
     labels = {
@@ -44,15 +45,15 @@ export default function AssetConverterForm(props) {
     }
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state] = iUseReducer(null, () => {
-        rxAmountTo = rxAmountTo || new BehaviorSubject()
+        // rxAmountTo = rxAmountTo || new BehaviorSubject()
         const rxValues = new BehaviorSubject({})
         const updateAmountTo = async () => {
             try {
                 const values = rxValues.value
-                const amountFrom = values[inputNames.amountFrom]
-                const assetFrom = values[inputNames.asset]
-                const assetTo = values[inputNames.assetTo]
-                const date = values[inputNames.date]
+                const amountFrom = rxAmountFrom.value //values[inputNames.amountFrom]
+                const assetFrom = rxAssetFrom.value// values[inputNames.asset]
+                const assetTo = rxAssetTo.value// values[inputNames.assetTo]
+                const date = rxDate.value// values[inputNames.date]
                 // conversion no required
                 if (!assetFrom || !assetTo || !amountFrom) return
                 const [_, amountConverted] = await convertTo(
@@ -62,7 +63,7 @@ export default function AssetConverterForm(props) {
                     null,
                     date,
                 )
-                rxAmountTo.next(amountConverted)
+                rxAmountTo.value !== amountConverted &&  rxAmountTo.next(amountConverted)
             } catch (err) {
                 rxAmountTo.next('')
                 setToast({
@@ -79,7 +80,7 @@ export default function AssetConverterForm(props) {
                 isFn(onChange) && onChange(e, values, invalid)
                 updateAmountTo()
                 rxValues.next(values)
-            }, 200),
+            }, 500),
             inputs: [
                 {
                     hidden: true,
@@ -103,20 +104,31 @@ export default function AssetConverterForm(props) {
                     unstackable: true,
                     inputs: [
                         {
-                            label: labels.asset,
-                            lazyLoad: true,
+                            content: (
+                                <FormInput {...{
+                                    label: labels.asset,
+                                    lazyLoad: true,
+                                    name: inputNames.asset,
+                                    options: [],
+                                    placeholder: textsCap.assetPlaceholder,
+                                    rxOptions: rxCurrencyOptions,
+                                    rxValue: rxAssetFrom,
+                                    search: [
+                                        'text',
+                                        'description',
+                                        'value',
+                                    ],
+                                    selection: true,
+                                    // improves performance by reducing number of onChange trigger
+                                    selectOnNavigation: false,
+                                    style: { maxHeight: 38 },
+                                    type: 'dropdown',
+                                    // value: (rxAmountFrom || {}).value,
+                                }} />
+                            ),
                             name: inputNames.asset,
-                            options: [],
-                            placeholder: textsCap.assetPlaceholder,
-                            rxOptions: rxCurrencyOptions,
                             rxValue: rxAssetFrom,
-                            search: [ 'text', 'description', 'value'],
-                            selection: true,
-                            // improves performance by reducing number of onChange trigger
-                            selectOnNavigation: false,
-                            style: { maxHeight: 38 },
-                            type: 'dropdown',
-                            value: (rxAmountFrom || {}).value,
+                            type: 'html',
                         },
                         {
                             label: labels.amountFrom,
@@ -149,13 +161,12 @@ export default function AssetConverterForm(props) {
         // set currency dropdown options
         !rxCurrencyOptions.value.length && getCurrencies()
             .then(currencies => {
-                const options = currencies.map(({ currency, name }) => ({
+                const options = currencies.map(({ currency, name, _id }) => ({
                     description: currency,
                     text: name,
                     value: currency,
                 }))
                 rxCurrencyOptions.next(options)
-                window.rxCurrencyOptions = rxCurrencyOptions
             })
 
         return state

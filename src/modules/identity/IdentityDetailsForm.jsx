@@ -48,7 +48,7 @@ const textsCap = translated({
 export const inputNames = {
 	address: 'address',
 	advanced: 'advanced',
-	cryptoType: 'cryptoType',
+	cryptoType: 'type',
 	delete: 'delete',
 	fileBackupTS: 'fileBackupTS',
 	identityForm: 'identityForm',
@@ -225,6 +225,7 @@ export default class IdentityDetailsForm extends Component {
 			...this.identity,
 			uri: this.getUri(this.identity.uri),
 		})
+		console.log(this.identity)
 	}
 
 	getUri = uri => (this.showSeed || !uri ? uri : '*'.repeat(uri.length))

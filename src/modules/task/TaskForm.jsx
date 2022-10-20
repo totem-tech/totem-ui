@@ -16,7 +16,13 @@ import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { showForm } from '../../services/modal'
 // modules
-import { convertTo, currencyDefault, getCurrencies, getSelected as getSelectedCurrency } from '../currency/currency'
+import {
+    convertTo,
+    currencyDefault,
+    getCurrencies,
+    getSelected as getSelectedCurrency,
+    rxSelected as rxSelectedCurrency,
+} from '../currency/currency'
 import Currency from '../currency/Currency'
 import { getById } from '../history/history'
 import { Balance } from '../identity/Balance'
@@ -25,6 +31,7 @@ import { get as getPartner, getAll as getPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { queueables } from './task'
 import { rxUpdater } from './useTasks'
+import { copyRxSubject } from '../../services/react'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
@@ -181,10 +188,9 @@ export default class TaskForm extends Component {
                             width: 6,
                         },
                         {
-                            // ignoreAttributes: ['rxValue'],
                             name: this.names.currency,
                             onChange: this.handleBountyChange,
-                            rxValue: new BehaviorSubject(getSelectedCurrency()),
+                            rxValue: copyRxSubject(rxSelectedCurrency),
                             type: 'hidden',
                         },
                     ]

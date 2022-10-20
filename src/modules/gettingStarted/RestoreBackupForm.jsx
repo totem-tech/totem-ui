@@ -509,7 +509,17 @@ export default class RestoreBackupForm extends Component {
 			isFn(onSubmit) && await onSubmit(true, values)
 			this.setState({
 				message: {
-					content: textsCap.success2,
+					content: redirectTo
+						? undefined
+						: (
+							<ButtonDelayed {...{
+								children: textsCap.success2,
+								El: 'span',
+								style: {
+									color: 'red'
+								}
+							}} />
+						),
 					header: redirectTo
 						? textsCap.successRedirect
 						: textsCap.success1,
@@ -524,7 +534,7 @@ export default class RestoreBackupForm extends Component {
 				!redirectTo
 					? window.location.reload(true)
 					: window.location.href = redirectTo
-			}, 1000)
+			}, redirectTo ? 1000 : 3000)
 		}
 
 		confirm({

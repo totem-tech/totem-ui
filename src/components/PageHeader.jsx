@@ -223,18 +223,23 @@ const PageHeaderView = props => {
 									setInvBrowser(false)
 								}
 							},
-							userId && {
-								icon: 'gem',
-								content: textsCap.requestFunds,
-								onClick: onFaucetRequest,
-							},
+							// userId && {
+							// 	icon: 'gem',
+							// 	content: textsCap.requestFunds,
+							// 	onClick: onFaucetRequest,
+							// },
 							{
 								icon: 'currency',
 								content: textsCap.changeCurrency,
 								onClick: () => showForm(SettingsForm, {
 									header: null, //textsCap.changeCurrency,
 									inputsHidden: Object.values(settingsInputNames)
-										.filter(x => x !== settingsInputNames.currency),
+										.filter(x =>
+											![
+												settingsInputNames.currency,
+												settingsInputNames.currencyHtml
+											].includes(x)
+										),
 									size: 'mini',
 								}),
 							},
@@ -244,7 +249,7 @@ const PageHeaderView = props => {
 								onClick: () => showForm(SettingsForm, {
 									header: null,// 'Change language',
 									inputsHidden: Object.values(settingsInputNames)
-										.filter(x => x !== settingsInputNames.languageCode),
+										.filter(x =>x !== settingsInputNames.languageCode),
 									size: 'mini',
 								}),
 							},

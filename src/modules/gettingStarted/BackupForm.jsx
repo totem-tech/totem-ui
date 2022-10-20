@@ -208,7 +208,11 @@ export default function BackupForm(props) {
 										<br />
 										<br />
 										<div style={{ color: 'red' }}>
-											<big>{textsCap.reloadingPage}</big>
+											<big>
+												<ButtonDelayed El='span'>
+													{textsCap.reloadingPage}
+												</ButtonDelayed>
+											</big>
 										</div>
 									</div>
 								),
@@ -222,7 +226,7 @@ export default function BackupForm(props) {
 							window.location.href = redirectTo
 						} else if (reload) {
 							// reload page to make sure user's password is prompted to be saved/updated by browser
-							setTimeout(() => window.location.reload(true), 2000)
+							setTimeout(() => window.location.reload(true), 3000)
 						}
 					} catch (err) {
 						console.error(err)

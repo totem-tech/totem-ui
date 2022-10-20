@@ -11,7 +11,7 @@ import { closeModal, confirm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
-import { arrSort, isFn, objSetPropUndefined } from '../../utils/utils'
+import { arrSort, deferred, isFn, objSetPropUndefined } from '../../utils/utils'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
 import { get, newId, remove, set as save, validationConf } from './contact'
@@ -152,45 +152,25 @@ export default function ContactForm(props) {
 				unstackable: true,
 				inputs: [
 					{
-						hidden: true,
+						autoComplete: 'off',
+						clearable: true,
+						input: <input autoComplete='off' />,
+						label: textsCap.phoneCodeLabel,
 						name: inputNames.phoneCode,
+						options: arrSort(countryOptions, 'description'),
+						placeholder: textsCap.phoneCodePlaceholder,
 						rxValue: rxPhoneCode,
+						search: ['search'],
+						selection: true,
+						style: { minWidth: 100 },
+						styleContainer: { paddingRight: 0 },
+						type: 'dropdown',
+						validate: (e, { value: code }, values) => {
+							const phone = values[inputNames.phoneNumber]
+							return phone && !code
+						},
+						width: 7,
 					},
-					{
-						content: (
-							<FormInput {...{
-								autoComplete: 'off',
-								input: <input autoComplete='off' />,
-								label: textsCap.phoneCodeLabel,
-								name: inputNames.phoneCode,
-								options: arrSort(countryOptions, 'description'),
-								placeholder: textsCap.phoneCodePlaceholder,
-								rxValue: rxPhoneCode,
-								search: ['search'],
-								selection: true,
-								style: { minWidth: 100 },
-								styleContainer: { paddingRight: 0 },
-								type: 'dropdown',
-								width: 7,
-							}} />
-						),
-						name: inputNames.phoneCode + 'html',
-						type: 'html',
-					},
-					// {
-					// 	autoComplete: 'off',
-					// 	input: <input autoComplete='off' />,
-					// 	label: textsCap.phoneCodeLabel,
-					// 	name: inputNames.phoneCode,
-					// 	options: arrSort(countryOptions, 'description'),
-					// 	placeholder: textsCap.phoneCodePlaceholder,
-					// 	search: ['search'],
-					// 	selection: true,
-					// 	style: { minWidth: 100 },
-					// 	styleContainer: { paddingRight: 0 },
-					// 	type: 'dropdown',
-					// 	width: 7,
-					// },
 					{
 						...validationConf.phoneNumber,
 						customMessages: {
@@ -200,20 +180,14 @@ export default function ContactForm(props) {
 						label: <br />,
 						maxLength: validationConf.phoneNumber.maxLength,
 						name: inputNames.phoneNumber,
-						onChange: (_, values) => {
-							const pccInput = findInput(
-								state.inputs,
-								inputNames.phoneCode
-							)
-							const required = !!values[inputNames.phoneNumber]
-							if (pccInput.required === required) return
-							pccInput.required = required
-							rxSetState.next({ ...state })
-						},
 						placeholder: '123456',
 						regex: /^[1-9][0-9\ ]+$/,
 						styleContainer: { paddingLeft: 0 },
 						type: 'text',
+						validate: (e, { value: phone }, values) => {
+							const code = values[inputNames.phoneCode]
+							return code && !phone
+						},
 						width: 9,
 					},
 				],

@@ -115,7 +115,9 @@ export class FormInput extends Component {
 				options = !isFn(rxOptionsModifier)
 					? options
 					: rxOptionsModifier(options)
-				isArr(options) && this.setState({ options })
+				if (!isArr(options)) return
+				this.setState({ options })
+				
 				if (!isSubjectLike(rxValue) || !hasValue(this.value)) return
 				
 				const isOption = !!options.find(o => o.value === this.value)				

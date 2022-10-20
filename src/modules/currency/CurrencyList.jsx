@@ -149,6 +149,7 @@ export default function CurrencyList(props) {
             emptyMessage: gotDate
                 ? { content: textsCap.emptyMessageDate }
                 : props.emptyMessage,
+            topLeftMenu: props.topLeftMenu || [<Converter key='c' style={{ maxWidth: 500}}></Converter>]
         }} />
     )
 }
@@ -160,10 +161,7 @@ CurrencyList.propTypes = {
     rxCurrencyId: PropTypes.instanceOf(BehaviorSubject)
 }
 CurrencyList.defaultProps = {
-    date: null, // show current prices
-    topLeftMenu: [
-        <Converter key='c' style={{ maxWidth: 500}}></Converter>
-    ],
+    date: null, // show current prices,
 }
 
 const getRowData = (unitDisplayed, unitDisplayedROE) => ([_, currency]) => {
