@@ -35,10 +35,10 @@ Invertible.defaultProps = {
 Invertible.asComponent = (El, reverseInverted) => props => (
     <Invertible {...{ ...props, El, reverseInverted }} />
 )
-export const InvertibleMemo = React.memo((props) => (
-    <Invertible {...{ ...props, asMemo: true }} />
-))
-InvertibleMemo.getComponent = (El, reverseInverted) => props => (
-    <InvertibleMemo {...{ ...props, El, reverseInverted }} />
-)
+// export const InvertibleMemo = React.memo((props) => (
+//     <Invertible {...{ ...props, asMemo: true }} />
+// ))
+// InvertibleMemo.getComponent = (El, reverseInverted) => props => (
+//     <InvertibleMemo {...{ ...props, El, reverseInverted }} />
+// )
 export default Invertible

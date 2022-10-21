@@ -22,7 +22,7 @@ import {
 	isObj,
 	isDefined,
 } from '../utils/utils'
-import { InvertibleMemo } from './Invertible'
+import { Invertible } from './Invertible'
 import Message from './Message'
 import Paginator from './Paginator'
 import { translated } from '../services/language'
@@ -491,7 +491,7 @@ export default class DataTable extends Component {
 			emptyMessage = { content: emptyMessage }
 		}
 		return (
-			<InvertibleMemo {...{
+			<Invertible {...{
 				El: Segment,
 				basic: true,
 				className: 'data-table',
@@ -508,7 +508,7 @@ export default class DataTable extends Component {
 						<Message {...emptyMessage} />
 					)}
 					{totalRows > 0 && (
-						<InvertibleMemo {...{
+						<Invertible {...{
 							...DataTable.defaultProps.tableProps, // merge when prop supplied
 							...tableProps,
 							El: Table,
@@ -530,10 +530,10 @@ export default class DataTable extends Component {
 									</Table.Row>
 								</Table.Footer>
 							)}
-						</InvertibleMemo>
+						</Invertible>
 					)}
 				</div>
-			</InvertibleMemo>
+			</Invertible>
 		)
 	}
 }

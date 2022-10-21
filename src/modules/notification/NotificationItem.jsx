@@ -7,7 +7,7 @@ import { Message } from '../../components/Message'
 // services
 import { itemViewHandlers, remove, toggleRead } from './notification'
 
-export default React.memo(({ id, notification }) => {
+export default function NotificationItem({ id, notification }) {
     const { from, type, childType, message, data, tsCreated, read, status } = notification || {}
     const key = `${type}:${childType || ''}`
     const handler = itemViewHandlers[key]
@@ -35,8 +35,9 @@ export default React.memo(({ id, notification }) => {
         </div>
     )
     const msgStatus = msg.status || status
+    
     return (
-        <Message  {...{
+        <Message {...{
             ...msg,
             icon: status === 'loading'
                 ? true
@@ -53,7 +54,7 @@ export default React.memo(({ id, notification }) => {
                 ...msg.style,
                 cursor: 'pointer',
                 textAlign: 'left',
-            }
+            },
         }} />
     )
-})
+}

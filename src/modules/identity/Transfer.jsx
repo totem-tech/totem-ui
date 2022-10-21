@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
@@ -505,7 +505,8 @@ export default class TransferForm extends Component {
         )
 
         confirm({
-            onConfirm: () => this.setPostSubmitMessage() | addToQueue(queueProps),
+            onConfirm: () => this.setPostSubmitMessage()
+                | addToQueue(queueProps),
             size: 'mini',
         })
 
@@ -559,25 +560,34 @@ const FromInputLabel = ({ rxAddress, rxCurrencyReceived, rxCurrencySent }) => {
     const key = `${dualBalance}${address}${currencyReceived}${currencySent}`
     return (
         <span>
-            {textsCap.payerIdentity} (
-                <Balance {...{
-                    address,
-                    emptyMessage: textsCap.loadingBalance + '...',
-                    key,
-                    prefix: `${textsCap.availableBalance}: `,
-                    showDetailed: true,
-                    suffix: !dualBalance ? undefined : (
-                        <Balance {...{
-                            address,
-                            key,
-                            prefix: ' | ',
-                            showDetailed: null,
-                            unitDisplayed: currencyReceived,
-                        }} />
-                    ),
-                    unitDisplayed: currencySent,
-                }} />
-            )
+            {textsCap.payerIdentity}
+            {' ('}
+            <Balance {...{
+                address,
+                El: 'a',
+                detailsPrefix: <span><Icon className='no-margin' name='eye slash' /> </span>,
+                emptyMessage: textsCap.loadingBalance + '...',
+                key,
+                prefix: (
+                    <span>
+                        <Icon className='no-margin' name='eye' />
+                        {' ' + textsCap.availableBalance + ': '}
+                    </span>
+                ),
+                showDetailed: true,
+                suffix: !dualBalance ? undefined : (
+                    <Balance {...{
+                        address,
+                        key,
+                        prefix: ' | ',
+                        showDetailed: null,
+                        // suffix: icon,
+                        unitDisplayed: currencyReceived,
+                    }} />
+                ),
+                unitDisplayed: currencySent,
+            }} />
+            {')'}
         </span>
     )
 }
@@ -609,7 +619,10 @@ setItemViewHandler(
                             userId: senderId,
                         }} />
                     </div>
-                    <div><b>{textsCap.yourIdentity}: </b>{identity.name}</div>
+                    <div>
+                        <b>{textsCap.yourIdentity}: </b>
+                        {identity.name}
+                    </div>
                 </div>
             ),
         }

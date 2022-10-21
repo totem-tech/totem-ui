@@ -15,4 +15,4 @@ const ModalInvertible = props => {
     }
     return <Modal {...props} />
 }
-export default React.memo(ModalInvertible)
+export default ModalInvertible

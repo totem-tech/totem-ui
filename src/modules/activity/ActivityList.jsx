@@ -209,7 +209,11 @@ export default class ActivityList extends Component {
                 this.setState({ emptyMessage: null, data: projects })
             })
         } catch (err) {
-            this.setState({ emptyMessage: { header: textsCap.projectsFailed, content: `${err}` } })
+            this.setState({
+                emptyMessage: {
+                    header: textsCap.projectsFailed, content: `${err}`
+                }
+            })
         }
     }
 
@@ -361,6 +365,7 @@ export default class ActivityList extends Component {
             _firstSeen: textsCap.detailsFirstSeenLabel
         }
         // Create a form on the fly and display data a read-only input fields
+        console.log({FormBuilder, data})
         showForm(FormBuilder, {
             closeOnEscape: true,
             closeOnDimmerClick: true,

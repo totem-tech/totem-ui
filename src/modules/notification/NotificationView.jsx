@@ -17,7 +17,7 @@ const textsCap = translated(
 	},
 	true
 )[1]
-export default React.memo(() => {
+export default function NotificationView() {
 	const [visible] = useRxSubject(rxVisible, visible => {
 		const { classList } = document.body
 		classList[visible ? 'add' : 'remove']('notification-visible')
@@ -138,4 +138,4 @@ export default React.memo(() => {
 			{visible && items}
 		</div>
 	)
-})
+}

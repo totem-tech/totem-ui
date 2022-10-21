@@ -235,7 +235,7 @@ export const Reveal = React.memo(function Reveal(props){
 		...toggleOnClick && { onClick: triggerEvent(true, onClick, !visible) },
 		...toggleOnHover && {
 				onMouseEnter: triggerEvent(true, onMouseEnter, true),
-				onMouseOver: triggerEvent(true, onMouseHover, true),
+				// onMouseOver: triggerEvent(true, onMouseHover, true),
 				onMouseLeave: triggerEvent(true, onMouseLeave, false),
 		},
 		style: {

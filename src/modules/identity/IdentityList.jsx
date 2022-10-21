@@ -71,20 +71,18 @@ const getActions = ({ address, name }) =>
 	[
 		{
 			icon: 'share',
-			onClick: () =>
-				showForm(IdentityShareForm, {
-					// inputsDisabled: ['address'],
-					includeOwnIdentities: true,
-					includePartners: false,
-					size: 'tiny',
-					values: { address, name },
-				}),
+			onClick: () => showForm(IdentityShareForm, {
+				// inputsDisabled: ['address'],
+				includeOwnIdentities: true,
+				includePartners: false,
+				size: 'tiny',
+				values: { address, name },
+			}),
 			title: textsCap.shareIdentityDetails,
 		},
 		{
 			icon: 'pencil',
-			onClick: () =>
-				showForm(IdentityDetailsForm, { values: { address } }),
+			onClick: () => showForm(IdentityDetailsForm, { values: { address } }),
 			title: textsCap.showDetails,
 		},
 	].map(props => <Button {...props} key={props.title + props.icon} />)

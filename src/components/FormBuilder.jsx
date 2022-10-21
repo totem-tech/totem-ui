@@ -518,7 +518,7 @@ FormBuilder.defaultProps = {
 	submitText: textsCap.submit,
 	size: 'tiny',
 }
-export default React.memo(FormBuilder)
+export default FormBuilder // Do not use React.memo()
 
 /**
  * @name    fillValues

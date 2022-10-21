@@ -56,7 +56,7 @@ export const inputNames = {
 	uri: 'uri',
 }
 // A read only form to display identity details including seed
-export default class IdentityDetailsForm extends Component {
+class IdentityDetailsForm extends Component {
 	constructor(props) {
 		super(props)
 
@@ -98,9 +98,8 @@ export default class IdentityDetailsForm extends Component {
 						{
 							action: {
 								icon: 'copy',
-								onClick: e =>
-									e.preventDefault() |
-									copyToClipboard(this.identity.address),
+								onClick: e => e.preventDefault()
+									| copyToClipboard(this.identity.address),
 								style: { cursor: 'pointer' },
 								title: textsCap.copyAddress,
 							},
@@ -122,25 +121,18 @@ export default class IdentityDetailsForm extends Component {
 										uriIn.action = !this.showSeed
 											? undefined
 											: {
-													icon: 'copy',
-													onClick: e =>
-														e.preventDefault() |
-														copyToClipboard(
-															this.identity.uri
-														),
-													title: textsCap.copySeed,
+												icon: 'copy',
+												onClick: e => e.preventDefault()
+													| copyToClipboard(this.identity.uri),
+												title: textsCap.copySeed,
 											  }
-										uriIn.inlineLabel.icon.name = `eye${
-											this.showSeed ? ' slash' : ''
-										}`
+										uriIn.inlineLabel.icon.name = `eye${this.showSeed ? ' slash' : ''}`
 										uriIn.inlineLabel.title = `${
 											this.showSeed
 												? textsCap.hideSeed
 												: textsCap.showSeed
 										}`
-										uriIn.value = this.getUri(
-											this.identity.uri
-										)
+										uriIn.value = this.getUri(this.identity.uri)
 										this.setState({ inputs })
 									}
 									this.showSeed
@@ -293,3 +285,5 @@ IdentityDetailsForm.defaultProps = {
 	header: textsCap.identityDetails,
 	size: 'tiny',
 }
+
+export default IdentityDetailsForm

@@ -20,7 +20,7 @@ import {
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import Message, { statuses } from './Message'
-import { InvertibleMemo } from './Invertible'
+import { Invertible } from './Invertible'
 // Custom Inputs
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
@@ -564,7 +564,7 @@ export class FormInput extends Component {
 		if (!isBool(collapsed)) collapsed = accordion.collapsed
 
 		return (
-			<InvertibleMemo {...{
+			<Invertible {...{
 				El: Accordion,
 				...objWithoutKeys(accordion, NON_ATTRIBUTES),
 				style: {
@@ -588,7 +588,7 @@ export class FormInput extends Component {
 					content: groupEl,
 					style: accordion.contentStyle,
 				}} />
-			</InvertibleMemo>
+			</Invertible>
 		)
 	}
 }

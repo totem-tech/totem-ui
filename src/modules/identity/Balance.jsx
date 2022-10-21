@@ -9,8 +9,6 @@ import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
 // modules
 import Currency from '../currency/Currency'
-import { useRxSubject } from '../../utils/reactHelper'
-import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
 	loadingAccBal: 'loading account balance',
@@ -21,6 +19,8 @@ const textsCap = translated({
 export const Balance = props => {
 	let {
 		address,
+		detailsPrefix,
+		detailsSuffix,
 		emptyMessage,
 		lockSeparator,
 		prefix,
@@ -29,7 +29,6 @@ export const Balance = props => {
 		suffix,
 		unitDisplayed,
 	} = props
-	const isMobile = useRxSubject(rxLayout, l => l === MOBILE)[0]
 	const balance = useBalance(address)
 	const locks = userLocks(address)
 	const isLoading = !isValidNumber(balance)
@@ -37,9 +36,13 @@ export const Balance = props => {
 	const freeBalance = isLoading
 		? undefined
 		: balance - lockedBalance
-	style = { cursor: 'pointer', ...style }
+	style = {
+		cursor: 'pointer',
+		userSelect: 'none',
+		...style
+	}
 	
-	const getContent = showLocked => () => (
+	const getContent = showDetails => () => (
 		<Currency {...{
 			...props,
 			emptyMessage: emptyMessage !== null && (
@@ -53,11 +56,11 @@ export const Balance = props => {
 					{emptyMessage}
 				</span>
 			),
-			prefix: showLocked
-				? `${textsCap.total}: `
+			prefix: showDetails
+				? <span>{detailsPrefix}{textsCap.total}: </span>
 				: prefix,
 			style,
-			suffix: !showLocked
+			suffix: !showDetails
 				? suffix
 				: (
 					<Currency {...{
@@ -67,11 +70,12 @@ export const Balance = props => {
 								{textsCap.locked}:{' '}
 							</span>
 						),
+						suffix: detailsSuffix,
 						value: lockedBalance,
 						unitDisplayed,
 					}} />
 				),
-			value: showLocked
+			value: showDetails
 				? balance
 				: freeBalance,
 		}} />
@@ -83,18 +87,22 @@ export const Balance = props => {
 				content: getContent(!showDetailed),
 				contentHidden: getContent(showDetailed),
 				ready: !isLoading,
-				toggleOnClick: isMobile,
-				toggleOnHover: !isMobile,
+				toggleOnClick: true,
+				toggleOnHover: true,
 			}} />
 		)
 }
 Balance.propTypes = {
 	address: PropTypes.string.isRequired,
+	details: PropTypes.any,
+	detailsSuffix: PropTypes.any,
 	// use null to prevent  displaying loading spinner
 	emptyMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+	prefix: PropTypes.any,
 	// @showDetailed: if truthy will display total balance and locked balance. Otherwise, free balance.
 	showDetailed: PropTypes.bool,
 	// any other props accepted by Currency component will be passed through
+	suffix: PropTypes.any,
 }
 Balance.defaultProps = {
 	lockSeparator: ' | ',

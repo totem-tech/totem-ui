@@ -15,7 +15,7 @@ import { translated } from '../../utils/languageHelper'
 import Message, { statuses } from '../../components/Message'
 import { setActive, setActiveExclusive } from '../../services/sidebar'
 import Text from '../../components/Text'
-import { InvertibleMemo } from '../../components/Invertible'
+import { Invertible } from '../../components/Invertible'
 
 const textsCap = translated({
 	errAlreadySubmitted: 'You have already submitted your claim.',
@@ -277,7 +277,7 @@ const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) =
 				}
 				return (
 					<li key={i}>
-						<InvertibleMemo {...{
+						<Invertible {...{
 							...item,
 							basic: true,
 							children: <Text {...{ children }} />,

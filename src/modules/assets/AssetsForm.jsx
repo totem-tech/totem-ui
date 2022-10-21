@@ -3,7 +3,7 @@ import { Button, Divider } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import { isFn, objWithoutKeys } from '../../utils/utils'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
-import { InvertibleMemo } from '../../components/Invertible'
+import { Invertible } from '../../components/Invertible'
 import { randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { unsubscribe, useRxSubject } from '../../services/react'
@@ -326,7 +326,7 @@ function newPortfolioGroup() {
                 width: 2,
                 content: (
                     <div className='action remove-asset'>
-                        <InvertibleMemo {...{
+                        <Invertible {...{
                             El: Button,
                             as: 'div',
                             basic: true,
@@ -357,7 +357,7 @@ function newPortfolioGroup() {
                 width: 2,
                 content: (
                     <div className='action add-asset'>
-                        <InvertibleMemo {...{
+                        <Invertible {...{
                             El: Button,
                             as: 'div',
                             basic: true,
