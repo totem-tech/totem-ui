@@ -333,7 +333,7 @@ export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
 
 			<Menu.Item
 				icon={{
-					color: timerInProgress && 'yellow' || '',
+					color: timerInProgress && 'yellow' || undefined,
 					className: 'no-margin',
 					loading: timerInProgress,
 					name: 'clock outline',

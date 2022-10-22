@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Checkbox as CB } from 'semantic-ui-react'
+import { Checkbox } from 'semantic-ui-react'
 import Text from './Text'
 import {
+    arrUnique,
     className,
     generateHash,
     hasValue,
@@ -11,110 +12,24 @@ import {
     isObj,
     objWithoutKeys,
 } from '../utils/utils'
+import { useRxSubject } from '../utils/reactHelper'
 
-const Checkbox = React.memo(CB)
 function CheckboxGroup(props) {
     const {
-        disabled,
-        ignoreAttributes,
-        inline,
-        multiple,
-        name,
-        options,
-        radio,
-        readOnly,
+        options = [],
         rxValue,
         style,
     } = props
-    const allowMultiple = !radio && !!multiple
-    const commonProps = objWithoutKeys(props, ignoreAttributes)
-    let [value, setValue] = useState(rxValue && rxValue.value || props.value)
+    const [value = [], setValue] = useRxSubject(rxValue || props.value)
+    const [checkboxes, setCheckboxes] = useState([])
 
-    rxValue && useEffect(() => {
-        let mounted = true
-        const subscribed = rxValue.subscribe(v => mounted && setValue(v))
-
-        return () => {
-            mounted = false
-            subscribed.unsubscribe()
-        }
-    }, [setValue])
-
+    useEffect(() => {
+        setCheckboxes(getCheckboxes(props, value, setValue))
+    }, [options, value])
+    
     return (
         <div style={style}>
-            {(options || []).map((option, i) => {
-                value = !allowMultiple
-                    ? value
-                    : !hasValue(value)
-                        ? []
-                        : !isArr(value)
-                            ? [value]
-                            : value
-                const checked = allowMultiple
-                    ? value.indexOf(option.value) >= 0
-                    : value === option.value
-                option.id = option.id || generateHash(
-                    `${name}${i}${JSON.stringify(option)}`,
-                    'blake2',
-                    64,
-                )
-                return option.hidden
-                    ? ''
-                    : (
-                        <Checkbox {...{
-                            ...commonProps,
-                            disabled: disabled || readOnly,
-                            ...option,
-                            checked,
-                            key: i,
-                            label: (
-                                <Text {...{
-                                    El: 'label',
-                                    children: option.label,
-                                    className: className({
-                                        'checkbox-group-item': true,
-                                        checked, 
-                                    }),
-                                    htmlFor:  option.id
-                                }} />
-                            ),
-                            // label: (
-                            //     <label {...{
-                            //         children: option.label,
-                            //         className: className({
-                            //             'checkbox-group-item': true,
-                            //             checked, 
-                            //         }),
-                            //         htmlFor:  option.id
-                            //     }} />
-                            // ),
-                            name: name + (allowMultiple ? i : ''),
-                            onChange: (e, data) => {
-                                isObj(e) && isFn(e.persist) && e.persist()
-                                const { onChange } = props
-                                const { checked } = data
-                                const { value: val } = option
-                                if (!allowMultiple) {
-                                    value = checked ? val : undefined
-                                } else {
-                                    value = isArr(value) ? value : (hasValue(value) ? [value] : [])
-                                    // add/remove from values
-                                    checked ? value.push(val) : value.splice(value.indexOf(val), 1)
-                                }
-                                setValue(value)
-                                isFn(onChange) && onChange(e, { ...data, value })
-                            },
-                            required: false, // handled by CheckboxGroup
-                            style: {
-                                ...option.style,
-                                margin: '5px',
-                                width: inline ? 'auto' : '100%'
-                            },
-                            type: 'checkbox',
-                            value: checked ? `${option.value}` : '',
-                        }} />
-                    )
-            })}
+            {checkboxes}
         </div>
     )
 }
@@ -148,3 +63,91 @@ CheckboxGroup.defaultProps = {
     ],
 }
 export default React.memo(CheckboxGroup)
+
+const getCheckboxes = (props, value, setValue) => {
+    const {
+        disabled,
+        ignoreAttributes,
+        inline,
+        multiple,
+        name,
+        options = [],
+        radio,
+        readOnly,
+    } = props
+    const allowMultiple = !radio && !!multiple
+    const commonProps = objWithoutKeys(props, ignoreAttributes)
+
+    if (allowMultiple) {
+        value = !hasValue(value)
+            ? []
+            : !isArr(value)
+                ? [value]
+                : value
+        value = arrUnique(value.flat())
+    }
+
+    return options.map((option, i) => {
+        const checked = allowMultiple
+            ? value.indexOf(option.value) >= 0
+            : value === option.value
+        option.id = generateHash(
+            `${name}${i}${JSON.stringify(option)}${checked}`,
+            'blake2',
+            32,
+        )
+        return !option.hidden && (
+            <Checkbox {...{
+                ...commonProps,
+                disabled: disabled || readOnly,
+                ...option,
+                checked,
+                key: option.id,
+                label: (
+                    <Text {...{
+                        El: 'label',
+                        children: option.label,
+                        className: className({
+                            'checkbox-group-item': true,
+                            checked, 
+                        }),
+                        htmlFor:  option.id
+                    }} />
+                ),
+                name: name + (allowMultiple ? i : ''),
+                onChange: (e, data) => {
+                    isObj(e) && isFn(e.persist) && e.persist()
+                    const { onChange } = props
+                    const { checked } = data
+                    const { value: val } = option
+                    if (!allowMultiple) {
+                        value = checked ? val : undefined
+                    } else {
+                        value = isArr(value)
+                            ? value
+                            : hasValue(value)
+                                ? [value]
+                                : []
+                        
+                        // add/remove from values
+                        checked
+                            ? value.push(val)
+                            : value.splice(value.indexOf(val), 1)
+                        
+                        value = arrUnique(value.flat())
+                    }
+                    setValue(value)
+                    isFn(onChange) && onChange(e, { ...data, value })
+                },
+                required: false, // handled by CheckboxGroup
+                style: {
+                    ...option.style,
+                    margin: '5px',
+                    width: inline ? 'auto' : '100%'
+                },
+                type: 'checkbox',
+                value: checked ? `${option.value}` : '',
+            }} />
+        )
+    }).filter(Boolean)
+}

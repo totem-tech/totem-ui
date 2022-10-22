@@ -103,15 +103,23 @@ const getActions = ({ address, name }) =>
 const getTableProps = isMobile => {
 	const BtnText = (props) => {
 		const El = isMobile && window.outerWidth <= 400 ? 'div' : 'span'
-		return <El {...{...props, style: {paddingTop: 5 }}} />
+		return <El {...{ ...props, style: {paddingTop: 5 }}} />
 	}
+	const getIcon = name => (
+		<Icon {...{
+			className: isMobile && 'no-margin' || '',
+			name,
+		}} />
+	)
 	return {
 		columns: [
 			{
 				collapsing: true,
 				content: p => {
 					let icon
-					const ut = p._isReward ? USAGE_TYPES.REWARD : p.usageType
+					const ut = p._isReward
+						? USAGE_TYPES.REWARD
+						: p.usageType
 					switch (ut) {
 						case USAGE_TYPES.BUSINESS:
 							icon = {
@@ -204,17 +212,17 @@ const getTableProps = isMobile => {
 				buttons: [
 					{
 						content: <BtnText>{textsCap.create}</BtnText>,
-						icon: 'plus',
+						icon: getIcon('plus'),
 						onClick: () => showForm(IdentityForm),
 					},
 					{
 						content: <BtnText>{textsCap.locations}</BtnText>,
-						icon: 'building',
+						icon: getIcon('building'),
 						onClick: () => showLocations(),
 					},
 					{
 						content: <BtnText>{textsCap.contacts}</BtnText>,
-						icon: 'text telephone',
+						icon: getIcon('text telephone'),
 						onClick: () => UserContactList.asModal(),
 					},
 				],

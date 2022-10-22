@@ -16,6 +16,7 @@ import storage from '../../services/storage'
 import { MOBILE, rxLayout } from '../../services/window'
 import { MODULE_KEY } from './timekeeping'
 import { unsubscribe } from '../../services/react'
+import { isArr, isStr } from '../../utils/utils'
 
 const textsCap = translated({
     archive: 'archive',
@@ -38,7 +39,12 @@ export default class TimekeepingView extends Component {
         super(props)
 
         const style = { textAlign: 'left' }
-        const viewOptions = props.viewOptions || rw().viewOptions || ['records']
+        let viewOptions = props.viewOptions || rw().viewOptions
+        viewOptions = isArr(viewOptions)
+            && viewOptions.length !== 0
+            && viewOptions.every(x => isStr(x))
+                ? viewOptions
+                : ['records']
         this.state = {
             optionsInput: {
                 rxValue: new BehaviorSubject(viewOptions),

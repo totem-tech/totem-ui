@@ -160,7 +160,7 @@ export class FormInput extends Component {
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...errMsgs, ...customMessages }
 		let err, validatorConfig, isANum
-		let {value} = data
+		let { value } = data
 
 		if (hasVal && !err) {
 			switch (typeLower) {
@@ -408,8 +408,7 @@ export class FormInput extends Component {
 				attrs.options = options || attrs.options
 				attrs.radio = typeLC === 'radio-group' || attrs.radio
 				attrs.rxValue = rxValue
-				attrs.value = (rxValue ? rxValue.value : attrs.value)
-					|| (attrs.multiple ? [] : '')
+				attrs.value = (rxValue || {}).value || attrs.value
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'date':
