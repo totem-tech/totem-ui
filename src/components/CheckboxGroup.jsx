@@ -8,6 +8,7 @@ import {
     generateHash,
     hasValue,
     isArr,
+    isDefined,
     isFn,
     isObj,
     objWithoutKeys,
@@ -16,16 +17,16 @@ import { useRxSubject } from '../utils/reactHelper'
 
 function CheckboxGroup(props) {
     const {
-        options = [],
+        options,
         rxValue,
         style,
     } = props
-    const [value = [], setValue] = useRxSubject(rxValue || props.value)
+    const [value, setValue] = useRxSubject(rxValue || props.value)
     const [checkboxes, setCheckboxes] = useState([])
 
     useEffect(() => {
         setCheckboxes(getCheckboxes(props, value, setValue))
-    }, [options, value])
+    }, [value, options])
     
     return (
         <div style={style}>
@@ -50,6 +51,7 @@ CheckboxGroup.propTypes = {
 }
 CheckboxGroup.defaultProps = {
     ignoreAttributes: [
+        'defaultChecked',
         'ignoreAttributes',
         'inline',
         'multiple',
@@ -91,7 +93,7 @@ const getCheckboxes = (props, value, setValue) => {
         const checked = allowMultiple
             ? value.indexOf(option.value) >= 0
             : value === option.value
-        option.id = generateHash(
+        option.id = option.id || generateHash(
             `${name}${i}${JSON.stringify(option)}${checked}`,
             'blake2',
             32,
@@ -133,7 +135,6 @@ const getCheckboxes = (props, value, setValue) => {
                         checked
                             ? value.push(val)
                             : value.splice(value.indexOf(val), 1)
-                        
                         value = arrUnique(value.flat())
                     }
                     setValue(value)

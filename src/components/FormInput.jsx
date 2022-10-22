@@ -88,7 +88,6 @@ export class FormInput extends Component {
 		super(props)
 
 		const { defer, name } = props
-		this.key = randomHex(name, 16)
 		this.state = { message: undefined }
 		this.value = undefined
 		if (defer !== null) {
@@ -374,7 +373,7 @@ export class FormInput extends Component {
 		let attrs = objWithoutKeys(
 			{
 				...this.props,
-				key: this.key,
+				key: name,
 				loading: loadingS || loading,
 			},
 			[...NON_ATTRIBUTES, ...(ignoreAttributes || [])]

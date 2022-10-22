@@ -158,25 +158,24 @@ export default class ActivityForm extends Component {
 						isFn(onSubmit) && onSubmit(!err, values)
 						this.setState({
 							message: {
-								content: err ? (
-									err
-								) : (
-									<Button
-										{...{
-											content: textsCap.addTeamMembers,
-											onClick: () => {
-												const { modalId } = this.props
-												closeModal(modalId)
-												confirm({
-													confirmButton: null,
-													content: <ActivityTeamList projectHash={hash} />,
-													header: `${textsCap.projectTeam} - ${title}`,
-												})
-											},
-										}}
-									/>
+								content: err || (
+									<Button {...{
+										content: textsCap.addTeamMembers,
+										onClick: e => {
+											e.preventDefault()
+											const { modalId } = this.props
+											closeModal(modalId)
+											confirm({
+												confirmButton: null,
+												content: <ActivityTeamList projectHash={hash} />,
+												header: `${textsCap.projectTeam} - ${title}`,
+											})
+										},
+									}} />
 								),
-								header: err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader,
+								header: err
+									? textsCap.submitErrorHeader
+									: textsCap.submitSuccessHeader,
 								icon: true,
 								status: !err ? 'success' : 'warning',
 							},

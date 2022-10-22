@@ -4,7 +4,7 @@ import { isObj, isStr, isValidNumber, isDefined } from '../../utils/utils'
 import storage from '../../services/storage'
 
 const key = 'history'
-const MODULE_KEY = 'totem_' + key
+export const MODULE_KEY = 'totem_' + key
 const history = new DataStorage(MODULE_KEY, true)
 export const rxHistory = history.rxData
 const LIMIT_DEFAULT = 500 // default number of items to store

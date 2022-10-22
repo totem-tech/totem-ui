@@ -243,7 +243,7 @@ export const sidebarItems = [
         content: ActivityList,
         // headerDividerHidden: true,
         icon: 'briefcase',
-        name: 'projects',
+        name: 'activities',
         subHeader: textsCap.projectSubheader,
         subHeaderDetails: (
             <div>

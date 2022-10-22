@@ -1,11 +1,11 @@
 import React, { isValidElement, useCallback, useEffect, useState } from 'react'
 import { Button, Icon, List } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
-import { iUseReducer, subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
-import { arrUnique, isFn, isObj, isStr, objClean, objWithoutKeys } from '../../utils/utils'
+import { iUseReducer, subjectAsPromise, unsubscribe, useRxSubject } from '../../utils/reactHelper'
+import { arrUnique, deferred, getUrlParam, isFn, isInteger, isObj, isStr, objClean, objToUrlParams, objWithoutKeys } from '../../utils/utils'
 import FAQ from '../../components/FAQ'
 import FormBuilder from '../../components/FormBuilder'
-import { getAll as getHistory } from '../history/history'
+import { getAll as getHistory, rxHistory } from '../history/history'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
 import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
@@ -16,18 +16,57 @@ import Message, { statuses } from '../../components/Message'
 import { setActive, setActiveExclusive } from '../../services/sidebar'
 import Text from '../../components/Text'
 import { Invertible } from '../../components/Invertible'
+import { BLOCK_DURATION_SECONDS, durationToSeconds } from '../../utils/time'
 
-const textsCap = translated({
+let textsCap = {
+	addIdentity: 'add identity shared by a friend',
+	addSelf: 'add yourself as a team member.',
+	amountClaimable: 'amount transferred will not affect the amount claimable.',
+	checkNotification: 'check your notification to see if your friend shared their identity with you and add their them as partner by clicking on "Add partner" button.',
+	clickCreate: 'click on the "Create" button.',
+	clickDuration: 'click on "Manually enter duration"',
+	clickProceed: 'click on the "Proceed" button',
+	clickRequest: 'click on the "Request" button.',
+	clickStart: 'click on the "Start" button',
+	clickSubmit: 'click on the "Submit" button',
+	clickTimer: 'click on the "Timer" button.',
+	clickToRefresh: 'click to refresh',
+	clickViewTeam: 'click on the "Add/view team members" button.',
+	createActivity: 'create an Activity',
+	createTask: 'create a task',
+	createTkRecord: 'create a timekeeping record',
+	enterAmount: 'enter any amount you wish to send.',
+	enterDuration: 'enter a duration of three hours (03:00:00) or greater.',
+	enterFriendUserId: `Enter your friend's Totem User ID`,
+	enterNameDesc: 'enter any name and description for the activity.',
+	enterReason: 'select or enter a custom reason',
 	errAlreadySubmitted: 'You have already submitted your claim.',
     errEnded: 'Claim period has ended!',
     errInactive: 'Claim period is over!',
 	errIneligible: 'You are not eligible to claim KAPEX!',
 	errNotRegistered: 'please complete registration in the getting started module',
-	feedbackLabel: 'please enter your unique feedback including any bug report here (between 50 and 5000 characters)',
+	feedbackLabel: 'feedback',
+	feedbackPlaceholder: 'please enter your feedback about the Totem.Live testnet application including any bug report (between 50 and 1000 characters)',
+	fillTaskForm: 'fill up all the required fields',
+	followInstructions: 'follow instruction below to complete the task:',
 	header: 'claim KAPEX',
+	goToActivity: 'go to Activities module',
+	goToPartners: 'go to Partners module',
+	goToTasks: 'go to Tasks module',
+	goToTimekeeping: 'go to Timekeeping module',
+	goToTransfer: 'go to Transfer module',
 	loading: 'loading...',
+	requestIdentity: 'request identity from a friend',
+	selectActivity: 'select an activity.',
+	selectRecipient: 'select your friend from the recipient DropDown list',
+	submit: 'submit',
+	submitActivity: 'submit and wait until Activity is successfully created.',
+	taskCompleted: 'you have completed this task',
 	tasksCompletedLabel: 'in order claim KAPEX you must complete the following tasks:',
-}, true)[1]
+	transferToFriend: 'transfer any amount to one of your friend',
+	waitAndStop: 'wait a few seconds and then click on the "stop" button',
+}
+textsCap = translated(textsCap, true)[1]
 
 export const inputNames = {
 	feedback: 'feedback',
@@ -64,7 +103,8 @@ export const getTaskList = taskIdentity => {
 			.filter(Boolean)
 	)
 	const partnerRequested = partnerIds.length > 0
-	const partnersAdded = Array.from(partners.getAll())
+	const allPartners = partners.getAll()
+	const partnersAdded = Array.from(allPartners)
 		.map(([_, p]) => partnerIds.includes(p.userId) && p)
 		.filter(Boolean)
 
@@ -72,7 +112,8 @@ export const getTaskList = taskIdentity => {
 		partnersAdded: partnersAdded.length > 0,
 	}
 
-	historyArr2d.forEach(([_, { action, data = [], identity, status }]) => {
+	historyArr2d.forEach(([_, historyItem]) => {
+		const { action, data = [], identity, status } = historyItem
 		const [recipient] = data
 
 		if (taskIdentity !== identity || status !== 'success') return
@@ -81,52 +122,25 @@ export const getTaskList = taskIdentity => {
 			case 'api.tx.projects.addNewProject':
 				taskStatus.activityDone = true
 				break
-			case 'api.tx.timekeeping.submitTime':
-				taskStatus.timekeepingDone = true
+			case 'api.tx.orders.createSpfso':
+				taskStatus.taskCreated = true
 				break
 			case 'api.tx.transfer.networkCurrency':
 				taskStatus.transferred = taskStatus.transferred
-					|| partnersAdded.find(x => x.address === recipient)
+					|| !!partnersAdded.find(x => x.address === recipient)
+					|| !!allPartners.get(recipient)
+				break
+			case 'api.tx.timekeeping.submitTime':
+				if (taskStatus.timekeepingDone) break
+				const numBlocks = data[7] - data[6]
+				if (!isInteger(numBlocks)) break
+
+				const minSeconds = durationToSeconds('03:00:00')
+				const seconds = numBlocks * BLOCK_DURATION_SECONDS
+				taskStatus.timekeepingDone = seconds >= minSeconds
 				break
 		}
 	})
-
-	const textsCap = {
-		addIdentity: 'add identity shared by a friend',
-		addSelf: 'add yourself as a team member.',
-		amountClaimable: 'amount transferred will not affect the amount claimable.',
-		checkNotification: 'check your notification to see if your friend shared their identity with you and add their them as partner by clicking on "Add partner" button.',
-		clickCreate: 'click on the "Create" button.',
-		clickDuration: 'click on "Manually enter duration"',
-		clickProceed: 'click on the "Proceed" button',
-		clickRequest: 'click on the "Request" button.',
-		clickStart: 'click on the "Start" button',
-		clickSubmit: 'click on the "Submit" button',
-		clickTimer: 'click on the "Timer" button.',
-		clickViewTeam: 'click on the "Add/view team members" button.',
-		createActivity: 'create an Activity',
-		createTask: 'create a task',
-		createTkRecord: 'create a timekeeping record',
-		enterAmount: 'enter any amount you wish to send.',
-		enterDuration: 'enter a duration of three hours (03:00:00) or greater.',
-		enterFriendUserId: `Enter your friend's Totem User ID`,
-		enterNameDesc: 'enter any name and description for the activity.',
-		enterReason: 'select or enter a custom reason',
-		followInstructions: 'follow instruction below to complete the task:',
-		goToActivity: 'go to Activity module',
-		goToPartners: 'go to Partners module',
-		goToTasks: 'go to Tasks module',
-		goToTimekeeping: 'go to Timekeeping module',
-		goToTransfer: 'go to Transfer module',
-		requestIdentity: 'request identity from a friend',
-		selectActivity: 'select an activity.',
-		selectRecipient: 'select your friend from the recipient DropDown list',
-		submit: 'submit',
-		submitActivity: 'submit and wait until Activity is successfully created.',
-		taskCompleted: 'you have completed this task',
-		transferToFriend: 'transfer any amount to one of your friend',
-		waitAndStop: 'wait a few seconds and then click on the "stop" button',
-	}
 
 	const checkMark = (
 		<Icon {...{
@@ -211,7 +225,7 @@ export const getTaskList = taskIdentity => {
 			answer: getStepList([
 				{
 					children: textsCap.goToActivity,
-					module: 'activity',
+					module: 'activities',
 				},
 				textsCap.clickCreate,
 				textsCap.enterNameDesc,
@@ -252,9 +266,12 @@ export const getTaskList = taskIdentity => {
 					children: textsCap.goToTasks,
 					module: 'tasks',
 				},
+				textsCap.clickCreate,
+				textsCap.fillTaskForm,
+				textsCap.clickSubmit,
 			]),
-			completed: true,
-			question: <span>{textsCap.createTask} {false && checkMark}</span>,
+			completed: taskStatus.taskCreated,
+			question: <span>{textsCap.createTask} {taskStatus.taskCreated && checkMark}</span>,
 		},
 	]
 	return tasks
@@ -267,23 +284,41 @@ const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) =
 			{items.map((item, i) => {
 				if (isStr(item) || isValidElement(item)) return <li key={i}>{item}</li>
 
-				let { children, El = Button, module } = item || {}
+				let { children, El = Button, module, url } = item || {}
 				if (isStr(module)) {
 					item.onClick = e => {
 						e.preventDefault()
 						// hide all modules other than these two
 						setActiveExclusive(['claim-kapex', module], true)
 					}
+					const { location: { host, protocol } } = window
+					const params = {
+						module,
+						exclusive: true,
+					}
+					url = [
+						`${protocol}//`,
+						window.location.host,
+						`?${objToUrlParams(params)}`
+					].join('')
 				}
 				return (
 					<li key={i}>
 						<Invertible {...{
 							...item,
-							basic: true,
 							children: <Text {...{ children }} />,
 							El,
 							size: 'mini',
 						}} />
+						{isStr(module) && (
+							<Button {...{
+								as: 'a',
+								icon: 'forward mail',
+								href: url,
+								size: 'mini',
+								target: '_blank',
+							}} />
+						)}
 					</li>
 				)
 			})}
@@ -292,92 +327,87 @@ const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) =
 	</div>
 )
 
-const getFormProps = rxSetState => {
-	const reload = () => rxSetState.next({
-		...rxSetState.value,
-		inputs: inputs(),
-	})
+const getFormProps = () => {
+	const getSelected = () => identities.getSelected().address
+	const { address: rewardsIdentity } = (storage.settings.module('messaging') || {})
+		.user || {}
+	const switchIdenity = !!identities.get(rewardsIdentity)
+		&& rewardsIdentity !== getSelected()
+	// If rewards identity is available it will be selected automatically.
+	if (switchIdenity) identities.setSelected(rewardsIdentity)
+	const taskIdentity = getSelected()
+	// identity to complete the tasks with.
 
-	const inputs = () => {
-		const getSelected = () => identities.getSelected().address
-		const { address: rewardsIdentity } = (storage.settings.module('messaging') || {})
-			.user || {}
-		const switchIdenity = !!identities.get(rewardsIdentity)
-			&& rewardsIdentity !== getSelected()
-		// If rewards identity is available it will be selected automatically.
-		if (switchIdenity) identities.setSelected(rewardsIdentity)
-		const taskIdentity = getSelected()
-		// identity to complete the tasks with.
-
-		const tasks = getTaskList(taskIdentity)
-		const tasksCompleted = tasks.every(x => x.completed)
-		return [
-			{
-				hidden: true,
-				name: inputNames.rewardsIdentity,
-				value: rewardsIdentity,
-			},
-			{
-				hidden: true,
-				name: inputNames.taskIdentity,
-				value: taskIdentity,
-			},
-			{
-				checked: tasksCompleted,
-				disabled: true,
-				label: (
-					<div>
-						{textsCap.tasksCompletedLabel + ' '}
-						<Icon {...{
-							className: 'no-margin',
-							name: 'refresh',
-							onClick: () => reload(),
-							style: {
-								// color: 'orange',
-								cursor: 'pointer',
-							},
-						}} />
-					</div>
-				),
-				name: inputNames.tasksCompleted,
-				required: true,
-				type: 'checkbox',
-				value: tasksCompleted,
-			},
-			{
-				content: (
-					<div>
-						<FAQ {...{ questions: tasks, exclusive: true }} />
-						<br />
-					</div>
-				),
-				name: inputNames.taskList,
-				type: 'html',
-			},
-			{
-				hidden: values => !values.tasksCompleted,
-				label: 'Feedback',
-				maxLength: 1000,
-				minLength: 50,
-				name: inputNames.feedback,
-				placeholder: textsCap.feedbackPlaceholder,
-				required: true,
-				type: 'textarea',
-			},
-		]
-	}
+	const tasks = getTaskList(taskIdentity)
+	const tasksCompleted = tasks.every(x => x.completed)
+	const inputs = [
+		{
+			hidden: true,
+			name: inputNames.rewardsIdentity,
+			value: rewardsIdentity,
+		},
+		{
+			hidden: true,
+			name: inputNames.taskIdentity,
+			value: taskIdentity,
+		},
+		{
+			checked: tasksCompleted,
+			disabled: true,
+			label: (
+				<div>
+					{textsCap.tasksCompletedLabel + ' '}
+					{/* <Icon {...{
+						className: 'no-margin',
+						name: 'refresh',
+						onClick: () => reload(),
+						style: {
+							// color: 'orange',
+							cursor: 'pointer',
+						},
+						title: textsCap.clickToRefresh,
+					}} /> */}
+				</div>
+			),
+			name: inputNames.tasksCompleted,
+			required: true,
+			type: 'checkbox',
+			value: tasksCompleted,
+		},
+		{
+			content: (
+				<div>
+					<FAQ {...{ questions: tasks, exclusive: true }} />
+					<br />
+				</div>
+			),
+			name: inputNames.taskList,
+			type: 'html',
+		},
+		{
+			hidden: values => !values.tasksCompleted,
+			label: textsCap.feedbackLabel,
+			maxLength: 1000,
+			minLength: 50,
+			name: inputNames.feedback,
+			placeholder: textsCap.feedbackPlaceholder,
+			required: true,
+			type: 'textarea',
+		},
+	]
 
 	return {
-		...rxSetState.value,
-		inputs: inputs(),
+		inputs,
+		submitInProgress: false,
+		success: false,
 	}
 }
 
 export default function ClaimKAPEXView(props) {
-	const [formProps, setFormProps] = iUseReducer(null, getFormProps)
-	const [isRegistered] = useRxSubject(rxIsRegistered)
 	const [status, setStatusOrg] = useState(() => ({ ...statusCached(), loading: true }))
-	let { active, eligible, endDate, loading, message, startDate, submitted } = status
+	const [formProps, setFormProps] = useRxSubject(rxHistory, getFormProps)
+	const [isRegistered] = useRxSubject(rxIsRegistered)
+	let { eligible, loading, message, submitted } = status
 
 	const setStatus = useCallback((status) => {
 		const now = new Date()
@@ -467,7 +497,7 @@ export default function ClaimKAPEXView(props) {
 				statusCached(status)
 				setStatus(status)
 
-				setFormProps({ submitInProgress: false })
+				setFormProps({ submitted: true, submitInProgress: false })
 				isFn(onSubmit) && onSubmit(true, values)
 			},
 		}} />

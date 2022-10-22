@@ -106,7 +106,6 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
     const { address } = getSelected()
     if (checkBanned) {
         const banned = await query.worker.banned(hash, address)
-        console.log({ banned })
         if (banned) return this.setState({
             message: {
                 header: texts.permissionDenied,
@@ -245,6 +244,7 @@ export default class TimekeepingForm extends Component {
                 {
                     rxValue: new BehaviorSubject(),
                     disabled: !!values.inprogress,
+                    multiple: false,
                     name: 'manualEntry',
                     options: [{
                         label: texts.manuallyEnterDuration,
@@ -288,7 +288,7 @@ export default class TimekeepingForm extends Component {
 
             this.setState({ inputs })
         }, 100)
-        this.subscriptions.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
+        // this.subscriptions.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
         this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
         this.subscriptions.projects = await getProjects(true, updateProjects)
 
