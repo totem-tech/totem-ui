@@ -1,8 +1,7 @@
 import React, { isValidElement, useCallback, useEffect, useState } from 'react'
-import { Button, Icon, List } from 'semantic-ui-react'
-import { BehaviorSubject } from 'rxjs'
-import { iUseReducer, subjectAsPromise, unsubscribe, useRxSubject } from '../../utils/reactHelper'
-import { arrUnique, deferred, getUrlParam, isFn, isInteger, isObj, isStr, objClean, objToUrlParams, objWithoutKeys } from '../../utils/utils'
+import { Button, Icon } from 'semantic-ui-react'
+import { subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
+import { arrUnique, isFn, isInteger, isObj, isStr, objClean, objToUrlParams } from '../../utils/utils'
 import FAQ from '../../components/FAQ'
 import FormBuilder from '../../components/FormBuilder'
 import { getAll as getHistory, rxHistory } from '../history/history'
@@ -10,10 +9,9 @@ import identities from '../identity/identity'
 import partners from '../partner/partner'
 import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
 import storage from '../../utils/storageHelper'
-import { useRewards } from './rewards'
 import { translated } from '../../utils/languageHelper'
 import Message, { statuses } from '../../components/Message'
-import { setActive, setActiveExclusive } from '../../services/sidebar'
+import { setActiveExclusive } from '../../services/sidebar'
 import Text from '../../components/Text'
 import { Invertible } from '../../components/Invertible'
 import { BLOCK_DURATION_SECONDS, durationToSeconds } from '../../utils/time'
@@ -45,7 +43,7 @@ let textsCap = {
     errInactive: 'Claim period is over!',
 	errIneligible: 'You are not eligible to claim KAPEX!',
 	errNotRegistered: 'please complete registration in the getting started module',
-	feedbackLabel: 'feedback',
+	feedbackLabel: 'enter your feedback',
 	feedbackPlaceholder: 'please enter your feedback about the Totem.Live testnet application including any bug report (between 50 and 1000 characters)',
 	fillTaskForm: 'fill up all the required fields',
 	followInstructions: 'follow instruction below to complete the task:',
@@ -328,14 +326,14 @@ const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) =
 )
 
 const getFormProps = () => {
-	const getSelected = () => identities.getSelected().address
+	const { address: selectedIdentitty } = identities.getSelected()
 	const { address: rewardsIdentity } = (storage.settings.module('messaging') || {})
 		.user || {}
 	const switchIdenity = !!identities.get(rewardsIdentity)
-		&& rewardsIdentity !== getSelected()
+		&& rewardsIdentity !== selectedIdentitty
 	// If rewards identity is available it will be selected automatically.
 	if (switchIdenity) identities.setSelected(rewardsIdentity)
-	const taskIdentity = getSelected()
+	const taskIdentity = selectedIdentitty
 	// identity to complete the tasks with.
 
 	const tasks = getTaskList(taskIdentity)
@@ -354,6 +352,7 @@ const getFormProps = () => {
 		{
 			checked: tasksCompleted,
 			disabled: true,
+			hidden: tasksCompleted,
 			label: (
 				<div>
 					{textsCap.tasksCompletedLabel + ' '}
@@ -385,7 +384,7 @@ const getFormProps = () => {
 			type: 'html',
 		},
 		{
-			hidden: values => !values.tasksCompleted,
+			hidden: !tasksCompleted,
 			label: textsCap.feedbackLabel,
 			maxLength: 1000,
 			minLength: 50,
@@ -395,6 +394,7 @@ const getFormProps = () => {
 			type: 'textarea',
 		},
 	]
+	console.log({inputs})
 
 	return {
 		inputs,

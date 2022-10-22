@@ -88,6 +88,7 @@ export class FormInput extends Component {
 		super(props)
 
 		const { defer, name } = props
+		this.key = randomHex(name, 32)
 		this.state = { message: undefined }
 		this.value = undefined
 		if (defer !== null) {
@@ -509,7 +510,7 @@ export class FormInput extends Component {
 					: (message && message.status === statuses.ERROR)
 						|| !!error
 						|| !!invalid,
-				key: name,
+				key: this.key,
 				required,
 				style: styleContainer,
 				title: editable
