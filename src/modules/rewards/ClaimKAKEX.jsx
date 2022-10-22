@@ -245,9 +245,9 @@ export const getTaskList = taskIdentity => {
 					module: 'timekeeping',
 				},
 				textsCap.clickTimer,
-				textsCap.selectActivity,
-				textsCap.clickStart,
-				textsCap.waitAndStop,
+				// textsCap.selectActivity,
+				// textsCap.clickStart,
+				// textsCap.waitAndStop,
 				textsCap.clickDuration,
 				textsCap.enterDuration,
 				textsCap.clickSubmit,
@@ -296,7 +296,7 @@ const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) =
 					}
 					url = [
 						`${protocol}//`,
-						window.location.host,
+						host,
 						`?${objToUrlParams(params)}`
 					].join('')
 				}
