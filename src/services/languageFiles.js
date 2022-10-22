@@ -10,6 +10,7 @@ export default [
     "./src/components/FAQ.jsx",
     "./src/components/FormBuilder.jsx",
     "./src/components/FormInput.jsx",
+    "./src/components/Holdable.jsx",
     "./src/components/Invertible.jsx",
     "./src/components/JSONView.jsx",
     "./src/components/LabelCopy.jsx",

@@ -137,6 +137,7 @@ const PageHeaderView = React.memo(props => {
 			),
 			value: address
 		}))
+	const langCode = getSelectedLang() || ''
 	const topBar = (
 		<Menu
 			attached="top"
@@ -176,7 +177,7 @@ const PageHeaderView = React.memo(props => {
 				}} />
 				<Dropdown
 					item
-					text={getSelectedLang()}
+					text={langCode}
 					icon={{
 						name: 'cog',//'chevron circle ' + (showTools ? 'up' : 'down'),
 						size: 'large',
@@ -246,7 +247,7 @@ const PageHeaderView = React.memo(props => {
 							},
 							{
 								icon: 'language',
-								content: 'Change language', // Better left un-translated
+								content: `Change language (${langCode})`, // Better left un-translated
 								onClick: () => showForm(SettingsForm, {
 									header: null,// 'Change language',
 									inputsHidden: Object.values(settingsInputNames)
@@ -332,10 +333,11 @@ export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
 
 			<Menu.Item
 				icon={{
+					color: timerInProgress && 'yellow' || '',
 					className: 'no-margin',
 					loading: timerInProgress,
 					name: 'clock outline',
-					size: 'large'
+					size: 'large',
 				}}
 				onClick={() => showForm(TimekeepingForm, {})}
 			/>

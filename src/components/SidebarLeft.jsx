@@ -6,10 +6,11 @@ import { translated } from '../services/language'
 import { useRxSubject } from '../services/react'
 import {
 	rxAllInactive, getItem, setActive, setSidebarState,
-	sidebarItems, rxSidebarState, scrollTo, toggleActive, toggleSidebarState
+	sidebarItems, rxSidebarState, scrollTo, toggleActive, toggleSidebarState, setActiveExclusive
 } from '../services/sidebar'
 import { rxLayout, MOBILE } from '../services/window'
 import ContentSegment from './ContentSegment'
+import Holdable from './Holdable'
 
 const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
@@ -111,7 +112,7 @@ _MainContentItem.propTypes = {
 export const MainContentItem = React.memo(_MainContentItem)
 
 const _SidebarMenuItem = props => {
-	let { isMobile, name, rxTrigger, sidebarCollapsed, style } = props
+	let { name, rxTrigger, sidebarCollapsed, style } = props
 	const [item, setItem] = useRxSubject(rxTrigger, () => getItem(name))
 	const {
 		active,
@@ -126,20 +127,15 @@ const _SidebarMenuItem = props => {
 		title,
 	} = item || {}
 
+	
 	return !item || hidden
 		? ''
 		: (
-			<Menu.Item {...{
+			<Holdable {...{
 				as: 'a',
 				active,
+				El: Menu.Item,
 				href,
-				style: {
-					...style,
-					...anchorStyle,
-					...active && anchorStyleActive,
-				},
-				target,
-				title,
 				onClick: e => {
 					if (isFn(onClick)) onClick(e, item)
 					
@@ -149,8 +145,15 @@ const _SidebarMenuItem = props => {
 					if (e.shiftKey && getItem(name).active) return scrollTo(name)
 					const { active } = toggleActive(name)
 					setItem({ ...item, active })
-					// active && isMobile && toggleSidebarState()
 				},
+				onHold: e => e.stopPropagation() | setActiveExclusive(name, true),
+				style: {
+					...style,
+					...anchorStyle,
+					...active && anchorStyleActive,
+				},
+				target,
+				title,
 			}}>
 				{badge && <Label color='red'>{badge}</Label>}
 				<span>
@@ -160,7 +163,7 @@ const _SidebarMenuItem = props => {
 					}} />
 					{!sidebarCollapsed ? item.title : ''}
 				</span>
-			</Menu.Item>
+			</Holdable>
 		)
 }
 _SidebarMenuItem.propTypes = {

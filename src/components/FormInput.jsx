@@ -28,6 +28,7 @@ import DateInput from './DateInput'
 //
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
+import { randomHex } from '../services/blockchain'
 
 const Dropdown = React.memo(DD)
 const errMsgs = translated({
@@ -86,7 +87,8 @@ export class FormInput extends Component {
 	constructor(props = {}) {
 		super(props)
 
-		const { defer } = props
+		const { defer, name } = props
+		this.key = randomHex(name, 16)
 		this.state = { message: undefined }
 		this.value = undefined
 		if (defer !== null) {
@@ -372,7 +374,7 @@ export class FormInput extends Component {
 		let attrs = objWithoutKeys(
 			{
 				...this.props,
-				key: name,
+				key: this.key,
 				loading: loadingS || loading,
 			},
 			[...NON_ATTRIBUTES, ...(ignoreAttributes || [])]

@@ -14,7 +14,8 @@ import { createInbox } from '../modules/chat/chat'
 import { get as getPartner, getByUserId } from '../modules/partner/partner'
 import PartnerForm from '../modules/partner/PartnerForm'
 import { getUser } from '../modules/chat/ChatClient'
-import { useInverted } from '../services/window'
+import { MOBILE, rxLayout, useInverted } from '../services/window'
+import { useRxSubject } from '../utils/reactHelper'
 
 const [texts, textsCap] = translated({
 	accept: 'accept',
@@ -201,6 +202,8 @@ export const Reveal = React.memo(function Reveal(props){
 		onMouseHover,
 		onMouseEnter,
 		onMouseLeave,
+		onTouchEnd,
+		onTouchStart,
 		ready,
 		style,
 		toggleOnClick,
@@ -208,9 +211,7 @@ export const Reveal = React.memo(function Reveal(props){
 	} = props
 	const [visible, setVisible] = useState(defaultVisible)
 	const getContent = useCallback(c => isFn(c) ? c() : c)
-	const triggerEvent = useCallback((enable, func, show) => async (...args) => {
-		if (!enable) return
-		
+	const triggerEvent = useCallback((func, show) => async (...args) => {
 		const _ready = await (isFn(ready) ? ready() : ready)
 		if (!_ready) return
 
@@ -224,19 +225,27 @@ export const Reveal = React.memo(function Reveal(props){
 			? getContent(contentHidden)
 			: [
 				<span key='c'>{getContent(content)}</span>,
-					<span key='ch' onClick={exclusive && (e => e.preventDefault() | e.stopPropagation())}>
-						{getContent(contentHidden)}
-					</span >
+				<span key='ch' onClick={exclusive && (e => e.preventDefault() | e.stopPropagation())}>
+					{getContent(contentHidden)}
+				</span>
 			]
 
+    const touchable = 'ontouchstart' in document.documentElement
 	const elProps = {
 		...objWithoutKeys(props, ignoreAttributes),
 		children,
-		...toggleOnClick && { onClick: triggerEvent(true, onClick, !visible) },
+		...toggleOnClick && {
+			onClick: !touchable 
+				? triggerEvent(onClick, !visible)
+				: onClick,
+			onTouchStart: touchable
+				? triggerEvent(onTouchStart, !visible)
+				: onTouchStart,
+		},
 		...toggleOnHover && {
-				onMouseEnter: triggerEvent(true, onMouseEnter, true),
-				// onMouseOver: triggerEvent(true, onMouseHover, true),
-				onMouseLeave: triggerEvent(true, onMouseLeave, false),
+			onMouseEnter: triggerEvent(onMouseEnter, true),
+			// onMouseOver: triggerEvent(onMouseHover, true),
+			onMouseLeave: triggerEvent(onMouseLeave, false),
 		},
 		style: {
 			cursor: 'pointer',
@@ -253,7 +262,7 @@ Reveal.propTypes = {
 	// initial state of `hiddenContent`
 	defaultVisible: PropTypes.any,
 	El: PropTypes.oneOfType([
-		PropTypes.element,
+		PropTypes.elementType,
 		PropTypes.func,
 		PropTypes.string,
 	]).isRequired,

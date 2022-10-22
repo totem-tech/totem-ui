@@ -254,7 +254,7 @@ export const queueables = {
  * 
  * @returns {String} hash
  */
-export const randomHex = address => generateHash(`${address}${uuid.v1()}`)
+export const randomHex = (address, bitLength = 256) => generateHash(`${address}${uuid.v1()}`, 'blake2', bitLength)
 
 // Replace config
 export const setConfig = newConfig => {

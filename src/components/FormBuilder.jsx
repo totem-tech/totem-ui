@@ -457,7 +457,10 @@ FormBuilder.propTypes = {
 		PropTypes.string,
 	]),
 	defaultOpen: PropTypes.bool,
-	El: PropTypes.elementType,
+	El: PropTypes.oneOfType([
+		PropTypes.elementType,
+		PropTypes.string,
+	]),
 	// props to be passed on to the Form or `El` component
 	formProps: PropTypes.object,
 	// disable inputs on load

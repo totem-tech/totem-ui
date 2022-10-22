@@ -143,15 +143,15 @@ export const rxSidebarState = new BehaviorSubject({
 })
 
 export const setSidebarState = (collapsed, visible) => {
-    const lastState = { ...rxSidebarState.value }
+    const prev = { ...rxSidebarState.value }
     const isMobile = rxLayout.value === MOBILE
     // force expand on mobile mode
     collapsed = !isMobile && collapsed
     // always visible when not on mobile mode
     visible = !isMobile || visible
-    // state hasn't changed
-    if (lastState.collapsed === collapsed && lastState.visible === visible) return
-    rxSidebarState.next({ collapsed, visible })
+    const changed = prev.collapsed !== collapsed
+        || prev.visible !== visible
+    changed && rxSidebarState.next({ collapsed, visible })
 }
 
 export const toggleSidebarState = () => {
@@ -395,6 +395,8 @@ export const setActive = (name, active = true, contentProps, hidden) => {
         .every(({ active, hidden }) => !active || hidden)
     rxAllInactive.next(allInactive)
 
+    const isMobile = rxLayout.value === MOBILE
+    isMobile && active && toggleSidebarState()
     scrollTo(name)
     return item
 }

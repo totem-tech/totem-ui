@@ -28,7 +28,7 @@ import location from '../location/location'
 import contact from '../contact/contact'
 import { Button, Icon } from 'semantic-ui-react'
 import Text from '../../components/Text'
-import { getActiveStep, MODULE_KEY, saveActiveStep, stepIndexes } from './GettingStarted'
+import { getActiveStep, MODULE_KEY, saveActiveStep, setActiveStep, stepIndexes } from './GettingStarted'
 import { decryptBackup, encryptBackup, generatePassword } from '.'
 import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/ButtonDelayed'
@@ -598,6 +598,8 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) =
 	// all backed up
 	if (total === 0) return
 
+	// set getting started step to backup
+	setActiveStep(stepIndexes.backup)
 	const styleCritical = { color: 'orange', fontWeight: 'bold' }
 	const iconWarning = (
 		<Text {...{

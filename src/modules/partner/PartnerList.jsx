@@ -19,6 +19,7 @@ import {
 } from './partner'
 import CompanyForm from './CompanyForm'
 import PartnerForm, { inputNames } from './PartnerForm'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated(
 	{
@@ -44,6 +45,7 @@ const textsCap = translated(
 )[1]
 
 export default function PartnerList(props = {}) {
+	const [tableProps] = useRxSubject(rxLayout, getTableProps)
 	const [data] = useRxSubject(rxPartners, map =>
 		Array.from(map).map(([_, partnerOrg]) => {
 			const partner = { ...partnerOrg } // prevents unwanted data being writen to storage when caching is enabled
@@ -85,127 +87,130 @@ export default function PartnerList(props = {}) {
 	return <DataTable {...{ ...props, ...tableProps, data }} />
 }
 
-const tableProps = Object.freeze({
-	columns: [
-		{
-			collapsing: true,
-			content: p => {
-				const { type, visibility } = p
-				const isPersonal = type === types.PERSONAL
-				const isPublic = visibility === visibilityTypes.PUBLIC
-				const icons = {
-					business: { name: 'building', title: textsCap.business },
-					personal: { name: 'user circle', title: textsCap.personal },
-					public: {
-						color: 'blue',
-						name: 'certificate',
-						title: textsCap.public,
-					},
-				}
-				const icon = isPublic
-					? icons.public
-					: isPersonal
-					? icons.personal
-					: icons.business
-				return (
-					<Icon {...{
-						className: 'no-margin',
-						size: 'large',
-						...icon,
-					}} />
-				)
+const getTableProps = layout => {
+	const isMobile = layout === MOBILE
+	return Object.freeze({
+		columns: [
+			{
+				collapsing: true,
+				content: p => {
+					const { type, visibility } = p
+					const isPersonal = type === types.PERSONAL
+					const isPublic = visibility === visibilityTypes.PUBLIC
+					const icons = {
+						business: { name: 'building', title: textsCap.business },
+						personal: { name: 'user circle', title: textsCap.personal },
+						public: {
+							color: 'blue',
+							name: 'certificate',
+							title: textsCap.public,
+						},
+					}
+					const icon = isPublic
+						? icons.public
+						: isPersonal
+							? icons.personal
+							: icons.business
+					return (
+						<Icon {...{
+							className: 'no-margin',
+							size: 'large',
+							...icon,
+						}} />
+					)
+				},
+				draggable: false,
+				headerProps: { style: { borderRight: 'none' } },
+				style: {
+					borderRight: 'none',
+					paddingRight: 0,
+				},
+				textAlign: 'center',
+				title: '',
 			},
-			draggable: false,
-			headerProps: { style: { borderRight: 'none' } },
-			style: {
-				borderRight: 'none',
-				paddingRight: 0,
+			{
+				draggable: false,
+				headerProps: { style: { borderLeft: 'none' } },
+				key: '_name',
+				sortKey: 'name',
+				style: { borderLeft: 'none' },
+				title: textsCap.partnerName,
 			},
-			textAlign: 'center',
-			title: '',
-		},
-		{
-			draggable: false,
-			headerProps: { style: { borderLeft: 'none' } },
-			key: '_name',
-			sortKey: 'name',
-			style: { borderLeft: 'none' },
-			title: textsCap.partnerName,
-		},
-		{
-			key: '_associatedIdentity',
-			title: textsCap.usedBy,
-			style: { maxWidth: 200 },
-		},
-		{
-			key: '_tags',
-			draggable: false, // individual tags are draggable
-			sortKey: 'tags',
-			title: textsCap.tags,
-		},
-		{
-			collapsing: true,
-			content: getActions,
-			draggable: false,
-			title: textsCap.edit,
-		},
-		{
-			content: getVisibilityContent,
-			collapsing: true,
-			textAlign: 'center',
-			title: textsCap.public,
-		},
-	],
-	defaultSort: 'name',
-	emptyMessage: null,
-	searchExtraKeys: [
-		'address',
-		'associatedIdentity',
-		'name',
-		'visibility',
-		'_tagsStr',
-		'userId',
-	],
-	searchable: true,
-	topLeftMenu: [
-		{
-			El: ButtonGroup,
-			buttons: [
-				{ content: textsCap.add, icon: 'plus' },
-				{ content: textsCap.request },
-			],
-			// onAction: (_, addPartner) => {
-			// // Immediately re-opens the form on update mode
-			// 	const handleSubmit = (ok, partner) => ok && _showForm({
-			// 			autoSave: true,
-			// 			key: 'saved',
-			// 			values: partner,
-			// 		})
-			// 	const _showForm = (props = {}) => showForm(
-			// 		addPartner
-			// 			? PartnerForm
-			// 			: IdentityRequestForm,
-			// 		props,
-			// 		addPartner ? 'add-partner' : 'request-identity',
-			// 	)
+			{
+				key: '_associatedIdentity',
+				title: textsCap.usedBy,
+				style: { maxWidth: 200 },
+			},
+			!isMobile && {
+				key: '_tags',
+				draggable: false, // individual tags are draggable
+				sortKey: 'tags',
+				title: textsCap.tags,
+			},
+			{
+				collapsing: true,
+				content: getActions,
+				draggable: false,
+				title: textsCap.edit,
+			},
+			!isMobile && {
+				content: getVisibilityContent,
+				collapsing: true,
+				textAlign: 'center',
+				title: textsCap.public,
+			},
+		].filter(Boolean),
+		defaultSort: 'name',
+		emptyMessage: null,
+		searchExtraKeys: [
+			'address',
+			'associatedIdentity',
+			'name',
+			'visibility',
+			'_tagsStr',
+			'userId',
+		],
+		searchable: true,
+		topLeftMenu: [
+			{
+				El: ButtonGroup,
+				buttons: [
+					{ content: textsCap.add, icon: 'plus' },
+					{ content: textsCap.request },
+				],
+				// onAction: (_, addPartner) => {
+				// // Immediately re-opens the form on update mode
+				// 	const handleSubmit = (ok, partner) => ok && _showForm({
+				// 			autoSave: true,
+				// 			key: 'saved',
+				// 			values: partner,
+				// 		})
+				// 	const _showForm = (props = {}) => showForm(
+				// 		addPartner
+				// 			? PartnerForm
+				// 			: IdentityRequestForm,
+				// 		props,
+				// 		addPartner ? 'add-partner' : 'request-identity',
+				// 	)
 
-			// 	_showForm({
-			//		closeOnSubmit: false,
-			// 		onSubmit: addPartner
-			// 			? handleSubmit
-			// 			: undefined,
-			// 	})
-			// },
-			onAction: (_, addPartner) => showForm(
-				addPartner
-					? PartnerForm
-					: IdentityRequestForm
-			),
-			or: true,
-			values: [true, false],
-		},
-	],
-})
+				// 	_showForm({
+				//		closeOnSubmit: false,
+				// 		onSubmit: addPartner
+				// 			? handleSubmit
+				// 			: undefined,
+				// 	})
+				// },
+				onAction: (_, addPartner) => showForm(
+					addPartner
+						? PartnerForm
+						: IdentityRequestForm
+				),
+				or: true,
+				values: [true, false],
+			},
+		],
+	})
+}
 
 function getActions(partner = {}) {
 	const { address, name } = partner

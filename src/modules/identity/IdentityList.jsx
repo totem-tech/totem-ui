@@ -23,6 +23,7 @@ import { MOBILE, rxLayout } from '../../services/window'
 const textsCap = translated(
 	{
 		actions: 'actions',
+		balance: 'balance',
 		business: 'business',
 		contacts: 'contacts',
 		create: 'create',
@@ -55,7 +56,19 @@ export default function IdentityList(props) {
 			const isPersonal = usageType === USAGE_TYPES.PERSONAL
 			identity._isReward = address === rewardsIdentity
 			identity._balance = (
-				<Balance {...{ address, lockSeparator: <br />, showDetailed: true }} />
+				<Balance {...{
+					address,
+					EL: 'div',
+					lockSeparator: <br />,
+					showDetailed: true,
+					style: {
+    					alignItems: 'center',
+    					display: 'flex',
+    					justifyContent: 'center',
+						minHeight: 40,
+						textAlign: 'center',
+					}
+				}} />
 			)
 			identity._fileBackupTS = format(fileBackupTS) || textsCap.never
 			identity._tagsStr = tags.join(' ') // for tags search
@@ -88,7 +101,10 @@ const getActions = ({ address, name }) =>
 	].map(props => <Button {...props} key={props.title + props.icon} />)
 
 const getTableProps = isMobile => {
-	const vertical = isMobile && window.innerWidth < 415
+	const BtnText = (props) => {
+		const El = isMobile && window.outerWidth <= 400 ? 'div' : 'span'
+		return <El {...{...props, style: {paddingTop: 5 }}} />
+	}
 	return {
 		columns: [
 			{
@@ -119,13 +135,11 @@ const getTableProps = isMobile => {
 					}
 
 					return (
-						<Icon
-							{...{
-								className: 'no-margin',
-								size: 'large',
-								...icon,
-							}}
-						/>
+						<Icon {...{
+							className: 'no-margin',
+							size: 'large',
+							...icon,
+						}} />
 					)
 				},
 				draggable: false,
@@ -140,24 +154,30 @@ const getTableProps = isMobile => {
 			{
 				headerProps: { style: { borderLeft: 'none' } },
 				key: 'name',
-				style: { minWidth: 150 },
+				style: { 
+					// maxWidth: isMobile ? 120 : undefined,
+					minWidth: 150, //isMobile ? 150 : 120,
+					overflowX: 'hidden'
+				},
 				title: textsCap.name,
 			},
 			{
-				collapsing: true,
+				// collapsing: true,
 				draggable: false,
 				key: '_balance',
 				sortable: false,
 				textAlign: 'right',
-				title: textsCap.txAllocations,
+				title: isMobile
+					? textsCap.balance
+					: textsCap.txAllocations,
 			},
-			{
+			!isMobile && {
 				key: '_tags',
 				draggable: false, // individual tags are draggable
 				sortKey: 'tags',
 				title: textsCap.tags,
 			},
-			{
+			!isMobile && {
 				key: '_fileBackupTS',
 				textAlign: 'center',
 				title: textsCap.lastBackup,
@@ -169,7 +189,7 @@ const getTableProps = isMobile => {
 				textAlign: 'center',
 				title: textsCap.actions,
 			},
-		],
+		].filter(Boolean),
 		defaultSort: 'name',
 		emptyMessage: { content: textsCap.emptyMessage },
 		searchExtraKeys: ['address', 'name', '_tagsStr', 'usageType'],
@@ -183,23 +203,22 @@ const getTableProps = isMobile => {
 				El: ButtonGroup,
 				buttons: [
 					{
-						content: textsCap.create,
+						content: <BtnText>{textsCap.create}</BtnText>,
 						icon: 'plus',
 						onClick: () => showForm(IdentityForm),
 					},
 					{
-						content: textsCap.locations,
+						content: <BtnText>{textsCap.locations}</BtnText>,
 						icon: 'building',
 						onClick: () => showLocations(),
 					},
 					{
-						content: textsCap.contacts,
+						content: <BtnText>{textsCap.contacts}</BtnText>,
 						icon: 'text telephone',
 						onClick: () => UserContactList.asModal(),
 					},
 				],
 				key: 0,
-				vertical,
 			},
 		],
 	}

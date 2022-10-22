@@ -9,6 +9,8 @@ import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
 // modules
 import Currency from '../currency/Currency'
+import { useRxSubject } from '../../utils/reactHelper'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
 	loadingAccBal: 'loading account balance',
@@ -32,6 +34,7 @@ export const Balance = props => {
 	const balance = useBalance(address)
 	const locks = userLocks(address)
 	const isLoading = !isValidNumber(balance)
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
 	const freeBalance = isLoading
 		? undefined
@@ -57,7 +60,11 @@ export const Balance = props => {
 				</span>
 			),
 			prefix: showDetails
-				? <span>{detailsPrefix}{textsCap.total}: </span>
+				? (
+					<span>
+						{detailsPrefix}<b>{textsCap.total}: </b>
+					</span>
+				)
 				: prefix,
 			style,
 			suffix: !showDetails
@@ -67,7 +74,7 @@ export const Balance = props => {
 						prefix: (
 							<span>
 								{lockSeparator}
-								{textsCap.locked}:{' '}
+								<b>{textsCap.locked}:</b>{' '}
 							</span>
 						),
 						suffix: detailsSuffix,
@@ -101,8 +108,8 @@ Balance.propTypes = {
 	prefix: PropTypes.any,
 	// @showDetailed: if truthy will display total balance and locked balance. Otherwise, free balance.
 	showDetailed: PropTypes.bool,
-	// any other props accepted by Currency component will be passed through
 	suffix: PropTypes.any,
+	// any other props accepted by Currency component will be passed through
 }
 Balance.defaultProps = {
 	lockSeparator: ' | ',

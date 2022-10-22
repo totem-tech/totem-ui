@@ -13,7 +13,12 @@ import client from './modules/chat/ChatClient'
 import { fetchNSaveTexts } from './services/language'
 import storage from './services/storage'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
+import Invertible from './components/Invertible'
+import { translated } from './utils/languageHelper'
 
+const textsCap = translated({
+    loading: 'loading',
+}, true)[1]
 const urlParams = getUrlParam()
 const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')
 const debug = getUrlParam('debug').toLowerCase()
@@ -111,16 +116,22 @@ const doRender = () => {
 }
 
 // show loading spinner if it takes longer than 100ms to initialize
-PromisE.timeout(initPromise, 100)
-    .catch(() => {
-        const styleCenter = {
-            top: 'calc( 50% - 29px )',
-            left: 'calc( 50% - 29px )',
-            position: 'fixed',
-        }
-        const loader = <Loader active style={styleCenter}>Loading...</Loader>
-        render(loader, document.getElementById('app'))
-    })
+// const showLoader = () => {
+//     const loader = (
+//         <Invertible {...{
+//             active: true,
+//             children: `${textsCap.loading}...`,
+//             El: Loader,
+//             size: 'big',
+//             style: {
+//                 paddingBottom: 3,
+//             },
+//         }} />
+//     )
+//     render(loader, document.getElementById('app'))
+// }
+// PromisE.timeout(initPromise, 100)
+//     .catch(showLoader)
 initPromise
     .then(doRender)
     .catch(doRender)

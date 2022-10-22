@@ -82,7 +82,11 @@ function Currency(props) {
         ? (emptyMessage || '')
         : (
             <span>
-                {prefix || ''}{valueConverted} {ticker}{suffix || ''}
+                {prefix || ''}
+                <span style={{ whiteSpace: 'nowrap' }}>
+                    {valueConverted} {ticker}
+                </span>
+                {suffix || ''}
             </span>
         )
     return (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Checkbox } from 'semantic-ui-react'
+import { Checkbox as CB } from 'semantic-ui-react'
 import Text from './Text'
 import {
     className,
@@ -12,6 +12,7 @@ import {
     objWithoutKeys,
 } from '../utils/utils'
 
+const Checkbox = React.memo(CB)
 function CheckboxGroup(props) {
     const {
         disabled,
