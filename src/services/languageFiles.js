@@ -72,6 +72,7 @@ export default [
     "./src/modules/crowdsale/crowdsale.js",
     "./src/modules/currency/Converter.jsx",
     "./src/modules/currency/Currency.jsx",
+    "./src/modules/currency/CurrencyDropdown.jsx",
     "./src/modules/currency/CurrencyList.jsx",
     "./src/modules/currency/currency.js",
     "./src/modules/event/EventList.jsx",

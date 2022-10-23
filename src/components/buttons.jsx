@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { isBool, isFn, objWithoutKeys } from '../utils/utils'
+import { isFn, objWithoutKeys } from '../utils/utils'
 import { getRawUserID } from './UserIdInput'
 // forms
 import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
@@ -14,8 +14,8 @@ import { createInbox } from '../modules/chat/chat'
 import { get as getPartner, getByUserId } from '../modules/partner/partner'
 import PartnerForm from '../modules/partner/PartnerForm'
 import { getUser } from '../modules/chat/ChatClient'
-import { MOBILE, rxLayout, useInverted } from '../services/window'
-import { useRxSubject } from '../utils/reactHelper'
+import { useInverted } from '../services/window'
+import Holdable from './Holdable'
 
 const [texts, textsCap] = translated({
 	accept: 'accept',
@@ -199,14 +199,13 @@ export const Reveal = React.memo(function Reveal(props){
 		exclusive,
 		ignoreAttributes,
 		onClick,
-		onMouseHover,
 		onMouseEnter,
 		onMouseLeave,
-		onTouchEnd,
 		onTouchStart,
 		ready,
 		style,
 		toggleOnClick,
+		toggleOnHold,
 		toggleOnHover,
 	} = props
 	const [visible, setVisible] = useState(defaultVisible)
@@ -252,6 +251,11 @@ export const Reveal = React.memo(function Reveal(props){
 			...style,
 		},
 	}
+	if (toggleOnHold) {
+		elProps.El = El
+		El = Holdable
+		elProps.onHold = triggerEvent(null, !visible)
+	}
 	return <El {...elProps} />
 })
 Reveal.propTypes = {
@@ -274,8 +278,10 @@ Reveal.propTypes = {
 		PropTypes.bool,
 		PropTypes.func,
 	]),
-	// whether to triggle visibility on mouse click
+	// whether to trigger visibility on mouse click
 	toggleOnClick: PropTypes.bool,
+	// whether to triggler visibility on touch and hold
+	toggleOnHold: PropTypes.bool,
 	// whether to trigger visibility on mouse enter and leave
 	toggleOnHover: PropTypes.bool,
 }
@@ -293,10 +299,12 @@ Reveal.defaultProps = {
 		'ready',
 		'ignoreAttributes',
 		'toggleOnClick',
+		'toggleOnHold',
 		'toggleOnHover',
 	],
 	ready: true,
 	toggleOnClick: false,
+	toggleOnHold: false,
 	toggleOnHover: true,
 }
 

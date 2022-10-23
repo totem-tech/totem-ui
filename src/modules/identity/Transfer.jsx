@@ -32,6 +32,7 @@ import AddPartnerBtn from '../partner/AddPartnerBtn'
 import FormInput from '../../components/FormInput'
 import { Reveal } from '../../components/buttons'
 import { useRxSubject } from '../../utils/reactHelper'
+import CurrencyDropdown, { asInlineLabel } from '../currency/CurrencyDropdown'
 
 const textsCap = translated({
     amount: 'amount',
@@ -85,8 +86,8 @@ export default class TransferForm extends Component {
             txFee: 'txFeeHTML'
         }
         this.rxAddress = new BehaviorSubject()
-        this.rxCurrencyReceived = new BehaviorSubject()
-        this.rxCurrencySent = new BehaviorSubject()
+        this.rxCurrencyReceived = new BehaviorSubject(rxSelectedCurrency.value)
+        this.rxCurrencySent = new BehaviorSubject(rxSelectedCurrency.value)
         this.rxCurrencyOptions = new BehaviorSubject([])
         this.state = {
             message: undefined,
@@ -95,7 +96,7 @@ export default class TransferForm extends Component {
             submitDisabled: {},
             success: false,
             values: {
-                currency: rxSelectedCurrency.value,
+                // currency: rxSelectedCurrency.value,
             },
             inputs: [
                 {
@@ -159,7 +160,10 @@ export default class TransferForm extends Component {
                     name: this.names.amountSentGroup,
                     inputs: [
                         {
-                            disabled: true,
+                            ...asInlineLabel({
+                                rxValue: this.rxCurrencySent,
+                                readOnly: true,
+                            }),
                             label: textsCap.amountSentLabel,
                             min: 0,
                             name: this.names.amountSent,
@@ -167,35 +171,12 @@ export default class TransferForm extends Component {
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            width: 9,
                         },
                         {
                             hidden: true,
                             name: this.names.currencySent,
                             onChange: this.handleCurrencyReceivedChange,
                             rxValue: this.rxCurrencySent,
-                        },
-                        {
-                            content: (
-                                <FormInput {...{
-                                    // mimics a `selection` dropdown without limitting the width of the dropdown list
-                                    className: 'selection fluid',
-                                    disabled: true,
-                                    label: textsCap.currencySentLabel,
-                                    name: this.names.currencySent,
-                                    options: [],
-                                    rxOptions: this.rxCurrencyOptions,
-                                    rxValue: this.rxCurrencySent,
-                                    search: ['text', 'description'],
-                                    selection: false,
-                                    // selectOnBlur: false,
-                                    // selectOnNavigation: false,
-                                    type: 'dropdown',
-                                    width: 7,
-                                }} />
-                            ),
-                            name: this.names.currencySent + '-html',
-                            type: 'html',
                         },
                     ],
                     type: 'group',
@@ -212,6 +193,10 @@ export default class TransferForm extends Component {
                     unstackable: true,
                     inputs: [
                         {
+                            ...asInlineLabel({
+                                onCurrencies: currencies => this.currencies = currencies,
+                                rxValue: this.rxCurrencyReceived,
+                            }),
                             icon: 'money',
                             iconPosition: 'left',
                             label: textsCap.amountReceivedLabel,
@@ -225,36 +210,12 @@ export default class TransferForm extends Component {
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
                             useInput: true,
-                            width: 9,
                         },
                         {
                             hidden: true,
                             name: this.names.currencyReceived,
                             onChange: this.handleCurrencyReceivedChange,
                             rxValue: this.rxCurrencyReceived,
-                        },
-                        {
-                            content: (
-                                <FormInput {...{
-                                    // mimics a `selection` dropdown without limitting the width of the dropdown list
-                                    className: 'selection fluid',
-                                    direction: 'left',
-                                    label: textsCap.currencyReceivedLabel,
-                                    name: this.names.currencyReceived,
-                                    options: [],
-                                    required: true,
-                                    rxOptions: this.rxCurrencyOptions,
-                                    rxValue: this.rxCurrencyReceived,
-                                    search: ['text', 'description'],
-                                    selection: false,
-                                    // selectOnBlur: false,
-                                    // selectOnNavigation: false,
-                                    type: 'dropdown',
-                                    width: 7,
-                                }} />
-                            ),
-                            name: this.names.currencyReceived + '-html',
-                            type: 'html',
                         },
                     ],
                 },
@@ -302,42 +263,6 @@ export default class TransferForm extends Component {
                 'text'
             )
             this.setState({ inputs })
-        })
-
-        // set currency dropdown options
-        getCurrencies().then(currencies => {
-            this.currencies = currencies
-            const options = this.currencies.map(({ currency, name }) => ({
-                key: currency,
-                text: (
-                    <Reveal {...{
-                        content: currency,
-                        contentHidden: (
-                            <span>
-                                <span style={{ fontWeight: 'bold' }}>
-                                    {currency}
-                                </span>
-                                {' - '}
-                                <span style={{ color: 'grey' }}>
-                                    {name}
-                                </span>
-                            </span>
-                        ),
-                        El: 'div',
-                        style: {
-                            margin: '-10px -15px',
-                            padding: '10px 15px',
-                            whiteSpace: 'pre-wrap',
-                        }
-                    }} />
-                ),
-                value: currency,
-            }))
-
-            const { value: curSelected } = rxSelectedCurrency
-            currencyReceivedIn.rxValue.next(curSelected)
-            currencySentIn.rxValue.next(curSelected)
-            this.rxCurrencyOptions.next(options)
         })
     }
 
@@ -432,7 +357,7 @@ export default class TransferForm extends Component {
 
         amountSentIn.rxValue.next(resAmountSent[1])
         this.setState({ inputs, submitDisabled })
-    }, 500)
+    }, 300)
 
     handleAmountReceivedInvalid = deferred(() => {
         const { inputs } = this.state
@@ -457,8 +382,8 @@ export default class TransferForm extends Component {
         this.setState({ inputs })
 
         if (!isValidNumber(amountReceived)) return
-        amountReceivedIn.rxValue.next('')
-        amountReceivedIn.rxValue.next(amountReceived)
+
+        this.handleAmountReceivedChange(_, values)      
     }
 
     handleSubmit = (_, values) => {

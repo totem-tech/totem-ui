@@ -382,7 +382,7 @@ export const sidebarItems = [
 export const findItem = name => sidebarItems.find(x => x.name === name)
 export const getItem = name => findItem(name)
 
-export const setActive = (name, active = true, contentProps, hidden) => {
+export const setActive = (name, active = true, contentProps, hidden, toggle) => {
     const item = findItem(name)
     if (!item) return
 
@@ -396,7 +396,7 @@ export const setActive = (name, active = true, contentProps, hidden) => {
     rxAllInactive.next(allInactive)
 
     const isMobile = rxLayout.value === MOBILE
-    isMobile && active && toggleSidebarState()
+    toggle && isMobile && active && toggleSidebarState()
     scrollTo(name)
     return item
 }
@@ -448,28 +448,31 @@ export const scrollTo = name => {
 
 export const toggleActive = name => setActive(name, !(getItem(name) || {}).active)
 
-// adds new and removes any deprecated items
-statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
-// if all items are inactive show getting started module
-sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName)
-// update sidebar state on layout change
-rxLayout.subscribe(() => {
-    const { collapsed, visible } = rxSidebarState.value || {}
-    setSidebarState(collapsed, visible)
-})
-// automatically save to the settings storage
-// save to local storage to preseve state
-rxSidebarState.subscribe(() => {
-    const { collapsed, visible } = rxSidebarState.value
-
-    rw({ status: rxSidebarState.value })
-    setClass('body', {
-        'sidebar-visible': visible,
-        'sidebar-collapsed': collapsed,
+const init = () => {
+    // adds new and removes any deprecated items
+    statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
+    // if all items are inactive show getting started module
+    sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName, true, null, null, false)
+    // update sidebar state on layout change
+    rxLayout.subscribe(() => {
+        const { collapsed, visible } = rxSidebarState.value || {}
+        setSidebarState(collapsed, visible)
     })
-})
+    // automatically save to the settings storage
+    // save to local storage to preseve state
+    rxSidebarState.subscribe(() => {
+        const { collapsed, visible } = rxSidebarState.value
+
+        rw({ status: rxSidebarState.value })
+        setClass('body', {
+            'sidebar-visible': visible,
+            'sidebar-collapsed': collapsed,
+        })
+    })
+}
 
 setTimeout(() => {
+    init()
     const modules = (getUrlParam('module') || '').trim()
     const exclusive = (getUrlParam('exclusive') || '').toLowerCase() !== 'false'
     if (!modules) return

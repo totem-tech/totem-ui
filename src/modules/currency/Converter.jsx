@@ -1,15 +1,17 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { Dropdown, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
 import { deferred } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { iUseReducer } from '../../services/react'
-import { convertTo, getCurrencies, rxSelected } from './currency'
+import { convertTo, rxSelected } from './currency'
 import { MOBILE, rxLayout } from '../../services/window'
+import CurrencyDropDown from './CurrencyDropdown'
 
 const textsCap = translated({
     amount: 'amount',
+    header: 'currency converter',
     select: 'select',
 }, true)[1]
 const inputNames = {
@@ -31,7 +33,6 @@ const inputNames = {
 const Converter = props => {
     const [state] = iUseReducer(null, rxSetState => {
         const isMobile = rxLayout.value === MOBILE
-        const currenciesPromise = getCurrencies()
         const rxFrom = new BehaviorSubject(rxSelected.value)
         const rxFromAmount = new BehaviorSubject(1)
         const rxTo = new BehaviorSubject()
@@ -47,6 +48,7 @@ const Converter = props => {
             )
             rxToAmount.next(`${newAmount[1]}`)
         }, 200)
+        window.rxFrom = rxFrom
 
         const state = {
             submitText: null,
@@ -57,6 +59,7 @@ const Converter = props => {
                     type: 'group',
                     inputs: [
                         {
+                            input: <input style={{ minWidth: 120 }} />,
                             labelPosition: 'right',
                             name: inputNames.from,
                             onChange: updateToAmount,
@@ -76,11 +79,10 @@ const Converter = props => {
                                         name: 'exchange',
                                         onClick: () => {
                                             // on exchange icon click, switch the currencies and amounts
-                                            const currency = rxTo.value
-                                            const amount = rxToAmount.value
-                                            rxTo.next(rxFrom.value)
-                                            rxFrom.next(currency)
-                                            rxFromAmount.next(amount)
+                                            const from = rxFrom.value || ''
+                                            const to = rxTo.value || ''
+                                            rxTo.next(from)
+                                            rxFrom.next(to)
                                         },
                                         size: 'big',
                                         style: {
@@ -94,12 +96,13 @@ const Converter = props => {
                             type: 'html',
                         },
                         {
+                            input: <input style={{ minWidth: 120 }} />,
                             labelPosition: 'right',
                             name: inputNames.to,
                             placeholder: textsCap.amount,
                             readOnly: true,
                             rxValue: rxToAmount,
-                            style: !isMobile ? null : { marginBottom: 10},
+                            style: !isMobile ? null : { marginBottom: 10 },
                             type: 'text',
                         },
                     ],
@@ -109,54 +112,31 @@ const Converter = props => {
         // pre-fill values if supplied in the props
         fillValues(state.inputs, props.values)
 
-        const setDropdowns = () => {
-            currenciesPromise.then(currencies => {
-                const options = currencies.map(({ currency, type }) => ({
-                    text: currency,
-                    title: type,
-                    value: currency,
-                }))
-                
-                const getDD = (from = true) => {
-                    const rx = from ? rxFrom : rxTo
-                    return (
-                        <Dropdown {...{
-                            defaultValue: rx.value,
-                            icon: (
-                                <Icon {...{
-                                    name: 'dropdown',
-                                    style: {
-                                        marginRight: 0,
-                                        marginLeft: 0,
-                                    }
-                                }} />
-                            ),
-                            key: rx.value,
-                            onChange: (_, { value }) => {
-                                rx.next(value)
-                                updateToAmount()
-                            },
-                            lazyLoad: true,
-                            openOnFocus: true,
-                            options,
-                            placeholder: textsCap.select,
-                            selection: true,
-                            search: true,
-                            style: { minWidth: 120, paddingRight: 0 },
-                        }} />
-                    )
-                }
-                findInput(state.inputs, inputNames.from).inlineLabel = getDD(true)
-                findInput(state.inputs, inputNames.to).inlineLabel = getDD(false)
-                rxSetState.next({...state})
-            })
-        }
-        setDropdowns()
+        
+            const fromIn = findInput(state.inputs, inputNames.from)
+            const toIn = findInput(state.inputs, inputNames.to)
+            fromIn.inlineLabel = (
+                <CurrencyDropDown {...{ 
+                    onChange: updateToAmount,
+                    rxValue: rxFrom,
+                    secondary: true,
+                }} />
+            )
+            toIn.inlineLabel = (
+                <CurrencyDropDown {...{ 
+                    onChange: updateToAmount,
+                    rxValue: rxTo,
+                    secondary: true,
+                }} />
+            )
         return state
     })
     
 
     return <FormBuilder {...{ ...props, ...state }} />
 }
-
-export default Converter
+Converter.defaultProps = {
+    closeText: null,
+    header: textsCap.header,
+}
+export default React.memo(Converter)

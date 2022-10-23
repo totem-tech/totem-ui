@@ -7,9 +7,8 @@ import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import { stepIndexes, setActiveStep } from '../gettingStarted/GettingStarted'
-import client, { referralCode, rxIsRegistered } from './ChatClient'
 import { rxSelected } from '../identity/identity'
-import { setActive } from '../../services/sidebar'
+import client, { referralCode, rxIsRegistered } from './ChatClient'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
@@ -196,10 +195,6 @@ const handleSubmit = (props, setState) => async (_, values) => {
             : silent,
         redirectTo,
     )
-
-    // // open rewards module
-    // setActive('rewards')
-    
     // delete referral information from device
     referralCode(null)
 }

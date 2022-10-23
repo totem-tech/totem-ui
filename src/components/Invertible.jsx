@@ -19,7 +19,7 @@ export function Invertible(props) {
 Invertible.propTypes = {
     // @dynamicProps add props based on inverted status
     dynamicProps: PropTypes.func,
-    El: PropTypes.func.isRequired,
+    El: PropTypes.elementType.isRequired,
     ignoreAttributes: PropTypes.array.isRequired,
     reverseInverted: PropTypes.bool,
 }

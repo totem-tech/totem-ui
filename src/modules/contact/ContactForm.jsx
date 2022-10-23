@@ -152,24 +152,31 @@ export default function ContactForm(props) {
 				unstackable: true,
 				inputs: [
 					{
-						autoComplete: 'off',
-						clearable: true,
-						input: <input autoComplete='off' />,
-						label: textsCap.phoneCodeLabel,
+						content: (
+							<FormInput {...{
+								autoComplete: 'off',
+								clearable: true,
+								input: <input autoComplete='off' />,
+								label: textsCap.phoneCodeLabel,
+								name: inputNames.phoneCode,
+								options: arrSort(countryOptions, 'description'),
+								placeholder: textsCap.phoneCodePlaceholder,
+								rxValue: rxPhoneCode,
+								search: ['search'],
+								selection: true,
+								style: { minWidth: 100 },
+								styleContainer: { paddingRight: 0 },
+								type: 'dropdown',
+								width: 7,
+							}} />
+						),
 						name: inputNames.phoneCode,
-						options: arrSort(countryOptions, 'description'),
-						placeholder: textsCap.phoneCodePlaceholder,
+						type: 'html',
 						rxValue: rxPhoneCode,
-						search: ['search'],
-						selection: true,
-						style: { minWidth: 100 },
-						styleContainer: { paddingRight: 0 },
-						type: 'dropdown',
 						validate: (e, { value: code }, values) => {
 							const phone = values[inputNames.phoneNumber]
 							return phone && !code
 						},
-						width: 7,
 					},
 					{
 						...validationConf.phoneNumber,

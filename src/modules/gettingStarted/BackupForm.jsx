@@ -583,6 +583,7 @@ BackupForm.defaultProps = {
  * @param 	{Boolean} allowPageReload (optional) whether to allow BackupForm to reload to page in order to prompt user to save password by the password manager
  */
 BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) => {
+	console.log('checkAndWarn')
 	const { id, fileBackupTS } = getUser() || {}
 	const query = { fileBackupTS: undefined }
 	const warnContacts = contact.search(query)
@@ -596,10 +597,11 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) =
 		+ warnPartners.size
 		+ warnUserCreds.size
 	// all backed up
-	if (total === 0) return
+	if (total === 0) return 
 
 	// set getting started step to backup
-	setActiveStep(stepIndexes.backup)
+	saveActiveStep(stepIndexes.backup)
+
 	const styleCritical = { color: 'orange', fontWeight: 'bold' }
 	const iconWarning = (
 		<Text {...{
@@ -680,15 +682,16 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) =
 			</ul>
 		</div>
 	)
-	const backupAsPromise = () => new Promise(resolve => {
-		showForm(BackupForm, {
-			onClose: () => resolve(false),
-			onSubmit: ok => resolve(!!ok),
-			// prevent reloading page?
-			reload: allowPageReload,
-			values: { confirmed: 'yes' },
+	const backupAsPromise = proceed => proceed
+		&& new Promise(resolve => {
+			showForm(BackupForm, {
+				onClose: () => resolve(false),
+				onSubmit: ok => resolve(!!ok),
+				// prevent reloading page?
+				reload: allowPageReload,
+				values: { confirmed: 'yes' },
+			})
 		})
-	})
 	return await confirmAsPromise({
 		cancelButton: textsCap.backupLater,
 		confirmButton: {
@@ -708,8 +711,10 @@ setTimeout(() => {
 
 	const key = 'autoCheckAndWarnTS'
 	const last = (storage.settings.module(MODULE_KEY) || {})[key]
-	// wait 24 hours if user closed without completing backup
-	const checkNow = !last || ((new Date() - new Date(last)) / 1000 / 60 / 60 > 24)
+	const checkNow = !last || (
+		// check if 24 hours has pass since the last unsuccessful warning
+		(new Date() - new Date(last)) / 1000 / 60 / 60 > 24
+	)
 	checkNow && BackupForm
 		.checkAndWarn(true)
 		.then(done => {

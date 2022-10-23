@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { generateHash, arrSort, isValidNumber, isValidDate, arrUnique, isArr } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import client, { rxIsConnected, rxIsInMaintenanceMode } from '../chat/ChatClient'
@@ -21,6 +21,8 @@ const updateFrequencyMs = 24 * 60 * 60 * 1000
 export const currencyDefault = 'TOTEM'
 // RxJS Subject to keep track of selected currencly changes
 export const rxSelected = new BehaviorSubject(getSelected())
+// Only triggered when currency list is updated
+export const rxCurrencies = new Subject()
 
 /**
  * @name    convertTo
@@ -118,7 +120,7 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
     // save timestamp to auto update if application is open for long period of time
     lastUpdated = new Date()
     console.log('Currency list updated', currencies)
-
+    rxCurrencies.next(currencies)
     return currencies
 }
 
@@ -169,7 +171,8 @@ export const updateCurrencies = async () => {
         }
 
         // if in maintenance mode wait for it to be switched off
-        rxIsInMaintenanceMode.value && await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
+        rxIsInMaintenanceMode.value
+            && await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
         const p = fetchCurrencies(cached)
         // only use timeout if there is cached data available.
         // First time load must retrieve full list of currencies.

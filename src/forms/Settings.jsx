@@ -24,8 +24,9 @@ import {
     translated,
 } from '../services/language'
 import { gridColumns } from '../services/window'
-import { confirm } from '../services/modal'
+import { confirm, confirmAsPromise } from '../services/modal'
 import { copyRxSubject } from '../services/react'
+import CurrencyDropdown, { asInput } from '../modules/currency/CurrencyDropdown'
 
 const [texts, textsCap] = translated({
     chatLimitLabel: 'chat message limit per conversation',
@@ -70,7 +71,6 @@ const savedMsg = {
 export const inputNames = {
     chatMsgLimit: 'chatMsgLimit',
     currency: 'currency',
-    currencyHtml: 'currency-html',
     gridCols: 'gridCols',
     historyLimit: 'historyLimit',
     kbShortcutsBtn: 'kbShortcutsBtn',
@@ -146,29 +146,14 @@ export default class SettingsForm extends Component {
                     type: 'dropdown',
                     value: getSelectedLang(),
                 },
-                {
-                    hidden: true,
+                asInput({
+                    defaultVisible: true,
+                    label: textsCap.gsCurrencyLabel,
                     name: inputNames.currency,
                     onChange: this.handleCurrencyChange,
                     rxValue: this.rxCurrency,
-                },
-                {
-                    content: (
-                        <FormInput {...{
-                            label: textsCap.gsCurrencyLabel,
-                            lazyLoad: true,
-                            name: inputNames.currency,
-                            options: [],
-                            rxOptions: this.rxCurrencyOptions,
-                            rxValue: this.rxCurrency,
-                            search: ['text', 'description'],
-                            selection: true,
-                            type: 'dropdown',
-                        }} />
-                    ),
-                    name: inputNames.currencyHtml,
                     type: 'html',
-                },
+                }),
                 {
                     label: textsCap.historyLimitLabel,
                     name: inputNames.historyLimit,
@@ -273,13 +258,13 @@ export default class SettingsForm extends Component {
 
     handleLanguageChange = async (_, values) => {
         const languageCode = values[inputNames.languageCode]
-        this.setInputMessage('languageCode', savedMsg, 0)
         const changed = getSelectedLang() !== languageCode
         const updated = await setSelectedLang(languageCode, client)
         const reloadRequired = changed || updated
         if (!reloadRequired) return
-
-        confirm({
+        
+        this.setInputMessage('languageCode', savedMsg, 2000)
+        confirmAsPromise({
             cancelButton: textsCap.langConfirmCancelBtn,
             confirmButton: textsCap.langConfirmOk,
             header: textsCap.langConfirmHeader,

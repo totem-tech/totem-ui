@@ -19,6 +19,7 @@ import Text from './Text'
 import { translated } from '../services/language'
 import { Invertible } from './Invertible'
 import { closeModal } from '../services/modal'
+import { MOBILE, rxLayout } from '../services/window'
 
 const textsCap = translated({
 	cancel: 'cancel',
@@ -138,7 +139,7 @@ class FormBuilder extends Component {
 			} = input
 			const typeLC = (type || '').toLowerCase()
 			const isGroup = typeLC === 'group'
-			if (!isStr(name) || nonValueTypes.includes(type)) return values
+			if (!isStr(name)) return values
 			if (isGroup) {
 				const newValues = this.getValues(
 					childInputs,
@@ -256,6 +257,7 @@ class FormBuilder extends Component {
 			trigger,
 			widths,
 		} = this.props
+		const isMobile = rxLayout.value === MOBILE
 		if (submitText === null && closeText === null) {
 			// enable close on escase and dimmer click
 			closeOnDimmerClick = true
@@ -331,6 +333,7 @@ class FormBuilder extends Component {
 						// float: !modal ? 'right' : undefined,
 						paddingLeft: icon ? 10 : undefined,
 						marginLeft: modal ? undefined : 3,
+						marginTop: modal || !isMobile ? undefined : 15,
 						...style,
 					},
 				}} />

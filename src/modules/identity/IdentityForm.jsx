@@ -31,6 +31,8 @@ import LocationForm from '../location/LocationForm'
 import ContactForm from '../contact/ContactForm'
 import { getAll as getContacts, rxContacts } from '../contact/contact'
 import BackupForm from '../gettingStarted/BackupForm'
+import { statuses } from '../../components/Message'
+import PromisE from '../../utils/PromisE'
 
 const textsCap = translated(
 	{
@@ -305,6 +307,22 @@ export default class IdentityForm extends Component {
 		}
 	}
 
+	deferredSave = deferred((address, values) => {
+		try {
+			set(address, values)
+		} catch (err) {
+			this.setState({
+				message: {
+					content: `${err}`,
+					icon: true,
+					status: statuses.ERROR,
+				}
+			})
+		}
+	}, 500)
+
+	deferredUriValidate = PromisE.deferred()
+
 	getContactOptions = contactsMap => {
 		const excludePartnerContacts = ([_, c]) => !c.partnerIdentity
 		const formatOption = ([id, c]) => ({
@@ -425,8 +443,8 @@ export default class IdentityForm extends Component {
 		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
 
 		const address = values[inputNames.address]
-		set(address, values)
-	}, 300)
+		this.deferredSave(address, values)
+	}, 500)
 
 	handleLocationCreate = (success, _, id) => {
 		if (!success) return
@@ -442,7 +460,9 @@ export default class IdentityForm extends Component {
 		uriInput.action = restore ? undefined : this.generateBtn
 		uriInput.readOnly = !restore
 		uriInput.hidden = !restore
-		uriInput.validate = restore ? this.validateUri : undefined
+		uriInput.validate = restore
+			? this.validateUri
+			: undefined
 		this.setState({
 			inputs,
 			header: restore ? textsCap.headerRestore : this.header,
@@ -468,12 +488,24 @@ export default class IdentityForm extends Component {
 		warnBackup && BackupForm.checkAndWarn()
 	}, 100)
 
-	handleUriChange = deferred(() => {
+	handleUriChange = deferred(e => {
 		const { inputs } = this.state
-		const isRestore = !!this.values.restore
+		const isRestore = !!this.values[inputNames.restore]
 		const seed = this.values[inputNames.uri] || ''
-		const mnemonic = seed.split('/')[0]
 		const uriInput = findInput(inputs, inputNames.uri)
+		uriInput.invalid = false
+		if (this.isRestore && !!seed) {
+			const err = this.validateUri(e, { value: seed })
+			uriInput.invalid = !!err
+			uriInput.message = !!err && {
+				content: `${err}`,
+				status: statuses.ERROR,
+			}
+			console.log({err})
+			return this.setState({ inputs })
+		}
+
+		const mnemonic = seed.split('/')[0]
 		const valid = !seed
 			|| !mnemonic
 			|| !isRestore
@@ -514,8 +546,10 @@ export default class IdentityForm extends Component {
 
 	validateName = (_, { value: name }) => {
 		const { address } = find(name) || {}
-		if (address && address !== this.values.address)
-			return textsCap.uniqueNameRequired
+		
+		return !!address
+			&& address !== this.values.address
+			&& textsCap.uniqueNameRequired
 	}
 
 	validateUri = (_, { value: seed }) => {
@@ -524,11 +558,14 @@ export default class IdentityForm extends Component {
 		const { inputs } = this.state
 		const { address } = (seed && addFromUri(seed)) || {}
 		if (!address) {
+			// reset address
 			this.rxAddress.next('')
 			return textsCap.validSeedRequired
 		}
+
 		const existing = find(address)
 		if (existing) return `${textsCap.seedExists} ${existing.name}`
+
 		this.values[inputNames.address] = address
 		this.rxAddress.next(address)
 		if (seed.includes(DERIVATION_PATH_PREFIX)) {

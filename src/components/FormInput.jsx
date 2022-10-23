@@ -1,7 +1,16 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject, Subject } from 'rxjs'
-import { Accordion, Button, Checkbox, Dropdown as DD, Form, Icon, Input, TextArea } from 'semantic-ui-react'
+import {
+	Accordion as S_Accordion,
+	Button as S_Button,
+	Checkbox as S_Checkbox,
+	Dropdown as S_Dropdown,
+	Form,
+	Icon as S_ICON,
+	Input as S_Input,
+	TextArea as S_Textarea,
+} from 'semantic-ui-react'
 import PromisE from '../utils/PromisE'
 import {
 	deferred,
@@ -30,7 +39,20 @@ import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 import { randomHex } from '../services/blockchain'
 
-const Dropdown = React.memo(DD)
+// Memo-ify everything
+const Accordion = React.memo(S_Accordion)
+const Accordion_Content = React.memo(S_Accordion.Content)
+const Accordion_Title = React.memo(S_Accordion.Title)
+const Button = React.memo(S_Button)
+const Checkbox = React.memo(S_Checkbox)
+const Dropdown = React.memo(S_Dropdown)
+const Form_Field = React.memo(Form.Field)
+const Form_Input = React.memo(Form.Input)
+const Form_Group = React.memo(Form.Group)
+const Icon = React.memo(S_ICON)
+const Input = React.memo(S_Input)
+const TextArea = React.memo(S_Textarea)
+
 const errMsgs = translated({
 	decimals: 'maximum number of decimals allowed',
 	email: 'please enter a valid email address',
@@ -498,12 +520,12 @@ export class FormInput extends Component {
 				attrs.label = inlineLabel || attrs.label
 				const El = useInput || inlineLabel
 					? Input
-					: Form.Input
+					: Form_Input
 				inputEl = <El {...attrs} />
 		}
 
 		if (!isGroup) return (
-			<Form.Field {...{
+			<Form_Field {...{
 				...containerProps,
 				error: ['dateinput', 'date'].includes(typeLC)
 					? false
@@ -539,12 +561,12 @@ export class FormInput extends Component {
 					]}
 				{inputEl}
 				{message && <Message {...message} />}
-			</Form.Field>
+			</Form_Field>
 		)
 
 		let groupEl = (
 			<React.Fragment>
-				<Form.Group {...{
+				<Form_Group {...{
 					...attrs,
 					className: 'form-group',
 					...objWithoutKeys(attrs, ['inputs']),
@@ -554,7 +576,7 @@ export class FormInput extends Component {
 					},
 				}}>
 					{inputEl}
-				</Form.Group>
+				</Form_Group>
 				<Message {...message} />
 			</React.Fragment>
 		)
@@ -574,7 +596,7 @@ export class FormInput extends Component {
 					...accordion.style,
 				},
 			}}>
-				<Accordion.Title {...{
+				<Accordion_Title {...{
 					active: !collapsed,
 					content: accordion.title || label,
 					icon: accordion.icon || 'dropdown',
@@ -584,7 +606,7 @@ export class FormInput extends Component {
 					},
 					style: accordion.titleStyle,
 				}} />
-				<Accordion.Content {...{
+				<Accordion_Content {...{
 					active: !collapsed,
 					content: groupEl,
 					style: accordion.contentStyle,
