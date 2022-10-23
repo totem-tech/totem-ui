@@ -33,12 +33,14 @@ import FormInput from '../../components/FormInput'
 import { Reveal } from '../../components/buttons'
 import { useRxSubject } from '../../utils/reactHelper'
 import CurrencyDropdown, { asInlineLabel } from '../currency/CurrencyDropdown'
+import { statuses } from '../../components/Message'
 
 const textsCap = translated({
     amount: 'amount',
     amountReceivedLabel: 'payment amount',
     amountReceivedPlaceholder: 'enter amount',
     amountSentLabel: 'amount in display currency',
+    amountTooLarge: 'amount too large',
     amountToSend: 'amount to send',
     addPartner: 'add partner',
     availableBalance: 'available balance',
@@ -332,16 +334,30 @@ export default class TransferForm extends Component {
             [api.query.balances.locks, from]
         ]])
         const freeBalance = balance - locks.reduce((sum, x) => sum + x.amount, 0)
-        this.fee = await getTxFee(
-            api,
-            from,
-            await api.tx.transfer.networkCurrency(
+        try {
+            const tx = await api.tx.transfer.networkCurrency(
                 to || from,
                 this.amountRounded,
                 randomHex(from)
-            ),
-            identity.uri,
-        )
+            )
+            this.fee = await getTxFee(
+                api,
+                from,
+                tx,
+                identity.uri,
+            )
+        } catch (err) {
+            const content = `${err}`.includes(`'payment_amount':: Assertion failed`)
+                ? textsCap.amountTooLarge
+                : `${err}`
+            amountIn.invalid = true
+            amountIn.loading = false
+            amountIn.message = {
+                content,
+                status: statuses.ERROR,
+            }
+            return this.setState({inputs})
+        }
         txFeeIn.content = this.getTxFeeEl(this.fee)
         const total = this.fee + this.amountRounded
         const gotFund = freeBalance - total > 0
