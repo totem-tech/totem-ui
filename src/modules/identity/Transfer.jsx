@@ -310,8 +310,9 @@ export default class TransferForm extends Component {
         const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
         const amountSentIn = findInput(inputs, this.names.amountSent)
         const txFeeIn = findInput(inputs, this.names.txFee)
-        amountIn.loading = valid
         amountIn.invalid = false
+        amountIn.loading = valid
+        amountIn.message = null
         submitDisabled.loadingAmount = valid
         amountGroupIn.message = null
         this.setState({ inputs, submitDisabled })
