@@ -147,7 +147,6 @@ export default class SettingsForm extends Component {
                     value: getSelectedLang(),
                 },
                 asInput({
-                    defaultVisible: true,
                     label: textsCap.gsCurrencyLabel,
                     name: inputNames.currency,
                     onChange: this.handleCurrencyChange,

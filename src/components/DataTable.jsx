@@ -490,6 +490,7 @@ export default class DataTable extends Component {
 		} else if (isStr(emptyMessage)) {
 			emptyMessage = { content: emptyMessage }
 		}
+		
 		return (
 			<Invertible {...{
 				El: Segment,

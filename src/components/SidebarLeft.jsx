@@ -1,7 +1,7 @@
-import React, { Component, useEffect, useState } from 'react'
+import React, { Component, useCallback, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
-import { isFn } from '../utils/utils'
+import { deferred, isFn } from '../utils/utils'
 import { translated } from '../services/language'
 import { useRxSubject } from '../services/react'
 import {
@@ -14,50 +14,65 @@ import Holdable from './Holdable'
 
 const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
+	keepOpen: 'keep open'
 }, true)
 function SidebarLeft() {
 	const [allInactive] = useRxSubject(rxAllInactive)
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [sidebarState] = useRxSubject(rxSidebarState)
+	const [hovered, setHovered] = useState(false)
 	let { collapsed = false, visible = false } = sidebarState
-	collapsed = allInactive ? false : collapsed
-	visible = allInactive ? true : visible
+	collapsed = !hovered && !allInactive && collapsed
+	visible = allInactive || visible
 
+	const _setHovered = useCallback(
+		deferred(hovered => sidebarState.collapsed && setHovered(hovered), 100),
+		[setHovered, sidebarState.collapsed],
+	)
+	const icon = hovered 
+		? 'pin'
+		: `arrow alternate circle ${collapsed ? 'right' : 'left'} outline`
+	
 	return (
 		<React.Fragment>
 			{
 				// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
 				isMobile && visible && (
-					<div
-						onClick={toggleSidebarState}
-						style={styles.dimmer}
-					/>
+					<div {...{
+						onClick: toggleSidebarState,
+						style: styles.dimmer
+					}} />
 				)
 			}
-			<Sidebar
-				as={Menu}
-				animation={isMobile ? 'overlay' : 'push'}
-				direction="left"
-				vertical
-				visible={visible}
-				width={collapsed ? 'very thin' : 'wide'}
-				color="black"
-				inverted
-				style={(collapsed ? styles.collapsed : styles.expanded)}
-				onHidden={() => isMobile && setSidebarState(false, false)}
-			>
+			<Sidebar {...{
+				as: Menu,
+				animation: isMobile ? 'overlay' : 'push',
+				direction: 'left',
+				vertical: true,
+				visible,
+				width: collapsed ? 'very thin' : 'wide',
+				color: 'black',
+				inverted: true,
+				style: collapsed ? styles.collapsed : styles.expanded,
+				onHidden: () => isMobile && setSidebarState(false, false),
+				onMouseEnter: () => _setHovered(true),
+				onMouseLeave: () => _setHovered(false),
+			}}>
 				<Menu.Item
 					style={styles.sidebarToggleWrap}
-					onClick={toggleSidebarState}
+					onClick={() => {
+						sidebarState.collapsed && setHovered(false)
+						toggleSidebarState()
+					}}
 				>
 					<div
-						position="right"
+						position='right'
 						style={styles.sidebarToggle}
 						title={collapsed ? 'Expand' : 'Collapse'}
 					>
 						<span>
-							<Icon name={`arrow alternate circle ${collapsed ? 'right' : 'left'} outline`} />
-							{!collapsed && ` ${textsCap.closeSidebar}`}
+							<Icon name={icon} />
+							{!collapsed && ` ${hovered ? textsCap.keepOpen : textsCap.closeSidebar}`}
 						</span>
 					</div>
 				</Menu.Item>

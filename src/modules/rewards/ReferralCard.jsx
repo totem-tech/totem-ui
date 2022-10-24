@@ -176,6 +176,7 @@ const tableProps = {
         }
     ],
     // searchable: false,
+    style: { padding: '0.008em 0px' },
 }
 export const getReferralURL = () => location.protocol
     + '//'

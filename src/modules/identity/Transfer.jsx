@@ -29,10 +29,8 @@ import PartnerForm from '../partner/PartnerForm'
 import Balance from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
-import FormInput from '../../components/FormInput'
-import { Reveal } from '../../components/buttons'
 import { useRxSubject } from '../../utils/reactHelper'
-import CurrencyDropdown, { asInlineLabel } from '../currency/CurrencyDropdown'
+import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { statuses } from '../../components/Message'
 
 const textsCap = translated({
@@ -163,8 +161,8 @@ export default class TransferForm extends Component {
                     inputs: [
                         {
                             ...asInlineLabel({
-                                rxValue: this.rxCurrencySent,
                                 readOnly: true,
+                                rxValue: this.rxCurrencySent,
                             }),
                             label: textsCap.amountSentLabel,
                             min: 0,
@@ -198,6 +196,7 @@ export default class TransferForm extends Component {
                             ...asInlineLabel({
                                 onCurrencies: currencies => this.currencies = currencies,
                                 rxValue: this.rxCurrencyReceived,
+                                upward: true,
                             }),
                             icon: 'money',
                             iconPosition: 'left',
