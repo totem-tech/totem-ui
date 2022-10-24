@@ -61,8 +61,8 @@ function SidebarLeft() {
 				<Menu.Item
 					style={styles.sidebarToggleWrap}
 					onClick={() => {
-						sidebarState.collapsed && setHovered(false)
 						toggleSidebarState()
+						sidebarState.collapsed && setHovered(false)
 					}}
 				>
 					<div

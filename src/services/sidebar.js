@@ -382,7 +382,7 @@ export const sidebarItems = [
 export const findItem = name => sidebarItems.find(x => x.name === name)
 export const getItem = name => findItem(name)
 
-export const setActive = (name, active = true, contentProps, hidden, toggle) => {
+export const setActive = (name, active = true, contentProps, hidden, toggle = true) => {
     const item = findItem(name)
     if (!item) return
 
