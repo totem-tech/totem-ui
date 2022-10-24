@@ -1,16 +1,9 @@
-import React, { useEffect, useState } from 'react'
-import { Button, Icon } from 'semantic-ui-react'
-import FAQ from '../../components/FAQ'
+import React from 'react'
 import Message, { statuses } from '../../components/Message'
 import { translated } from '../../services/language'
-import { closeModal, confirm, showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
-import chatClient, { rxIsLoggedIn } from '../../utils/chatClient'
-import PromisE from '../../utils/PromisE'
-import storage from '../../utils/storageHelper'
-import { isBool } from '../../utils/utils'
+import { rxIsLoggedIn } from '../../utils/chatClient'
 import { rxIsRegistered } from '../chat/ChatClient'
-import ClaimKAPEXView from './ClaimKAKEX'
 import ReferralCard from './ReferralCard'
 import { useRewards } from './rewards'
 import RewardsProgress from './RewardsProgress'
@@ -25,12 +18,6 @@ const textsCap = translated({
 	signupDesc: 'reward you received when you signed up',
 	signupHeader: 'signup reward',
 }, true)[1]
-
-// // invoke without arguments to retrieve saved value
-// const cacheEligible = eligible =>
-// 	storage.cache('rewards', 'KAPEXClaimEligible', eligible) || null
-// const cacheSubmitted = submitted =>
-// 	storage.cache('rewards', 'KAPEXClaimSubmitted', submitted) || null
 
 export default function RewardsView(props) {
 	const [isLoggedIn] = useRxSubject(rxIsLoggedIn)

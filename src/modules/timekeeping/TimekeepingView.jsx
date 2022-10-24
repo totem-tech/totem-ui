@@ -126,33 +126,6 @@ export default class TimekeepingView extends Component {
             },
         ].filter(Boolean)
 
-
-        // if (showSummary) contents.push({
-        //     content: <TimekeepingSummaryList />,
-        //     header: texts.myTimeKeepingSummary,
-        //     key: `TimekeepingSummaryList`,
-        // })
-        // if (records) contents.push({
-        //     content: <TimekeepingList {...{ hideTimer }} />,
-        //     header: texts.myRecords,
-        //     key: 'TimekeepingList-records' + hideTimer,
-        // })
-        // if (manage) contents.push({
-        //     content: <TimekeepingList {...{ hideTimer, manage: true }} />,
-        //     header: texts.manageTeamTime,
-        //     key: 'TimekeepingList-manage' + hideTimer,
-        // })
-        // if (recordsArchive) contents.push({
-        //     content: <TimekeepingList {...{ archive: true, hideTimer }} />,
-        //     header: texts.myRecordsArchive,
-        //     key: 'TimekeepingList-records-archive' + hideTimer,
-        // })
-        // if (manageArchive) contents.push({
-        //     content: <TimekeepingList {...{ archive: true, hideTimer, manage: true }} />,
-        //     header: texts.manageArchive,
-        //     key: 'TimekeepingList-manage-archive' + hideTimer,
-        // })
-
         return (
             <div>
                 <Button {...timerButton} />
