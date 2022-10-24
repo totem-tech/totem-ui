@@ -21,6 +21,7 @@ const textsCap = translated({
 	errIneligibleToMigrate: 'You are not eligible to claim $KAPEX!',
 	migrateRewards: 'claim $KAPEX',
 	notRegistered: 'please complete registration in the getting started module',
+	loadingMsg: 'signing in',
 	signupDesc: 'reward you received when you signed up',
 	signupHeader: 'signup reward',
 }, true)[1]
@@ -35,98 +36,18 @@ export default function RewardsView(props) {
 	const [isLoggedIn] = useRxSubject(rxIsLoggedIn)
 	const rewards = useRewards()
 	const { socialRewards, signupReward, referralRewards } = rewards
-	// const [isLoading, setLoading] = useState(false)
-	// const [isEligible, setIsEligible] = useState(cacheEligible())
-	// const [claimSubmitted, setClaimSubmitted] = useState(cacheSubmitted())
-	// const modalId = 'migrate-rewards'
-
-	// useEffect(() => {
-	// 	const init = async () => {
-	// 		const eligible =
-	// 			isEligible !== false &&
-	// 			(await chatClient.rewardsClaimKAPEX.promise({
-	// 				checkEligible: true,
-	// 			}))
-	// 		setIsEligible(eligible)
-	// 		cacheEligible(eligible)
-	// 		if (!eligible) return
-
-	// 		const submitted = await chatClient.rewardsClaimKAPEX.promise({
-	// 			checkSubmitted: true,
-	// 		})
-	// 		setClaimSubmitted(submitted)
-	// 		submitted && cacheSubmitted(submitted)
-	// 	}
-
-	// 	if (isLoggedIn && !claimSubmitted) {
-	// 		setLoading(true)
-	// 		init().finally(() => setLoading(false))
-	// 	}
-	// }, [isLoggedIn])
 
 	return !isLoggedIn
-		? <div {...props}>{textsCap.notRegistered}</div>
+		? rxIsRegistered.value
+			? <Message {...{
+				content: textsCap.loadingMsg,
+				icon: true,
+				status: statuses.LOADING,
+			}} />
+			: <div {...props}>{textsCap.notRegistered}</div>
 		: (
 			<div {...props}>
 				<RewardsProgress {...{ rewards }} />
-				{/* Claim KAPEX button */}
-				{/* <Button
-					{...{
-						color: (claimSubmitted && 'green') || undefined,
-						content: textsCap.migrateRewards,
-						disabled: claimSubmitted,
-						icon: {
-							name:
-								isEligible === false
-									? 'warning sign'
-									: claimSubmitted
-									? 'check circle'
-									: 'play',
-						},
-						loading: isLoading,
-						onClick: async () => {
-							try {
-								if (isEligible === false)
-									throw new Error(textsCap.errIneligibleToMigrate)
-
-								// showForm(
-								// 	ClaimKAPEXForm,
-								// 	{
-								// 		onSubmit: success => {
-								// 			if (!success) return
-								// 			setClaimSubmitted(true)
-								// 		},
-								// 	},
-								// 	modalId
-								// )
-							} catch (err) {
-								confirm(
-									{
-										content: (
-											<span
-												style={{
-													color: 'red',
-													fontWeight: 'bold',
-												}}
-											>
-												{`${err}`.replace('Error: ', '')}
-											</span>
-										),
-										confirmButton: null,
-										size: 'mini',
-									},
-									modalId
-								)
-							}
-						},
-						size: 'big',
-						style: {
-							background: 'deeppink',
-							color: 'white',
-							marginTop: 15,
-						},
-					}}
-				/> */}
 				<SignupCard {...{ signupReward }} />
 				<SocialCard {...{ socialRewards }} />
 				<ReferralCard {...{ referralRewards }} />
