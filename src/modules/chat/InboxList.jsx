@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button, Label } from 'semantic-ui-react'
 import { arrSort, textEllipsis } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
@@ -6,7 +6,7 @@ import Message from '../../components/Message'
 import { getUser } from './ChatClient'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { MOBILE, getLayout } from '../../services/window'
+import { MOBILE, getLayout, rxLayout } from '../../services/window'
 import {
     createInbox,
     rxExpanded,
@@ -24,6 +24,7 @@ import {
 } from './chat'
 import NewInboxForm, { showEditNameForm } from './NewInboxForm'
 import { unsubscribe, useRxSubject } from '../../services/react'
+import { contentPlaceholder } from '../../components/ContentSegment'
 
 const ALL_ONLINE = 'green'
 const SOME_ONLINE = 'yellow'
@@ -136,58 +137,71 @@ export default function InboxList() {
     const [query, setQuery] = useState('')
     // whether to include archived and deleted items
     const [showAll, setShowAllOrg] = useState(false)
-    const [items, setItems] = useState(filterInboxes(query, showAll))
+    const [loaded, setLoaded] = useState(false)
+    const _filterInboxes = useCallback(
+        (_query = query) => filterInboxes(_query, showAll),
+        [query, showAll],
+    )
+    const [items, setItems] = useRxSubject(rxInboxListChanged, () => _filterInboxes())
     const [showActions, setShowActions] = useState(null)
     const setShowAll = showAll => {
         rxExpanded.next(false)
-        // update list 
-        setItems(filterInboxes(query, showAll))
+        _filterInboxes()
         setShowAllOrg(showAll)
     }
 
     useEffect(() => {
-        let mounted = true
-        const subscriptions = {}
-        subscriptions.inboxList = rxInboxListChanged.subscribe(() => mounted && setItems(filterInboxes(query, showAll)))
-        return () => {
-            mounted = false
-            unsubscribe(subscriptions)
-        }
-    }, [query, showAll])
-    return (
-        <div {...{
-            className: 'inbox-list',
-            style: {
-                // full height if no inbox is selected
-                height: rxOpenInboxKey.value ? undefined : '100%'
-            },
-        }}>
-            <ToolsBar {...{
-                query,
-                onSeachChange: (_, { value }) => {
-                    rxExpanded.value && rxExpanded.next(false)
-                    setQuery(value)
-                    setItems(filterInboxes(value, showAll))
-                },
-                showAll,
-                toggleShowAll: () => setShowAll(!showAll),
-            }} />
-            <div className='list'>
-                {items.map(item => (
-                    <InboxListItem {...{
-                        ...item,
-                        active: rxOpenInboxKey.value === item.inboxKey,
-                        key: JSON.stringify(item),
-                        query,
-                        setShowActions,
-                        showActions,
-                    }} />
-                ))}
+        setTimeout(() => setLoaded(true), 300)
+    }, [])
 
-                {query && <Message className='empty-message' content={textsCap.noResultMsg} />}
-            </div>
-        </div >
-    )
+    return !loaded
+        ? (
+            <React.Fragment>
+                {contentPlaceholder}
+                {contentPlaceholder}
+                {contentPlaceholder}
+                {contentPlaceholder}
+                {contentPlaceholder}
+                {contentPlaceholder}
+                {contentPlaceholder}
+                {contentPlaceholder}
+            </React.Fragment>
+        )
+        : (
+            <div {...{
+                className: 'inbox-list',
+                style: {
+                    // full height if no inbox is selected
+                    height: rxOpenInboxKey.value ? undefined : '100%'
+                },
+            }}>
+                <ToolsBar {...{
+                    query,
+                    onSeachChange: (_, { value }) => {
+                        rxExpanded.value && rxExpanded.next(false)
+                        setQuery(value)
+                        // setItems(filterInboxes(value, showAll))
+                        setItems(_filterInboxes(value))
+                    },
+                    showAll,
+                    toggleShowAll: () => setShowAll(!showAll),
+                }} />
+                <div className='list'>
+                    {items.map(item => (
+                        <InboxListItem {...{
+                            ...item,
+                            active: rxOpenInboxKey.value === item.inboxKey,
+                            key: JSON.stringify(item),
+                            query,
+                            setShowActions,
+                            showActions,
+                        }} />
+                    ))}
+
+                    {query && <Message className='empty-message' content={textsCap.noResultMsg} />}
+                </div>
+            </div >
+        )
 }
 
 const getStatusColor = (online = {}, userIds = []) => {

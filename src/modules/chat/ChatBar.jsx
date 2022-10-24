@@ -12,7 +12,7 @@ export default function ChatBar() {
 
     return (
         <div className='chat-container'>
-            {!visible ? '' : (
+            {visible && (
                 <div className='chat-contents'>
                     <InboxList inboxKey={inboxKey} />
                     {receiverIds.length > 0 && <Inbox {...{ inboxKey, key: inboxKey, receiverIds }} />}

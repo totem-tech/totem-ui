@@ -58,7 +58,6 @@ const CurrencyDropdown = React.memo((props) => {
         ...props.style,
     }
 
-    console.log(props.upward, props)
     return (
         <FormInput {...{
             lazyLoad: true,

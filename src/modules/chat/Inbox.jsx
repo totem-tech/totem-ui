@@ -21,8 +21,9 @@ import client, { getUser, rxIsLoggedIn } from './ChatClient'
 import { translated } from '../../services/language'
 import Message from '../../components/Message'
 import { getInboxName } from './InboxList'
-import { getLayout, MOBILE, setClass } from '../../services/window'
+import { getLayout, MOBILE, rxLayout, setClass } from '../../services/window'
 import { unsubscribe } from '../../services/react'
+import { useRxSubject } from '../../utils/reactHelper'
 
 const [texts, textsCap] = translated({
     close: 'close',
@@ -71,9 +72,10 @@ export default function Inbox(props) {
     if (!inboxKey) return ''
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const [loaded, setLoaded] = useState(false)
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = receiverIds.length > 1 || isTrollbox
-    const isMobile = getLayout() === MOBILE
 
     useEffect(() => {
         let mounted = true
@@ -86,6 +88,8 @@ export default function Inbox(props) {
         })
         // focus and scoll down to latest msg
         scrollToBottom(false, true)
+        
+        setTimeout(() => setLoaded(true), 300)
 
         return () => {
             mounted = false
@@ -93,7 +97,7 @@ export default function Inbox(props) {
         }
     }, []) // keep [] to prevent useEffect from being invoked on every render
 
-    return (
+    return loaded && (
         <div className='inbox'>
             <div className='inbox-wrap'>
                 <InboxHeader {...{

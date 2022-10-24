@@ -46,7 +46,7 @@ export default class ContentSegment extends Component {
 			!!ContentEl
 				? <ContentEl {...contentProps} />
 				: content
-		) || placeholder
+		) || contentPlaceholder
 	}
 
 	toggleSubHeader = e => {
@@ -205,8 +205,8 @@ ContentSegment.defaultProps = {
 }
 
 
-const placeholder = (
-	<Placeholder>
+export const contentPlaceholder = (
+	<Invertible El={Placeholder}>
 		<Placeholder.Paragraph>
 			<Placeholder.Line />
 			<Placeholder.Line />
@@ -217,7 +217,7 @@ const placeholder = (
 			<Placeholder.Line />
 			<Placeholder.Line />
 		</Placeholder.Paragraph>
-	</Placeholder>
+	</Invertible>
 )
 
 const styles = {
