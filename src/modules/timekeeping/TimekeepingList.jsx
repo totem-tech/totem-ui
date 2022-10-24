@@ -60,6 +60,7 @@ const textsCap = translated({
     emptyMessage: 'no time records available',
     emptyMessageArchive: 'no records have been archived yet',
     finishedAt: 'finished at',
+    loading: 'loading...',
     orInviteATeamMember: 'maybe invite someone to an activity?',
     noTimeRecords: 'your team have not yet booked time.',
     numberOfBreaks: 'number of breaks',
@@ -201,8 +202,12 @@ export default class ProjectTimeKeepingList extends Component {
             : manage
                 ? listByProject
                 : list
+        this.loaded = false
         // subscribe to changes on the list of recordIds
-        const handleResult = deferred(this.getRecords, 500)
+        const handleResult = deferred((...args) => {
+            this.loaded = true
+            this.getRecords(...args)
+        }, 500)
         this.subs.recordIds = queryFn(arg, handleResult, multi)
 
         if (manage) {
@@ -602,18 +607,26 @@ export default class ProjectTimeKeepingList extends Component {
             item.icon = archive ? 'reply all' : 'file archive'
         })
         this.state.emptyMessage = {
-            content: archive ? textsCap.emptyMessageArchive : (
-                <p>
-                    {manage ? textsCap.noTimeRecords : textsCap.emptyMessage + ' '}
-                    {manage && (
-                        <Button
-                            positive
-                            content={textsCap.orInviteATeamMember}
-                            onClick={() => showForm(TimekeepingInviteForm)}
-                        />
-                    )}
-                </p>
-            )
+            content: !this.loaded
+                ? textsCap.loading
+                : archive
+                    ? textsCap.emptyMessageArchive
+                    : (
+                        <p>
+                            {manage ? textsCap.noTimeRecords : textsCap.emptyMessage + ' '}
+                            {manage && (
+                                <Button
+                                    positive
+                                    content={textsCap.orInviteATeamMember}
+                                    onClick={() => showForm(TimekeepingInviteForm)}
+                                />
+                            )}
+                        </p>
+                    ),
+            icon: !this.loaded,
+            status: this.loaded
+                ? undefined
+                : 'loading',
         }
         return <DataTable {...this.state} />
     }
