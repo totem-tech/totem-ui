@@ -300,6 +300,7 @@ export default class RestoreBackupForm extends Component {
 			borderRadius: 3,
 			background: '#ffa5005e',
 		}
+		const ILabel = props => <span {...{...props, style: { fontSize: '110%' }}} />
 		const dataInputs = current.map(([keyC, valueC = {}]) => {
 			const valueB = backupMap.get(keyC)
 			const strC = JSON.stringify(objWithoutKeys(valueC, ignoredKeys))
@@ -332,7 +333,7 @@ export default class RestoreBackupForm extends Component {
 			
 			return {
 				inline: !isMobile,
-				label,
+				label: <ILabel>{label}</ILabel>,
 				name: keyC,
 				options,
 				radio: true,
@@ -345,7 +346,7 @@ export default class RestoreBackupForm extends Component {
 		}).concat( // find any remaining items in b
 			backup.map(([keyB, valueB]) => !processed[keyB] && {
 				inline: true,
-				label: valueB.name || keyB,
+				label: <ILabel>{valueB.name || keyB}</ILabel>,
 				name: keyB,
 				options: [
 					// { disabled: true, label: textsCap.keepUnchanged, value: 'keep-input-disabled' },
