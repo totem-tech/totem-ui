@@ -17,6 +17,7 @@ import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/ButtonDelayed'
 
 const [texts, textsCap] = translated({
+	addFromBackup: 'add from backup',
 	backupNow: 'backup now',
 	backupValue: 'backup value',
 	cancel: 'cancel',
@@ -32,6 +33,7 @@ const [texts, textsCap] = translated({
 	confirmText: 'this action is irreversible',
 	conflicts: 'conflicts',
 	currentValue: 'current value',
+	entries: 'entries',
 	fileLabel: 'select your backup JSON file',
 	formHeader: 'restore backup',
 	history: 'history',
@@ -293,6 +295,11 @@ export default class RestoreBackupForm extends Component {
 		const backupMap = new Map(backup)
 		const processed = {}
 		const isMobile = rxLayout.value === MOBILE
+		const styleHighlight = {
+			border: '1px solid orange',
+			borderRadius: 3,
+			background: '#ffa5005e',
+		}
 		const dataInputs = current.map(([keyC, valueC = {}]) => {
 			const valueB = backupMap.get(keyC)
 			const strC = JSON.stringify(objWithoutKeys(valueC, ignoredKeys))
@@ -322,10 +329,6 @@ export default class RestoreBackupForm extends Component {
 			].filter(Boolean)
 			processed[keyC] = true
 			const label = valueC.name || valueB.name || keyC
-			if (label === 'Alice Updated') {
-				window.debug = {options, valueB, valueC, identical }
-				console.log(debug)
-			}
 			
 			return {
 				inline: !isMobile,
@@ -334,6 +337,8 @@ export default class RestoreBackupForm extends Component {
 				options,
 				radio: true,
 				required: doMerge,
+				rxValue: new BehaviorSubject(value),
+				styleContainer: conflict && styleHighlight || {},
 				type: 'checkbox-group',
 				value,
 			}
@@ -343,12 +348,13 @@ export default class RestoreBackupForm extends Component {
 				label: valueB.name || keyB,
 				name: keyB,
 				options: [
-					{ disabled: true, label: textsCap.keepUnchanged, value: 'keep-input-disabled' },
-					{ label: textsCap.restoreFromBackup, value: valueB },
+					// { disabled: true, label: textsCap.keepUnchanged, value: 'keep-input-disabled' },
+					{ label: textsCap.addFromBackup, value: valueB },
 					{ label: textsCap.remove, value: REMOVE }, // ignore option
 				],
 				radio: true,
 				required: doMerge,
+				rxValue: new BehaviorSubject(valueB),
 				type: 'checkbox-group',
 				value: valueB,
 			}).filter(Boolean)
@@ -484,7 +490,7 @@ export default class RestoreBackupForm extends Component {
 		optionGroupIn.grouped = true // forces full width child inputs
 		optionGroupIn.groupValues = true // true => create an object with child input values
 		optionGroupIn.inputs = valueInputs
-		optionGroupIn.label = `${input.label}: ${numConflicts} ${texts.conflicts} out of ${valueInputs.length} entries`
+		optionGroupIn.label = `${input.label}: ${numConflicts} ${texts.conflicts} / ${valueInputs.length} ${textsCap.entries}`
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
 		restoreOptionsIn.inputs = exists
