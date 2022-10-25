@@ -227,22 +227,40 @@ const InboxListItem = React.memo(({
     showActions,
 }) => {
     query = query.trim().toLowerCase()
-    const [userIds] = useState(inboxKey.split(',').filter(id => ![userId, TROLLBOX].includes(id)))
+    const [userIds] = useState(
+        inboxKey
+            .split(',')
+            .filter(id =>
+                ![userId, TROLLBOX].includes(id)
+            )
+    )
     const [status] = useRxSubject(
-        userIds.length === 0 ? [OFFLINE] : rxUsersOnline,
+        userIds.length === 0
+            ? [OFFLINE]
+            : rxUsersOnline,
         online => getStatusColor(online, userIds),
     )
     const isTrollbox = inboxKey === TROLLBOX
     const receiverIds = inboxKey.split(',')
     const isSupport = receiverIds.includes(SUPPORT)
     const isGroup = receiverIds.length > 1
-    const icon = isTrollbox ? 'globe' : (
-        isSupport ? 'heartbeat' : ( // alts: ambulance, heartbeat, user doctor
-            isGroup ? 'group' : 'user'
-        )
-    )
-    const { id: msgId, message: msgText, senderId, } = message || {}
-    const qIndex = !msgText ? -1 : msgText.toLowerCase().indexOf(query)
+    const icon = isTrollbox
+        ? 'globe'
+        : isSupport
+            ? 'heartbeat'
+            : isGroup // alts: ambulance, heartbeat, user doctor
+                ? 'group'
+                : 'user'
+    const {
+        id: msgId,
+        message: msgText,
+        senderId,
+    } = message || {}
+    const qIndex = !msgText
+        ? -1
+        : msgText
+            .toLowerCase()
+            .indexOf(query)
 
     return (
         <div {...{
@@ -253,7 +271,9 @@ const InboxListItem = React.memo(({
 
                 // inbox already open => toggle expanded
                 if (isMobile && isOpen) return rxExpanded.next(!rxExpanded.value)
-                const key = rxOpenInboxKey.value === inboxKey ? null : inboxKey
+                const key = rxOpenInboxKey.value === inboxKey
+                    ? null
+                    : inboxKey
                 key && createInbox(key.split(','))
                 rxOpenInboxKey.next(key)
                 isMobile && rxExpanded.next(true)
@@ -266,7 +286,9 @@ const InboxListItem = React.memo(({
                         name: icon,
                     },
                     content: `${unreadCount || ''}`,
-                    title: status === OFFLINE ? textsCap.offline : textsCap.online,
+                    title: status === OFFLINE
+                        ? textsCap.offline
+                        : textsCap.online,
                 }} />
             </div>
             <div className='content'>

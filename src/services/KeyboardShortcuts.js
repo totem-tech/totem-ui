@@ -7,6 +7,7 @@ import NewInboxForm from '../modules/chat/NewInboxForm'
 import { rxVisible as rxChatVisible } from '../modules/chat/chat'
 import { rxVisible as rxNotifVisible } from '../modules/notification/notification'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
+import { rxInverted } from './window'
 
 const keys = new Set()
 const handlers = {
@@ -29,6 +30,10 @@ const handlers = {
     C: {
         handler: () => rxChatVisible.next(!rxChatVisible.value),
         type: 'func'
+    },
+    D: {
+        handler: () => rxInverted.next(!rxInverted.value),
+        type: 'func',
     },
     I: {
         handler: () => rxIdentityListVisible.next(!rxIdentityListVisible.value),

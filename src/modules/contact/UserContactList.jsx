@@ -11,7 +11,12 @@ const textsCap = translated({ header: 'my contact details' }, true)[1]
 export const UserContactList = props => {
 	const [data] = useRxSubject(
 		rxContacts,
-		map => new Map(Array.from(map).filter(([_, c]) => !c.partnerIdentity))
+		map => new Map(
+			Array.from(map)
+				.filter(([_, c]) =>
+					!c.partnerIdentity
+				)
+		)
 	)
 	return <ContactList {...{ ...props, data }} />
 }

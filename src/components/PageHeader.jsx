@@ -50,12 +50,20 @@ let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
 function PageHeader(props) {
-	const [wallets] = useRxSubject(rxIdentities, map => Array.from(map).map(([_, x]) => x))
+	const [wallets] = useRxSubject(
+		rxIdentities,
+		map => Array
+			.from(map)
+			.map(([_, x]) => x)
+	)
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-	const [[userId, isLoggedIn]] = useRxSubject(rxIsLoggedIn, isLoggedIn => ([
-		(getUser() || {}).id,
-		isLoggedIn,
-	]))
+	const [[userId, isLoggedIn]] = useRxSubject(
+		rxIsLoggedIn,
+		isLoggedIn => ([
+			(getUser() || {}).id,
+			isLoggedIn,
+		])
+	)
 	const viewProps = {
 		...props,
 		userId,

@@ -60,7 +60,12 @@ const [texts, textsCap] = translated({
 	userCredentials: 'user credentials',
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
-const MERGEABLES = ['totem_identities', 'totem_partners', 'totem_locations']
+const MERGEABLES = [
+	'totem_contacts',
+	'totem_identities',
+	'totem_partners',
+	'totem_locations',
+]
 // ignore meta data or unnecessary fields when comparing between current and backed up data
 const diffIgnoreKeys = {
 	totem_identities: ['address', 'cloudBackupStatus', 'cloudBackupTS', 'fileBackupTS'],
@@ -185,7 +190,7 @@ export default class RestoreBackupForm extends Component {
 		const { inputs } = this.state
 		const restoreOptionsIn = findInput(inputs, inputNames.restoreOpitons)
 		this.backupData = objClean(JSON.parse(str), essentialKeys)
-		this.existingData = backup.generateData()
+		this.existingData = backup.generateData(null)
 		const settings = new Map(this.backupData.totem_settings)
 		const backupUser = ((settings.get('module_settings') || {}).messaging || {}).user || {}
 		const user = getUser() || {}
@@ -197,9 +202,20 @@ export default class RestoreBackupForm extends Component {
 				const allowMerge = exists && MERGEABLES.includes(key)
 				const label = textCapitalize(key.split('totem_').join(''))
 				const options = [
-					{ label: !exists || numExists <= 0 ? textsCap.restoreFromBackup : textsCap.restore, value: OVERRIDE },
-					allowMerge && numExists > 0 && { label: textsCap.merge, value: MERGE },
-					{ label: textsCap.ignore, value: IGNORE }
+					{
+						label: !exists || numExists <= 0
+							? textsCap.restoreFromBackup
+							: textsCap.restore,
+						value: OVERRIDE,
+					},
+					allowMerge && numExists > 0 && {
+						label: textsCap.merge,
+						value: MERGE,
+					},
+					{
+						label: textsCap.ignore,
+						value: IGNORE,
+					}
 				].filter(Boolean)
 				return {
 					inline: true,
@@ -283,16 +299,37 @@ export default class RestoreBackupForm extends Component {
 			const strB = JSON.stringify(objWithoutKeys(valueB, ignoredKeys))
 			const identical = strC === strB
 			const conflict = valueB && !identical
-			const value = conflict ? null : valueC // forces make a selection if there is a conflict
+			const value = conflict
+				? null // forces make a selection if there is a conflict
+				: valueC
 			const options = [
-				{ label: textsCap.keepUnchanged, value: valueC },
-				{ disabled: !conflict, label: textsCap.restoreFromBackup, value: valueB },
-				{ label: textsCap.remove, value: REMOVE }, // ignore option
+				{
+					name: 'current',
+					label: textsCap.keepUnchanged,
+					value: valueC,
+				},
+				{
+					name: 'backup',
+					disabled: !conflict,
+					label: textsCap.restoreFromBackup,
+					value: valueB,
+				},
+				{
+					name: 'remove',
+					label: textsCap.remove,
+					value: REMOVE,
+				}, // ignore option
 			].filter(Boolean)
 			processed[keyC] = true
+			const label = valueC.name || valueB.name || keyC
+			if (label === 'Alice Updated') {
+				window.debug = {options, valueB, valueC, identical }
+				console.log(debug)
+			}
+			
 			return {
 				inline: !isMobile,
-				label: valueC.name || valueB.name || keyC,
+				label,
 				name: keyC,
 				options,
 				radio: true,
@@ -439,8 +476,9 @@ export default class RestoreBackupForm extends Component {
 		optionGroupIn.key = uuid.v1()
 		optionGroupIn.hidden = values[input.name] !== MERGE
 		optionGroupIn.accordion = {
-			collapsed: !hasConflict || [IGNORE, OVERRIDE]
-				.includes(values[input.name]),
+			collapsed: !hasConflict
+				|| [IGNORE, OVERRIDE]
+					.includes(values[input.name]),
 			styled: true, // enable/disable the boxed layout
 		}
 		optionGroupIn.grouped = true // forces full width child inputs

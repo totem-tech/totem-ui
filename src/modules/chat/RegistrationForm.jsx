@@ -42,7 +42,6 @@ export default function RegistrationForm(props) {
             inputs: getInputs(props, isRegistered),
             submitDisabled: { isRegistered },
         }),
-        false
     )
 
     return (

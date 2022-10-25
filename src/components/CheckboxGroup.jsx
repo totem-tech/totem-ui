@@ -94,7 +94,7 @@ const getCheckboxes = (props, value, setValue) => {
             ? value.indexOf(option.value) >= 0
             : value === option.value
         option.id = option.id || generateHash(
-            `${name}${i}${JSON.stringify(option)}${checked}`,
+            `${name}${i}${JSON.stringify(option.value)}${checked}`,
             'blake2',
             32,
         )

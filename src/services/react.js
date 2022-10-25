@@ -4,40 +4,40 @@ import { isSubjectLike } from '../utils/utils'
 
 module.exports = reactHelper
 
-/**
- * @name    copyRxSubject
- * @summary creates a new subject that automatically copies the value of the source subject.
- * 
- * @description The the changes are applied unidirectionally from the source subject to the destination subject.
- * Changes on the destination subject is NOT applied back into the source subject.
- * 
- * @param   {Object}    rxSource   RxJS source subject
- * @param   {Object}    rxCopy     (optional) RxJS copy/destination subject
- *                                 Default: `new BehaviorSubject()`
- * 
- * @returns {Object}    subjectCopy
- */
-export const copyRxSubject = (rxSource, rxCopy) => {
-    if (!isSubjectLike(rxCopy)) rxCopy = new BehaviorSubject()
-    if (!isSubjectLike(rxSource)) return rxCopy
+// /**
+//  * @name    copyRxSubject
+//  * @summary creates a new subject that automatically copies the value of the source subject.
+//  * 
+//  * @description The the changes are applied unidirectionally from the source subject to the destination subject.
+//  * Changes on the destination subject is NOT applied back into the source subject.
+//  * 
+//  * @param   {Object}    rxSource   RxJS source subject
+//  * @param   {Object}    rxCopy     (optional) RxJS copy/destination subject
+//  *                                 Default: `new BehaviorSubject()`
+//  * 
+//  * @returns {Object}    subjectCopy
+//  */
+// export const copyRxSubject = (rxSource, rxCopy) => {
+//     if (!isSubjectLike(rxCopy)) rxCopy = new BehaviorSubject()
+//     if (!isSubjectLike(rxSource)) return rxCopy
 
-    rxCopy.next(rxSource.value)
-    const subscribe = rxCopy.subscribe
-    rxCopy.subscribe = (...args) => {
-        const sourceSub = rxSource.subscribe(value =>
-            rxCopy.next(value)
-        )
-        const sub = subscribe.apply(rxCopy, args)
-        const { unsubscribe } = sub
-        sub.unsubscribe = (...args) => {
-            unsubscribe.apply(sub, ...args)
-            sourceSub.unsubscribe()
-        }
-        return sub
-    }
-    return rxCopy
-}
-module.exports.copyRxSubject = copyRxSubject
+//     rxCopy.next(rxSource.value)
+//     const subscribe = rxCopy.subscribe
+//     rxCopy.subscribe = (...args) => {
+//         const sourceSub = rxSource.subscribe(value =>
+//             rxCopy.next(value)
+//         )
+//         const sub = subscribe.apply(rxCopy, args)
+//         const { unsubscribe } = sub
+//         sub.unsubscribe = (...args) => {
+//             unsubscribe.apply(sub, ...args)
+//             sourceSub.unsubscribe()
+//         }
+//         return sub
+//     }
+//     return rxCopy
+// }
+// module.exports.copyRxSubject = copyRxSubject
 
 // // a set of reusable React and state related utility functions
 // import { useEffect, useReducer, useState } from 'react'
