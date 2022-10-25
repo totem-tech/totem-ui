@@ -299,21 +299,25 @@ export default class RestoreBackupForm extends Component {
 		const processed = {}
 		const isMobile = rxLayout.value === MOBILE
 		const padding = '7px 15px'
+		const margin = '-2px 0'
 		const styleConflict = {
 			border: '1px solid orange',
 			borderRadius: 3,
 			background: '#ffa5005e',
+			margin,
 			padding,
 		}
 		const styleNew = {
 			border: '1px solid #00800037',
 			borderRadius: 3,
 			background: '#00800037',
+			margin,
 			padding,
 		}
 		const styleExisting = {
 			border: '1px solid #80808040',
 			borderRadius: 3,
+			margin,
 			padding,
 		}
 		const ILabel = props => <span {...{...props, style: { fontSize: '110%' }}} />
