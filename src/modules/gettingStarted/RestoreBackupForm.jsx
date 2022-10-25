@@ -9,7 +9,7 @@ import { getUser, setUser } from '../../utils/chatClient'
 import { rxForeUpdateCache } from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
 import storage, { backup, essentialKeys } from '../../utils/storageHelper'
-import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue, deferred } from '../../utils/utils'
+import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue, deferred, textEllipsis } from '../../utils/utils'
 import BackupForm from './BackupForm'
 import { isHex } from 'web3-utils'
 import { decryptBackup } from '.'
@@ -256,14 +256,16 @@ export default class RestoreBackupForm extends Component {
 		return restoreOptionsIn.inputs.length > 0
 	}
 
-	generateObjDiffHtml = (current = {}, backup = {}, ignoreKeys = []) => {
-		const objDiff = Object.keys({ ...current, ...backup }).reduce((objDiff, key) => {
-			objDiff[key] = [
-				JSON.stringify(current[key], null, 4),
-				JSON.stringify(backup[key], null, 4),
-			]
-			return objDiff
-		}, {})
+	generateObjDiffHtml = (current = {}, backup = {}, ignoreKeys = [], maxLen = 24) => {
+		const objDiff = Object
+			.keys({ ...current, ...backup })
+			.reduce((objDiff, key) => {
+				objDiff[key] = [
+					JSON.stringify(current[key], null, 4),
+					JSON.stringify(backup[key], null, 4),
+				]
+				return objDiff
+			}, {})
 
 		return (
 			<Table basic celled compact definition unstackable>
@@ -275,18 +277,27 @@ export default class RestoreBackupForm extends Component {
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
-					{Object.keys(objDiff).sort().map(key => {
-						if (ignoreKeys.includes(key)) return undefined
-						const values = objDiff[key]
-						const conflict = values[0] !== values[1]
-						return (
-							<Table.Row key={key} positive={!conflict} negative={conflict}>
-								<Table.Cell><b>{key}</b></Table.Cell>
-								<Table.Cell>{values[0]}</Table.Cell>
-								<Table.Cell>{values[1]}</Table.Cell>
-							</Table.Row>
-						)
-					})}
+					{Object.keys(objDiff)
+						.sort()
+						.map(key => {
+							if (ignoreKeys.includes(key)) return undefined
+
+							const values = objDiff[key]
+							const conflict = values[0] !== values[1]
+							return (
+								<Table.Row key={key} positive={!conflict} negative={conflict}>
+									<Table.Cell title={key}>
+										<b>{textEllipsis(key, maxLen, 3, false)}</b>
+									</Table.Cell>
+									<Table.Cell title={values[0]}>
+										{textEllipsis(values[0], maxLen, 3, true)}
+									</Table.Cell>
+									<Table.Cell title={values[1]}>
+										{textEllipsis(values[1], maxLen, 3, true)}
+									</Table.Cell>
+								</Table.Row>
+							)
+						})}
 				</Table.Body>
 			</Table>
 		)
@@ -320,7 +331,7 @@ export default class RestoreBackupForm extends Component {
 			margin,
 			padding,
 		}
-		const ILabel = props => <span {...{...props, style: { fontSize: '110%' }}} />
+		const ILabel = props => <span {...{ ...props, style: { fontSize: '110%' } } } />
 		const dataInputs = current
 			.map(([keyC, valueC = {}]) => {
 				const valueB = backupMap.get(keyC)
