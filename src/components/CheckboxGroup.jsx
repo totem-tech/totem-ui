@@ -20,6 +20,7 @@ function CheckboxGroup(props) {
         options,
         rxValue,
         style,
+        title,
     } = props
     const [value, setValue] = useRxSubject(rxValue || props.value)
     const [checkboxes, setCheckboxes] = useState([])
@@ -29,7 +30,7 @@ function CheckboxGroup(props) {
     }, [value, options])
     
     return (
-        <div style={style}>
+        <div {...{ style, title }}>
             {checkboxes}
         </div>
     )

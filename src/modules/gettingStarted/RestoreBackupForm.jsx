@@ -59,6 +59,9 @@ const [texts, textsCap] = translated({
 	success1: 'restored successfully!',
 	success2: 'reloading page.',
 	successRedirect: 'Redirecting back to',
+	titleConflict: 'you must make a choice to contiue',
+	titleNoConflict: 'existing entry',
+	titleNew: 'from backup',
 	userCredentials: 'user credentials',
 }, true)
 // data that can be merged (must be 2D array that represents a Map)
@@ -295,71 +298,94 @@ export default class RestoreBackupForm extends Component {
 		const backupMap = new Map(backup)
 		const processed = {}
 		const isMobile = rxLayout.value === MOBILE
-		const styleHighlight = {
+		const padding = '7px 15px'
+		const styleConflict = {
 			border: '1px solid orange',
 			borderRadius: 3,
 			background: '#ffa5005e',
+			padding,
+		}
+		const styleNew = {
+			border: '1px solid #00800037',
+			borderRadius: 3,
+			background: '#00800037',
+			padding,
+		}
+		const styleExisting = {
+			border: '1px solid #80808040',
+			borderRadius: 3,
+			padding,
 		}
 		const ILabel = props => <span {...{...props, style: { fontSize: '110%' }}} />
-		const dataInputs = current.map(([keyC, valueC = {}]) => {
-			const valueB = backupMap.get(keyC)
-			const strC = JSON.stringify(objWithoutKeys(valueC, ignoredKeys))
-			const strB = JSON.stringify(objWithoutKeys(valueB, ignoredKeys))
-			const identical = strC === strB
-			const conflict = valueB && !identical
-			const value = conflict
-				? null // forces make a selection if there is a conflict
-				: valueC
-			const options = [
-				{
-					name: 'current',
-					label: textsCap.keepUnchanged,
-					value: valueC,
-				},
-				{
-					name: 'backup',
-					disabled: !conflict,
-					label: textsCap.restoreFromBackup,
+		const dataInputs = current
+			.map(([keyC, valueC = {}]) => {
+				const valueB = backupMap.get(keyC)
+				const strC = JSON.stringify(objWithoutKeys(valueC, ignoredKeys))
+				const strB = JSON.stringify(objWithoutKeys(valueB, ignoredKeys))
+				const identical = strC === strB
+				const conflict = valueB && !identical
+				const value = conflict
+					? null // forces make a selection if there is a conflict
+					: valueC
+				const options = [
+					{
+						name: 'current',
+						label: textsCap.keepUnchanged,
+						value: valueC,
+					},
+					{
+						name: 'backup',
+						disabled: !conflict,
+						label: textsCap.restoreFromBackup,
+						value: valueB,
+					},
+					{
+						name: 'remove',
+						label: textsCap.remove,
+						value: REMOVE,
+					}, // ignore option
+				].filter(Boolean)
+				processed[keyC] = true
+				const label = valueC.name || valueB.name || keyC
+				
+				return {
+					inline: !isMobile,
+					label: <ILabel>{label}</ILabel>,
+					name: keyC,
+					options,
+					radio: true,
+					required: doMerge,
+					rxValue: new BehaviorSubject(value),
+					styleContainer: conflict 
+						? styleConflict
+						: styleExisting,
+					title: conflict
+						? textsCap.titleConflict
+						: textsCap.titleNoConflict,
+					type: 'checkbox-group',
+					value,
+				}
+			})
+			.concat( // find any remaining items in b
+				backup.map(([keyB, valueB]) => !processed[keyB] && {
+					inline: true,
+					label: <ILabel>{valueB.name || keyB}</ILabel>,
+					name: keyB,
+					options: [
+						// { disabled: true, label: textsCap.keepUnchanged, value: 'keep-input-disabled' },
+						{ label: textsCap.addFromBackup, value: valueB },
+						{ label: textsCap.ignore, value: REMOVE }, // ignore option
+					],
+					radio: true,
+					required: doMerge,
+					rxValue: new BehaviorSubject(valueB),
+					styleContainer: styleNew,
+					title: textsCap.titleNew,
+					type: 'checkbox-group',
 					value: valueB,
-				},
-				{
-					name: 'remove',
-					label: textsCap.remove,
-					value: REMOVE,
-				}, // ignore option
-			].filter(Boolean)
-			processed[keyC] = true
-			const label = valueC.name || valueB.name || keyC
-			
-			return {
-				inline: !isMobile,
-				label: <ILabel>{label}</ILabel>,
-				name: keyC,
-				options,
-				radio: true,
-				required: doMerge,
-				rxValue: new BehaviorSubject(value),
-				styleContainer: conflict && styleHighlight || {},
-				type: 'checkbox-group',
-				value,
-			}
-		}).concat( // find any remaining items in b
-			backup.map(([keyB, valueB]) => !processed[keyB] && {
-				inline: true,
-				label: <ILabel>{valueB.name || keyB}</ILabel>,
-				name: keyB,
-				options: [
-					// { disabled: true, label: textsCap.keepUnchanged, value: 'keep-input-disabled' },
-					{ label: textsCap.addFromBackup, value: valueB },
-					{ label: textsCap.remove, value: REMOVE }, // ignore option
-				],
-				radio: true,
-				required: doMerge,
-				rxValue: new BehaviorSubject(valueB),
-				type: 'checkbox-group',
-				value: valueB,
-			}).filter(Boolean)
-		)
+				}).filter(Boolean)
+			)
+
 		const conflicts = dataInputs.filter(x => x.value === null)
 			.reduce((ar, input) => ([
 				...ar,
@@ -395,8 +421,12 @@ export default class RestoreBackupForm extends Component {
 			]), [])
 
 		return [
-			...conflicts, // place conflicts on top
-			...dataInputs.filter(x => x.value !== null),
+			// place conflicts on top
+			...conflicts, 
+			// new entries from backup
+			...dataInputs.filter(x => x.value !== null && x.options.length === 2),
+			// existing entries not in backup
+			...dataInputs.filter(x => x.value !== null && x.options.length > 2),
 		]
 	}
 
