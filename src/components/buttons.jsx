@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { isFn, objWithoutKeys } from '../utils/utils'
+import { deferred, isFn, objWithoutKeys } from '../utils/utils'
 import { getRawUserID } from './UserIdInput'
 // forms
 import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
@@ -200,6 +200,8 @@ export const Reveal = React.memo(function Reveal(props){
 		ignoreAttributes,
 		onClick,
 		onMouseEnter,
+		onMouseOver,
+		onMouseOut,
 		onMouseLeave,
 		onTouchStart,
 		ready,
@@ -210,13 +212,14 @@ export const Reveal = React.memo(function Reveal(props){
 	} = props
 	const [visible, setVisible] = useState(defaultVisible)
 	const getContent = useCallback(c => isFn(c) ? c() : c)
+	const _setVisible = useCallback(deferred(setVisible, 200), [setVisible])
 	const triggerEvent = useCallback((func, show) => async (...args) => {
 		const _ready = await (isFn(ready) ? ready() : ready)
 		if (!_ready) return
 
 		isFn(func) && func(...args)
-		setVisible(show)
-	}, [setVisible, ready, visible])
+		_setVisible(show)
+	}, [_setVisible, ready, visible])
 	
 	children = !visible
 		? getContent(content)
@@ -243,8 +246,9 @@ export const Reveal = React.memo(function Reveal(props){
 		},
 		...toggleOnHover && {
 			onMouseEnter: triggerEvent(onMouseEnter, true),
-			// onMouseOver: triggerEvent(onMouseHover, true),
 			onMouseLeave: triggerEvent(onMouseLeave, false),
+			// onMouseOver: triggerEvent(onMouseOver, true),
+			// onMouseOut:  triggerEvent(onMouseOut, false),
 		},
 		style: {
 			cursor: 'pointer',

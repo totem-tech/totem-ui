@@ -13,9 +13,8 @@ import {
 	isSubjectLike,
 } from '../utils/utils'
 import Message, { statuses } from '../components/Message'
-import FormInput, { nonValueTypes } from './FormInput'
+import FormInput from './FormInput'
 import IModal from './Modal'
-import Text from './Text'
 import { translated } from '../services/language'
 import { Invertible } from './Invertible'
 import { closeModal } from '../services/modal'
@@ -257,6 +256,11 @@ class FormBuilder extends Component {
 			trigger,
 			widths,
 		} = this.props
+		loading = isObj(loading)
+			? Object
+				.values(loading)
+				.find(Boolean)
+			: !!loading
 		const isMobile = rxLayout.value === MOBILE
 		if (submitText === null && closeText === null) {
 			// enable close on escase and dimmer click
@@ -283,7 +287,8 @@ class FormBuilder extends Component {
 			? !!submitDisabled
 			: Object.values(submitDisabled).filter(Boolean).length > 0
 		// const formIsInvalid = checkFormInvalid(inputs, values)
-		const shouldDisable = submitDisabled
+		const shouldDisable = loading
+			|| submitDisabled
 			|| submitInProgress
 			|| success
 			|| checkFormInvalid(inputs, values)
@@ -301,8 +306,15 @@ class FormBuilder extends Component {
 				: React.isValidElement(submitText)
 					? { ...submitText.props }
 					: submitText
-
-			let { content, disabled, icon, loading, onClick, positive, style } = submitProps
+			let {
+				content,
+				disabled,
+				icon,
+				loading: sLoading,
+				onClick,
+				positive,
+				style,
+			} = submitProps
 			disabled = isBool(disabled)
 				? disabled
 				: shouldDisable
@@ -324,7 +336,7 @@ class FormBuilder extends Component {
 					),
 					disabled,
 					icon,
-					loading: !success && (submitInProgress || loading),
+					loading: !success && (submitInProgress || sLoading),
 					onClick: (...args) => isFn(onClick)
 						? onClick(...args)
 						: handleSubmit(...args),
@@ -364,23 +376,20 @@ class FormBuilder extends Component {
 			closeText = <Button {...closeProps} />
 		}
 
-		El = El || (modal ? 'div' : undefined)
-		const FormEl = El || Invertible
-		const isForm = !El || ['form', Form].includes(El)
+		const as = El || (modal ? 'div' : 'form')
 		msg = true
 
 		const form = (
-			<FormEl {...{
-				...!isForm && { className: 'ui form' },
-				...isForm && {
-					El: Form,
-					error: message.status === statuses.ERROR,
-					loading,
-					onSubmit: handleSubmit,
-					success: success || message.status === statuses.SUCCESS,
-					warning: message.status === statuses.WARNING,
-					widths,
-				},
+			<Invertible {...{
+				as,
+				className: 'ui form',
+				El: Form,
+				error: message.status === statuses.ERROR,
+				loading,
+				onSubmit: handleSubmit,
+				success: success || message.status === statuses.SUCCESS,
+				warning: message.status === statuses.WARNING,
+				widths,
 				style,
 				...formProps,
 			}}>
@@ -392,7 +401,7 @@ class FormBuilder extends Component {
 						{msg && <Message {...message} />}
 					</div>
 				)}
-			</FormEl>
+			</Invertible>
 		)
 
 		return !modal && form || (
@@ -477,7 +486,10 @@ FormBuilder.propTypes = {
 	hideFooter: PropTypes.bool,
 	message: PropTypes.object,
 	// show loading spinner
-	loading: PropTypes.bool,
+	loading: PropTypes.oneOfType([
+		PropTypes.bool,
+		PropTypes.object,
+	]),
 	modal: PropTypes.bool,
 	// If modal=true and onClose is defined, 'open' is expected to be controlled externally
 	onClose: PropTypes.func,

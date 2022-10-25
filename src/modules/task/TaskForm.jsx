@@ -4,7 +4,7 @@ import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 // utils
-import { arrSort, deferred, generateHash, isFn, isHash, isObj, isValidNumber, objClean } from '../../utils/utils'
+import { arrSort, deferred, generateHash, isArr, isFn, isHash, isObj, isValidNumber, objClean } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, blockNumberToTS, format } from '../../utils/time'
 // components
@@ -32,6 +32,8 @@ import PartnerForm from '../partner/PartnerForm'
 import { queueables } from './task'
 import { rxUpdater } from './useTasks'
 import { copyRxSubject } from '../../services/react'
+import { asInlineLabel } from '../currency/CurrencyDropdown'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
@@ -117,6 +119,8 @@ export default class TaskForm extends Component {
         const { taskId, values } = this.props
         // list of input names
         this.names = inputNames
+        this.rxCurrency = copyRxSubject(rxSelectedCurrency)
+        this.rxCurrencies = new BehaviorSubject()
         // keys used to generate BONSAI token hash
         // keep it in the same order as in the `VALID_KEYS` array in the messaging service
         this.bonsaiKeys = [
@@ -137,7 +141,10 @@ export default class TaskForm extends Component {
             header: isObj(values) && !!taskId
                 ? textsCap.formHeaderUpdate
                 : textsCap.formHeader,
-            loading: true,
+            loading: {
+                currencies: true,
+                onMount: true,
+            },
             submitDisabled: {
                 unchnaged: !!taskId,
             },
@@ -163,6 +170,15 @@ export default class TaskForm extends Component {
                     unstackable: true,
                     inputs: [
                         {
+                            ...asInlineLabel({
+                                onCurrencies: currencies => {
+                                    this.rxCurrencies.next(currencies)
+                                    const { loading } = this.state
+                                    loading.currencies = false
+                                    this.setState({ loading })
+                                },
+                                rxValue: this.rxCurrency,
+                            }),
                             label: textsCap.bountyLabel,
                             maxLength: 18,
                             min: 0, // allows bounty-free tasks
@@ -174,7 +190,7 @@ export default class TaskForm extends Component {
                             required: true,
                             type: 'number',
                             useInput: true,
-                            width: 10,
+                            // width: 10,
                         },
                         {// hidden type to store bounty in XTX (regardless of display currency selected)
                             hidden: true,
@@ -182,18 +198,26 @@ export default class TaskForm extends Component {
                             required: true,
                             rxValue: new BehaviorSubject(0),
                         },
-                        {// display currency
-                            content: '',
-                            name: this.names.currencyWrapper,
-                            type: 'html',
-                            width: 6,
-                        },
                         {
                             hidden: true,
                             name: this.names.currency,
-                            onChange: this.handleBountyChange,
-                            rxValue: copyRxSubject(rxSelectedCurrency),
-                            // type: 'hidden',
+                            onChange: async (...args) => { 
+                                const [_, values] = args
+                                const { inputs } = this.state
+                                const currency = values[this.names.currency]
+                                const bounty = values[this.names.bounty]
+                                const bountyIn = findInput(inputs, this.names.bounty)
+                                const currencies = await subjectAsPromise(this.rxCurrencies, x => isArr(x) && x)[0]
+                                const { decimals = 0 } = currencies.find(x => x.currency === currency) || {}
+                                bountyIn.decimals = parseInt(decimals || '') || 0
+                                bountyIn.message = null
+                                this.setState({ inputs })
+                                
+                                // trigger re-validation
+                                bountyIn.rxValue.next('')
+                                bountyIn.rxValue.next(bounty)
+                            },
+                            rxValue: this.rxCurrency,
                         },
                     ]
                 },
@@ -358,10 +382,9 @@ export default class TaskForm extends Component {
     async componentWillMount() {
         this._mounted = true
         const { taskId, values } = this.props
-        const { inputs } = this.state
+        const { inputs, loading } = this.state
         const assigneeIn = findInput(inputs, this.names.assignee)
         const currencyIn = findInput(inputs, this.names.currency)
-        const currencyWrapperIn = findInput(inputs, this.names.currencyWrapper)
         const tagsIn = findInput(inputs, this.names.tags)
         const assigneeOptions = Array.from(getPartners())
             .map(([address, { name, userId }]) => ({
@@ -371,32 +394,11 @@ export default class TaskForm extends Component {
                 value: address,
             }))
         assigneeIn.options = arrSort(assigneeOptions, 'text')
-        const currencyOptions = (await getCurrencies())
-            .map(({ currency }) => ({
-                key: currency,
-                text: currency,
-                value: currency,
-            }))
-        // currencyIn.deburr = true // ???
-        // currencyIn.options = arrSort(currencyOptions, 'text')
-        // currencyIn.search = ['text']
-        currencyWrapperIn.content = (
-            <FormInput {...{
-                label: textsCap.currency,
-                name: this.names.currency,
-                options: arrSort(currencyOptions, 'text'),
-                rxValue: currencyIn.rxValue,
-                search: ['text'],
-                selection: true,
-                style: {
-                    minWidth: 0, // fixes overflow issue
-                    marginBottom: 0, // removes margin on popup open
-                },
-                type: 'dropdown',
-                width: 6,
-            }} />
-        )
-        if (!isObj(values)) return this.setState({ inputs, loading: false })
+        if (!isObj(values)) {
+            loading.onMount = false
+            return this.setState({ inputs, loading })
+        }
+
         const { number } = await query('api.rpc.chain.getHeader')
         const amountXTX = values[this.names.amountXTX]
         const currency = values[this.names.currency]
@@ -424,7 +426,8 @@ export default class TaskForm extends Component {
             }))
         }
         fillValues(inputs, values, true)
-        const state = { inputs, loading: false }
+        loading.onMount = false
+        const state = { inputs, loading }
         if (taskId) {
             const editableFields = [
                 this.names.description,
@@ -476,22 +479,22 @@ export default class TaskForm extends Component {
         const { taskId, values: valuesOrg } = this.props
         const { amountXTX: bountyOriginal } = valuesOrg || {}
         const bounty = values[this.names.bounty]
+        console.log({bounty})
         // bounty hasn't changed
-        if (taskId && bounty === bountyOriginal) return
-
+        
         this.bountyDeferred = this.bountyDeferred || PromisE.deferred()
         const { inputs, submitDisabled } = this.state
         const amountXTXIn = findInput(inputs, this.names.amountXTX)
-        const bountyGrpIn = findInput(inputs, this.names.bountyGroup)
         const bountyIn = findInput(inputs, this.names.bounty)
         const valid = isValidNumber(bounty)
         const currency = values[this.names.currency]
         const { address } = getSelected()
         bountyIn.loading = valid
         bountyIn.invalid = false
-        bountyGrpIn.message = null
+        bountyIn.message = null
         submitDisabled.bounty = valid
         this.setState({ inputs, submitDisabled })
+        if (taskId && bounty === bountyOriginal) return
         if (!valid) return this.bountyDeferred(Promise.reject(null))
 
         const promise = new Promise(async (resolve, reject) => {
@@ -516,7 +519,7 @@ export default class TaskForm extends Component {
             const gotBalance = balanceXTX - amountTotalXTX >= 0
             amountXTXIn.rxValue.next(amountXTX)
             bountyIn.invalid = !gotBalance
-            bountyGrpIn.message = {
+            bountyIn.message = {
                 content: (
                     <div>
                         <div title={`${textsCap.balance}: ${balanceXTX} ${currencyDefault} `}>
@@ -547,7 +550,7 @@ export default class TaskForm extends Component {
         }
         const handleErr = err => {
             bountyIn.invalid = !!err
-            bountyGrpIn.message = !err ? null : {
+            bountyIn.message = !err ? null : {
                 content: `${err} `,
                 header: textsCap.conversionErrorHeader,
                 status: 'error'
@@ -561,7 +564,7 @@ export default class TaskForm extends Component {
     handleBountyInvalid = () => {
         // clear message field
         const { inputs } = this.state
-        findInput(inputs, this.names.bountyGroup).message = null
+        findInput(inputs, this.names.bounty).message = null
         this.setState({ inputs })
     }
 

@@ -5,7 +5,7 @@ import { Icon } from 'semantic-ui-react'
 // utils
 import { ss58Decode } from '../../utils/convert'
 import { getTxFee } from '../../utils/polkadotHelper'
-import { arrSort, textEllipsis, deferred, isValidNumber } from '../../utils/utils'
+import { arrSort, textEllipsis, deferred, isValidNumber, isArr } from '../../utils/utils'
 // components
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import Text from '../../components/Text'
@@ -29,7 +29,7 @@ import PartnerForm from '../partner/PartnerForm'
 import Balance from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
-import { useRxSubject } from '../../utils/reactHelper'
+import { subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { statuses } from '../../components/Message'
 
@@ -86,10 +86,15 @@ export default class TransferForm extends Component {
             txFee: 'txFeeHTML'
         }
         this.rxAddress = new BehaviorSubject()
+        this.rxCurrencies = new BehaviorSubject()
         this.rxCurrencyReceived = new BehaviorSubject(rxSelectedCurrency.value)
         this.rxCurrencySent = new BehaviorSubject(rxSelectedCurrency.value)
         this.rxCurrencyOptions = new BehaviorSubject([])
         this.state = {
+            loading: {
+                // wait until currencies list is loaded
+                currencies: true,
+            }, 
             message: undefined,
             onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
@@ -170,7 +175,6 @@ export default class TransferForm extends Component {
                             readOnly: true,
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
-                            useInput: true,
                         },
                         {
                             hidden: true,
@@ -194,7 +198,12 @@ export default class TransferForm extends Component {
                     inputs: [
                         {
                             ...asInlineLabel({
-                                onCurrencies: currencies => this.currencies = currencies,
+                                onCurrencies: currencies => {
+                                    this.rxCurrencies.next(currencies)
+                                    const { loading } = this.state
+                                    loading.currencies = false
+                                    this.setState({ loading })
+                                },
                                 rxValue: this.rxCurrencyReceived,
                                 upward: true,
                             }),
@@ -210,7 +219,6 @@ export default class TransferForm extends Component {
                             required: true,
                             rxValue: new BehaviorSubject(''),
                             type: 'number',
-                            useInput: true,
                         },
                         {
                             hidden: true,
@@ -386,21 +394,20 @@ export default class TransferForm extends Component {
         this.setState({ inputs })
     }, 100)
 
-    handleCurrencyReceivedChange = (_, values) => {
-        if (!this.currencies) return
-
+    handleCurrencyReceivedChange = deferred(async (_, values) => {
         const { inputs } = this.state
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
-        const currencyObj = this.currencies.find(x => x.currency === currencyReceived) || {}
-        amountReceivedIn.decimals = parseInt(currencyObj.decimals || 0)
+        const currencies = await subjectAsPromise(this.rxCurrencies, x => isArr(x) && x)[0]
+        const currencyObj = currencies.find(x => x.currency === currencyReceived) || {}
+        amountReceivedIn.decimals = parseInt(currencyObj.decimals || '') || 0
         this.setState({ inputs })
 
         if (!isValidNumber(amountReceived)) return
 
         this.handleAmountReceivedChange(_, values)      
-    }
+    }, 500)
 
     handleSubmit = (_, values) => {
         const amountReceived = values[this.names.amountReceived]

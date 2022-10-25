@@ -7,7 +7,7 @@ const key = 'history'
 export const MODULE_KEY = 'totem_' + key
 const history = new DataStorage(MODULE_KEY, true)
 export const rxHistory = history.rxData
-const LIMIT_DEFAULT = 500 // default number of items to store
+export const LIMIT_DEFAULT = 500 // default number of items to store
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
@@ -20,14 +20,16 @@ export const getById = id => history.get(id)
 
 export const remove = id => history.delete(id)
 
-// set number of actions to store and apply to history items
-// use null for unlimited history
-//
-// Params:
-// @newLimit    number: number of items to store. Use '0' (zero) to save unlimited items
-// @trigger     boolean: whether to trigger update on the history list (if open)
-//
-// Returns      number
+/**
+ * @name    limit
+ * @summary set number of actions to store and apply to history items.
+ * use null for unlimited history.
+ *
+ * @param   {number}: number of items to store. Use '0' (zero) to save unlimited items
+ * @param   {Boolean}: whether to trigger update on the history list (if open)
+ *
+ * @returns {Number}
+ */
 export const limit = (newLimit) => {
     let limit = rw().limit
     if (!isDefined(limit)) limit = LIMIT_DEFAULT

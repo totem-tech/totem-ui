@@ -4,7 +4,7 @@ import { subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
 import { arrUnique, isFn, isInteger, isObj, isStr, objClean, objToUrlParams } from '../../utils/utils'
 import FAQ from '../../components/FAQ'
 import FormBuilder from '../../components/FormBuilder'
-import { getAll as getHistory, rxHistory } from '../history/history'
+import { getAll as getHistory, limit, rxHistory } from '../history/history'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
 import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
@@ -12,13 +12,11 @@ import storage from '../../utils/storageHelper'
 import { translated } from '../../utils/languageHelper'
 import Message, { statuses } from '../../components/Message'
 import { setActiveExclusive } from '../../services/sidebar'
-import Text from '../../components/Text'
-import { Invertible } from '../../components/Invertible'
 import { BLOCK_DURATION_SECONDS, durationToSeconds } from '../../utils/time'
 
 let textsCap = {
 	addIdentity: 'add identity shared by a friend',
-	addSelf: 'add yourself as a team member.',
+	addSelf: 'add yourself as a team member by clicking on the "Add myself" button.',
 	amountClaimable: 'amount transferred will not affect the amount claimable.',
 	checkNotification: 'check your notification to see if your friend shared their identity with you and add their them as partner by clicking on "Add partner" button.',
 	clickCreate: 'click on the "Create" button.',
@@ -35,7 +33,7 @@ let textsCap = {
 	createTkRecord: 'create a timekeeping record',
 	enterAmount: 'enter any amount you wish to send.',
 	enterDuration: 'enter a duration of three hours (03:00:00) or greater.',
-	enterFriendUserId: `Enter your friend's Totem User ID`,
+	enterFriendUserId: `Enter your friend's Totem User ID in the "User" field`,
 	enterNameDesc: 'enter any name and description for the activity.',
 	enterReason: 'select or enter a custom reason',
 	errAlreadySubmitted: 'You have already submitted your claim.',
@@ -84,6 +82,9 @@ const statusCached = (status) => storage.cache(
 ) || {}
 
 export const getTaskList = taskIdentity => {
+	// set history limit to 100 or higer
+	const lim = limit() || 500
+	if (lim < 100) limit(100)
 	const historyArr2d = Array.from(getHistory())
 	// list of user IDs who were requested to shared their identity by current user
 	const partnerIds = arrUnique(
@@ -100,6 +101,7 @@ export const getTaskList = taskIdentity => {
 			.flat()
 			.filter(Boolean)
 	)
+	console.log({partnerIds})
 	const partnerRequested = partnerIds.length > 0
 	const allPartners = partners.getAll()
 	const partnersAdded = Array.from(allPartners)
@@ -149,25 +151,16 @@ export const getTaskList = taskIdentity => {
 	)
 	const tasks = [
 		{
-			answer: (
-				<div>
-					{textsCap.followInstructions}
-					<ul>
-						<li>
-							<a {...{
-								href: '/?exclusive=false&module=partners',
-								target: '_blank',
-							}}>
-								{textsCap.goToPartners}
-							</a>
-						</li>
-						<li>{textsCap.clickRequest}</li>
-						<li>{textsCap.enterFriendUserId}</li>
-						<li>{textsCap.enterReason}</li>
-						<li>{textsCap.submit}</li>
-					</ul>
-				</div>
-			),
+			answer: getStepList([
+				{
+					content: textsCap.goToPartners,
+					module: 'partners',
+				},
+				textsCap.clickRequest,
+				textsCap.enterFriendUserId,
+				textsCap.enterReason,
+				textsCap.submit,
+			]),
 			completed: partnerRequested,
 			question: (
 				<span>
@@ -180,9 +173,6 @@ export const getTaskList = taskIdentity => {
 			answer: textsCap.checkNotification,
 			answer: getStepList([
 				textsCap.checkNotification,
-				// {
-				// 	children: ''
-				// },
 			]),
 			completed: taskStatus.partnersAdded,
 			question: (
@@ -196,7 +186,7 @@ export const getTaskList = taskIdentity => {
 			answer: getStepList(
 				[
 					{
-						children: textsCap.goToTransfer,
+						content: textsCap.goToTransfer,
 						module: 'transfer',
 					},
 					textsCap.selectRecipient,
@@ -222,7 +212,7 @@ export const getTaskList = taskIdentity => {
 		{
 			answer: getStepList([
 				{
-					children: textsCap.goToActivity,
+					content: textsCap.goToActivity,
 					module: 'activities',
 				},
 				textsCap.clickCreate,
@@ -241,7 +231,7 @@ export const getTaskList = taskIdentity => {
 		{
 			answer: getStepList([
 				{
-					children: textsCap.goToTimekeeping,
+					content: textsCap.goToTimekeeping,
 					module: 'timekeeping',
 				},
 				textsCap.clickTimer,
@@ -261,7 +251,7 @@ export const getTaskList = taskIdentity => {
 		{
 			answer: getStepList([
 				{
-					children: textsCap.goToTasks,
+					content: textsCap.goToTasks,
 					module: 'tasks',
 				},
 				textsCap.clickCreate,
@@ -275,14 +265,68 @@ export const getTaskList = taskIdentity => {
 	return tasks
 }
 
+/**
+ * @name	quotedToBold
+ * @summary	embolden quoted texts
+ * 
+ * @param	{String}	str
+ * @param	{RegExp}	regex		Regular expression to match texts to be embolden.
+ * 									Default: regex that matches quoted texts
+ * @param	{Boolean}	reactSafe	If truthy, <React.Fragment /> with index as key will be used to avoid errors
+ * 									when using on the DOM/JSX
+ * 
+ * @example 
+ * ```javascript
+ * embolden('This is "quoted" text', undefined, false)
+ * 
+ * // Result: ['This is ', <b>"quoted"</b>, ' text']
+ * ```
+ * 
+ * @returns {Array}
+ */
+const embolden = (str, regex = /"[^"]+"/g, reactSafe = true) => {
+	if (!isStr(str)) return str
+
+	const matches = str.match(regex)
+	let arr = [str]
+	if (matches) {
+		const replacements = matches.map(quoted => <b>{quoted}</b>)
+		matches.forEach((quoted, i) => {
+			arr = arr.map(s =>
+				s.split(quoted).map((x, j) =>
+					j === 0
+						? [x]
+						: [replacements[i], x])
+					
+			)
+				.flat()
+				.flat()
+		})
+	}
+	return !reactSafe
+		? arr
+		: arr.map((x, i) =>
+			<React.Fragment {...{
+				children: x,
+				key: i
+			}} />
+		)
+}
+
 const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) => (
 	<div>
 		{prefix}
 		<ul>
 			{items.map((item, i) => {
-				if (isStr(item) || isValidElement(item)) return <li key={i}>{item}</li>
+				if (isStr(item) || isValidElement(item)) return (
+					<li key={i}>
+						{isStr(item)
+							? embolden(item)
+							: item}
+					</li>
+				)
 
-				let { children, El = Button, module, url } = item || {}
+				let { module, url } = item || {}
 				if (isStr(module)) {
 					item.onClick = e => {
 						e.preventDefault()
@@ -300,23 +344,24 @@ const getStepList = (items = [], prefix = textsCap.followInstructions, suffix) =
 						`?${objToUrlParams(params)}`
 					].join('')
 				}
+				const iconBtn = isStr(module) && (
+					<Button {...{
+						as: 'a',
+						icon: 'forward mail',
+						href: url,
+						size: 'tiny',
+						target: '_blank',
+					}} />
+				)
+
 				return (
 					<li key={i}>
-						<Invertible {...{
+						<Button {...{
 							...item,
-							children: <Text {...{ children }} />,
-							El,
-							size: 'mini',
+							icon: <Icon name='hand point right' />,
+							size: 'tiny',
 						}} />
-						{isStr(module) && (
-							<Button {...{
-								as: 'a',
-								icon: 'forward mail',
-								href: url,
-								size: 'mini',
-								target: '_blank',
-							}} />
-						)}
+						{iconBtn}
 					</li>
 				)
 			})}
