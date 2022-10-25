@@ -57,7 +57,8 @@ let textsCap = {
 	selectRecipient: 'select your friend from the recipient DropDown list',
 	submit: 'submit',
 	submitActivity: 'submit and wait until Activity is successfully created.',
-	taskCompleted: 'you have completed this task',
+	taskCompleted: 'Well done! You have completed this task.',
+	taskIncomplete: 'you have not completed this task',
 	tasksCompletedLabel: 'in order claim KAPEX you must complete the following tasks:',
 	transferToFriend: 'transfer any amount to one of your friend',
 	waitAndStop: 'wait a few seconds and then click on the "stop" button',
@@ -142,12 +143,24 @@ export const getTaskList = taskIdentity => {
 		}
 	})
 
-	const checkMark = (
-		<Icon {...{
-			color: 'green',
-			name: 'check circle',
-			title: textsCap.taskCompleted,
-		}} />
+	const icon = (name, title, color) => (
+		<React.Fragment>
+			<Icon {...{
+				className: 'no-margin',
+				color,
+				name,
+				title,
+			}} />{' '}
+		</React.Fragment>
+	)
+	const checkIcon = icon(
+		'check circle',
+		textsCap.taskCompleted,
+		'green',
+	)
+	const circleIcon = icon(
+		'circle outline',
+		textsCap.taskIncomplete,
 	)
 	const tasks = [
 		{
@@ -164,8 +177,8 @@ export const getTaskList = taskIdentity => {
 			completed: partnerRequested,
 			question: (
 				<span>
+					{partnerRequested ? checkIcon : circleIcon}
 					{textsCap.requestIdentity + ' '}
-					{partnerRequested && checkMark}
 				</span>
 			),
 		},
@@ -177,8 +190,8 @@ export const getTaskList = taskIdentity => {
 			completed: taskStatus.partnersAdded,
 			question: (
 				<span>
+					{taskStatus.partnersAdded ? checkIcon : circleIcon}
 					{textsCap.addIdentity + ' '}
-					{taskStatus.partnersAdded && checkMark}
 				</span>
 			),
 		},
@@ -204,8 +217,8 @@ export const getTaskList = taskIdentity => {
 			completed: taskStatus.transferred,
 			question: (
 				<span>
+					{taskStatus.transferred ? checkIcon : circleIcon}
 					{textsCap.transferToFriend + ' '}
-					{taskStatus.transferred && checkMark}
 				</span>
 			),
 		},
@@ -224,7 +237,8 @@ export const getTaskList = taskIdentity => {
 			completed: taskStatus.activityDone,
 			question: (
 				<span>
-					{textsCap.createActivity} {taskStatus.activityDone && checkMark}
+					{taskStatus.activityDone ? checkIcon : circleIcon}
+					{textsCap.createActivity}
 				</span>
 			),
 		},
@@ -245,7 +259,10 @@ export const getTaskList = taskIdentity => {
 			]),
 			completed: taskStatus.timekeepingDone,
 			question: (
-				<span>{textsCap.createTkRecord} {taskStatus.timekeepingDone && checkMark}</span>
+				<span>
+					{taskStatus.timekeepingDone ? checkIcon : circleIcon}
+					{textsCap.createTkRecord}
+				</span>
 			),
 		},
 		{
@@ -259,7 +276,12 @@ export const getTaskList = taskIdentity => {
 				textsCap.clickSubmit,
 			]),
 			completed: taskStatus.taskCreated,
-			question: <span>{textsCap.createTask} {taskStatus.taskCreated && checkMark}</span>,
+			question: (
+				<span>
+					{taskStatus.taskCreated ? checkIcon : circleIcon}
+					{textsCap.createTask}
+				</span>
+			),
 		},
 	]
 	return tasks
@@ -397,20 +419,9 @@ const getFormProps = () => {
 		{
 			checked: tasksCompleted,
 			disabled: true,
-			hidden: tasksCompleted,
 			label: (
 				<div>
 					{textsCap.tasksCompletedLabel + ' '}
-					{/* <Icon {...{
-						className: 'no-margin',
-						name: 'refresh',
-						onClick: () => reload(),
-						style: {
-							// color: 'orange',
-							cursor: 'pointer',
-						},
-						title: textsCap.clickToRefresh,
-					}} /> */}
 				</div>
 			),
 			name: inputNames.tasksCompleted,
