@@ -46,6 +46,7 @@ let textsCap = {
     timekeeping: 'timekeeping',
     update: 'update',
     unknown: 'unknown',
+    unnamed: 'unnamed',
 
     areYouSure: 'are you sure?',
     closeProject: 'close activity',
@@ -101,7 +102,7 @@ export default class ActivityList extends Component {
             selectable: true,
             columns: [
                 {
-                    content: ({ description, name }) => !this.state.isMobile
+                    content: ({ description, name = textsCap.unnamed }) => !this.state.isMobile
                         ? name 
                         : (
                             <div>

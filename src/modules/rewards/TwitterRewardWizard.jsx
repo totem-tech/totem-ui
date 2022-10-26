@@ -222,7 +222,8 @@ export default function TwitterRewardWizard(props) {
         },
     ]
     return (
-        <Step.Group ordered vertical>
+        <Step.Group ordered vertical 
+            style={{ textAlign: 'center' }}>
             {steps.map(({ completed, description, disabled, title }, index) => (
                 <Step {...{
                     active: activeStep === index,

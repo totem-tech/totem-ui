@@ -21,6 +21,7 @@ const textsCap = translated({
     tweetWithReferral: 'post a Tweet with your referral link',
     referralDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free $TOTEM.',
     referralDesc1: 'Totem works best when you have partners. Referring will get both you and your friends free $KAPEX when they contribute to Totem\'s crowdloan.',
+    referralDesc1: 'Totem works best when you have partners. Get your friends onboard!', 
     referralDesc2: 'Invite your friends to join Totem using the following link:',
     referralHeader: 'referral rewards',
     totalEarned: 'total earned',
