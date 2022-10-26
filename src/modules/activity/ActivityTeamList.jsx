@@ -6,14 +6,13 @@ import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-
 import { getUser } from '../chat/ChatClient'
 import { get as getIdentity, getSelected as getSelectedIdentity
  } from '../identity/identity'
 import { get as getPartner } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { query } from '../timekeeping/timekeeping'
-import TimekeepingInviteForm from '../timekeeping/TimekeepingInviteForm'
+import TimekeepingInviteForm, { inputNames as tkInputNames} from '../timekeeping/TimekeepingInviteForm'
 import { handleInvitation as handleTkInvitation } from '../timekeeping/notificationHandlers'
 
 const textsCap = translated({
@@ -50,6 +49,7 @@ export default class ActivityTeamList extends Component {
                                 icon: 'plus',
                                 onClick: () => showForm(TimekeepingInviteForm, {
                                     submitText: textsCap.addMyself,
+                                    inputsDisabled: Object.values(tkInputNames),
                                     inputsHidden: ['addpartner'],
                                     values: {
                                         projectHash: this.props.projectHash,

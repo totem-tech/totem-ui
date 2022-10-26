@@ -43,6 +43,12 @@ const textsCap = translated({
     zeroActivityWarning: 'you must have one or more open activities',
 }, true)[1]
 
+export const inputNames = {
+    addpartner: 'addpartner',
+    projectHash: 'projectHash',
+    workerAddress: 'workerAddress',
+}
+
 export default class TimeKeepingInviteForm extends Component {
     constructor(props) {
         super(props)
@@ -56,7 +62,7 @@ export default class TimeKeepingInviteForm extends Component {
             inputs: [
                 {
                     label: textsCap.activity,
-                    name: 'projectHash',
+                    name: inputNames.projectHash,
                     options: [],
                     placeholder: textsCap.activityLabel,
                     required: true,
@@ -68,7 +74,7 @@ export default class TimeKeepingInviteForm extends Component {
                 {
                     rxValue: new BehaviorSubject(),
                     label: textsCap.partner,
-                    name: 'workerAddress',
+                    name: inputNames.workerAddress,
                     onChange: this.handlePartnerChange,
                     options: [],
                     placeholder: textsCap.partnerLabel,
@@ -80,7 +86,7 @@ export default class TimeKeepingInviteForm extends Component {
                 {
                     content: textsCap.addPartner,
                     icon: 'plus',
-                    name: 'addpartner',
+                    name: inputNames.addpartner,
                     onClick: () => showForm(PartnerForm, {
                         // once partner created update the input with newly created partner's address
                         onSubmit: (success, { address }) => success && findInput(

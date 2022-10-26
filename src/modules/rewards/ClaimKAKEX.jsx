@@ -1,18 +1,19 @@
 import React, { isValidElement, useCallback, useEffect, useState } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
+import { Subject } from 'rxjs'
+import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
 import { subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
+import storage from '../../utils/storageHelper'
+import { BLOCK_DURATION_SECONDS, durationToSeconds } from '../../utils/time'
 import { arrUnique, isFn, isInteger, isObj, isStr, objClean, objToUrlParams } from '../../utils/utils'
 import FAQ from '../../components/FAQ'
 import FormBuilder from '../../components/FormBuilder'
+import Message, { statuses } from '../../components/Message'
+import { setActiveExclusive } from '../../services/sidebar'
 import { getAll as getHistory, limit, rxHistory } from '../history/history'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
-import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
-import storage from '../../utils/storageHelper'
-import { translated } from '../../utils/languageHelper'
-import Message, { statuses } from '../../components/Message'
-import { setActiveExclusive } from '../../services/sidebar'
-import { BLOCK_DURATION_SECONDS, durationToSeconds } from '../../utils/time'
 
 let textsCap = {
 	addIdentity: 'add identity shared by a friend',
@@ -74,15 +75,21 @@ export const inputNames = {
 }
 
 // invoke without arguments to retrieve saved value
-const statusCached = (status) => storage.cache(
+const statusCached = status => storage.cache(
 	'rewards',
 	'KAPEXClaimStatus',
 	isObj(status)
-		? objClean(status, ['eligible', 'endDate', 'submitted'])
+		? objClean(status, [ // only store these values in the localStorage
+			'eligible',
+			'endDate',
+			'startDate',
+			'submitted',
+		])
 		: undefined,
 ) || {}
 
 export const getTaskList = taskIdentity => {
+	let { endDate, startDate } = statusCached()
 	// set history limit to 100 or higer
 	const lim = limit() || 500
 	if (lim < 100) limit(100)
@@ -90,9 +97,13 @@ export const getTaskList = taskIdentity => {
 	// list of user IDs who were requested to shared their identity by current user
 	const partnerIds = arrUnique(
 		historyArr2d
-			.map(([_, { action = '', data = [] }]) => {
+			.map(([_, historyItem]) => {
+				const { action = '', data = [], timestamp } = historyItem || {}
 				const [userIds = [], type, childType] = data || []
-				return (
+				const entryEligible = startDate < timestamp
+					&& timestamp < endDate
+				
+				return entryEligible && (
 					action === 'client.notify' &&
 					type === 'identity' &&
 					childType === 'request' &&
@@ -102,7 +113,6 @@ export const getTaskList = taskIdentity => {
 			.flat()
 			.filter(Boolean)
 	)
-	console.log({partnerIds})
 	const partnerRequested = partnerIds.length > 0
 	const allPartners = partners.getAll()
 	const partnersAdded = Array.from(allPartners)
@@ -114,10 +124,22 @@ export const getTaskList = taskIdentity => {
 	}
 
 	historyArr2d.forEach(([_, historyItem]) => {
-		const { action, data = [], identity, status } = historyItem
+		const {
+			action,
+			data = [],
+			identity,
+			status,
+			timestamp,
+		} = historyItem
 		const [recipient] = data
 
-		if (taskIdentity !== identity || status !== 'success') return
+		const entryEligible = taskIdentity === identity
+			&& startDate < timestamp
+			&& timestamp < endDate
+			&& status === 'success'
+		console.log({entryEligible, startDate, endDate})
+		if (!entryEligible) return
+
 		// check blockchain transaction releated tasks
 		switch (action) {
 			case 'api.tx.projects.addNewProject':
@@ -450,7 +472,6 @@ const getFormProps = () => {
 			type: 'textarea',
 		},
 	]
-	console.log({inputs})
 
 	return {
 		inputs,
@@ -460,8 +481,8 @@ const getFormProps = () => {
 }
 
 export default function ClaimKAPEXView(props) {
-	const [status, setStatusOrg] = useState(() => ({ ...statusCached(), loading: true }))
-	const [formProps, setFormProps] = useRxSubject(rxHistory, getFormProps)
+	const [status, setStatusOrg] = useState(() => ({ ...statusCached(), loading: false }))
+	const [formProps, setFormProps] = useRxSubject(rxHistory, getFormProps, {}, true)
 	const [isRegistered] = useRxSubject(rxIsRegistered)
 	let { eligible, loading, message, submitted } = status
 
@@ -496,11 +517,11 @@ export default function ClaimKAPEXView(props) {
 		let mounted = true
 		const init = async () => {
 			const doCheckStatus = !submitted && eligible !== false
-			if (!doCheckStatus) return
+			if (!doCheckStatus) return console.log({doCheckStatus})
 			
 			try {
 				status.loading = doCheckStatus
-				setStatus(status)
+				setStatus({...status})
 				await subjectAsPromise(rxIsLoggedIn, true)[0]
 				const result = ClaimKAPEXView.resultCache
 					? {
@@ -512,20 +533,20 @@ export default function ClaimKAPEXView(props) {
 						.promise(true)
 				// store as in-memory cache
 				ClaimKAPEXView.resultCache = result
-				// console.log({result})
 				Object
 					.keys(result)
-					.forEach(key => status[key] = result[key] )
+					.forEach(key => status[key] = result[key])
+
+				statusCached(status)
+				setFormProps(getFormProps())
 			} catch (err) {
 				status.error = `${err}`
 			} finally {
 				status.loading = false
-				mounted && setStatus(status)		
+				mounted && setStatus({...status})		
 			}
 		}
-		!isRegistered
-			? setStatus(status)
-			: init()
+		isRegistered && init()
 		return () => mounted = false
 	}, [isRegistered, setStatus])
 
