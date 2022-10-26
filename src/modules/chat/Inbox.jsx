@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Icon } from 'semantic-ui-react'
-import { textEllipsis } from '../../utils/utils'
+import { deferred, isDefined, textEllipsis } from '../../utils/utils'
 import InboxMessages from './InboxMessages'
 import FormInput from '../../components/FormInput'
 import { UserID } from '../../components/buttons'
@@ -45,12 +45,13 @@ const [texts, textsCap] = translated({
 const msgsSelector = '.chat-container .inbox .messages'
 const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
 // scroll to bottom of the message list
-const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
+const scrollToBottom = deferred((animate = false, markAsRead = false) => {
     const msgsEl = document.querySelector(msgsSelector)
     const btnWrapEl = document.querySelector(scrollBtnSelector)
     const isMobile = getLayout() === MOBILE
-    // prevent scroll if scroll button is visible and not forced
-    if (btnWrapEl && btnWrapEl.classList.value.includes('visible') && !force) return
+    // prevent scroll if scroll button is visible and not markAsRead
+    if (btnWrapEl && btnWrapEl.classList.value.includes('visible') && !markAsRead) return
+
     const animateClass = 'animate-scroll'
     animate && msgsEl.classList.add(animateClass)
     msgsEl && msgsEl.scrollTo(0, msgsEl.scrollHeight)
@@ -59,7 +60,7 @@ const scrollToBottom = (animate = false, force = false) => setTimeout(() => {
         // mark inbox as read
         if (!isMobile || rxExpanded.value) inboxSettings(rxOpenInboxKey.value, { unread: 0 })
     }, 500)
-})
+}, 100)
 // on message list scroll show/hide scroll button
 const handleScroll = () => {
     const { scrollHeight, scrollTop, offsetHeight } = document.querySelector(msgsSelector) || {}
@@ -73,33 +74,25 @@ const rxLoaded = new BehaviorSubject(false)
 setTimeout(() => rxLoaded.next(true), 300)
 
 export default function Inbox(props) {
-    let { inboxKey, receiverIds } = props
+    let { inboxKey, messages: pMessages, receiverIds } = props
     if (!inboxKey) return ''
-    const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
+    
+    const isTrollbox = receiverIds.includes(TROLLBOX)
+    const isGroup = receiverIds.length > 1 || isTrollbox
     const [showMembers, setShowMembers] = useState(false)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [loaded] = useRxSubject(rxLoaded)
-    const isTrollbox = receiverIds.includes(TROLLBOX)
-    const isGroup = receiverIds.length > 1 || isTrollbox
+    const [messages = []] = useRxSubject(rxMsg, ([key = inboxKey] = []) => {
+        // a differnt inbox received a new message
+        if (key !== inboxKey) return useRxSubject.IGNORE_UPDATE
 
-    console.log({loaded})
-    useEffect(() => {
-        let mounted = true
-        const subscriptions = {}
-        // whenever a new message for current inbox is retrieved update message list
-        subscriptions.newMsg = rxMsg.subscribe(([key]) => {
-            if (!mounted || key !== inboxKey) return
-            setMessages(getMessages(inboxKey))
-            scrollToBottom()
-        })
-        // focus and scoll down to latest msg
-        scrollToBottom(false, true)
+        const msgs = getMessages(inboxKey)
+        setTimeout(() => scrollToBottom(true, true), 200)
+        return msgs
+    }, pMessages)
 
-        return () => {
-            mounted = false
-            unsubscribe(subscriptions)
-        }
-    }, []) // keep [] to prevent useEffect from being invoked on every render
+    // focus and scoll down to latest msg
+    useEffect(() => scrollToBottom(true, true), [])
 
     return loaded && (
         <div className='inbox'>
