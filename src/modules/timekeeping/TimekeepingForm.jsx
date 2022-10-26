@@ -23,7 +23,8 @@ const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
 const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration) ? 0 :
     parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
-const wordsCap = translated({
+
+const textsCap = translated({
     activity: 'activity',
     close: 'close',
     duration: 'duration',
@@ -33,6 +34,7 @@ const wordsCap = translated({
     project: 'project',
     proceed: 'proceed',
     start: 'start',
+    stop: 'stop',
     submit: 'submit',
     success: 'success',
     timekeeping: 'timekeeping',
@@ -40,47 +42,48 @@ const wordsCap = translated({
     update: 'update',
     yes: 'yes',
     wallet: 'wallet',
-}, true)[1]
-const [texts] = translated({
-    addedToQueue: 'Added to queue',
-    areYouSure: 'Are you sure?',
-    blockEnd: 'End block',
-    blockStart: 'Start block',
-    cancelWarning: 'You have a running timer. Would you like to stop and exit?',
-    checkingProjectStatus: 'Checking activity status...',
-    durationChangeRequired: 'Rejected record requires duration change in order to re-sumbit',
-    goBack: 'Go Back',
+
+    addedToQueue: 'added to queue',
+    areYouSure: 'are you sure?',
+    blockEnd: 'end block',
+    blockStart: 'start block',
+    cancelWarning: 'you have a running timer. Would you like to stop and exit?',
+    checkingProjectStatus: 'checking activity status...',
+    durationChangeRequired: 'rejected record requires duration change in order to re-sumbit',
+    goBack: 'go Back',
     hhmmss: 'hh:mm:ss', //????
-    inactiveWorkerHeader1: 'You are not part of this Team! Request an invitation',
-    inactiveWorkerHeader2: 'Action required',
-    inactiveWorkerMsg1: 'Please select an activity you have been invited to and already accepted.',
-    inactiveWorkerMsg3: 'You are yet to accept or reject invitation to join this activity team.',
-    inactiveProjectSelected: 'This Activity is inactive!',
-    invalidDuration: 'Invalid duration',
-    invalidDurationMsgPart1: 'Please enter a valid duration using the following format:',
-    manuallyEnterDuration: 'Manually enter duration',
-    noContinueTimer: 'No, continue timer',
-    noProjectsMsg: 'Create a new activity or ask to be invited to the Team',
-    numberOfBlocks: 'Number of blocks',
-    numberOfBreaks: 'Number of breaks',
-    permissionDenied: 'Permission denied',
-    recordSubmittedSuccessfully: 'Your Time record has been submitted for approval',
-    requestQueuedMsg: 'Request has been added to queue. You will be notified of the progress shortly.',
-    resetTimer: 'Reset the Timer',
-    resetTimerWarning: 'You are about to reset your timer. Are you sure?',
-    resumeTimer: 'Resume the timer',
-    resumeTimeWarning: 'Would you like to resume timekeeping on this activity?',
-    selectAProject: 'Select an Activity',
-    selectActiveProject: 'Please select an active Activity',
-    submitConfirmationMsg: 'Please verify the following information and click "Proceed" to submit your time record',
-    submitTime: 'Submit time',
-    timerStarted: 'Timer started',
-    timerRunningMsg: 'You may now close the dialog. Return here at anytime by clicking on the clock icon in the header.',
-    tkNewRecord: 'Timekeeping - New Record',
-    transactionFailed: 'Blockchain transaction failed!',
-    updateFormHeader: 'Timekeeping: Update Record',
-    workerBannedMsg: 'Permission denied',
-})
+    inactiveWorkerHeader1: 'you are not part of this Team! Request an invitation',
+    inactiveWorkerHeader2: 'action required',
+    inactiveWorkerMsg1: 'please select an activity you have been invited to and already accepted.',
+    inactiveWorkerMsg3: 'you are yet to accept or reject invitation to join this activity team.',
+    inactiveProjectSelected: 'this Activity is inactive!',
+    invalidDuration: 'invalid duration',
+    invalidDurationMsgPart1: 'please enter a valid duration using the following format:',
+    manuallyEnterDuration: 'manually enter duration',
+    newRecord: 'new Record',
+    noContinueTimer: 'no, continue timer',
+    noProjectsMsg: 'create a new activity or ask to be invited to the Team',
+    numberOfBlocks: 'number of blocks',
+    numberOfBreaks: 'number of breaks',
+    permissionDenied: 'permission denied',
+    recordSubmittedSuccessfully: 'your time record has been submitted for approval',
+    requestQueuedMsg1: 'request has been added to queue.',
+    requestQueuedMsg2: 'you will be notified of the progress shortly.',
+    resetTimer: 'reset the Timer',
+    // resetTimerWarning: 'you are about to reset your timer.',
+    resumeTimer: 'resume the timer',
+    resumeTimeWarning: 'would you like to resume timekeeping on this activity?',
+    selectAProject: 'select an Activity',
+    selectActiveProject: 'please select an active Activity',
+    submitConfirmationMsg: 'please verify the following information and click "Proceed" to submit your time record',
+    submitTime: 'submit time',
+    timerStarted: 'timer started',
+    timerRunningMsg1: 'you may now close the dialog.',
+    timerRunningMsg2: 'return here at anytime by clicking on the clock icon in the header.',
+    transactionFailed: 'blockchain transaction failed!',
+    updateFormHeader: 'update Record',
+    workerBannedMsg: 'permission denied',
+}, true)[1]
 
 function handleDurationChange(e, formValues, i) {
     const { inputs, values } = this.state
@@ -89,11 +92,11 @@ function handleDurationChange(e, formValues, i) {
     inputs[i].message = !invalid ? null : {
         content: (
             <span>
-                {texts.invalidDurationMsgPart1}<br />
-                <b>{texts.hhmmss}</b><br />
+                {textsCap.invalidDurationMsgPart1}<br />
+                <b>{textsCap.hhmmss}</b><br />
             </span>
         ),
-        header: texts.invalidDuration,
+        header: textsCap.invalidDuration,
         icon: true,
         status: 'error',
     }
@@ -108,7 +111,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         const banned = await query.worker.banned(hash, address)
         if (banned) return this.setState({
             message: {
-                header: texts.permissionDenied,
+                header: textsCap.permissionDenied,
                 icon: true,
                 status: 'error',
             }
@@ -118,15 +121,15 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
     const { onSubmit } = this.props
     const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
     const extraProps = {
-        title: texts.tkNewRecord,
-        description: `${wordsCap.activity}: ${projectName} | ${wordsCap.duration}: ${values.duration}`,
+        title: textsCap.newRecord,
+        description: `${textsCap.activity}: ${projectName} | ${textsCap.duration}: ${values.duration}`,
         then: success => {
             isFn(onSubmit) && onSubmit(success, values)
             this.setState({
                 closeText: undefined,
                 message: {
-                    content: success ? texts.recordSubmittedSuccessfully : texts.transactionFailed,
-                    header: success ? wordsCap.success : wordsCap.error,
+                    content: success ? textsCap.recordSubmittedSuccessfully : textsCap.transactionFailed,
+                    header: success ? textsCap.success : textsCap.error,
                     icon: true,
                     status: success ? 'success' : 'error',
                 },
@@ -151,22 +154,22 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
     )
 
     const message = {
-        content: texts.requestQueuedMsg,
-        header: texts.addedToQueue,
+        content: `${textsCap.requestQueuedMsg1} ${textsCap.requestQueuedMsg2}`,
+        header: textsCap.addedToQueue,
         status: 'loading',
         icon: true
     }
 
     this.confirmId = showForm(FormBuilder, {
-        header: `${texts.submitTime}?`,
+        header: `${textsCap.submitTime}?`,
         inputs: [
-            [wordsCap.submit, getAddressName(workerAddress)],
-            [wordsCap.activity, projectName],
-            [wordsCap.duration, duration],
-            [texts.numberOfBlocks, blockCount],
-            [texts.numberOfBreaks, breakCount],
-            [texts.blockStart, blockStart],
-            [texts.blockEnd, blockEnd],
+            [textsCap.submit, getAddressName(workerAddress)],
+            [textsCap.activity, projectName],
+            [textsCap.duration, duration],
+            [textsCap.numberOfBlocks, blockCount],
+            [textsCap.numberOfBreaks, breakCount],
+            [textsCap.blockStart, blockStart],
+            [textsCap.blockEnd, blockEnd],
         ].map(x => ({
             readOnly: true,
             label: x[0],
@@ -178,12 +181,12 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
             closeModal(this.confirmId)
             // send task to queue service
             addToQueue(queueProps)
-            this.setState({ closeText: wordsCap.close, message, submitDisabled: true })
+            this.setState({ closeText: textsCap.close, message, submitDisabled: true })
         },
         size: 'tiny',
-        subheader: texts.submitConfirmationMsg,
-        submitText: wordsCap.proceed,
-        closeText: texts.goBack,
+        subheader: textsCap.submitConfirmationMsg,
+        submitText: textsCap.proceed,
+        closeText: textsCap.goBack,
     })
 }
 
@@ -209,11 +212,11 @@ export default class TimekeepingForm extends Component {
                     rxValue: new BehaviorSubject(),
                     clearable: true,
                     disabled: projectHashSupplied,
-                    label: wordsCap.activity,
+                    label: textsCap.activity,
                     name: 'projectHash',
                     onChange: this.handleProjectChange,
                     options: [],
-                    placeholder: texts.selectAProject,
+                    placeholder: textsCap.selectAProject,
                     required: true,
                     search: true,
                     selection: true,
@@ -222,7 +225,7 @@ export default class TimekeepingForm extends Component {
                 },
                 {
                     rxValue: new BehaviorSubject(),
-                    label: wordsCap.identity,
+                    label: textsCap.identity,
                     name: 'workerAddress',
                     type: 'dropdown',
                     options: [],
@@ -233,10 +236,10 @@ export default class TimekeepingForm extends Component {
                 },
                 {
                     autoComplete: 'off',
-                    label: wordsCap.duration,
+                    label: textsCap.duration,
                     name: 'duration',
                     onChange: handleDurationChange.bind(this),
-                    placeholder: texts.hhmmss,
+                    placeholder: textsCap.hhmmss,
                     readOnly: values.manualEntry !== true,
                     type: 'text',
                     value: DURATION_ZERO
@@ -247,7 +250,7 @@ export default class TimekeepingForm extends Component {
                     multiple: false,
                     name: 'manualEntry',
                     options: [{
-                        label: texts.manuallyEnterDuration,
+                        label: textsCap.manuallyEnterDuration,
                         value: true
                     }],
                     required: false,
@@ -275,11 +278,11 @@ export default class TimekeepingForm extends Component {
             const options = Array.from(projects).map(([hash, project]) => ({
                 key: hash,
                 project,
-                text: project.name || wordsCap.unknown,
+                text: project.name || textsCap.unknown,
                 value: hash,
             }))
             projectIn.options = options
-            projectIn.noResultsMessage = options.length === 0 ? texts.noProjectsMsg : undefined
+            projectIn.noResultsMessage = options.length === 0 ? textsCap.noProjectsMsg : undefined
             // restore saved values
             if (!this.prefillDone) {
                 fillValues(inputs, values, true)
@@ -312,7 +315,7 @@ export default class TimekeepingForm extends Component {
 
         inputs[index].loading = true
         inputs[index].message = {
-            content: texts.checkingProjectStatus,
+            content: textsCap.checkingProjectStatus,
             icon: true,
             status: 'loading',
         }
@@ -325,8 +328,8 @@ export default class TimekeepingForm extends Component {
         workerAddress = workerAddress || address
         inputs[index].invalid = !projectActive
         inputs[index].message = projectActive ? undefined : {
-            content: texts.selectActiveProject,
-            header: texts.inactiveProjectSelected,
+            content: textsCap.selectActiveProject,
+            header: textsCap.inactiveProjectSelected,
             icon: true,
             status: 'error',
         }
@@ -344,13 +347,14 @@ export default class TimekeepingForm extends Component {
         ])
         const invited = invitedAr.includes(workerAddress)
         const accepted = acceptedAr.includes(workerAddress)
+        console.log({invited, invitedAr, accepted, acceptedAr, workerAddress})
         inputs[index].loading = false
         inputs[index].invalid = banned || !accepted
 
         if (banned) {
             // user has been banned by activity owner
             inputs[index].message = {
-                content: texts.workerBannedMsg,
+                content: textsCap.workerBannedMsg,
                 icon: true,
                 status: 'error',
             }
@@ -358,9 +362,9 @@ export default class TimekeepingForm extends Component {
         }
 
         inputs[index].message = accepted ? undefined : {
-            content: !invited ? texts.inactiveWorkerMsg1 : (
+            content: !invited ? textsCap.inactiveWorkerMsg1 : (
                 <div>
-                    {texts.inactiveWorkerMsg3} <br />
+                    {textsCap.inactiveWorkerMsg3} <br />
                     <ButtonAcceptOrReject
                         onAction={async (_, accepted) => {
                             const success = await handleInvitation(projectId, workerAddress, accepted)
@@ -371,7 +375,7 @@ export default class TimekeepingForm extends Component {
                     />
                 </div>
             ),
-            header: invited ? texts.inactiveWorkerHeader2 : texts.inactiveWorkerHeader1,
+            header: invited ? textsCap.inactiveWorkerHeader2 : textsCap.inactiveWorkerHeader1,
             icon: true,
             status: 'error',
         }
@@ -416,11 +420,11 @@ export default class TimekeepingForm extends Component {
         }
 
         !doConfirm ? reset() : confirm({
-            header: texts.resetTimer,
-            content: texts.resetTimeWarning,
+            header: textsCap.resetTimer,
+            content: textsCap.resetTimeWarning,
             onConfirm: () => reset(),
-            confirmButton: wordsCap.yes,
-            cancelButton: wordsCap.no,
+            confirmButton: textsCap.yes,
+            cancelButton: textsCap.no,
             size: 'mini'
         })
     }
@@ -541,14 +545,14 @@ export default class TimekeepingForm extends Component {
             // prevents annoying HTML form validation warnings from showing up when clicked
             formNoValidate: true,
             onClick: () => confirm({
-                header: texts.resumeTimer,
-                content: texts.resumeTimeWarning,
+                header: textsCap.resumeTimer,
+                content: textsCap.resumeTimeWarning,
                 onConfirm: this.handleResume.bind(this),
-                confirmButton: wordsCap.yes,
-                cancelButton: wordsCap.no,
+                confirmButton: textsCap.yes,
+                cancelButton: textsCap.no,
                 size: 'mini'
             }),
-            title: texts.resumeTimer,
+            title: textsCap.resumeTimer,
         }
 
         const closeBtn = (
@@ -560,10 +564,10 @@ export default class TimekeepingForm extends Component {
                     const { values: { inprogress } } = this.state
                     const doCancel = () => this.handleReset(false) | isFn(onClose) && onClose(e, d)
                     !inprogress ? doCancel() : confirm({
-                        cancelButton: texts.noContinueTimer,
-                        confirmButton: wordsCap.yes,
-                        content: texts.cancelWarning,
-                        header: texts.areYouSure,
+                        cancelButton: textsCap.noContinueTimer,
+                        confirmButton: textsCap.yes,
+                        content: textsCap.cancelWarning,
+                        header: textsCap.areYouSure,
                         onConfirm: doCancel,
                         size: 'tiny'
                     })
@@ -582,10 +586,10 @@ export default class TimekeepingForm extends Component {
                 size="massive"
                 style={btnStyle}
             >
-                {!inprogress ? (done ? wordsCap.submit : wordsCap.start) : (
+                {!inprogress ? (done ? textsCap.submit : textsCap.start) : (
                     <React.Fragment>
                         <Icon name="clock outline" loading={true} style={{ background: 'transparent' }} />
-                        Stop
+                        {textsCap.stop}
                     </React.Fragment>
                 )}
             </Button>
@@ -598,8 +602,8 @@ export default class TimekeepingForm extends Component {
                 closeText: closeBtn,
                 inputs,
                 message: !inprogress ? message : {
-                    content: texts.timerRunningMsg,
-                    header: texts.timerStarted,
+                    content: `${textsCap.timerRunningMsg1} ${textsCap.timerRunningMsg2}`,
+                    header: textsCap.timerStarted,
                     icon: true,
                     status: 'info'
                 },
@@ -612,7 +616,7 @@ export default class TimekeepingForm extends Component {
 TimekeepingForm.defaultProps = {
     closeOnEscape: true,
     closeOnDimmerClick: true,
-    header: wordsCap.timekeeping,
+    header: textsCap.timekeeping,
     // prevents multiple modal being open
     modalId: 'TimekeepingForm',
     size: 'tiny'
@@ -633,7 +637,7 @@ export class TimekeepingUpdateForm extends Component {
             inputs: [
                 {
                     rxValue: new BehaviorSubject(),
-                    label: wordsCap.duration,
+                    label: textsCap.duration,
                     name: 'duration',
                     onChange: this.handleDurationChange,
                     type: 'text',
@@ -671,7 +675,7 @@ export class TimekeepingUpdateForm extends Component {
         const input = inputs[i]
         input.invalid = status === statuses.reject && duration === durationOriginal
         input.message = !input.invalid ? null : {
-            content: texts.durationChangeRequired,
+            content: textsCap.durationChangeRequired,
             status: 'error',
         }
         this.setState({ inputs })
@@ -713,10 +717,10 @@ TimekeepingUpdateForm.propTypes = {
 }
 
 TimekeepingUpdateForm.defaultProps = {
-    closeText: wordsCap.close,
+    closeText: textsCap.close,
     closeOnEscape: false,
     closeOnDimmerClick: false,
-    header: texts.updateFormHeader,
+    header: `${textsCap.timekeeping} - ${textsCap.updateFormHeader}`,
     size: 'tiny',
-    submitText: wordsCap.update,
+    submitText: textsCap.update,
 }

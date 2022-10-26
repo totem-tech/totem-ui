@@ -137,7 +137,6 @@ export const getTaskList = taskIdentity => {
 			&& startDate < timestamp
 			&& timestamp < endDate
 			&& status === 'success'
-		console.log({entryEligible, startDate, endDate})
 		if (!entryEligible) return
 
 		// check blockchain transaction releated tasks
@@ -517,7 +516,7 @@ export default function ClaimKAPEXView(props) {
 		let mounted = true
 		const init = async () => {
 			const doCheckStatus = !submitted && eligible !== false
-			if (!doCheckStatus) return console.log({doCheckStatus})
+			if (!doCheckStatus) return
 			
 			try {
 				status.loading = doCheckStatus
