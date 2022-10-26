@@ -200,28 +200,32 @@ export default function BackupForm(props) {
 						// update getting started active step if necessary
 						!!rxIsRegistered.value && saveActiveStep(stepIndexes.backup + 1)
 						
-						rxState.next({
-							message: {
-								content: (
-									<div>
-										{textsCap.backupSuccessContent}
-										<br />
-										<br />
-										<div style={{ color: 'red' }}>
-											<big>
-												<ButtonDelayed El='span'>
-													{textsCap.reloadingPage}
-												</ButtonDelayed>
-											</big>
-										</div>
+						const message = {
+							content: (
+								<div>
+									{textsCap.backupSuccessContent}
+									<br />
+									<br />
+									<div style={{ color: 'red' }}>
+										<big>
+											<ButtonDelayed El='span'>
+												{textsCap.reloadingPage}
+											</ButtonDelayed>
+										</big>
 									</div>
-								),
-								header: textsCap.backupSuccessHeader,
-								status: statuses.SUCCESS,
-							},
+								</div>
+							),
+							header: textsCap.backupSuccessHeader,
+							status: statuses.SUCCESS,
+						}
+						rxState.next({
+							message,
 							success: true,
 						})
+						// additionally show toast in case form message is out of sight (ie: on mobile)
+						setToast(message, 5000, 'BackupForm')
 						isFn(onSubmit) && onSubmit(true, values)
+						
 						if (redirectTo) {
 							window.location.href = redirectTo
 						} else if (reload) {

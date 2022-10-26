@@ -386,6 +386,7 @@ export const setActive = (name, active = true, contentProps, hidden, toggle = tr
     const item = findItem(name)
     if (!item) return
 
+    const activeChanged = !!active !== !!item.active
     item.active = active
     item.hidden = isBool(hidden) ? hidden : item.hidden
     item.contentProps = { ...item.contentProps, ...contentProps }
@@ -396,7 +397,7 @@ export const setActive = (name, active = true, contentProps, hidden, toggle = tr
     rxAllInactive.next(allInactive)
 
     const isMobile = rxLayout.value === MOBILE
-    toggle && isMobile && active && toggleSidebarState()
+    toggle && isMobile && activeChanged && setSidebarState(false, false)
     scrollTo(name)
     return item
 }

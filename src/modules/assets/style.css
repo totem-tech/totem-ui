@@ -15,7 +15,7 @@ body:not(.mobile) .assets-form .portfolio {
     min-width: 550px;
 }
 body.mobile .assets-form .portfolio {
-    margin-top: -20px;
+    /* margin-top: -20px; */
     width: 100%;
 }
 body:not(.mobile) .assets-form .hide-on-desktop,

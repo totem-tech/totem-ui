@@ -44,31 +44,29 @@ export const ButtonAcceptOrReject = React.memo(function ButtonAcceptOrReject(pro
 	} = props
 
 	return (
-		<ButtonGroup
-			{...{
-				...props,
-				buttons: [
-					{
-						...acceptProps,
-						content: acceptText,
-						color: acceptColor,
-						loading: loading,
-					},
-					{
-						...rejectProps,
-						content: rejectText,
-						color: rejectColor,
-						loading: loading,
-					},
-				],
-				ignoreAttributes: [
-					...ignoreAttributes,
-					...ButtonGroup.defaultProps.ignoreAttributes,
-				],
-				or: true,
-				values: [true, false],
-			}}
-		/>
+		<ButtonGroup {...{
+			...props,
+			buttons: [
+				{
+					...acceptProps,
+					content: acceptText,
+					color: acceptColor,
+					loading: loading,
+				},
+				{
+					...rejectProps,
+					content: rejectText,
+					color: rejectColor,
+					loading: loading,
+				},
+			],
+			ignoreAttributes: [
+				...ignoreAttributes,
+				...ButtonGroup.defaultProps.ignoreAttributes,
+			],
+			or: true,
+			values: [true, false],
+		}} />
 	)
 })
 ButtonAcceptOrReject.propTypes = {

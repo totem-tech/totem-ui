@@ -55,21 +55,6 @@ export default function IdentityList(props) {
 			const { address, fileBackupTS, tags = [], usageType } = identity
 			const isPersonal = usageType === USAGE_TYPES.PERSONAL
 			identity._isReward = address === rewardsIdentity
-			identity._balance = (
-				<Balance {...{
-					address,
-					EL: 'div',
-					lockSeparator: <br />,
-					showDetailed: true,
-					style: {
-    					alignItems: 'center',
-    					display: 'flex',
-    					justifyContent: 'center',
-						minHeight: 40,
-						textAlign: 'center',
-					}
-				}} />
-			)
 			identity._fileBackupTS = format(fileBackupTS) || textsCap.never
 			identity._tagsStr = tags.join(' ') // for tags search
 			identity._tags = <Tags key={address} tags={tags} />
@@ -109,6 +94,21 @@ const getTableProps = isMobile => {
 		<Icon {...{
 			className: isMobile && 'no-margin' || '',
 			name,
+		}} />
+	)
+	const getBalance = ({ address }) => (
+		<Balance {...{
+			address,
+			EL: 'div',
+			lockSeparator: <br />,
+			showDetailed: true,
+			style: isMobile ? undefined : {
+				alignItems: 'center',
+				display: 'flex',
+				justifyContent: 'center',
+				minHeight: 40,
+				textAlign: 'center',
+			}
 		}} />
 	)
 	return {
@@ -160,6 +160,14 @@ const getTableProps = isMobile => {
 				title: '',
 			},
 			{
+				content: !isMobile 
+					? undefined
+					: identity => (
+						<div>
+							<div>{identity.name}</div>
+							{getBalance(identity)}
+						</div>
+					),
 				headerProps: { style: { borderLeft: 'none' } },
 				key: 'name',
 				style: { 
@@ -169,10 +177,10 @@ const getTableProps = isMobile => {
 				},
 				title: textsCap.name,
 			},
-			{
+			!isMobile && {
+				content: getBalance,
 				// collapsing: true,
 				draggable: false,
-				key: '_balance',
 				sortable: false,
 				textAlign: 'right',
 				title: isMobile

@@ -5,7 +5,7 @@ import { BehaviorSubject, Subject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, secondsToDuration, blockNumberToTS } from '../../utils/time'
-import { isArr, deferred, copyToClipboard, textEllipsis } from '../../utils/utils'
+import { isArr, deferred, copyToClipboard, textEllipsis, isFn } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import FormBuilder from '../../components/FormBuilder'
 import { hashTypes, queueables as bcQueueables, getCurrentBlock } from '../../services/blockchain'
@@ -95,13 +95,28 @@ export default class ProjectTimeKeepingList extends Component {
         this.state = {
             inProgressHashes: [],
             columns: [
-                { collapsing: true, key: '_end_block', title: textsCap.finishedAt },
-                { key: 'projectName', title: textsCap.activity },
+                {
+                    hidden: () => this.state.isMobile,
+                    collapsing: true,
+                    key: '_end_block',
+                    title: textsCap.finishedAt,
+                },
+                {
+                    key: 'projectName',
+                    title: textsCap.activity,
+                    style: { minWidth: 125 }
+                },
                 { key: '_workerName', title: textsCap.workerIdentity },
                 { key: 'duration', textAlign: 'center', title: textsCap.duration },
                 // { key: 'start_block', title: texts.blockStart },
                 // { key: 'end_block', title: texts.blockEnd },
-                { collapsing: true, key: '_status', textAlign: 'center', title: textsCap.status },
+                {
+                    collapsing: true,
+                    hidden: () => this.state.isMobile,
+                    key: '_status',
+                    textAlign: 'center',
+                    title: textsCap.status,
+                },
                 {
                     collapsing: true,
                     content: this.getActionContent,
@@ -112,7 +127,7 @@ export default class ProjectTimeKeepingList extends Component {
                 }
             ],
             data: new Map(),
-            defaultSort: '_status',
+            defaultSort: '_end_block',
             defaultSortAsc: false,
             loading: false,
             perPage: 10,
@@ -183,8 +198,15 @@ export default class ProjectTimeKeepingList extends Component {
         this.subs = {}
         this.ignoredFirst = false
         const { archive, manage, projectId } = this.props
-        const { list, listArchive, listByProject, listByProjectArchive } = query.record
-        let arg = !manage ? getSelected().address : projectId
+        const {
+            list,
+            listArchive,
+            listByProject,
+            listByProjectArchive,
+        } = query.record
+        let arg = !manage
+            ? getSelected().address
+            : projectId
         let multi = false
         if (manage && !arg) {
             const projects = await getProjects()
@@ -239,6 +261,9 @@ export default class ProjectTimeKeepingList extends Component {
         this.subs.trigger = rxTrigger.subscribe(() => {
             this.getRecords([], true)
         })
+        this.subs.isMobile = rxLayout.subscribe(l =>
+            this.setState({ isMobile: l === MOBILE })
+        )
     }
 
     componentWillUnmount() {
@@ -519,7 +544,7 @@ export default class ProjectTimeKeepingList extends Component {
 
     showDetails = (hash, record) => {
         const { manage } = this.props
-        const isMobile = rxLayout.value === MOBILE
+        const isMobile = this.state
         const {
             duration,
             end_block,
@@ -628,7 +653,18 @@ export default class ProjectTimeKeepingList extends Component {
                 ? undefined
                 : 'loading',
         }
-        return <DataTable {...this.state} />
+        return (
+            <DataTable {...{
+                ...this.props,
+                ...this.state,
+                columns: this.state.columns.map(column => ({
+                    ...column,
+                    hidden: isFn(column.hidden)
+                        ? column.hidden()
+                        : column.hidden
+                })),
+            }} />
+        )
     }
 }
 ProjectTimeKeepingList.propTypes = {

@@ -1,15 +1,16 @@
 import React, { Component } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import { format } from '../../utils/time'
-import { clearClutter, textEllipsis } from '../../utils/utils'
+import { clearClutter, isFn, textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
-import { confirm, showForm } from '../../services/modal'
+import { confirm, confirmAsPromise, showForm } from '../../services/modal'
 import { getById as getQueueItemById, remove as removeQueueItem, statuses, checkComplete } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { getAddressName } from '../partner/partner'
 import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from './history'
 import HistoryItemDetailsForm from './HistoryItemDetailsForm'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
     action: 'action',
@@ -36,9 +37,9 @@ const textsCap = translated({
         However, if the execution has not started yet or is stuck, 
         revoming will prevent it from being executed again on page reload.
     `,
-    removeWarning2: 'You will not be able to recover this history item once removed.',
+    removeWarning2: 'you will not be able to recover this history item once removed.',
     removeConfirmHeader: 'remove unfinished queue item?',
-    removeConfirmHeader2: 'Are you sure?',
+    removeConfirmHeader2: 'are you sure?',
     status: 'status',
     taskId: 'Task ID',
     techDetails: 'technical details',
@@ -80,6 +81,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
+                    hidden: () => this.state.isMobile,
                     key: '_timestamp',
                     title: textsCap.executionTime,
                 },
@@ -99,6 +101,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
+                    hidden: () => this.state.isMobile,
                     key: '_identity',
                     title: textsCap.identity,
                 },
@@ -155,10 +158,8 @@ export default class HistoryList extends Component {
                 content: textsCap.clearAll,
                 name: 'clear-all',
                 negative: true,
-                onClick: () => confirm({
-                    onConfirm: () => clearAll(),
-                    size: 'tiny',
-                }),
+                onClick: () => confirmAsPromise({ size: 'tiny' })
+                    .then(ok => ok && clearAll()),
             }],
             topRightMenu: [{
                 content: textsCap.delete,
@@ -172,15 +173,18 @@ export default class HistoryList extends Component {
 
     componentWillMount() {
         this._mounted = true
-        this.subscriptions = {}
-        this.subscriptions.history = rxHistory.subscribe(this.setHistory)
+        this.subs = {}
+        this.subs.history = rxHistory.subscribe(this.setHistory)
+        this.subs.isMobile = rxLayout.subscribe(l => 
+            this.setState({ isMobile: l === MOBILE })
+        )
         // force initial read as in-memory caching is disabled
         this.setHistory(getAll())
     }
 
     componentWillUnmount() {
         this._mounted = false
-        unsubscribe(this.subscriptions)
+        unsubscribe(this.subs)
     }
 
     setHistory = (history = new Map()) => {
@@ -200,7 +204,19 @@ export default class HistoryList extends Component {
 
     render() {
         const { data, topLeftMenu } = this.state
-        topLeftMenu.find(x => x.name === 'clear-all').disabled = data.size === 0
-        return <DataTable {...this.state} />
+        const clearAll = topLeftMenu.find(x => x.name === 'clear-all')
+        clearAll.disabled = data.size === 0
+        return (
+            <DataTable {...{
+                ...this.props,
+                ...this.state,
+                columns: this.state.columns.map(column => ({
+                    ...column,
+                    hidden: isFn(column.hidden)
+                        ? column.hidden()
+                        : column.hidden
+                }))
+            }} />
+        )
     }
 }

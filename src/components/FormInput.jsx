@@ -377,7 +377,6 @@ export class FormInput extends Component {
 			useInput: useInputOrginal,
 			width,
 		} = this.props
-
 		let useInput = useInputOrginal
 		const {
 			invalid: invalidS,
@@ -407,13 +406,16 @@ export class FormInput extends Component {
 		let isGroup = false
 		const typeLC = type.toLowerCase()
 		const editable = !attrs.readOnly && !attrs.disabled
+		let El
 
 		switch (typeLC) {
 			case 'button':
 				attrs.content = !isFn(content)
 					? content
 					: content(this.props)
-				inputEl = <Button {...{ as: 'a', ...attrs }} />
+				El = attrs.El || Button
+				delete attrs.El
+				inputEl = <El {...{ as: 'a', ...attrs }} />
 				break
 			case 'checkbox':
 			case 'radio':
@@ -518,7 +520,7 @@ export class FormInput extends Component {
 					? undefined
 					: attrs.fluid
 				attrs.label = inlineLabel || attrs.label
-				const El = useInput || inlineLabel
+				El = useInput || inlineLabel
 					? Input
 					: Form_Input
 				inputEl = <El {...attrs} />

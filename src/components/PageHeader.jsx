@@ -30,6 +30,7 @@ import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted, rxLayout, MOBILE, setInvertedBrowser } from '../services/window'
+import IdentityShareForm from '../modules/identity/IdentityShareForm'
 
 const [texts, textsCap] = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -44,6 +45,7 @@ const [texts, textsCap] = translated({
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request funds',
+	shareIdentity: 'share my identity',
 	updateIdentity: 'update identity',
 }, true)
 let copiedMsgId
@@ -87,6 +89,7 @@ function PageHeader(props) {
 			args: [getSelected().address]
 		}),
 		onSelection: (_, { value: address }) => setSelected(address),
+		onShare: () => showForm(IdentityShareForm, { values: getSelected()})
 	}
 
 	return <PageHeaderView {...viewProps} />
@@ -115,6 +118,7 @@ const PageHeaderView = React.memo(props => {
 		onEdit,
 		onFaucetRequest,
 		onSelection,
+		onShare,
 		wallets,
 	} = props
 	const selected = getSelected() || {}
@@ -199,6 +203,11 @@ const PageHeaderView = React.memo(props => {
 								icon: 'pencil',
 								content: textsCap.updateIdentity,
 								onClick: onEdit,
+							},
+							{
+								icon: 'share',
+								content: textsCap.shareIdentity,
+								onClick: onShare,
 							},
 							{
 								icon: 'copy',

@@ -136,7 +136,7 @@ const getTableProps = layout => {
 				style: { borderLeft: 'none' },
 				title: textsCap.partnerName,
 			},
-			{
+			!isMobile && {
 				key: '_associatedIdentity',
 				title: textsCap.usedBy,
 				style: { maxWidth: 200 },

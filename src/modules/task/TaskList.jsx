@@ -18,10 +18,14 @@ import { useRxSubject } from '../../services/react'
 import Currency from '../currency/Currency'
 import { getSelected } from '../identity/identity'
 import { queueableApis, statuses } from './task'
-import { handleAssignmentResponse, handleInvoicedResponse, handleUpdateStatus } from './notificationHandlers'
+import {
+    handleAssignmentResponse,
+    handleInvoicedResponse,
+    handleUpdateStatus,
+} from './notificationHandlers'
 import TaskDetailsForm from './TaskDetailsForm'
-import { getAddressName } from '../partner/partner'
-import PartnerForm from '../partner/PartnerForm'
+import { MOBILE, rxLayout } from '../../services/window'
+import Text from '../../components/Text'
 
 const textsCap = translated({
     acceptInvoice: 'accept invoice',
@@ -68,6 +72,7 @@ const rxInProgressIds = new BehaviorSubject(new Set())
 
 export default function TaskList(props) {
     const [inProgressIds] = useRxSubject(rxInProgressIds)
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const listType = listTypes[props.type] || listTypes.owner
     const isOwnedList = listType === listTypes.owner
     // const isApproverList = listType === listTypes.approver
@@ -76,52 +81,56 @@ export default function TaskList(props) {
     const keywordsKey = 'keywords' + listType
     const showCreate = isOwnedList || isMarketPlace
 
-    return <DataTable {...{
-        ...props,
-        ...tableProps,
-        columnsHidden: [
-            isOwnedList && '_owner',
-            isFulfillerList && '_fulfiller',
-        ].filter(Boolean),
-        emptyMessage: isMarketPlace ? textsCap.emptyMsgMarketPlace : undefined,
-        inProgressIds,
-        isOwnedList,
-        // preserve search keywords
-        keywords: tempCache.get(keywordsKey),
-        listType,
-        topLeftMenu: [
-            showCreate && {
-                content: textsCap.create,
-                icon: 'plus',
-                onClick: () => showForm(TaskForm, {
-                    values: !isMarketPlace ? undefined : { isMarket: false },
-                    size: 'tiny',
-                }),
-            }
-        ].filter(Boolean)
+    return (
+        <DataTable {...{
+            ...props,
+            ...getTableProps(isMobile, isFulfillerList),
+            columnsHidden: [
+                isOwnedList && '_owner',
+                isFulfillerList && '_fulfiller',
+            ].filter(Boolean),
+            emptyMessage: isMarketPlace
+                ? textsCap.emptyMsgMarketPlace
+                : undefined,
+            inProgressIds,
+            isOwnedList,
+            // preserve search keywords
+            keywords: tempCache.get(keywordsKey),
+            listType,
+            topLeftMenu: [
+                showCreate && {
+                    content: textsCap.create,
+                    icon: 'plus',
+                    onClick: () => showForm(TaskForm, {
+                        values: !isMarketPlace ? undefined : { isMarket: false },
+                        size: 'tiny',
+                    }),
+                }
+            ].filter(Boolean)
 
-        // searchHideOnEmpty: !isMarketPlace,
-        // searchable: !isMarketPlace ? true : (
-        //     <FormInput {...{
-        //         // for advanced filtering
-        //         // filter by: 
-        //         //      tags(categories?),
-        //         //      amountXTX (convert from display currency if necessary)
-        //         //      deadline (convert timestamp to block number before search)
-        //         //      created after (tsCreated)
-        //         // search by: title, description, userId (filter by partner userId or own (default on first load??))
-        //         action: {
-        //             icon: 'filter',
-        //             onClick: toBeImplemented
-        //         },
-        //         icon: 'search',
-        //         iconPosition: 'left',
-        //         name: 'search',
-        //         placeholder: 'search',
-        //         type: 'search'
-        //     }} />
-        // ),
-    }} />
+            // searchHideOnEmpty: !isMarketPlace,
+            // searchable: !isMarketPlace ? true : (
+            //     <FormInput {...{
+            //         // for advanced filtering
+            //         // filter by: 
+            //         //      tags(categories?),
+            //         //      amountXTX (convert from display currency if necessary)
+            //         //      deadline (convert timestamp to block number before search)
+            //         //      created after (tsCreated)
+            //         // search by: title, description, userId (filter by partner userId or own (default on first load??))
+            //         action: {
+            //             icon: 'filter',
+            //             onClick: toBeImplemented
+            //         },
+            //         icon: 'search',
+            //         iconPosition: 'left',
+            //         name: 'search',
+            //         placeholder: 'search',
+            //         type: 'search'
+            //     }} />
+            // ),
+        }} />
+    )
 }
 TaskList.propTypes = {
     // @listType valid options: owner, approver, fulfiller etc
@@ -210,28 +219,56 @@ const getStatusView = (task, taskId) => {
     }
     return _orderStatus
 }
-
-const tableProps = Object.freeze({
+const getBounty = ({ amountXTX }) => (
+    <Currency {...{
+        emptyMessage: textsCap.loading,
+        value: amountXTX,
+    }} />
+)
+const getTableProps = (isMobile, isFulfillerList) => ({
     columns: [
-        { collapsing: true, key: '_tsCreated', title: textsCap.createdAt },
-        { key: 'title', title: textsCap.title },
-        {
+        !isMobile && {
             collapsing: true,
-            content: ({ amountXTX }) => <Currency value={amountXTX} emptyMessage={textsCap.loading} />,
+            key: '_tsCreated',
+            title: textsCap.createdAt,
+        },
+        {
+            content: !isMobile
+                ? undefined // display title only
+                : task => ( // display title and bounty amount
+                    <div>
+                        {task.title}
+                        <Text {...{
+                            children: <small>({getBounty(task)})</small>,
+                            color: 'grey',
+                            El: 'div',
+                            invertedColor: 'lightgrey',
+                        }} />
+                    </div>
+                ),
+            key: 'title',
+            style: { minWidth: 125 },
+            title: textsCap.title,
+        },
+        !isMobile && {
+            collapsing: true,
+            content: getBounty,
             key: 'amountXTX',
             title: textsCap.bounty,
         },
-        {
+        !isMobile && {
             key: '_owner',
             name: '_owner',
             textAlign: 'center',
             title: textsCap.taskOwner,
         },
-        {
-            key: '_fulfiller',
-            title: textsCap.assignee,
-        },
-        {
+        isMobile && isFulfillerList 
+            ? false
+            : {
+                key: '_fulfiller',
+                title: textsCap.assignee,
+            },
+        !isMobile && {
             content: ({ tags }) => [...tags || []].map(tag => (
                 <Label
                     key={tag}
@@ -287,7 +324,7 @@ const tableProps = Object.freeze({
             textAlign: 'center',
             title: textsCap.action,
         },
-    ],
+    ].filter(Boolean),
     defaultSort: '_tsCreated',
     defaultSortAsc: false,
     // disable all actions if there is an unfinished queue item for this task ID

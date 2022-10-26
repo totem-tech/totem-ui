@@ -157,7 +157,10 @@ const _SidebarMenuItem = props => {
 					if (href) return
 
 					e.stopPropagation()
-					if (e.shiftKey && getItem(name).active) return scrollTo(name)
+					if (e.shiftKey && getItem(name).active) {
+						rxLayout.value === MOBILE && toggleSidebarState()
+						return scrollTo(name)
+					}
 					const { active } = toggleActive(name)
 					setItem({ ...item, active })
 				},

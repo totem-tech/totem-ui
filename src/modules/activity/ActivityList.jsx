@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Button } from 'semantic-ui-react'
-import { copyToClipboard, textEllipsis } from '../../utils/utils'
+import { copyToClipboard, isFn, textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { statuses } from '../../components/Message'
@@ -15,6 +15,8 @@ import { getProjects, openStatuses, query, statusCodes, queueables, forceUpdate 
 import ActivityForm from './ActivityForm'
 import ActivityReassignForm from './ActivityReassignForm'
 import ActivityTeamList from './ActivityTeamList'
+import { ButtonGroup } from '../../components/buttons'
+import Text from '../../components/Text'
 
 const toBeImplemented = () => alert('To be implemented')
 let textsCap = {
@@ -36,10 +38,13 @@ let textsCap = {
     open: 'open',
     proceed: 'proceed',
     project: 'project',
+    records: 'records',
     reopen: 're-open',
     reopened: 're-opened',
     status: 'status',
+    team: 'team',
     timekeeping: 'timekeeping',
+    update: 'update',
     unknown: 'unknown',
 
     areYouSure: 'are you sure?',
@@ -57,7 +62,7 @@ let textsCap = {
     detailsFirstSeenLabel: 'activity first used on (this date)',
     detailsFormHeader: 'activity details',
     detailsTimeRecordsBtn: 'view time records',
-    editProject: 'edit activity',
+    editProject: 'update activity',
     loading: 'loading...',
     projectsFailed: 'failed to retrieve activities',
     projectCloseReopenWarning: 'you are about to change status of the following activities to:',
@@ -96,23 +101,40 @@ export default class ActivityList extends Component {
             selectable: true,
             columns: [
                 {
+                    content: ({ description, name }) => !this.state.isMobile
+                        ? name 
+                        : (
+                            <div>
+                                {name}
+                                <Text {...{
+                                    children: <small>{textEllipsis(description, 64, 3, false)}</small>,
+                                    color: 'grey',
+                                    El: 'div',
+                                    invertedColor: 'lightgrey',
+                                    style: { lineHeight: 1 },
+                                }} />
+                            </div>
+                        ),
                     key: 'name',
-                    title: textsCap.name
+                    title: textsCap.name,
+                    style: { minWidth: 125 }
                 },
                 {
-                    hidden: true,
+                    hidden: () => this.state.isMobile,
                     key: 'description',
                     style: { whiteSpace: 'pre-wrap' },
                     title: textsCap.description,
                 },
                 {
                     collapsing: true,
+                    hidden: () => this.state.isMobile,
                     key: '_statusText',
                     textAlign: 'center',
                     title: textsCap.status
                 },
                 {
                     collapsing: true,
+                    hidden: () => this.state.isMobile,
                     key: '_totalTime',
                     textAlign: 'center',
                     title: textsCap.totalTime,
@@ -120,26 +142,31 @@ export default class ActivityList extends Component {
                 {
                     // No key required
                     collapsing: true,
-                    content: (project, recordId) => ([
-                        {
-                            key: 'edit',
-                            icon: 'pencil',
-                            onClick: () => showForm(ActivityForm, { hash: recordId, values: project }),
-                            title: textsCap.editProject,
-                        },
-                        {
-                            icon: { name: 'group' },
-                            key: 'workers',
-                            onClick: () => this.showTeam(recordId, project.name),
-                            title: textsCap.viewTeam,
-                        },
-                        {
-                            icon: { name: 'eye' },
-                            key: 'detials',
-                            onClick: () => this.showDetails(project, recordId),
-                            title: textsCap.viewDetails,
-                        }
-                    ]).map(props => <Button {...props} />),
+                    content: (project, recordId) => {
+                        const { isMobile } = this.state
+                        return [
+                            !isMobile && {
+                                key: 'edit',
+                                icon: 'pencil',
+                                onClick: () => showForm(ActivityForm, { hash: recordId, values: project }),
+                                title: textsCap.editProject,
+                            },
+                            !isMobile && {
+                                icon: { name: 'group' },
+                                key: 'workers',
+                                onClick: () => this.showTeam(recordId, project.name),
+                                title: textsCap.viewTeam,
+                            },
+                            {
+                                icon: { name: 'eye' },
+                                key: 'detials',
+                                onClick: () => this.showDetails(project, recordId),
+                                title: textsCap.viewDetails,
+                            }
+                        ]
+                            .filter(Boolean)
+                            .map(props => <Button {...props} />)
+                    },
                     draggable: false,
                     textAlign: 'center',
                     title: textsCap.actions,
@@ -196,15 +223,11 @@ export default class ActivityList extends Component {
             projects: null,
             status: null,
         }
-        this.subscriptions.layout = rxLayout.subscribe(layout => {
-            const { columns } = this.state
-            // hide on mobile
-            const descCol = columns
-                .find(x => x.key === 'description')
-                || {}
-            descCol.hidden = layout === MOBILE
-            this.setState({ columns })
-        })
+        this.subscriptions.layout = rxLayout.subscribe(l => 
+            this.setState({
+                isMobile: l === MOBILE,
+            })
+        )
         try {
             this.subscriptions.project = await getProjects(true, projects => {
                 if (!this._mounted) return
@@ -371,6 +394,7 @@ export default class ActivityList extends Component {
 
     // show project details in a read-only modal form
     showDetails = (project, recordId) => {
+        const { isMobile } = this.state
         const data = { ...project }
         data.recordId = textEllipsis(recordId, 23)
         data._firstSeen = data.firstSeen ? data.firstSeen : textsCap.never
@@ -383,41 +407,102 @@ export default class ActivityList extends Component {
             _firstSeen: textsCap.detailsFirstSeenLabel
         }
         // Create a form on the fly and display data a read-only input fields
-        console.log({FormBuilder, data})
+        const getContent = (mobile, desktop = mobile) => {
+            const El = isMobile
+                ? 'div'
+                : 'span'
+            return <El>{isMobile ? mobile : desktop}</El>
+        }
+        const btnRecords = {
+            // view time records button
+            content: getContent(
+                textsCap.records,
+                textsCap.detailsTimeRecordsBtn,
+            ),
+            icon: 'clock outline',
+            key: 'records',
+            name: 'records',
+            onClick: () => confirm({
+                cancelButton: textsCap.close,
+                confirmButton: null,
+                content: <TimekeepingList {...{
+                    isOwner: true,
+                    manage: true,
+                    projectHash: recordId,
+                    projectName: project.name,
+                    ownerAddress: project.ownerAddress,
+                }} />,
+                header: `${project.name}: ${textsCap.timekeeping}`,
+            }),
+            type: 'Button',
+        }
+        const btnTeam = {
+            content: getContent(
+                textsCap.team,
+                textsCap.viewTeam,
+            ),
+            icon: { name: 'group' },
+            key: 'workers',
+            onClick: () => this.showTeam(recordId, project.name),
+            title: textsCap.viewTeam,
+        }
+        const btnEdit = {
+            content: getContent(
+                textsCap.update,
+                textsCap.editProject,
+            ),
+            key: 'edit',
+            icon: 'pencil',
+            onClick: () => showForm(ActivityForm, { hash: recordId, values: project }),
+            title: textsCap.editProject,
+        }
+        const btnGroup = {
+            basic: true,
+            buttons: [btnTeam, btnRecords, btnEdit],
+            El: ButtonGroup,
+            fluid: true,
+            name: 'buttons',
+            type: 'button',
+            // vertical: isMobile,
+        }
         showForm(FormBuilder, {
             closeOnEscape: true,
             closeOnDimmerClick: true,
-            closeText: textsCap.close,
+            closeText: null,
             header: textsCap.detailsFormHeader,
-            inputs: Object.keys(labels).map(key => ({
-                action: key !== 'recordId' ? undefined : { icon: 'copy', onClick: () => copyToClipboard(recordId) },
-                label: labels[key],
-                name: key,
-                readOnly: true,
-                type: key === 'description' ? 'textarea' : 'text',
-                value: data[key]
-            })).concat({
-                // view time records button
-                content: textsCap.detailsTimeRecordsBtn,
-                name: 'button',
-                onClick: () => confirm({
-                    cancelButton: textsCap.close,
-                    confirmButton: null,
-                    content: <TimekeepingList {...{
-                        isOwner: true,
-                        manage: true,
-                        projectHash: recordId,
-                        projectName: project.name,
-                        ownerAddress: project.ownerAddress,
-                    }} />,
-                    header: `${project.name}: ${textsCap.timekeeping}`,
-                }),
-                type: 'Button',
-            }),
+            inputs: Object
+                .keys(labels)
+                .map(key => ({
+                    action: key !== 'recordId'
+                        ? undefined
+                        : {
+                            icon: 'copy',
+                            onClick: () => copyToClipboard(recordId),
+                        },
+                    label: labels[key],
+                    name: key,
+                    readOnly: true,
+                    type: key === 'description'
+                        ? 'textarea'
+                        : 'text',
+                    value: data[key]
+                }))
+                .concat(btnGroup),
             size: 'tiny',
             submitText: null
         })
     }
 
-    render = () => <DataTable {...{ ...this.props, ...this.state }} />
+    render = () => (
+        <DataTable {...{
+            ...this.props,
+            ...this.state,
+            columns: this.state.columns.map(column => ({
+                ...column,
+                hidden: isFn(column.hidden)
+                    ? column.hidden()
+                    : column.hidden
+            }))
+        }} />
+    )
 }

@@ -15,6 +15,7 @@ import { isHex } from 'web3-utils'
 import { decryptBackup } from '.'
 import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/ButtonDelayed'
+import { setToast } from '../../services/toast'
 
 const [texts, textsCap] = translated({
 	addFromBackup: 'add from backup',
@@ -597,26 +598,29 @@ export default class RestoreBackupForm extends Component {
 			if (user) setUser(user)
 			// wait for onSubmit to finish executing
 			isFn(onSubmit) && await onSubmit(true, values)
+			const message = {
+				content: redirectTo
+					? undefined
+					: (
+						<ButtonDelayed {...{
+							children: textsCap.success2,
+							El: 'span',
+							style: {
+								color: 'red'
+							}
+						}} />
+					),
+				header: redirectTo
+					? textsCap.successRedirect
+					: textsCap.success1,
+				status: 'success',
+			}
 			this.setState({
-				message: {
-					content: redirectTo
-						? undefined
-						: (
-							<ButtonDelayed {...{
-								children: textsCap.success2,
-								El: 'span',
-								style: {
-									color: 'red'
-								}
-							}} />
-						),
-					header: redirectTo
-						? textsCap.successRedirect
-						: textsCap.success1,
-					status: 'success',
-				},
+				message,
 				success: true,
 			})
+			// additionally show toast in case form message is out of sight (ie: on mobile)
+			setToast(message, 5000, 'RestoreBackupForm')
 			// reload page to reflect changes
 			setTimeout(() => {
 				// remove all non-essential data from localStorage

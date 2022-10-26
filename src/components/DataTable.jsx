@@ -53,8 +53,9 @@ export default class DataTable extends Component {
 
 		let { columns, defaultSort, defaultSortAsc, pageNo } = props
 		if (!defaultSort) {
-			const { key, sortKey } =
-				columns.find(x => !!x.key && x.sortable !== false) || {}
+			const { key, sortKey } = columns.find(x =>
+				!!x.key && x.sortable !== false
+			) || {}
 			defaultSort = sortKey || key
 		}
 		this.state = {
@@ -87,25 +88,21 @@ export default class DataTable extends Component {
 		let { footerContent, navLimit } = this.props
 		const { isMobile } = this.state
 		const paginator = totalPages > 1 && (
-			<Paginator
-				{...{
-					current: pageNo,
-					float: isMobile ? 'left' : 'right',
-					key: 'paginator',
-					navLimit: navLimit,
-					total: totalPages,
-					onSelect: this.handlePageSelect,
-				}}
-			/>
+			<Paginator {...{
+				current: pageNo,
+				float: isMobile ? 'left' : 'right',
+				key: 'paginator',
+				navLimit: navLimit,
+				total: totalPages,
+				onSelect: this.handlePageSelect,
+			}} />
 		)
 		const footer = footerContent && (
-			<div
-				{...{
-					children: footerContent,
-					key: 'footer-content',
-					style: { float: !!paginator ? 'left' : '' },
-				}}
-			/>
+			<div {...{
+				children: footerContent,
+				key: 'footer-content',
+				style: { float: !!paginator ? 'left' : '' },
+			}} />
 		)
 		return [paginator, footer].filter(Boolean)
 	}
@@ -116,36 +113,34 @@ export default class DataTable extends Component {
 		const { sortable } = { ...DataTable.defaultProps.tableProps, ...tp }
 
 		const columnsVisible = columns.filter(
-			x => !x.hidden && !columnsHidden.includes(x.name)
+			x => !columnsHidden.includes(x.name) && !x.hidden
 		)
 		const headers = columnsVisible.map((x, i) => {
 			const columnSortable = sortable && x.key && x.sortable !== false
 			const sortKey = x.sortKey || x.key
 			return (
-				<Table.HeaderCell
-					{...{
-						...x.headerProps,
-						content: x.title,
-						key: i,
-						onClick: () =>
-							columnSortable &&
-							this.setState({
-								sortBy: sortKey,
-								sortAsc: sortBy === sortKey ? !sortAsc : true,
-							}),
-						sorted:
-							sortBy !== sortKey
-								? null
-								: sortAsc
-								? 'ascending'
-								: 'descending',
-						style: {
-							...(x.headerProps || {}).style,
-							...styles.columnHeader,
-						},
-						textAlign: 'center',
-					}}
-				/>
+				<Table.HeaderCell {...{
+					...x.headerProps,
+					content: x.title,
+					key: i,
+					onClick: () =>
+						columnSortable &&
+						this.setState({
+							sortBy: sortKey,
+							sortAsc: sortBy === sortKey ? !sortAsc : true,
+						}),
+					sorted:
+						sortBy !== sortKey
+							? null
+							: sortAsc
+							? 'ascending'
+							: 'descending',
+					style: {
+						...(x.headerProps || {}).style,
+						...styles.columnHeader,
+					},
+					textAlign: 'center',
+				}} />
 			)
 		})
 
@@ -155,11 +150,13 @@ export default class DataTable extends Component {
 		const iconName = `${n > 0 ? 'check ' : ''}square${
 			n === 0 || n != totalRows ? ' outline' : ''
 		}`
-		const deselect = n === totalRows || (n > 0 && n < totalRows)
+		const deselect = n === totalRows
+			|| (n > 0 && n < totalRows)
 		const numRows = deselect ? n : totalRows
-		const title = `${
-			deselect ? textsCap.deselectAll : textsCap.selectAll
-		} (${numRows})`
+		const t = deselect
+			? textsCap.deselectAll
+			: textsCap.selectAll
+		const title = `${t} (${numRows})`
 		headers.splice(
 			0,
 			0,
@@ -216,8 +213,7 @@ export default class DataTable extends Component {
 							/>
 						</Table.Cell>
 					)}
-					{columns
-						.filter(
+					{columns.filter(
 							({ hidden, name }) =>
 								!hidden && !columnsHidden.includes(name)
 						)
@@ -291,23 +287,19 @@ export default class DataTable extends Component {
 			hasSearchOnChange && searchOnChange(keywords, this.props)
 		}
 		const actions = showActions && (
-			<Dropdown
-				{...{
-					button: true,
-					disabled: selectedIndexes.length === 0,
-					fluid: isMobile,
-					style: {
-						margin: !isMobile ? undefined : '5px 0',
-						textAlign: 'center',
-					},
-					text: textsCap.actions,
-				}}
-			>
+			<Dropdown {...{
+				button: true,
+				disabled: selectedIndexes.length === 0,
+				fluid: isMobile,
+				style: {
+					margin: !isMobile ? undefined : '5px 0',
+					textAlign: 'center',
+				},
+				text: textsCap.actions,
+			}} >
 				<Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
 					{onSelectMenu.map((item, i) =>
-						React.isValidElement(item) ? (
-							item
-						) : (
+						React.isValidElement(item) && item || (
 							<Dropdown.Item
 								{...item}
 								key={i}
@@ -325,36 +317,32 @@ export default class DataTable extends Component {
 		// if searchable is a valid element search is assumed to be externally handled
 		const searchEl =
 			showSearch &&
-			(React.isValidElement(searchable) ? (
-				searchable
-			) : (
-				<Input
-					{...{
-						action: !keywords
-							? undefined
-							: {
-									basic: true,
-									icon: {
-										className: 'no-margin',
-										name: 'close',
-									},
-									onClick: () => triggerSearchChange(''),
-							  },
-						fluid: isMobile,
-						icon: 'search',
-						iconPosition: 'left',
-						onChange: (_, d) => triggerSearchChange(d.value),
-						onDragOver: e => e.preventDefault(),
-						onDrop: e => {
-							const keywords = e.dataTransfer.getData('Text')
-							if (!keywords.trim()) return
-							triggerSearchChange(keywords)
-						},
-						placeholder: textsCap.search,
-						type: 'search', // enables escape to clear
-						value: keywords || '',
-					}}
-				/>
+			(React.isValidElement(searchable) && searchable || (
+				<Input {...{
+					action: !keywords
+						? undefined
+						: {
+								basic: true,
+								icon: {
+									className: 'no-margin',
+									name: 'close',
+								},
+								onClick: () => triggerSearchChange(''),
+							},
+					fluid: isMobile,
+					icon: 'search',
+					iconPosition: 'left',
+					onChange: (_, d) => triggerSearchChange(d.value),
+					onDragOver: e => e.preventDefault(),
+					onDrop: e => {
+						const keywords = e.dataTransfer.getData('Text')
+						if (!keywords.trim()) return
+						triggerSearchChange(keywords)
+					},
+					placeholder: textsCap.search,
+					type: 'search', // enables escape to clear
+					value: keywords || '',
+				}} />
 			))
 
 		const leftBtns = (
@@ -368,20 +356,18 @@ export default class DataTable extends Component {
 					if (React.isValidElement(item) || !isObj(item)) return item
 					let { El = Button, onClick, style } = item
 					return (
-						<El
-							{...{
-								...objWithoutKeys(item, ['El']),
-								fluid: isMobile,
-								key: i,
-								onClick: !isFn(onClick)
-									? null
-									: e => onClick(selectedIndexes, data, e),
-								style: {
-									...(isMobile ? { marginBottom: 5 } : {}),
-									...style,
-								},
-							}}
-						/>
+						<El {...{
+							...objWithoutKeys(item, ['El']),
+							fluid: isMobile,
+							key: i,
+							onClick: !isFn(onClick)
+								? null
+								: e => onClick(selectedIndexes, data, e),
+							style: {
+								...(isMobile ? { marginBottom: 5 } : {}),
+								...style,
+							},
+						}} />
 					)
 				})}
 			</Grid.Column>
@@ -459,7 +445,9 @@ export default class DataTable extends Component {
 		const columns = columnsOriginal.filter(x => !!x && !x.hidden)
 		// Include extra searchable keys that are not visibile on the table
 		const keys = arrUnique([
-			...columns.filter(x => !!x.key).map(x => x.key),
+			...columns
+				.filter(x => !!x.key)
+				.map(x => x.key),
 			...(searchExtraKeys || []),
 		])
 		let filteredData = !keywords ? data : search(data, keywords, keys)

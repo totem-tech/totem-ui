@@ -14,6 +14,7 @@ const textsCap = translated({
     totalBlocks: 'total time in blocks',
     totalHours: 'total time in hours',
     yourContribution: 'how your time is divided',
+    unnamed: 'unnamed',
 }, true)[1]
 
 export default class TimekeepingSummaryList extends Component {
@@ -31,6 +32,7 @@ export default class TimekeepingSummaryList extends Component {
                 {
                     key: 'name',
                     title: textsCap.activity,
+                    style: { minWidth: 125 }
                 },
                 {
                     key: 'totalHours',
@@ -84,10 +86,16 @@ export default class TimekeepingSummaryList extends Component {
         }
         const sumTotalBlocks = arrTotalBlocks.reduce((sum, next) => sum + next, 0)
         const data = arrTotalBlocks.map((totalBlocks, i) => ({
-            name: projects.get(recordIds[i]).name,
+            name: projects
+                .get(recordIds[i])
+                .name
+                || textsCap.unnamed,
             totalBlocks,
             totalHours: secondsToDuration(totalBlocks * BLOCK_DURATION_SECONDS),
-            percentage: totalBlocks === 0 ? '0%' : (totalBlocks * 100 / sumTotalBlocks).toFixed(0) + '%',
+            percentage: totalBlocks === 0
+                ? '0%'
+                : (totalBlocks * 100 / sumTotalBlocks)
+                    .toFixed(0) + '%',
         }))
         this.setState({ data })
     }

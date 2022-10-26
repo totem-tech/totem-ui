@@ -547,9 +547,10 @@ export default class PartnerForm extends Component {
 	}
 
 	handleAddressChange = (e, values) => {
+		const { inputs } = this.state
 		const address = values[inputNames.address]
 		const isPublic = values[inputNames.visibility] === visibilityTypes.PUBLIC
-		const { inputs } = this.state
+		const name = values[inputNames.name]
 		const nameIn = findInput(inputs, inputNames.name)
 		const regNumIn = findInput(inputs, inputNames.registeredNumber)
 		const typeIn = findInput(inputs, inputNames.type)
@@ -579,7 +580,7 @@ export default class PartnerForm extends Component {
 				},
 			)
 			
-			nameIn.rxValue.next(cName)
+			nameIn.rxValue.next(cName || name)
 			typeIn.rxValue.next(
 				com ? types.BUSINESS : types.PERSONAL
 			)
