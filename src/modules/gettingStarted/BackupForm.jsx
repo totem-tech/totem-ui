@@ -583,7 +583,6 @@ BackupForm.defaultProps = {
  * @param 	{Boolean} allowPageReload (optional) whether to allow BackupForm to reload to page in order to prompt user to save password by the password manager
  */
 BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) => {
-	console.log('checkAndWarn')
 	const { id, fileBackupTS } = getUser() || {}
 	const query = { fileBackupTS: undefined }
 	const warnContacts = contact.search(query)

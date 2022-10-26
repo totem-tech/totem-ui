@@ -24,6 +24,7 @@ import { getInboxName } from './InboxList'
 import { getLayout, MOBILE, rxLayout, setClass } from '../../services/window'
 import { unsubscribe } from '../../services/react'
 import { useRxSubject } from '../../utils/reactHelper'
+import { BehaviorSubject } from 'rxjs'
 
 const [texts, textsCap] = translated({
     close: 'close',
@@ -67,16 +68,21 @@ const handleScroll = () => {
     btnWrapEl && btnWrapEl.classList[showBtn ? 'add' : 'remove']('visible')
 }
 
+const rxLoaded = new BehaviorSubject(false)        
+// delay only the first time inbox is opened
+setTimeout(() => rxLoaded.next(true), 300)
+
 export default function Inbox(props) {
     let { inboxKey, receiverIds } = props
     if (!inboxKey) return ''
     const [messages, setMessages] = useState(props.messages || getMessages(inboxKey))
     const [showMembers, setShowMembers] = useState(false)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    const [loaded, setLoaded] = useState(false)
+    const [loaded] = useRxSubject(rxLoaded)
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = receiverIds.length > 1 || isTrollbox
 
+    console.log({loaded})
     useEffect(() => {
         let mounted = true
         const subscriptions = {}
@@ -88,8 +94,6 @@ export default function Inbox(props) {
         })
         // focus and scoll down to latest msg
         scrollToBottom(false, true)
-        
-        setTimeout(() => setLoaded(true), 300)
 
         return () => {
             mounted = false

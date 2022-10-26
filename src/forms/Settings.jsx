@@ -54,15 +54,17 @@ const [texts, textsCap] = translated({
     saved: 'saved',
     settings: 'settings',
     unlimited: 'unlimited',
-    _shiftC: 'start new chat',
-    _shiftS: 'settings',
-    _shiftT: 'timekeeping form',
     _c: 'toggle chat bar visibility',
     _d: 'toggle dark mode',
     _k: 'toggle keyboard shortcuts view',
     _i: 'toggle identity dropdown visibility',
     _n: 'toggle notification visibility',
     _s: 'toggle sidebar',
+    _shiftC: 'start new chat',
+    _shiftS: 'settings',
+    _shiftT: 'timekeeping form',
+    _header: 'keyboard shortcuts',
+    _subheader: 'not available when an input field is on focus',
 }, true)
 const savedMsg = {
     content: textsCap.saved,
@@ -104,7 +106,20 @@ export const showKeyboardShortcuts = () => confirm(
                 style: { margin: '-15px 0' },
             }} />
         ),
-        header: 'Keyboard shortcuts',
+        header: (
+            <div className='header'>
+                {textsCap._header}
+                <div style={{
+                    fontWeight: 'normal',
+                    fontSize: 13,
+                    textTransform: 'initial',
+                    lineHeight: 1,
+                    fontStyle: 'italic',
+                }}>
+                    * {textsCap._subheader}
+                </div>
+            </div>
+        ),
         size: 'mini',
     },
     'shortcutKey-K',
