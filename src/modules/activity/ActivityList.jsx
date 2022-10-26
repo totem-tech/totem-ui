@@ -3,6 +3,7 @@ import { Button } from 'semantic-ui-react'
 import { copyToClipboard, textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
+import { statuses } from '../../components/Message'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
@@ -16,7 +17,7 @@ import ActivityReassignForm from './ActivityReassignForm'
 import ActivityTeamList from './ActivityTeamList'
 
 const toBeImplemented = () => alert('To be implemented')
-const textsCap = translated({
+let textsCap = {
     actions: 'actions',
     activity: 'activity',
     abandoned: 'abandoned',
@@ -57,6 +58,7 @@ const textsCap = translated({
     detailsFormHeader: 'activity details',
     detailsTimeRecordsBtn: 'view time records',
     editProject: 'edit activity',
+    loading: 'loading...',
     projectsFailed: 'failed to retrieve activities',
     projectCloseReopenWarning: 'you are about to change status of the following activities to:',
     projectTeam: 'activity team',
@@ -65,7 +67,8 @@ const textsCap = translated({
     totalTime: 'total time',
     viewDetails: 'view details',
     viewTeam: 'view team',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 const statusTexts = []
 statusTexts[statusCodes.open] = textsCap.open
 statusTexts[statusCodes.reopen] = textsCap.reopened
@@ -80,7 +83,11 @@ export default class ActivityList extends Component {
         super(props)
 
         this.state = {
-            emptyMessage: null,
+            emptyMessage: {
+                content: textsCap.loading,
+                icon: true,
+                status: statuses.LOADING,
+            },
             data: new Map(),
             defaultSort: 'status',
             perPage: 5,
@@ -192,21 +199,32 @@ export default class ActivityList extends Component {
         this.subscriptions.layout = rxLayout.subscribe(layout => {
             const { columns } = this.state
             // hide on mobile
-            columns.find(x => x.key === 'description').hidden = layout === MOBILE
+            const descCol = columns
+                .find(x => x.key === 'description')
+                || {}
+            descCol.hidden = layout === MOBILE
             this.setState({ columns })
         })
         try {
             this.subscriptions.project = await getProjects(true, projects => {
                 if (!this._mounted) return
-                const recordIds = Array.from(projects).map(([recordId, project]) => {
-                    const { status, totalBlocks } = project
-                    project.recordId = recordId
-                    project._statusText = statusTexts[status] || textsCap.unknown
-                    project._totalTime = `${totalBlocks} ${textsCap.blocks}`
-                    return recordId
+                const recordIds = Array.from(projects)
+                    .map(([recordId, project]) => {
+                        const { status, totalBlocks } = project
+                        project.recordId = recordId
+                        project._statusText = statusTexts[status] || textsCap.unknown
+                        project._totalTime = `${totalBlocks} ${textsCap.blocks}`
+                        return recordId
+                    })
+                this.subscribeToStatusChanges(
+                    recordIds,
+                    getSelected().address,
+                )
+                this.setState({
+                    emptyMessage: null,
+                    data: projects,
+                    loaded: true,
                 })
-                this.subscribeToStatusChanges(recordIds, getSelected().address)
-                this.setState({ emptyMessage: null, data: projects })
             })
         } catch (err) {
             this.setState({
