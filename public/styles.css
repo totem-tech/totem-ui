@@ -182,7 +182,7 @@ body .pushable {
 	overflow: hidden;
 	-webkit-overflow: hidden;
 }
-body.mobile .pushable {
+body.mobile:not(.unregistered) .pushable {
 	height: calc(100% - 108px);
 }
 .mobile #main-content::-webkit-scrollbar {

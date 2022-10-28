@@ -17,7 +17,7 @@
 	<meta name="theme-color" content="#ffffff">
 </head>
 
-<body>
+<body class="unregistered">
 	<noscript>
 		JavaScript is required to run this application. Your browser does not support JavaScript or it has been disabled in the browser settings!
 	</noscript>
@@ -48,6 +48,9 @@
 				background: deeppink;
 				border-radius: 50%;
 				animation: lds-default 1.2s linear infinite;
+			}
+			body.inverted .lds-default div {
+				background: white;
 			}
 			.lds-default div:nth-child(1) {
 				animation-delay: 0s;

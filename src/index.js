@@ -15,6 +15,8 @@ import storage from './services/storage'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
 import Invertible from './components/Invertible'
 import { translated } from './utils/languageHelper'
+import { subjectAsPromise } from './utils/reactHelper'
+import { rxIsRegistered } from './utils/chatClient'
 
 const textsCap = translated({
     loading: 'loading',
@@ -135,3 +137,7 @@ const doRender = () => {
 initPromise
     .then(doRender)
     .catch(doRender)
+
+// after registration is complete remove the "unregistered" class
+subjectAsPromise(rxIsRegistered, true)[0]
+    .then(() => document.body.classList.remove('unregistered'))
