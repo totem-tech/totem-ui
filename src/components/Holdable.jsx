@@ -67,7 +67,7 @@ Holdable.propTypes = {
     onHold: PropTypes.func,
 }
 Holdable.defaultProps = {
-    duration: 1500,
+    duration: 1000,
     El: 'span',
     ignoreAttributes: [
         'duration',

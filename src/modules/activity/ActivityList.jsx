@@ -387,7 +387,7 @@ export default class ActivityList extends Component {
 
     // show project team in a modal
     showTeam = (recordId, projectName) => confirm({
-        cancelButton: textsCap.close,
+        cancelButton: null,
         confirmButton: null,
         content: <ActivityTeamList projectHash={recordId} />,
         header: `${textsCap.projectTeam} - ${projectName}`,

@@ -166,6 +166,7 @@ export default class ActivityForm extends Component {
 											const { modalId } = this.props
 											closeModal(modalId)
 											confirm({
+												cancelButton: null,
 												confirmButton: null,
 												content: <ActivityTeamList projectHash={hash} />,
 												header: `${textsCap.projectTeam} - ${title}`,

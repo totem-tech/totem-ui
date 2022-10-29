@@ -1,6 +1,6 @@
 import React from 'react'
 import uuid from 'uuid'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 // Views (including lists and forms)
 import AssetFormView from '../modules/assets/AssetsFormView'
 import FinancialStatement from '../modules/financialStatement/FinancialStatement'
@@ -360,8 +360,8 @@ export const sidebarItems = [
 ].map(item => {
     const {
         active = false,
-        rxTrigger = new BehaviorSubject(uuid.v1()),
         contentProps = {},
+        rxTrigger = new BehaviorSubject(uuid.v1()),
         title,
         // use title if name not provided
         name = title
@@ -371,11 +371,11 @@ export const sidebarItems = [
     return {
         ...item,
         active: isBool(activeX) ? activeX : active,
-        rxTrigger,
         contentProps,
+        elementRef: React.createRef(),
         name,
         // used for auto scrolling to element
-        elementRef: React.createRef(),
+        rxTrigger,
     }
 })
 
@@ -427,7 +427,8 @@ export const setContentProps = (name, props = {}, scrollToItem = true) => {
         .forEach(key =>
             item.contentProps[key] = props[key]
         )
-    isSubjectLike(item.rxTrigger) && item.rxTrigger.next(uuid.v1())
+    isSubjectLike(item.rxTrigger)
+        && item.rxTrigger.next(uuid.v1())
 
     scrollToItem && scrollTo(name)
     return item

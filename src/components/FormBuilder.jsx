@@ -645,24 +645,33 @@ export const checkInputInvalid = (formValues = {}, input) => {
 		required,
 		rxValue,
 		type,
+		validate,
 		value,
 	} = input || {}
 	type = (type || 'text').toLowerCase()
-	// ignore current input if conditions met
-	if (['button', 'hidden', 'html'].includes(type)) return false
-	const isHidden = isFn(hidden) ? !!hidden(formValues, name) : !!hidden
-	if (isHidden) return false
+
+	// ignore if hidden
+	const isHidden = isFn(hidden)
+		? !!hidden(formValues, name)
+		: !!hidden
+	if (isHidden || type === 'hidden') return false
+
+	// ignore if input is a button or html type and doesn't have rxValue
+	const gotSubject = isSubjectLike(rxValue)
+	const isElementType = ['button', 'html'].includes(type)
+	if (isElementType && !(gotSubject || validate)) return false
 
 	let gotValue = hasValue(formValues[name])
 	const isGroup = type === 'group'
 	if (!isGroup && !required && !gotValue) return false
 
 	// Use recursion to validate input groups
-	if (isGroup)
-		return checkFormInvalid(
-			inputs,
-			!groupValues ? formValues : formValues[name] || {}
-		)
+	if (isGroup) return checkFormInvalid(
+		inputs,
+		!groupValues
+			? formValues
+			: formValues[name] || {}
+	)
 
 	// if input is set invalid externally or internally by FormInput
 	if (invalid || _invalid) return true
@@ -670,11 +679,13 @@ export const checkInputInvalid = (formValues = {}, input) => {
 	const isCheckbox = ['checkbox', 'radio'].indexOf(type) >= 0
 	value = gotValue
 		? formValues[name]
-		: !hasValue(value) && isSubjectLike(rxValue)
-		? rxValue.value
-		: value
+		: !hasValue(value) && gotSubject
+			? rxValue.value
+			: value
 
-	return isCheckbox && required ? !value : !hasValue(value)
+	return isCheckbox && required
+		? !value
+		: !hasValue(value)
 }
 /**
  * @name	checkFormInvalid

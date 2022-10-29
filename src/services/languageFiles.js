@@ -7,6 +7,7 @@ export default [
     "./src/components/DataTable.jsx",
     "./src/components/DateInput.jsx",
     "./src/components/DrillDownList.jsx",
+    "./src/components/Embolden.jsx",
     "./src/components/FAQ.jsx",
     "./src/components/FormBuilder.jsx",
     "./src/components/FormInput.jsx",

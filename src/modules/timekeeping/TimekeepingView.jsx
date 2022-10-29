@@ -135,11 +135,14 @@ export default class TimekeepingView extends Component {
                         ...item,
                         active: true,
                         basic: true,
+                        // content: <item.content {...item.contentProps} />,
                         headerTag: 'h3',
-                        key: JSON.stringify({ ...item.contentProps, header: item.header }),
+                        key: JSON.stringify({
+                            ...item.contentProps,
+                            header: item.header,
+                        }),
                         style: { padding: 0 },
-                    }}
-                    />
+                    }} />
                 ))}
             </div>
         )

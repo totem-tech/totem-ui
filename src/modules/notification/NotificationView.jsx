@@ -10,30 +10,25 @@ import { ButtonGroup } from '../../components/buttons'
 import modalService from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 
-const textsCap = translated(
-	{
-		btnDelete: 'delete all',
-		btnRead: 'mark all as read',
-	},
-	true
-)[1]
+const textsCap = translated({
+	btnDelete: 'delete all',
+	btnRead: 'mark all as read',
+}, true)[1]
 export default function NotificationView() {
 	const [visible] = useRxSubject(rxVisible, visible => {
 		const { classList } = document.body
 		classList[visible ? 'add' : 'remove']('notification-visible')
 
 		// on mobile view scroll to bottom (first item) of the list
-		const shouldScroll =
-			visible &&
-			rxLayout.value === MOBILE &&
-			!window._notification_scroll_done
+		const shouldScroll = visible
+			&& rxLayout.value === MOBILE
+			&& !window._notification_scroll_done
 		if (shouldScroll) {
-			window._notification_scroll_done = true
-			const containerEl = document.querySelector('.notification-list')
-			setTimeout(
-				() => containerEl.scroll(0, containerEl.offsetHeight),
-				50
-			)
+			setTimeout(() => {
+				const containerEl = document.querySelector('.notification-list')
+				containerEl.scroll(0, containerEl.scrollHeight)//containerEl.offsetHeight)
+				window._notification_scroll_done = true
+			}, 100)
 		}
 		return visible
 	})

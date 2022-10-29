@@ -16,6 +16,7 @@ const [_, textsCap] = translated({
 	closeSidebar: 'close sidebar',
 	keepOpen: 'keep open'
 }, true)
+
 function SidebarLeft() {
 	const [allInactive] = useRxSubject(rxAllInactive)
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
@@ -33,17 +34,16 @@ function SidebarLeft() {
 		? 'pin'
 		: `arrow alternate circle ${collapsed ? 'right' : 'left'} outline`
 	
+	// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
+	const mobileDimmer = isMobile && visible && (
+		<div {...{
+			onClick: toggleSidebarState,
+			style: styles.dimmer
+		}} />
+	)
 	return (
 		<React.Fragment>
-			{
-				// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
-				isMobile && visible && (
-					<div {...{
-						onClick: toggleSidebarState,
-						style: styles.dimmer
-					}} />
-				)
-			}
+			{mobileDimmer}
 			<Sidebar {...{
 				as: Menu,
 				animation: isMobile ? 'overlay' : 'push',
@@ -97,7 +97,7 @@ export default React.memo(SidebarLeft)
 const _MainContentItem = props => {
 	const { name, rxTrigger } = props
 	const [isMobile] = useRxSubject(rxLayout, layout => layout === MOBILE)
-	const [item] = useRxSubject(rxTrigger, () => getItem(name))
+	const [item] = useRxSubject(rxTrigger, () => getItem(name) || {})
 	const { active, elementRef, hidden } = item || {}
 	const show = !!item && active && !hidden
 	item.style = {
@@ -115,7 +115,11 @@ const _MainContentItem = props => {
 			ref={elementRef}
 			name={name}
 		>
-			<ContentSegment {...item} onClose={name => setActive(name, false)} />
+			<ContentSegment {...{
+				...item,
+				key: item.name,
+				onClose: name => setActive(name, false),
+			}} />
 		</div>
 	)
 }
@@ -149,6 +153,7 @@ const _SidebarMenuItem = props => {
 			<Holdable {...{
 				as: 'a',
 				active,
+				duration: 1000,
 				El: Menu.Item,
 				href,
 				onClick: e => {

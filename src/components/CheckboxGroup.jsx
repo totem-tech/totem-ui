@@ -17,21 +17,22 @@ import { useRxSubject } from '../utils/reactHelper'
 
 function CheckboxGroup(props) {
     const {
+        disabled,
         options,
         rxValue,
         style,
         title,
     } = props
     const [value, setValue] = useRxSubject(rxValue || props.value)
-    const [checkboxes, setCheckboxes] = useState([])
+    // const [checkboxes, setCheckboxes] = useState([])
 
-    useEffect(() => {
-        setCheckboxes(getCheckboxes(props, value, setValue))
-    }, [value, options])
+    // useEffect(() => {
+    //     setCheckboxes(getCheckboxes(props, value, setValue))
+    // }, [value, options, disabled])
     
     return (
         <div {...{ style, title }}>
-            {checkboxes}
+            {getCheckboxes(props, value, setValue)}
         </div>
     )
 }

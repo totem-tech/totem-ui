@@ -2,6 +2,7 @@ import uuid from 'uuid'
 import DataStorage from '../../utils/DataStorage'
 import { isObj, isStr, isValidNumber, isDefined } from '../../utils/utils'
 import storage from '../../services/storage'
+import { getUser } from '../../utils/chatClient'
 
 const key = 'history'
 export const MODULE_KEY = 'totem_' + key
@@ -147,6 +148,7 @@ export const save = (
         timestamp,
         title,
         txId,
+        userId: (getUser() || {}).id,
     })
     // apply history limit
     limit(undefined, false)

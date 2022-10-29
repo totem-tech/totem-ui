@@ -218,6 +218,9 @@ export class FormInput extends Component {
 						: parseFloat(data.value)
 					value = data.value
 					break
+				case 'url': 
+					validatorConfig = { type: TYPES.url }
+					break
 				case 'hex':
 					validatorConfig = { type: TYPES.hex }
 				case 'text':

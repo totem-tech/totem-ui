@@ -86,7 +86,7 @@ statusTexts[statuses.delete] = textsCap.deleted
 const rxTrigger = new BehaviorSubject()
 const rxInProgressIds = new BehaviorSubject([])
 
-export default class ProjectTimeKeepingList extends Component {
+class TimeKeepingList extends Component {
     constructor(props) {
         super(props)
 
@@ -195,7 +195,20 @@ export default class ProjectTimeKeepingList extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        this.subs = {}
+        this.subs = this.subs || {}
+        // reset everything on selected address change
+        this.subs.selected = rxSelected.subscribe(this.init)
+        this.init()
+    }
+
+    componentWillUnmount() {
+        this._mounted = false
+        unsubscribe(this.subs)
+    }
+
+    init = deferred(async () => {
+        this.subs = this.subs || {}
+        unsubscribe(this.subs)
         this.ignoredFirst = false
         const { archive, manage, projectId } = this.props
         const {
@@ -242,17 +255,6 @@ export default class ProjectTimeKeepingList extends Component {
             )
         }
 
-        // reset everything on selected address change
-        this.subs.selected = rxSelected.subscribe(() => {
-            if (!this._mounted) return
-            if (!this.ignoredFirst) {
-                this.ignoredFirst = true
-                return
-            }
-            this.componentWillUnmount()
-            this.componentWillMount()
-        })
-
         this.subs.inProgressIds = rxInProgressIds.subscribe(ar => {
             this._mounted && this.setState({ inProgressHashes: ar })
             this.getRecords()
@@ -264,12 +266,7 @@ export default class ProjectTimeKeepingList extends Component {
         this.subs.isMobile = rxLayout.subscribe(l =>
             this.setState({ isMobile: l === MOBILE })
         )
-    }
-
-    componentWillUnmount() {
-        this._mounted = false
-        unsubscribe(this.subs)
-    }
+    }, 500)
 
     getActionContent = (record, hash, asButton = true) => {
         const { archive, manage } = this.props
@@ -667,7 +664,7 @@ export default class ProjectTimeKeepingList extends Component {
         )
     }
 }
-ProjectTimeKeepingList.propTypes = {
+TimeKeepingList.propTypes = {
     // whether to retrieve archives
     archive: PropTypes.bool,
     hideTimer: PropTypes.bool,
@@ -676,8 +673,9 @@ ProjectTimeKeepingList.propTypes = {
     // manage single project
     projecthash: PropTypes.string,
 }
-ProjectTimeKeepingList.defaultProps = {
+TimeKeepingList.defaultProps = {
     archive: false,
     hideTimer: false,
     manage: false,
 }
+export default React.memo(TimeKeepingList)

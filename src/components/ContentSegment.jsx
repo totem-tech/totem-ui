@@ -8,7 +8,7 @@ import { Invertible } from './Invertible'
 import Text from './Text'
 import { toggleFullscreen } from '../services/window'
 
-export default class ContentSegment extends Component {
+class ContentSegment extends Component {
 	constructor(props) {
 		super(props)
 
@@ -38,15 +38,10 @@ export default class ContentSegment extends Component {
 	}
 
 	getContent = props => {
-		const { content, contentProps } = props || this.props
-		const ContentEl = isFn(content)
-			? content
-			: undefined
-		return (
-			!!ContentEl
-				? <ContentEl {...contentProps} />
-				: content
-		) || contentPlaceholder
+		const { content: Content, contentProps } = props || this.props
+		return isFn(Content) || Content['$$typeof'] === React.memo('div')['$$typeof']
+			? <Content {...contentProps} />
+			: Content || contentPlaceholder
 	}
 
 	toggleSubHeader = e => {
@@ -158,7 +153,6 @@ export default class ContentSegment extends Component {
 		)
 	}
 }
-
 ContentSegment.propTypes = {
 	active: PropTypes.bool,
 	basic: PropTypes.bool,
@@ -193,7 +187,6 @@ ContentSegment.propTypes = {
 	title: PropTypes.string,
 	vertical: PropTypes.bool
 }
-
 ContentSegment.defaultProps = {
 	basic: false,
 	compact: false,
@@ -203,7 +196,7 @@ ContentSegment.defaultProps = {
 	index: 0,
 	vertical: false
 }
-
+export default React.memo(ContentSegment)
 
 export const contentPlaceholder = (
 	<Invertible El={Placeholder}>

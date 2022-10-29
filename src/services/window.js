@@ -14,7 +14,6 @@ export const rxGridColumns = new BehaviorSubject(gridColumns())
 export const rxOnline = new BehaviorSubject()
 export const rxInverted = new BehaviorSubject(
     [undefined, true].includes(rw().invertedBrowser)
-        || !isBool(rw().inverted)
         ? !!checkDarkPreferred()
         : rw().inverted
 )
