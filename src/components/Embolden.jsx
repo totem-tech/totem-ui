@@ -46,7 +46,7 @@ const Embolden = ({ children, regex = /"[^"]+"/g }, keepQuotes = true) => {
                 // double flattening required due to 3-dimentional Array
                 .flat().flat()
 		})
-	}
+    }
 	return arr.map((children, i) =>
         <React.Fragment {...{
             children,
