@@ -7,11 +7,11 @@ import { translated } from '../../utils/languageHelper'
 import { subjectAsPromise, unsubscribe, useRxSubject } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
 import { BLOCK_DURATION_SECONDS, durationToSeconds } from '../../utils/time'
-import { arrUnique, clearClutter, deferred, isFn, isInteger, isObj, isStr, objClean, objToUrlParams } from '../../utils/utils'
+import { arrUnique, clearClutter, deferred, isFn, isInteger, isObj, isStr, objClean, objToUrlParams, objWithoutKeys } from '../../utils/utils'
 import FAQ from '../../components/FAQ'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import Message, { statuses } from '../../components/Message'
-import { setActiveExclusive } from '../../services/sidebar'
+import { setActiveExclusive, setContentProps } from '../../services/sidebar'
 import { getAll as getHistory, limit, rxHistory } from '../history/history'
 import identities, { rxIdentities, rxSelected } from '../identity/identity'
 import partners from '../partner/partner'
@@ -20,6 +20,7 @@ import PromisE from '../../utils/PromisE'
 import { MOBILE, rxLayout } from '../../services/window'
 import { keyring } from '../../utils/polkadotHelper'
 import { bytesToHex, isHex } from 'web3-utils'
+import { listTypes } from '../task/TaskList'
 
 let textsCap = {
 	addIdentity: 'add identity shared by a friend',
@@ -357,6 +358,9 @@ export const getTasks = rewardIdentity => {
 				{
 					content: textsCap.goToTasks,
 					module: 'tasks',
+					moduleProps: {
+						activeType: listTypes.owner,
+					},
 				},
 				textsCap.clickCreate,
 				textsCap.fillTaskForm,
@@ -385,11 +389,12 @@ const getTaskSteps = (items = [], prefix = textsCap.followInstructions, suffix) 
 					</li>
 				)
 
-				let { module, url } = item || {}
+				let { module, moduleProps, url } = item || {}
 				if (isStr(module)) {
 					item.onClick = e => {
 						e.preventDefault()
 						// hide all modules other than these two
+						isObj(moduleProps) && setContentProps(module, moduleProps)
 						setActiveExclusive(['claim-kapex', module], true)
 					}
 					const { location: { host, protocol } } = window
@@ -416,7 +421,7 @@ const getTaskSteps = (items = [], prefix = textsCap.followInstructions, suffix) 
 				return (
 					<li key={i}>
 						<Button {...{
-							...item,
+							...objWithoutKeys(item, ['moduleProps']),
 							icon: <Icon name='hand point right' />,
 							size: 'tiny',
 						}} />
@@ -678,7 +683,7 @@ const getFormProps = () => {
 	}
 }
 
-export default function ClaimKAPEXView(props) {
+export default function ClaimKAPEXForm(props) {
 	const [status, setStatusOrg] = useState(() => ({ ...getStatusCached(), loading: false }))
 	const [state, setState] = useRxSubject(null, getFormProps, {}, true)
 	const [isRegistered] = useRxSubject(rxIsRegistered)
@@ -742,16 +747,16 @@ export default function ClaimKAPEXView(props) {
 			const doCheckStatus = !submitted && eligible !== false
 			if (!doCheckStatus) return
 
-			const result = ClaimKAPEXView.resultCache
+			const result = ClaimKAPEXForm.resultCache
 				? {
-					...ClaimKAPEXView.resultCache,
+					...ClaimKAPEXForm.resultCache,
 					submitted: status.submitted,
 				}
 				: await chatClient
 					.rewardsClaimKAPEX
 					.promise(true)
 			// store as in-memory cache
-			ClaimKAPEXView.resultCache = result
+			ClaimKAPEXForm.resultCache = result
 			Object
 				.keys(result)
 				.forEach(key => status[key] = result[key])
@@ -856,6 +861,6 @@ export default function ClaimKAPEXView(props) {
 		}} />
 	)
 }
-ClaimKAPEXView.defaultProps = {
+ClaimKAPEXForm.defaultProps = {
 	header: textsCap.header,
 }

@@ -59,7 +59,8 @@ const textsCap = translated({
     update: 'update',
     yes: 'yes',
 }, true)[1]
-const listTypes = Object.freeze({
+
+export const listTypes = Object.freeze({
     approver: 'approver',
     beneficiary: 'beneficiary',
     marketplace: 'marketplace',

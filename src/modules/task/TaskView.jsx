@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
 import { Menu, Tab } from 'semantic-ui-react'
 import Message from '../../components/Message'
 import Text from '../../components/Text'
-import TaskList from './TaskList'
+import TaskList, { listTypes } from './TaskList'
 import { rxSelected } from '../identity/identity'
 import { translated } from '../../services/language'
 import useTasks from './useTasks'
@@ -22,11 +23,20 @@ const textsCap = translated({
     unknown: 'unknown',
 }, true)[1]
 
-export default function TaskView({ address }) {
+export default function TaskView({ address, activeType: _activeType }) {
     const inverted = useInverted()
     address = address || useRxSubject(rxSelected)[0]
-    const [allTasks = new Map(), message] = useTasks(['owner', 'approver', 'beneficiary'], address)
-    const [activeType, setActiveType] = useState(rwSettings().activeType || 'owner')
+    const [allTasks = new Map(), message] = useTasks(
+        Object
+            .values(listTypes)
+            .filter(x => x !== listTypes.marketplace),
+        address,
+    )
+    const [activeType, setActiveType] = useState(
+        _activeType
+        || rwSettings().activeType
+        || 'owner'
+    )
     const panes = [
         {
             name: textsCap.ownerTasks,
@@ -62,6 +72,10 @@ export default function TaskView({ address }) {
     }))
 
     const activeIndex = panes.findIndex(x => x.type === activeType)
+    const data = activeType !== listTypes.marketplace
+        && allTasks
+        && allTasks.get(activeType)
+        || new Map()
     return message
         ? <Message {...message} />
         : (
@@ -75,11 +89,15 @@ export default function TaskView({ address }) {
                 <TaskList {...{
                     address,
                     asTabPane: true,
-                    data: activeType !== 'marketplace' && allTasks && allTasks.get(activeType) || new Map(),
+                    data,
                     key: activeType,
                     style: { marginTop: 15 },
                     type: activeType,
                 }} />
             </div>
         )
+}
+TaskView.propTypes = {
+    address: PropTypes.string,
+    activeType: PropTypes.string,
 }

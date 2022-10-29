@@ -112,7 +112,7 @@ export default [
     "./src/modules/partner/PartnerList.jsx",
     "./src/modules/partner/notificationHandlers.jsx",
     "./src/modules/partner/partner.js",
-    "./src/modules/rewards/ClaimKAKEX.jsx",
+    "./src/modules/rewards/ClaimKAKEXForm.jsx",
     "./src/modules/rewards/Decoded2206Wizard.jsx",
     "./src/modules/rewards/DiscordRewardWizard.jsx",
     "./src/modules/rewards/ReferralCard.jsx",

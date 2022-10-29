@@ -25,7 +25,7 @@ import { isBool, isSubjectLike } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
-import ClaimKAPEXView from '../modules/rewards/ClaimKAKEX'
+import ClaimKAPEXForm from '../modules/rewards/ClaimKAKEXForm'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -181,7 +181,7 @@ export const sidebarItems = [
     {
         anchorStyle: { background: 'deeppink' },
         anchorStyleActive: { background: undefined },
-        content: ClaimKAPEXView,
+        content: ClaimKAPEXForm,
         contentProps: { style: { maxWidth: 600 } },
         icon: 'gift',
         name: 'claim-kapex',
