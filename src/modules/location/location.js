@@ -2,7 +2,7 @@ import uuid from 'uuid'
 import DataStorage from '../../utils/DataStorage'
 import { optionalFields, requiredFields } from './LocationForm'
 import { generateHash, isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
-import { TYPES } from '../../utils/validator'
+// import { TYPES } from '../../utils/validator'
 
 const locations = new DataStorage('totem_locations', true)
 export const rxLocations = locations.rxData // RxJS Subject (because caching is disabled)

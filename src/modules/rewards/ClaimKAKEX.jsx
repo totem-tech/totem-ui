@@ -19,7 +19,7 @@ import Embolden from '../../components/Embolden'
 import PromisE from '../../utils/PromisE'
 import { MOBILE, rxLayout } from '../../services/window'
 import { keyring } from '../../utils/polkadotHelper'
-import { bytesToHex } from 'web3-utils'
+import { bytesToHex, isHex } from 'web3-utils'
 
 let textsCap = {
 	addIdentity: 'add identity shared by a friend',
@@ -565,10 +565,13 @@ const updateTasks = inputs => {
 
 	// generate and attach signature
 	const address = getRewardIdentity()
-	keyring.add([identities.get(address).uri])
-	const pair = keyring.getPair(address)
-	const signature = bytesToHex(pair.sign(tokenIn.rxValue))
-	signatureIn.rxValue.next(signature)
+	const { uri } = identities.get(address) || {}
+	if (isStr(uri) && !isHex(uri)) {
+		keyring.add([identities.get(address).uri])
+		const pair = keyring.getPair(address)
+		const signature = bytesToHex(pair.sign(tokenIn.rxValue))
+		signatureIn.rxValue.next(signature)
+	}
 	return inputs
 }
 
