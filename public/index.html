@@ -17,7 +17,7 @@
 	<meta name="theme-color" content="#ffffff">
 </head>
 
-<body class="unregistered">
+<body class="inverted unregistered">
 	<noscript>
 		JavaScript is required to run this application. Your browser does not support JavaScript or it has been disabled in the browser settings!
 	</noscript>
@@ -30,9 +30,11 @@
 		</div> -->
 		<style>
 			#app {
-				width: 80px !important;
 				height: 80px !important;
-				margin: calc(50% - 40px) auto;
+				left: calc(50% - 40px);
+				position: absolute;
+				top: calc(50% - 40px);
+				width: 80px !important;
 			}
 			/* loading.io pure css spinner */
 			.lds-default {
@@ -121,7 +123,7 @@
 				}
 			}
 		</style>
-		<div class="spinner">
+		<div class="spinner">		
 			<div class="lds-default"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
 		</div>
 	</div>
