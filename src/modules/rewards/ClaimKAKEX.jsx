@@ -46,6 +46,7 @@ let textsCap = {
 	enterNameDesc: 'enter any name and description for the activity.',
 	enterReason: 'select or enter a custom reason',
 	errSubmitted: 'your claim has been received!',
+	errSubmittedDetails: 'make sure to remind your friends to submit their claim.', 
 	errEnded: 'Claim period has ended!',
 	errIneligible: 'You are not eligible to claim KAPEX.',
 	errInvalidTweetUrl: 'invalid Tweet URL',
@@ -693,12 +694,23 @@ export default function ClaimKAPEXView(props) {
 					: endDate && new Date(endDate) < now
 						? textsCap.errEnded
 						: null
+		
 		return setStatusOrg({
 			...status,
 			message: !content
 				? null
 				: {
-					content: !submitted && content,
+					content: submitted
+						? (
+							<div>
+								{textsCap.errSubmittedDetails + ' '}
+								
+								<a href='https://docs.totemaccounting.com/#/totem/terms'>
+									{textsCap.successMsg2}
+								</a>
+							</div>
+						)
+						: content,
 					header: submitted && content,
 					icon: true,
 					status: submitted
