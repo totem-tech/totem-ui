@@ -25,7 +25,7 @@ import { isBool, isSubjectLike } from '../utils/utils'
 import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
-import ClaimKAPEXForm from '../modules/rewards/ClaimKAKEXForm'
+import ClaimKAPEXForm from '../modules/rewards/claimKapex/ClaimKapexView'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
