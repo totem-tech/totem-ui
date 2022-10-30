@@ -478,10 +478,7 @@ export default class TaskForm extends Component {
     handleBountyChange = deferred((_, values) => {
         const { taskId, values: valuesOrg } = this.props
         const { amountXTX: bountyOriginal } = valuesOrg || {}
-        const bounty = values[this.names.bounty]
-        console.log({bounty})
-        // bounty hasn't changed
-        
+        const bounty = values[this.names.bounty]     
         this.bountyDeferred = this.bountyDeferred || PromisE.deferred()
         const { inputs, submitDisabled } = this.state
         const amountXTXIn = findInput(inputs, this.names.amountXTX)

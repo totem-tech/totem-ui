@@ -347,7 +347,6 @@ export default class TimekeepingForm extends Component {
         ])
         const invited = invitedAr.includes(workerAddress)
         const accepted = acceptedAr.includes(workerAddress)
-        console.log({invited, invitedAr, accepted, acceptedAr, workerAddress})
         inputs[index].loading = false
         inputs[index].invalid = banned || !accepted
 

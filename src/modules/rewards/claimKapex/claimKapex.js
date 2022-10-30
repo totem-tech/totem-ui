@@ -1,53 +1,5 @@
-import React, { isValidElement, useCallback, useEffect, useState } from 'react'
-import { Button, Icon, Step } from 'semantic-ui-react'
-import { BehaviorSubject } from 'rxjs'
-import uuid from 'uuid'
-import chatClient, {
-    getUser,
-    rxIsLoggedIn,
-    rxIsRegistered,
-} from '../../../utils/chatClient'
-import { bytesToHex } from '../../../utils/convert'
-import PromisE from '../../../utils/PromisE'
-import {
-    subjectAsPromise,
-    unsubscribe,
-    useRxSubject,
-} from '../../../utils/reactHelper'
 import storage from '../../../utils/storageHelper'
-import {
-    BLOCK_DURATION_SECONDS,
-    durationToSeconds,
-} from '../../../utils/time'
-import {
-    arrUnique,
-    deferred,
-    isFn,
-    isHex,
-    isInteger,
-    isObj,
-    isStr,
-    objClean,
-    objToUrlParams,
-    objWithoutKeys,
-} from '../../../utils/utils'
-import FAQ from '../../../components/FAQ'
-import FormBuilder, { findInput } from '../../../components/FormBuilder'
-import Message, { statuses } from '../../../components/Message'
-import { setActiveExclusive, setContentProps } from '../../../services/sidebar'
-import {
-    getAll as getHistory,
-    limit,
-    rxHistory,
-} from '../../history/history'
-import identities, {
-    rxIdentities,
-    rxSelected,
-} from '../../identity/identity'
-import partners, { rxPartners } from '../../partner/partner'
-import Embolden from '../../../components/Embolden'
-import { MOBILE, rxLayout } from '../../../services/window'
-import { listTypes } from '../../task/TaskList'
+import { isObj, objClean } from '../../../utils/utils'
 
 export const generateTweet = () => {
     const { endDate } = statusCached()
@@ -58,11 +10,12 @@ export const generateTweet = () => {
         title = 'hours'
         count = Math.floor(diffMs / 1000 / 60 / 60)
     }
+    const { host, protocol } = window.location
     const tweet = encodeURIComponent(
-        `Only ${count} ${title} @totem_live_ to claim $KAPEX for your testnet $TOTEM rewards!`
+        `Only ${count} ${title} left to claim $KAPEX for your $TOTEM (@totem_live_) rewards!`
         + '\n\nIf you have participated in the Totem rewards campaign you must complete the claim process to be '
-        + 'eligible to migrate your reward tokens to $KAPEX.'
-        + '\n\nSubmit your claim now!\nhttps://totem.live?module=claim-kapex'
+        + 'eligible to migrate reward tokens.'
+        + `\n\nSubmit your claim now!\n${protocol}//${host}?module=claim-kapex`
     )
     return `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweet}`
 }

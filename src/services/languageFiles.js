@@ -123,6 +123,7 @@ export default [
     "./src/modules/rewards/claimKapex/ClaimKapexForm.jsx",
     "./src/modules/rewards/claimKapex/ClaimKapexView.jsx",
     "./src/modules/rewards/claimKapex/claimKapex.js",
+    "./src/modules/rewards/claimKapex/usageTasks.jsx",
     "./src/modules/rewards/notificationHandlers.jsx",
     "./src/modules/rewards/rewards.js",
     "./src/modules/task/TaskDetails.jsx",

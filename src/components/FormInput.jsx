@@ -265,7 +265,11 @@ export class FormInput extends Component {
 			data.invalid = !!err
 			isFn(onChange) && onChange(event, data, this.props)
 			this.value = data.value
-			rxValue && rxValue.next(data.value)
+			if (isSubjectLike(rxValue)) {
+				// prevent going to handleChange again
+				this.ignoreUpdate = true
+				rxValue.next(data.value)
+			}
 			this.setMessage(data.invalid, message)
 		}
 
