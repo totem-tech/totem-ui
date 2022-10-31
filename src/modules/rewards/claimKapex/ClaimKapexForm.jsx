@@ -233,7 +233,10 @@ function ClaimKAPEXForm(props) {
 					message.content = (
 						<div>
 							{textsCap.successMsg1 + ' '}
-							<a href='https://docs.totemaccounting.com/#/totem/terms'>
+							<a
+								href='https://docs.totemaccounting.com/#/crowdloan/contribution-terms?id=totem-meccano-testnet-account-migration-amp-allocations'
+								target='_blank'
+							>
 								{textsCap.successMsg2}
 							</a>
 						</div>
