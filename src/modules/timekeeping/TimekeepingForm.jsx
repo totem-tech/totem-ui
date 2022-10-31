@@ -21,8 +21,9 @@ import { handleInvitation } from './notificationHandlers'
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
 const blockCountToDuration = blockCount => secondsToDuration(blockCount * BLOCK_DURATION_SECONDS)
-const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration) ? 0 :
-    parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
+const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration)
+    ? 0
+    : parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
 
 const textsCap = translated({
     activity: 'activity',
@@ -84,6 +85,7 @@ const textsCap = translated({
     updateFormHeader: 'update Record',
     workerBannedMsg: 'permission denied',
 }, true)[1]
+textsCap.hhmmss = textsCap.hhmmss.toLowerCase()
 
 function handleDurationChange(e, formValues, i) {
     const { inputs, values } = this.state

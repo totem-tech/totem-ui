@@ -31,6 +31,7 @@ import identities, {
 import { rxPartners } from '../../partner/partner'
 import { generateTweet, getRewardIdentity, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
+import BackupForm from '../../gettingStarted/BackupForm'
 
 let textsCap = {	    
 	continue: 'continue',    
@@ -41,10 +42,11 @@ let textsCap = {
 	errIneligible2: 'Only users who previously participated in the rewards campaign are eligible.',
 	errInvalidTweetUrl: 'invalid Tweet URL',
 	errRewardId404: 'reason: missing reward identity',
+	errWarnBackup: 'please download a backup of your account to make sure you do not loose access to your rewards',
 	feedbackLabel: 'enter your feedback',
 	feedbackPlaceholder: 'please enter your feedback about the Totem.Live testnet application including any bug report (between 50 and 1000 characters)',  
     header: 'claim KAPEX',
-	historyWarning: 'DO NOT remove history items before submitting your claim!',    
+	// historyWarning: 'DO NOT remove history items before submitting your claim!',    
     loading: 'loading...',
 	rewardIdLabel: 'your reward identity',
 	rewardIdLabelDetails: 'this is the identity you need to complete the tasks with',    
@@ -54,7 +56,8 @@ let textsCap = {
 	taskCompleted: 'Well done! You have completed this task.',
     tasksListTitle: 'in order claim KAPEX you must complete the following tasks using your reward identity:',
 	tweetedBtn: 'post a tweet',
-	tweetBtnDesc: 'Post a tweet to spread the word about the Totem KAPEX migration. In order for you to be eligible for referral rewards users you have referred MUST also submit their claim and be accepted.',
+	tweetBtnDesc1: 'post a tweet to spread the word about the Totem KAPEX migration.',
+	tweetBtnDesc2: 'in order for you to be eligible for referral rewards users you have referred MUST also submit their claim and be accepted.',
     tweetUrlLabel: 'Tweet ID',
 	tweetUrlPlaceholder: 'paste the URL of the Tweet',
 }
@@ -117,7 +120,7 @@ function ClaimKAPEXForm(props) {
 							<div>
 								{textsCap.errSubmittedDetails + ' '}
 								
-								<a href='https://docs.totemaccounting.com/#/totem/terms'>
+								<a href='https://docs.totemaccounting.com/#/crowdloan/contribution-terms?id=totem-meccano-testnet-account-migration-amp-allocations'>
 									{textsCap.successMsg2}
 								</a>
 							</div>
@@ -185,11 +188,11 @@ function ClaimKAPEXForm(props) {
 		status: statuses.LOADING,
 	}} />
 
-	let submitText, onSubmit
+	let submitText, handleSubmit
 	switch (values[inputNames.step]) {
         case steps.tasks:
             submitText = null
-            onSubmit = null
+            handleSubmit = null
 			// submitText = textsCap.continue
 			// onSubmit = () => {
 			// 	// continue to feedback step
@@ -199,21 +202,25 @@ function ClaimKAPEXForm(props) {
 			break
 		case steps.tweet:
 			submitText = textsCap.continue
-			onSubmit = () => {
+			handleSubmit = () => {
 				// continue to feedback step
 				const { rxValue } = findInput(state.inputs, inputNames.step) || {}
 				rxValue && rxValue.next(steps.feedback)
 			}
 			break
 		case steps.feedback:
-			onSubmit = async (e, values) => {
+			handleSubmit = async (e, values) => {
 				const message = {}
+				const { onSubmit } = props
 				try {
-					const { onSubmit } = props
 					setState({
 						message: null,
 						submitInProgress: true,
 					})
+					const backupDone = await BackupForm.checkAndWarn(true)
+					if (!backupDone === false) throw new Error(textsCap.errWarnBackup)
+					
+
 					await chatClient.rewardsClaimKAPEX.promise(values)
 
 					status.submitted = true
@@ -254,7 +261,7 @@ function ClaimKAPEXForm(props) {
 				: Object.values(inputNames),
 			message: message || state.message || props.message,
 			onChange: (_, values) => setState({ values }),
-			onSubmit,
+			onSubmit: handleSubmit,
 			submitText,
 		}} />
 	)
@@ -401,9 +408,9 @@ const updateInputs = inputs => {
 	tasksIn.content = (
 		<div>
 			<h4 className='no-margin'>{textsCap.tasksListTitle + ' '}</h4>
-			<small style={{ color: 'deeppink' }}>
+			{/* <small style={{ color: 'deeppink' }}>
 				<b>({textsCap.historyWarning})</b>
-			</small>
+			</small> */}
 			<FAQ {...{
 				questions: tasks,
 				exclusive: true,
@@ -424,8 +431,13 @@ const updateInputs = inputs => {
 	// Tweet button
     const href = generateTweet()
 	tweetBtn.content = (
-		<p>
-			{textsCap.tweetBtnDesc}
+		<div>
+			<div>
+				{textsCap.tweetBtnDesc1}
+			</div>
+			<div style={{ color: 'deeppink' }}>
+				{textsCap.tweetBtnDesc2}
+			</div>
 			<Button {...{
 				as: 'a',
 				content: textsCap.tweetedBtn,
@@ -434,9 +446,10 @@ const updateInputs = inputs => {
 					e.preventDefault()
 					window.open(href, '_blank')
 				},
+				style: { marginBottom: 10 },
 				target: '_blank',
 			}} />
-		</p>
+		</div>
 	)
 
 	// generate a token for this request

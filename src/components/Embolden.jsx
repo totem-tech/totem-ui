@@ -31,13 +31,16 @@ const Embolden = ({ children, regex = /"[^"]+"/g }, keepQuotes = true) => {
         const replacements = matches.map(quoted =>
             <b>
                 {!keepQuotes
-                    ? quoted.split('"').join('')
+                    ? `${quoted}`
+                        .split('"')
+                        .join('')
                     : quoted}
             </b>
         )
 		matches.forEach((quoted, i) => {
 			arr = arr.map(s =>
-                s.split(quoted)
+                `${s}`
+                    .split(quoted)
                     .map((x, j) =>
                         j === 0
                             ? [x]

@@ -38,48 +38,55 @@ const logoSrc = TotemButtonLogo
 export default function App() {
 	useEffect(() => {
 		// For debug only.
-		window.utils = {
-			convert: require('./utils/convert'),
-			generatePassword,
-			naclHelper: require('./utils/naclHelper'),
-			polkadotHelper: require('./utils/polkadotHelper'),
-			PromisE: require('./utils/PromisE'),
-			time: require('./utils/time'),
-			utils: require('./utils/utils'),
-			validator: require('./utils/validator'),
-		}
-		window.DataStorage = require('./utils/DataStorage')
-		window.services = {
-			activity,
-			blockchain,
-			chatClient,
-			currency,
-			history: require('./modules/history/history'),
-			identity,
-			language,
-			modal,
-			partner,
-			queue,
-			sidebar,
-			storage,
-			timeKeeping,
-			toast,
-			window: windowService,
+		const isProd = window.location.host === 'totem.live'
+		if (!isProd) {
+			window.utils = {
+				convert: require('./utils/convert'),
+				generatePassword,
+				naclHelper: require('./utils/naclHelper'),
+				polkadotHelper: require('./utils/polkadotHelper'),
+				PromisE: require('./utils/PromisE'),
+				time: require('./utils/time'),
+				utils: require('./utils/utils'),
+				validator: require('./utils/validator'),
+			}
+			window.DataStorage = require('./utils/DataStorage')
+			window.services = {
+				activity,
+				blockchain,
+				chatClient,
+				currency,
+				history: require('./modules/history/history'),
+				identity,
+				language,
+				modal,
+				partner,
+				queue,
+				sidebar,
+				storage,
+				timeKeeping,
+				toast,
+				window: windowService,
+			}
 		}
 
-		window.queryBlockchain = async (func, args, multi) =>
-			await blockchain.query(func, args, multi, true)
-		queryBlockchain().then(api => (window.api = api))
+		window.queryBlockchain = async (func, args, multi) => await blockchain
+			.query(func, args, multi, true)
+		
+		queryBlockchain().then(api =>
+			window.api = api
+		)
 
 		if (!queueResumed) {
 			// resume any incomplete queued tasks
 			queueResumed = true
 			setTimeout(() => resumeQueue(), 1000)
 		}
+		
+		// make sure all notification handlers are imported
 		filePaths
 			.filter(path => path.includes('/notificationHandlers.js'))
 			.forEach(path => require(`./${path.replace('./src/', '')}`))
-		return () => {}
 	}, [])
 
 	const gridClass = gridClasses[rxGridColumns.value - 1]

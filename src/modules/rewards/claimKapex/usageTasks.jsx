@@ -23,6 +23,7 @@ import { getAll as getHistory, limit } from '../../history/history'
 import partners from '../../partner/partner'
 import { listTypes } from '../../task/TaskList'
 import { statusCached } from './claimKapex'
+import { confirm } from '../../../services/modal'
 
 let textsCap = {
 	addIdentity: 'add identity shared by a friend',
@@ -35,7 +36,7 @@ let textsCap = {
 	clickRequest: 'click on the "Request" button.',
 	clickSubmit: 'click on the "Submit" button',
     clickTimer: 'click on the "Timer" button.',    
-    clickViewTeam: 'click on the "Add/view team members" button.',    
+    clickViewTeam: 'click on the "Add/view team members" button. Or click on the view team icon under the "Actions" column.',    
 	createActivity: 'create an Activity',
 	createTask: 'create a task',
 	createTkRecord: 'create a timekeeping record',
@@ -52,7 +53,9 @@ let textsCap = {
 	goToTasks: 'go to Tasks module',
 	goToTimekeeping: 'go to Timekeeping module',
 	goToTransfer: 'go to Transfer module',
+	openTab: 'open in a new tab?',
 	requestIdentity: 'request identity from a friend',
+	selectActivity: 'select the activity you just created',
 	selectRecipient: 'select your friend from the recipient DropDown list',
 	step1Title: 'test the DApp',
 	step2Title: 'post a Tweet',
@@ -155,7 +158,7 @@ export const getUsageTasks = rewardIdentity => {
 			case 'api.tx.timekeeping.submitTime':
 				// create new time record
 				if (taskStatus.timekeepingDone) break
-				const numBlocks = data[7] - data[6]
+				const numBlocks = data[4]
 				if (!isInteger(numBlocks)) break
 
 				const minSeconds = durationToSeconds('03:00:00')
@@ -271,6 +274,7 @@ export const getUsageTasks = rewardIdentity => {
 					module: 'timekeeping',
 				},
 				textsCap.clickTimer,
+				textsCap.selectActivity,
 				textsCap.clickDuration,
 				`${textsCap.enterDuration} "${textsCap.enterDuration2}"`,
 				textsCap.clickSubmit,
@@ -345,6 +349,14 @@ const getUsageInstructions = (items = [], prefix = textsCap.followInstructions, 
 						as: 'a',
 						icon: 'forward mail',
 						href: url,
+						onClick: e => {
+							e.preventDefault()
+							confirm({
+								content: textsCap.openTab,
+								onConfirm: () => window.open(url, '_blank'),
+								size: 'mini',
+							})
+						},
 						size: 'tiny',
 						target: '_blank',
 					}} />
