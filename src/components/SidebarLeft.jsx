@@ -65,11 +65,7 @@ function SidebarLeft() {
 						sidebarState.collapsed && setHovered(false)
 					}}
 				>
-					<div
-						position='right'
-						style={styles.sidebarToggle}
-						title={collapsed ? 'Expand' : 'Collapse'}
-					>
+					<div position='right' style={styles.sidebarToggle}>
 						<span>
 							<Icon name={icon} />
 							{!collapsed && ` ${hovered ? textsCap.keepOpen : textsCap.closeSidebar}`}

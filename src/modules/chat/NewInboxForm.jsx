@@ -50,7 +50,6 @@ export default function NewInboxForm(props) {
         ].join('&')
         const redirectTo = `${location.protocol}//${location.host}?${params}`
         
-        console.log({props, redirectTo})
         showForm(RegistrationForm, { values: { redirectTo, silent: true } })
         return ''
     }

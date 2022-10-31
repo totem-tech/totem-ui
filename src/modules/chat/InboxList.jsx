@@ -449,7 +449,6 @@ const InboxActions = React.memo(props => {
                     icon: 'cog',
                     onClick: e => {
                         e.stopPropagation()
-                        console.log()
                         setShowActions(!active && inboxKey)
                     },
                     title: active

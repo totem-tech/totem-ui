@@ -71,15 +71,13 @@ class IdentityDetailsForm extends Component {
 			inputs: [
 				{
 					content: (
-						<IdentityForm
-							{...{
-								El: 'div',
-								// auto save changes
-								autoSave: true,
-								submitText: null,
-								values: this.identity,
-							}}
-						/>
+						<IdentityForm {...{
+							El: 'div',
+							// auto save changes
+							autoSave: true,
+							submitText: null,
+							values: this.identity,
+						}} />
 					),
 					name: inputNames.identityForm,
 					type: 'html',
@@ -217,7 +215,6 @@ class IdentityDetailsForm extends Component {
 			...this.identity,
 			uri: this.getUri(this.identity.uri),
 		})
-		console.log(this.identity)
 	}
 
 	getUri = uri => (this.showSeed || !uri ? uri : '*'.repeat(uri.length))

@@ -339,6 +339,7 @@ const getUsageInstructions = (items = [], prefix = textsCap.followInstructions, 
 						`?${objToUrlParams(params)}`
 					].join('')
 				}
+				
 				const iconBtn = isStr(module) && (
 					<Button {...{
 						as: 'a',
