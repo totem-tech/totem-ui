@@ -104,6 +104,7 @@ export default function AssetConverterForm(props) {
                     inputs: [
                         {
                             ...asInput({
+                                autoHideName: true,
                                 label: labels.asset,
                                 lazyLoad: true,
                                 name: inputNames.asset,

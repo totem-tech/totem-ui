@@ -10,11 +10,9 @@ import { isFn, objWithoutKeys } from '../../utils/utils'
 const CurrencyDropdown = React.memo((props) => {
     const { autoHideName, onCurrencies } = props
     props = objWithoutKeys(props, ['autoHideName', 'onCurrencies'])
-        props.name === 'asset' && console.log({rxValue:props.rxValue})
     const [options = []] = usePromise(async () => {
         const currencies = await getCurrencies()
         isFn(onCurrencies) && onCurrencies(currencies)
-        props.name === 'asset' && console.log({currencies, rxValue:props.rxValue})
 
         return currencies.map(({ _id, currency, name, ticker, type }) => {
             const withName = (
