@@ -456,7 +456,8 @@ const init = () => {
         map.set(name, active),
         new Map(),
     )
-    statuses.setAll(sanitisedStatuses, true)
+    const changed = JSON.stringify(statuses.toArray()) !== JSON.stringify(Array.from(sanitisedStatuses))
+    changed && statuses.setAll(sanitisedStatuses, true)
     // if all items are inactive show getting started module
     sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName, true, null, null, false)
     // update sidebar state on layout change
@@ -468,12 +469,17 @@ const init = () => {
     // save to local storage to preseve state
     rxSidebarState.subscribe(() => {
         const { collapsed, visible } = rxSidebarState.value
-
-        rw({ status: rxSidebarState.value })
         setClass('body', {
             'sidebar-visible': visible,
             'sidebar-collapsed': collapsed,
         })
+
+        if (!rxSidebarState.ignoredFirst) {
+            rxSidebarState.ignoredFirst = true
+            return
+        }
+
+        rw({ status: rxSidebarState.value })
     })
 }
 

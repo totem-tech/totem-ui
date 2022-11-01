@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import { format } from '../../utils/time'
 import {
@@ -203,7 +203,8 @@ export default function HistoryList(props) {
         }
         return state
     })
-    const [data] = useRxSubject(rxHistory, (history = new Map()) => {
+    // update table whenever rxHistory is changed
+    const [data, setData] = useRxSubject(rxHistory, (history = new Map()) => {
         Array
             .from(history)
             .forEach(([_, item]) => {
@@ -220,7 +221,11 @@ export default function HistoryList(props) {
                 item._search = JSON.stringify(item)
             })
         return history
-    }, getAll())
+    })
+
+    // Set initial table data.
+    // This is required because rxHistory is a Subject instance (due to cache being disabled)
+    useEffect(() => setData(getAll()), [])
         
     const { topLeftMenu } = state
     const btnClearAll = topLeftMenu.find(x => x.name === 'clear-all')

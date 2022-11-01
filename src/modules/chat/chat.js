@@ -370,14 +370,23 @@ setTimeout(() => {
         doUpdate && inboxSettings(inboxKey, { unread: 0 })
     }
     rxOpenInboxKey.subscribe(key => {
+        handleChange()
+        if (!rxOpenInboxKey.ignoredFirst) {
+            rxOpenInboxKey.ignoredFirst = true
+            return
+        }
         // remember last open inbox key
         rw({ openInboxKey: key })
-        handleChange()
     })
     rxVisible.subscribe(visible => {
-        rw({ visible })
         setClass('body', { 'chat-visible': visible })
         handleChange()
+
+        if (!rxVisible.ignoredFirst) {
+            rxVisible.ignoredFirst = true
+            return
+        }
+        rw({ visible })
     })
     rxExpanded.subscribe(expand => {
         // add/remove 'inbox-expanded' class for styling purposes

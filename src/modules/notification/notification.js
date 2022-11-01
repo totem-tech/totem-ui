@@ -11,7 +11,9 @@ import { MOBILE, rxLayout, rxVisible as rxWindowVisbile } from '../../services/w
 
 export const MODULE_KEY = 'notifications'
 // remove legacy notifications data
-storage.settings.module('totem_notifications', null)
+if (storage.settings.module('totem_notifications')) {
+    storage.settings.module('totem_notifications', null)
+}
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 const notifications = new DataStorage('totem_' + MODULE_KEY)
 export const itemViewHandlers = {}
