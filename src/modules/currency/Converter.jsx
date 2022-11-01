@@ -117,6 +117,7 @@ const Converter = props => {
             const toIn = findInput(state.inputs, inputNames.to)
             fromIn.inlineLabel = (
                 <CurrencyDropDown {...{ 
+                    autoHideName: true,
                     onChange: updateToAmount,
                     rxValue: rxFrom,
                     secondary: true,
@@ -124,6 +125,7 @@ const Converter = props => {
             )
             toIn.inlineLabel = (
                 <CurrencyDropDown {...{ 
+                    autoHideName: true,
                     onChange: updateToAmount,
                     rxValue: rxTo,
                     secondary: true,

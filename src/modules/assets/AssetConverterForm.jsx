@@ -3,12 +3,12 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { arrReverse, deferred, isDefined, isFn } from '../../utils/utils'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
-import FormInput from '../../components/FormInput'
 import { translated } from '../../services/language'
 import { iUseReducer, useRxSubject } from '../../services/react'
 import { setToast } from '../../services/toast'
 import { MOBILE, rxLayout } from '../../services/window'
-import { convertTo, getCurrencies } from '../currency/currency'
+import { convertTo } from '../currency/currency'
+import { asInput } from '../currency/CurrencyDropdown'
 
 const textsCap = translated({
     assetLabel: 'asset',
@@ -25,7 +25,6 @@ const inputNames = {
     date: 'date',
     group: 'group',
 }
-const rxCurrencyOptions = new BehaviorSubject([])
 export default function AssetConverterForm(props) {
     let {
         labels,
@@ -104,31 +103,24 @@ export default function AssetConverterForm(props) {
                     unstackable: true,
                     inputs: [
                         {
-                            content: (
-                                <FormInput {...{
-                                    label: labels.asset,
-                                    lazyLoad: true,
-                                    name: inputNames.asset,
-                                    options: [],
-                                    placeholder: textsCap.assetPlaceholder,
-                                    rxOptions: rxCurrencyOptions,
-                                    rxValue: rxAssetFrom,
-                                    search: [
-                                        'text',
-                                        'description',
-                                        'value',
-                                    ],
-                                    selection: true,
-                                    // improves performance by reducing number of onChange trigger
-                                    selectOnNavigation: false,
-                                    style: { maxHeight: 38 },
-                                    type: 'dropdown',
-                                    // value: (rxAmountFrom || {}).value,
-                                }} />
-                            ),
-                            name: inputNames.asset,
-                            rxValue: rxAssetFrom,
-                            type: 'html',
+                            ...asInput({
+                                label: labels.asset,
+                                lazyLoad: true,
+                                name: inputNames.asset,
+                                options: [],
+                                placeholder: textsCap.assetPlaceholder,
+                                rxValue: rxAssetFrom,
+                                search: [
+                                    'text',
+                                    'description',
+                                    'value',
+                                ],
+                                selection: true,
+                                // improves performance by reducing number of onChange trigger
+                                selectOnNavigation: false,
+                                style: { maxHeight: 38 },
+                                type: 'dropdown',
+                            })
                         },
                         {
                             label: labels.amountFrom,
@@ -157,17 +149,6 @@ export default function AssetConverterForm(props) {
             groupIn.inputs,
             !isMobile && reverseInputs,
         )
-        
-        // set currency dropdown options
-        !rxCurrencyOptions.value.length && getCurrencies()
-            .then(currencies => {
-                const options = currencies.map(({ currency, name, _id }) => ({
-                    description: currency,
-                    text: name,
-                    value: _id,
-                }))
-                rxCurrencyOptions.next(options)
-            })
 
         return state
     })

@@ -149,7 +149,7 @@ export default function CurrencyList(props) {
             emptyMessage: gotDate
                 ? { content: textsCap.emptyMessageDate }
                 : props.emptyMessage,
-            topLeftMenu:  [<Converter key='c' style={{ maxWidth: 500}}></Converter>]
+            // topLeftMenu:  [<Converter key='c' style={{ maxWidth: 500}}></Converter>]
         }} />
     )
 }

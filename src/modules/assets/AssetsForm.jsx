@@ -15,12 +15,13 @@ const textsCap = translated({
     addAsset: 'add',
     btnSubtract: 'subtract all',
     btnAdd: 'add all to folio',
-    labelFE: 'Selection Functional Currency',
+    labelFE: 'selection Functional Currency',
     latestPriceMsg: 'using latest available prices',
     removeAsset: 'remove',
     searchAssets: 'search assets',
     tableHide: 'Hide Rates Table',
     tableShow: 'Show Rates Table',
+    toBeImplemented: 'feature not implemented yet!',
     totalValueOfAssets: 'Total Value of Assets'
 }, true)[1]
 export const inputNames = {
@@ -48,7 +49,7 @@ const rxShowList = new BehaviorSubject(false)
 const rxDate = new BehaviorSubject()
 const rxPortfolioValues = new BehaviorSubject({})
 const rxAmountFrom = new BehaviorSubject('')
-const rxAssetFrom = new BehaviorSubject('')
+const rxAssetFrom = new BehaviorSubject(rxSelected.value)
 const lineIdPrefix = 'lineId-'
 
 export default function AssetsForm(props) {
@@ -67,7 +68,7 @@ export default function AssetsForm(props) {
             .substr(0, 10)
         rxDate.next(date)
 
-        const notImplemented = () => setToast('Feature not implemented yet!', 2000, 'not-implemented')
+        const notImplemented = () => setToast(textsCap.toBeImplemented, 2000, 'not-implemented')
         const searchInput = {
             name: inputNames.keywords,
             // forces table to be visible on search change
@@ -264,12 +265,13 @@ export default function AssetsForm(props) {
 
         // set default functional currency 
         !rxAssetFrom.value && rxAssetFrom.next(rxSelected.value)
+        console.log(rxAssetFrom.value)
 
         return () => {
             mounted = false
             unsubscribe(subscriptions)
         }
-    })
+    }, [])
 
     if (state.inputs) {
         const input = findInput(state.inputs, inputNames.groupPortfolio)
