@@ -261,7 +261,7 @@ class TimeKeepingList extends Component {
         })
         // update record details whenever triggered
         this.subs.trigger = rxTrigger.subscribe(() => {
-            this.getRecords([], true)
+            this.getRecords()
         })
         this.subs.isMobile = rxLayout.subscribe(l =>
             this.setState({ isMobile: l === MOBILE })
