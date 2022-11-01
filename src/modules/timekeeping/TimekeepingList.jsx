@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
-import { BehaviorSubject, Subject } from 'rxjs'
+import { BehaviorSubject, map, Subject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
 import { BLOCK_DURATION_SECONDS, secondsToDuration, blockNumberToTS } from '../../utils/time'
@@ -20,10 +20,11 @@ import PartnerForm from '../partner/PartnerForm'
 import { getProjects, statuses, query, queueables } from './timekeeping'
 import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
+import TimekeepingDetailsForm from './TimekeepingDetailsForm'
 
 const toBeImplemented = () => alert('To be implemented')
 
-const textsCap = translated({
+let textsCap = {
     action: 'action',
     activity: 'activity',
     approve: 'approve',
@@ -38,6 +39,7 @@ const textsCap = translated({
     edit: 'edit',
     hash: 'hash',
     invoiced: 'invoiced',
+    locked: 'locked',
     no: 'no',
     reject: 'reject',
     rejected: 'rejected',
@@ -72,7 +74,8 @@ const textsCap = translated({
     setAsDraftDetailed: 'set as draft and force user to submit again',
     unarchiveRecord: 'restore from archive',
     workerIdentity: 'worker identity',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 const statusTexts = {}
 statusTexts[statuses.draft] = textsCap.draft
 statusTexts[statuses.submit] = textsCap.submitted
@@ -91,9 +94,10 @@ class TimeKeepingList extends Component {
         super(props)
 
         this.recordIds = []
-        this.detailsModalId = 'details-modal'
+        this.rxData = new BehaviorSubject(new Map())
+        this.inProgressBtns = new Map()
         this.state = {
-            inProgressHashes: [],
+            inprogressIds: [],
             columns: [
                 {
                     hidden: () => this.state.isMobile,
@@ -119,7 +123,7 @@ class TimeKeepingList extends Component {
                 },
                 {
                     collapsing: true,
-                    content: this.getActionContent,
+                    content: this.getActionButtons,
                     draggable: false,
                     style: { padding: '0px 5px' },
                     textAlign: 'center',
@@ -133,11 +137,17 @@ class TimeKeepingList extends Component {
             perPage: 10,
             rowProps: item => {
                 const { approved, draft, rejected } = item
-                return !rejected && draft ? {} : {
-                    warning: rejected,
-                    positive: approved,
-                    title: approved ? textsCap.approved : (rejected ? textsCap.rejected : '')
-                }
+                return !rejected && draft
+                    ? {}
+                    : {
+                        warning: rejected,
+                        positive: approved,
+                        title: approved
+                            ? textsCap.approved
+                            : rejected
+                                ? textsCap.rejected
+                                : ''
+                    }
             },
             searchExtraKeys: ['address', 'hash', 'approved'],
             selectable: true,
@@ -241,132 +251,136 @@ class TimeKeepingList extends Component {
         // subscribe to changes on the list of recordIds
         const handleResult = deferred((...args) => {
             this.loaded = true
-            this.getRecords(...args)
+            this.updateRecords(...args)
         }, 500)
         this.subs.recordIds = queryFn(arg, handleResult, multi)
 
         if (manage) {
             // auto update partner/identity names
             this.subs.identities = rxIdentities.subscribe(() =>
-                this._mounted && this.processRecords(this.state.data)
+                this._mounted && this.setTableData(this.state.data)
             )
             this.subs.partners = rxPartners.subscribe(() =>
-                this._mounted && this.processRecords(this.state.data)
+                this._mounted && this.setTableData(this.state.data)
             )
         }
 
         this.subs.inProgressIds = rxInProgressIds.subscribe(ar => {
-            this._mounted && this.setState({ inProgressHashes: ar })
-            this.getRecords()
+            if (!this._mounted) return
+            this.setState({ inprogressIds: ar })
+            // this.updateRecords()
         })
         // update record details whenever triggered
         this.subs.trigger = rxTrigger.subscribe(() => {
-            this.getRecords()
+            this._mounted && this.updateRecords()
         })
         this.subs.isMobile = rxLayout.subscribe(l =>
-            this.setState({ isMobile: l === MOBILE })
+            this._mounted && this.setState({ isMobile: l === MOBILE })
         )
     }, 500)
 
-    getActionContent = (record, hash, asButton = true) => {
+    getActionButtons = (record, hash, asButton = true) => {
         const { archive, manage } = this.props
-        const { inProgressHashes = [] } = this.state
+        const { inprogressIds = [] } = this.state
         const {
-            approved, duration, locked,
-            projectHash, projectName, projectOwnerAddress,
-            start_block, submit_status, total_blocks,
-            workerAddress
+            approved,
+            locked,
+            projectOwnerAddress,
+            submit_status,
         } = record
-        const editableStatuses = [statuses.draft, statuses.dispute, statuses.reject]
+        const editableStatuses = [
+            statuses.draft,
+            statuses.dispute,
+            statuses.reject,
+        ]
         const isSubmitted = submit_status === statuses.submit
-        const inProgress = inProgressHashes.includes(hash)
+        const inProgress = inprogressIds.includes(hash)
         const isOwner = projectOwnerAddress === getSelected().address
-        const detailsBtn = {
-            icon: 'eye',
-            onClick: () => this.showDetails(hash, record),
-            title: textsCap.recordDetails,
-        }
-        const buttons = !archive
-            ? [
-                detailsBtn,
-                {
-                    disabled: inProgress || !editableStatuses.includes(submit_status) || locked || approved,
-                    hidden: manage,
-                    icon: 'pencil',
-                    onClick: () => showForm(
-                        TimekeepingUpdateForm,
-                        {
-                            values: {
-                                blockCount: total_blocks,
-                                blockEnd: start_block + total_blocks,
-                                blockStart: start_block,
-                                duration,
-                                projectHash,
-                                projectName,
-                                status: submit_status,
-                                workerAddress,
-                            },
-                            hash,
-                            projectName,
-                            onSubmit: success => {
-                                if (!success) return
-                                this.updateTrigger()
-                                closeModal(this.detailsModalId)
-                            }
-                        }),
-                    title: textsCap.edit,
-                },
-                {
-                    disabled: inProgress || !isSubmitted,
-                    hidden: !manage || approved,
-                    icon: 'check',
-                    onClick: () => this.handleApprove(hash, true),
-                    positive: true,
-                    title: textsCap.approve,
-                },
-                {
-                    // set as draft button
-                    disabled: inProgress,
-                    hidden: !manage || !approved,
-                    icon: 'reply',
-                    onClick: () => confirm({
-                        content: <h3>{textsCap.setAsDraftDetailed}?</h3>,
-                        onConfirm: () => this.handleSetAsDraft(hash),
-                        size: 'tiny',
-                    }),
-                    title: textsCap.setAsDraft,
-                },
-                {
-                    // dispute button
-                    disabled: inProgress || !isSubmitted || approved || !isOwner,
-                    hidden: !manage,
-                    icon: 'bug',
-                    onClick: toBeImplemented,
-                    title: textsCap.dispute,
-                },
-                {
-                    // reject button
-                    disabled: inProgress || !isSubmitted,
-                    hidden: !manage,
-                    icon: 'close',
-                    onClick: () => confirm({
-                        confirmButton: <Button negative content={textsCap.reject} />,
-                        onConfirm: () => this.handleApprove(hash, false),
-                        size: 'tiny'
-                    }),
-                    negative: true,
-                    title: textsCap.reject,
-                },
-            ]
-            : [
-                detailsBtn,
-                {
-                    disabled: inProgress,
-                    icon: 'reply all',
-                    onClick: () => this.handleArchive(hash, false),
-                    title: textsCap.unarchive
-                }
-            ]
+        const isBtnInprogress = title =>  this.inProgressBtns.get(hash) === title
+        const buttons = [
+            {
+                icon: 'eye',
+                onClick: () => this.showDetails(hash, record),
+                title: textsCap.recordDetails,
+            },
+            !archive && {
+                disabled: inProgress
+                    || !editableStatuses.includes(submit_status)
+                    || locked
+                    || approved,
+                hidden: manage,
+                icon: 'pencil',
+                loading: isBtnInprogress(textsCap.edit),
+                onClick: () => this.handleEdit(
+                    record,
+                    hash,
+                    textsCap.edit,
+                ),
+                title: textsCap.edit,
+            },
+            !archive && {
+                disabled: inProgress || !isSubmitted,
+                hidden: !manage || approved,
+                icon: 'check',
+                loading: isBtnInprogress(textsCap.approve),
+                onClick: () => this.handleApprove(
+                    hash,
+                    true,
+                    textsCap.approve,
+                ),
+                positive: true,
+                title: textsCap.approve,
+            },
+            !archive && {
+                // set as draft button
+                disabled: inProgress,
+                hidden: !manage || !approved,
+                icon: 'reply',
+                loading: isBtnInprogress(textsCap.setAsDraft),
+                onClick: () => confirm({
+                    content: <h3>{textsCap.setAsDraftDetailed}?</h3>,
+                    onConfirm: () => this.handleSetAsDraft(
+                        hash,
+                        textsCap.setAsDraft,
+                    ),
+                    size: 'tiny',
+                }),
+                title: textsCap.setAsDraft,
+            },
+            // !archive && {
+            //     // dispute button
+            //     disabled: inProgress
+            //         || !isSubmitted
+            //         || approved
+            //         || !isOwner,
+            //     hidden: !manage,
+            //     icon: 'bug',
+            //     loading: isBtnInprogress(textsCap.dispute),
+            //     onClick: toBeImplemented,
+            //     title: textsCap.dispute,
+            // },
+            !archive && {
+                // reject button
+                disabled: inProgress || !isSubmitted,
+                hidden: !manage,
+                icon: 'close',
+                loading: isBtnInprogress(textsCap.reject),
+                onClick: () => confirm({
+                    confirmButton: <Button negative content={textsCap.reject} />,
+                    onConfirm: () => this.handleApprove(hash, false, textsCap.reject),
+                    size: 'tiny'
+                }),
+                negative: true,
+                title: textsCap.reject,
+            },
+            archive && {
+                disabled: inProgress,
+                icon: 'reply all',
+                loading: isBtnInprogress(textsCap.unarchive),
+                onClick: () => this.handleArchive(hash, false, textsCap.unarchive),
+                title: textsCap.unarchive
+            }
+        ].filter(Boolean)
 
         return buttons
             .map((x, i) => {
@@ -380,7 +394,7 @@ class TimeKeepingList extends Component {
             )
     }
 
-    getRecords = deferred(async (recordIds) => {
+    updateRecords = deferred(async (recordIds) => {
         if (!this._mounted) return
 
         recordIds = [
@@ -400,7 +414,12 @@ class TimeKeepingList extends Component {
 
         records = records.map((record, i) => {
             if (!record) return
-            const { end_block, project_hash: projectHash, total_blocks, worker } = record
+            const {
+                end_block,
+                project_hash: projectHash,
+                total_blocks,
+                worker,
+            } = record
             const recordId = recordIds[i]
             const { name, ownerAddress } = projects.get(projectHash) || {}
             return [
@@ -418,80 +437,155 @@ class TimeKeepingList extends Component {
                 }
             ]
         })
-
-        this.processRecords(new Map(records))
+        this.setTableData(new Map(records))
     }, 150)
 
-    // process record details and add extra information like worker name etc
-    processRecords = records => Array.from(records || new Map()).forEach(([recordId, record]) => {
-        const { locked, projectName, projectOwnerAddress, submit_status, workerAddress } = record
-        record.approved = submit_status === statuses.accept
-        record.rejected = submit_status === statuses.reject
-        record.draft = submit_status === statuses.draft
-        record.workerName = getAddressName(workerAddress)
-        record.projectName = projectName || textsCap.unknown
-        // banned = ....
-        // if worker is not in the partner or identity lists, show button to add as partner
-        record._workerName = record.workerName || (
-            <Button
-                content='Add Partner'
-                onClick={() => showForm(PartnerForm, {
-                    values: {
-                        address: workerAddress,
-                        associatedIdentity: projectOwnerAddress,
-                    }
-                })}
-            />
-        )
-        record._status = locked ? textsCap.locked : statusTexts[submit_status]
-    }) | this.setState({ data: records })
+    // add extra information to records like worker name etc and then set table data
+    setTableData = records => {
+        Array
+            .from(records || new Map())
+            .forEach(([recordId, record]) => {
+                const {
+                    locked,
+                    projectName,
+                    projectOwnerAddress,
+                    submit_status,
+                    workerAddress,
+                } = record
+                record.approved = submit_status === statuses.accept
+                record.rejected = submit_status === statuses.reject
+                record.draft = submit_status === statuses.draft
+                record.workerName = getAddressName(workerAddress)
+                record.projectName = projectName || textsCap.unknown
+                // banned = ....
+                // if worker is not in the partner or identity lists, show button to add as partner
+                record._workerName = record.workerName || (
+                    <Button
+                        content='Add Partner'
+                        onClick={() => showForm(PartnerForm, {
+                            values: {
+                                address: workerAddress,
+                                associatedIdentity: projectOwnerAddress,
+                            }
+                        })}
+                    />
+                )
+                record._status = locked
+                    ? textsCap.locked
+                    : statusTexts[submit_status]
+            })
+        this.setState({ data: records })
+        this.rxData.next(records)
+    }
 
-    handleApprove = (hash, approve = false) => {
-        const { data, inProgressHashes = [] } = this.state
-        const { projectHash, projectOwnerAddress, submit_status, workerAddress } = data.get(hash) || {}
-        const targetStatus = approve ? statuses.accept : statuses.reject
-        if (!workerAddress || submit_status !== statuses.submit || targetStatus === submit_status) return
-        rxInProgressIds.next(inProgressHashes.concat(hash))
-        const task = queueables.record.approve(projectOwnerAddress, workerAddress, projectHash, hash, approve, null, {
-            title: `${textsCap.timekeeping} - ${approve ? textsCap.approveRecord : textsCap.rejectRecord}`,
-            description: `${textsCap.recordId}: ${hash}`,
-            then: success => {
-                rxInProgressIds.next(inProgressHashes.filter(h => h !== hash))
-                if (!success) return
-                this.updateTrigger()
-                closeModal(this.detailsModalId)
-            },
-        })
+    handleApprove = (hash, approve = false, title) => {
+        const { data } = this.state
+        const {
+            projectHash,
+            projectOwnerAddress,
+            submit_status,
+            workerAddress,
+        } = data.get(hash) || {}
+        const targetStatus = approve
+            ? statuses.accept
+            : statuses.reject
+        const ignore = !workerAddress
+            || submit_status !== statuses.submit
+            || targetStatus === submit_status
+        if (ignore) return
+
+        this.setBtnInprogress(hash, title)
+        const actionTitle = approve
+            ? textsCap.approveRecord
+            : textsCap.rejectRecord
+        const task = queueables.record.approve(
+            projectOwnerAddress,
+            workerAddress,
+            projectHash,
+            hash,
+            approve,
+            null,
+            {
+                title: `${textsCap.timekeeping} - ${actionTitle}`,
+                description: `${textsCap.recordId}: ${hash}`,
+                then: success => {
+                    this.setBtnInprogress(hash)
+
+                    if (!success) return
+                    this.updateTrigger()
+                },
+            }
+        )
         addToQueue(task)
     }
 
-    handleArchive = (hash, archive = true) => {
+    handleArchive = (hash, archive = true, title) => {
         const { manage } = this.props
-        const { data, inProgressHashes = [] } = this.state
+        const { data } = this.state
         const { projectOwnerAddress, workerAddress } = data.get(hash) || {}
-        const address = manage ? projectOwnerAddress : workerAddress
+        const address = manage
+            ? projectOwnerAddress
+            : workerAddress
         if (!address) return
-        inProgressHashes.push(hash)
-        this.setState({ inProgressHashes })
 
-        addToQueue(bcQueueables.archiveRecord(address, hashTypes.timeRecordHash, hash, archive, {
-            title: textsCap.archiveRecord,
-            description: `${textsCap.hash}: ${hash}`,
-            then: () => {
-                inProgressHashes.shift(hash)
-                this.setState({ inProgressHashes })
-                closeModal(this.detailsModalId)
-                this.updateTrigger()
+        this.setBtnInprogress(recordId, title)
+        const queueProps = bcQueueables.archiveRecord(
+            address,
+            hashTypes.timeRecordHash,
+            hash,
+            archive,
+            {
+                title: textsCap.archiveRecord,
+                description: `${textsCap.hash}: ${hash}`,
+                then: () => {
+                    this.setBtnInprogress(recordId)
+                    this.updateTrigger()
+                }
             }
-        }))
+        )
+        addToQueue(queueProps)
     }
 
     handleBan = (selectedHashes) => {
         
     }
 
-    handleSetAsDraft = hash => {
-        const { data, inProgressHashes = [] } = this.state
+    handleEdit = (record, recordId, title) => {
+        const {
+            duration,
+            projectHash,
+            projectName,
+            start_block,
+            submit_status,
+            total_blocks,
+            workerAddress
+        } = record
+        this.setBtnInprogress(recordId, title)
+        showForm(TimekeepingUpdateForm, {
+            values: {
+                blockCount: total_blocks,
+                blockEnd: start_block + total_blocks,
+                blockStart: start_block,
+                duration,
+                projectHash,
+                projectName,
+                status: submit_status,
+                workerAddress,
+            },
+            hash: recordId,
+            projectName,
+            // if closed without submitting
+            onClose: () => this.setBtnInprogress(recordId),
+            onSubmit: success => {
+                if (!success) return
+                this.setBtnInprogress(recordId)
+                this.updateTrigger()
+            }
+        })
+    }
+
+    handleSetAsDraft = (hash, title) => {
+        const { data } = this.state
         const {
             approved,
             end_block,
@@ -509,9 +603,7 @@ class TimeKeepingList extends Component {
             ReasonCodeKey: 0,
             ReasonCodeTypeKey: 0
         }
-
-        inProgressHashes.push(hash)
-        this.setState({ inProgressHashes })
+        this.setBtnInprogress(hash, title)
         const task = queueables.record.save(
             projectOwnerAddress,
             projectHash,
@@ -527,89 +619,45 @@ class TimeKeepingList extends Component {
                 title: `${textsCap.timekeeping} - ${textsCap.setAsDraft}`,
                 description: `${textsCap.recordId}: ${hash}`,
                 then: success => {
-                    inProgressHashes.shift(hash)
-                    this.setState({ inProgressHashes })
+                    this.setBtnInprogress(hash)
                     if (!success) return
 
                     this.updateTrigger()
-                    closeModal(this.detailsModalId)
                 },
             }
         )
         addToQueue(task)
     }
 
-    showDetails = (hash, record) => {
-        const { manage } = this.props
-        const isMobile = this.state
-        const {
-            duration,
-            end_block,
-            nr_of_breaks,
-            projectHash,
-            projectName,
-            start_block,
-            total_blocks,
-            workerAddress,
-            workerName,
-            _end_block,
-            _status,
-        } = record
-        const inputs = [
-            manage && [textsCap.projectName, projectName || projectHash],
-            [textsCap.recordId, textEllipsis(hash, 30)],
-            [textsCap.worker, workerName || workerAddress],
-            [textsCap.status, _status],
-            [textsCap.duration, duration],
-            [textsCap.numberOfBreaks, nr_of_breaks, 'number'],
-            [textsCap.finishedAt, _end_block],
-            [textsCap.blockCount, total_blocks],
-            [textsCap.blockStart, start_block],
-            [textsCap.blockEnd, end_block],
-        ]
-            .filter(Boolean)
-            .map(([label, value, type]) => ({
-                action: label !== textsCap.recordId ? undefined : { icon: 'copy', onClick: () => copyToClipboard(hash) },
-                label,
-                name: label,
-                readOnly: true,
-                type: type || 'text',
-                value,
-            }))
-
-        const excludeTitles = [
-            textsCap.recordDetails,
-        ]
-        const actions = this.getActionContent(record, hash)
-            .filter(({ props = {} }) =>
-                !excludeTitles.includes(props.title)
-                && !props.disabled
-            )
-            .map(button => ({
-                ...button,
-                props: {
-                    ...button.props,
-                    content: button.props.title,
-                    fluid: isMobile,
-                    style: { ...button.props.style, margin: 5, }
-                }
-            }))
-
-        actions.length > 0 && inputs.push({
-            content: <div style={{ textAlign: 'center' }}>{actions}</div>,
-            name: 'actions',
-            type: 'html'
-        })
-
-        const formProps = {
-            closeOnEsCape: true,
-            closeText: null,
-            header: textsCap.recordDetails,
-            inputs,
-            size: 'tiny',
-            submitText: null,
+    setBtnInprogress = (recordId, title) => {
+        const ids = rxInProgressIds.value
+        if (title) { 
+            // add entry
+            this.inProgressBtns.set(recordId, title)
+            rxInProgressIds.next(ids.concat(recordId))
+        } else {
+            this.inProgressBtns.delete(recordId)
+            rxInProgressIds.next(ids.filter(id => id !== recordId))
         }
-        showForm(FormBuilder, formProps, this.detailsModalId)
+    }
+
+    showDetails = (recordId, record) => {
+        const { manage } = this.props
+        const { isMobile } = this.state
+        const formProps = {
+            getActionButtons: this.getActionButtons,
+            isMobile,
+            manage,
+            recordId,
+            rxData: this.rxData,
+            rxInProgressIds,
+        }
+        
+        showForm(
+            TimekeepingDetailsForm,
+            formProps,
+            recordId,
+        )
     }
 
     updateTrigger = deferred(() => rxTrigger.next(uuid.v1()), 150)

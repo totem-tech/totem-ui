@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
-import { deferred, hasValue, isDefined, isFn, objCopy } from '../../utils/utils'
+import { deferred, hasValue, isBool, isDefined, isFn, isValidNumber, objCopy } from '../../utils/utils'
 import { BLOCK_DURATION_SECONDS, BLOCK_DURATION_REGEX, durationToSeconds, secondsToDuration } from '../../utils/time'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
@@ -50,7 +50,7 @@ const textsCap = translated({
     blockStart: 'start block',
     cancelWarning: 'you have a running timer. Would you like to stop and exit?',
     checkingProjectStatus: 'checking activity status...',
-    durationChangeRequired: 'rejected record requires duration change in order to re-sumbit',
+    errRejectedDurationUnchanged: 'rejected record requires duration change in order to re-sumbit',
     goBack: 'go Back',
     hhmmss: 'hh:mm:ss', //????
     inactiveWorkerHeader1: 'you are not part of this Team! Request an invitation',
@@ -76,6 +76,8 @@ const textsCap = translated({
     resumeTimeWarning: 'would you like to resume timekeeping on this activity?',
     selectAProject: 'select an Activity',
     selectActiveProject: 'please select an active Activity',
+    saveAsDraft: 'save as draft',
+    submitForApproval: 'submit for approval',
     submitConfirmationMsg: 'please verify the following information and click "Proceed" to submit your time record',
     submitTime: 'submit time',
     timerStarted: 'timer started',
@@ -87,11 +89,14 @@ const textsCap = translated({
 }, true)[1]
 textsCap.hhmmss = textsCap.hhmmss.toLowerCase()
 
-function handleDurationChange(e, formValues, i) {
-    const { inputs, values } = this.state
-    const valid = BLOCK_DURATION_REGEX.test(formValues.duration)
-    const invalid = inputs[i].value === DURATION_ZERO && values.manualEntry ? true : !valid
-    inputs[i].message = !invalid ? null : {
+const handleValidateDuration = (_1, _2, values) => {
+    const { duration, manualEntry } = values
+    const valid = BLOCK_DURATION_REGEX.test(duration)
+    const invalid = !manualEntry
+        ? !valid
+        : duration === DURATION_ZERO || !valid
+    
+    return invalid && {
         content: (
             <span>
                 {textsCap.invalidDurationMsgPart1}<br />
@@ -102,9 +107,6 @@ function handleDurationChange(e, formValues, i) {
         icon: true,
         status: 'error',
     }
-    inputs[i].invalid = invalid
-    inputs[i].error = invalid
-    this.setState({ inputs: inputs })
 }
 
 async function handleSubmitTime(hash, projectName, values, status, reason, checkBanned = true) {
@@ -240,10 +242,11 @@ export default class TimekeepingForm extends Component {
                     autoComplete: 'off',
                     label: textsCap.duration,
                     name: 'duration',
-                    onChange: handleDurationChange.bind(this),
+                    // onChange: handleDurationChange.bind(this),
                     placeholder: textsCap.hhmmss,
                     readOnly: values.manualEntry !== true,
                     type: 'text',
+                    validate: handleValidateDuration,
                     value: DURATION_ZERO
                 },
                 {
@@ -640,17 +643,25 @@ export class TimekeepingUpdateForm extends Component {
                     rxValue: new BehaviorSubject(),
                     label: textsCap.duration,
                     name: 'duration',
-                    onChange: this.handleDurationChange,
                     type: 'text',
                     required: true,
+                    validate: this.handleValidateDuration,
                 },
                 {
                     inline: true,
                     name: 'submit_status',
                     options: [
-                        { label: 'Save as draft', value: statuses.draft },
-                        { label: 'Submit for approval', value: statuses.submit }
+                        { label: textsCap.saveAsDraft, value: statuses.draft },
+                        { label: textsCap.submitForApproval, value: statuses.submit }
                     ],
+                    // manually trigger validation of duration
+                    onChange: (event, values) => {
+                        const { inputs } = this.state
+                        const durationIn = findInput(inputs, 'duration')
+                        durationIn.rxValue.next('')
+                        const { duration } = values
+                        setTimeout(() => durationIn.rxValue.next(duration))
+                    },
                     required: true,
                     type: 'radio-group',
                 },
@@ -667,19 +678,31 @@ export class TimekeepingUpdateForm extends Component {
 
     componentWillUnmount = () => this._mounted = false
 
-    handleDurationChange = (e, values, i) => {
-        handleDurationChange.call(this, e, values, i)
-        if (this.state.inputs[i].invalid) return
-        const { inputs } = this.state
-        const { duration } = values
-        const { values: { duration: durationOriginal, status } } = this.props
-        const input = inputs[i]
-        input.invalid = status === statuses.reject && duration === durationOriginal
-        input.message = !input.invalid ? null : {
-            content: textsCap.durationChangeRequired,
-            status: 'error',
-        }
-        this.setState({ inputs })
+    handleValidateDuration = (e, _, values) => {
+        let err = handleValidateDuration(e, _, values)
+        if (err) return err
+
+        // require a value change if record was rejected or setting back to draft
+        const { duration, submit_status: newStatus } = values
+        const {
+            values: {
+                duration: durationOriginal,
+                status: currentStatus,
+            } = {}
+        } = this.props
+        const isChanged = duration !== durationOriginal
+        const isRejected = currentStatus === statuses.reject
+        const requireChange = isRejected || newStatus === statuses.draft
+        const invalid = !isChanged && requireChange
+        err = !invalid
+            ? false
+            : !isRejected
+                ? true
+                : {
+                    content: textsCap.errRejectedDurationUnchanged,
+                    status: 'error',
+                }
+        return err
     }
 
     handleSubmit = async (_, { duration, submit_status }) => {

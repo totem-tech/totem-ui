@@ -88,6 +88,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	'isMobile',
 	'label',
 	'labelDetails',
+	'message',
 	'trueValue',
 	'falseValue',
 	'styleContainer',
@@ -662,7 +663,10 @@ FormInput.propTypes = {
 	// Whether to use Semantic UI's Input or Form.Input component.
 	// Truthy => Input, Falsy (default) => Form.Input
 	useInput: PropTypes.bool,
-	message: PropTypes.object,
+	message: PropTypes.oneOfType([
+		PropTypes.bool,
+		PropTypes.object,
+	]),
 	name: PropTypes.string.isRequired,
 	label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
 	onChange: PropTypes.func,
