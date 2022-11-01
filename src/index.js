@@ -85,7 +85,7 @@ const initPromise = PromisE.timeout((resolve, reject) => {
             countriesChecked = true
             if (err || countries.size === 0) return
 
-            storage.countries.setAll(countries)
+            storage.countries.setAll(countries, true)
             countriesHash = generateHash(
                 Array.from(countries),
                 'blake2',

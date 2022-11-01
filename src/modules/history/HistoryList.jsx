@@ -1,31 +1,49 @@
-import React, { Component } from 'react'
+import React from 'react'
 import { Button, Icon } from 'semantic-ui-react'
 import { format } from '../../utils/time'
-import { clearClutter, isFn, textEllipsis } from '../../utils/utils'
+import {
+    clearClutter,
+    isFn,
+    textEllipsis,
+} from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
-import { confirm, confirmAsPromise, showForm } from '../../services/modal'
-import { getById as getQueueItemById, remove as removeQueueItem, statuses, checkComplete } from '../../services/queue'
-import { unsubscribe } from '../../services/react'
+import {
+    confirm,
+    confirmAsPromise,
+    showForm,
+} from '../../services/modal'
+import {
+    checkComplete,
+    getById as getQueueItemById,
+    remove as removeQueueItem,
+    statuses,
+} from '../../services/queue'
 import { getAddressName } from '../partner/partner'
-import { clearAll, remove as removeHistoryItem, rxHistory, getAll } from './history'
+import {
+    clearAll,
+    getAll,
+    remove as removeHistoryItem,
+    rxHistory,
+} from './history'
 import HistoryItemDetailsForm from './HistoryItemDetailsForm'
 import { MOBILE, rxLayout } from '../../services/window'
+import { useRxSubject } from '../../utils/reactHelper'
 
 const textsCap = translated({
     action: 'action',
     balanceAfterTx: 'account balance after transaction',
     balanceBeforeTx: 'account balance before transaction',
-    clearAll: 'Clear All',
+    clearAll: 'clear All',
     close: 'close',
     dataReceived: 'data received',
     dataSent: 'data sent',
     delete: 'delete',
     description: 'description',
-    errorMessage: 'Error message',
-    executionTime: 'Execution time',
+    errorMessage: 'error message',
+    executionTime: 'execution time',
     function: 'function',
-    groupId: 'Group ID',
+    groupId: 'group ID',
     identity: 'identity',
     message: 'message',
     pendingExecution: 'pending execution',
@@ -41,22 +59,21 @@ const textsCap = translated({
     removeConfirmHeader: 'remove unfinished queue item?',
     removeConfirmHeader2: 'are you sure?',
     status: 'status',
-    taskId: 'Task ID',
+    taskId: 'task ID',
     techDetails: 'technical details',
     timestamp: 'timestamp',
     title: 'title',
-    txId: 'Transaction ID',
+    txId: 'transaction ID',
     type: 'type',
 }, true)[1]
 
-export default class HistoryList extends Component {
-    constructor(props) {
-        super(props)
-
+export default function HistoryList(props) {
+    const [state] = useRxSubject(rxLayout, layout => {
+        const isMobile = layout === MOBILE
         // makes columns resizable
         const headerProps = { style: { resize: 'both', overflow: 'auto' } }
-
-        this.state = {
+        const state = {
+            isMobile,
             columns: [
                 {
                     collapsing: true,
@@ -81,7 +98,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
-                    hidden: () => this.state.isMobile,
+                    hidden: isMobile,
                     key: '_timestamp',
                     title: textsCap.executionTime,
                 },
@@ -101,7 +118,7 @@ export default class HistoryList extends Component {
                 },
                 {
                     collapsing: true,
-                    hidden: () => this.state.isMobile,
+                    hidden: isMobile,
                     key: '_identity',
                     title: textsCap.identity,
                 },
@@ -115,8 +132,12 @@ export default class HistoryList extends Component {
                                 const rootTask = getQueueItemById(groupId)
                                 const isComplete = checkComplete(rootTask)
                                 confirm({
-                                    content: !isComplete ? textsCap.removeWarning : textsCap.removeWarning2,
-                                    header: !isComplete ? textsCap.removeConfirmHeader : textsCap.removeConfirmHeader2,
+                                    content: !isComplete
+                                        ? textsCap.removeWarning
+                                        : textsCap.removeWarning2,
+                                    header: !isComplete
+                                        ? textsCap.removeConfirmHeader
+                                        : textsCap.removeConfirmHeader2,
                                     onConfirm: () => {
                                         removeHistoryItem(id)
                                         removeQueueItem(groupId)
@@ -156,67 +177,66 @@ export default class HistoryList extends Component {
             selectable: true,
             topLeftMenu: [{
                 content: textsCap.clearAll,
+                icon: 'trash',
                 name: 'clear-all',
                 negative: true,
-                onClick: () => confirmAsPromise({ size: 'tiny' })
+                onClick: () => confirmAsPromise({
+                    confirmButton: (
+                        <Button {...{
+                            content: textsCap.clearAll,
+                            icon: 'trash',
+                            negative: true,
+                        }} />
+                    ),
+                    header: textsCap.clearAll,
+                    size: 'mini',
+                })
                     .then(ok => ok && clearAll()),
+
             }],
+            // on select menu
             topRightMenu: [{
                 content: textsCap.delete,
-                icon: 'close',
+                icon: 'trash',
                 onClick: ids => ids.forEach(removeHistoryItem)
             }]
         }
-        this.originalSetState = this.setState
-        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
-    }
+        return state
+    })
+    const [data] = useRxSubject(rxHistory, (history = new Map()) => {
+        Array
+            .from(history)
+            .forEach(([_, item]) => {
+                // clear unwanted spaces caused by use of backquotes etc.
+                item.message = clearClutter(item.message || '')
+                item._description = (item.description || '')
+                    .split(' ')
+                    .map(x => textEllipsis(x, 20))
+                    .join(' ')
+                // add identity name if available
+                item._identity = getAddressName(item.identity)
+                item._timestamp = format(item.timestamp, true)
+                // to make the entire object searchable
+                item._search = JSON.stringify(item)
+            })
+        return history
+    }, getAll())
+        
+    const { topLeftMenu } = state
+    const btnClearAll = topLeftMenu.find(x => x.name === 'clear-all')
+    btnClearAll.disabled = data.size === 0
 
-    componentWillMount() {
-        this._mounted = true
-        this.subs = {}
-        this.subs.history = rxHistory.subscribe(this.setHistory)
-        this.subs.isMobile = rxLayout.subscribe(l => 
-            this.setState({ isMobile: l === MOBILE })
-        )
-        // force initial read as in-memory caching is disabled
-        this.setHistory(getAll())
-    }
-
-    componentWillUnmount() {
-        this._mounted = false
-        unsubscribe(this.subs)
-    }
-
-    setHistory = (history = new Map()) => {
-        Array.from(history).forEach(([_, item]) => {
-            // clear unwanted spaces caused by use of backquotes etc.
-            item.message = clearClutter(item.message || '')
-            item._description = (item.description || '')
-                .split(' ')
-                .map(x => textEllipsis(x, 20))
-                .join(' ')
-            // add identity name if available
-            item._identity = getAddressName(item.identity)
-            item._timestamp = format(item.timestamp, true)
-        })
-        this.setState({ data: history })
-    }
-
-    render() {
-        const { data, topLeftMenu } = this.state
-        const clearAll = topLeftMenu.find(x => x.name === 'clear-all')
-        clearAll.disabled = data.size === 0
-        return (
-            <DataTable {...{
-                ...this.props,
-                ...this.state,
-                columns: this.state.columns.map(column => ({
-                    ...column,
-                    hidden: isFn(column.hidden)
-                        ? column.hidden()
-                        : column.hidden
-                }))
-            }} />
-        )
-    }
+    return (
+        <DataTable {...{
+            ...props,
+            ...state,
+            columns: state.columns.map(column => ({
+                ...column,
+                hidden: isFn(column.hidden)
+                    ? column.hidden()
+                    : column.hidden
+            })),
+            data,
+        }} />
+    )
 }

@@ -12,7 +12,7 @@ export const LIMIT_DEFAULT = 500 // default number of items to store
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
-export const clearAll = () => history.setAll(new Map())
+export const clearAll = () => history.setAll(new Map(), true)
 
 export const getAll = () => history.getAll()
 
@@ -43,7 +43,7 @@ export const limit = (newLimit) => {
     if (limit === 0 || history.size <= limit) return limit
 
     const limitted = Array.from(history.getAll()).slice(-limit)
-    history.setAll(new Map(limitted))
+    history.setAll(new Map(limitted), true)
     return limit
 }
 

@@ -452,7 +452,11 @@ export const toggleActive = name => setActive(name, !(getItem(name) || {}).activ
 
 const init = () => {
     // adds new and removes any deprecated items
-    statuses.setAll(sidebarItems.reduce((map, { active, name }) => map.set(name, active), new Map()))
+    const sanitisedStatuses = sidebarItems.reduce((map, { active, name }) =>
+        map.set(name, active),
+        new Map(),
+    )
+    statuses.setAll(sanitisedStatuses, true)
     // if all items are inactive show getting started module
     sidebarItems.every(x => x.hidden || !x.active) && setActive(gsName, true, null, null, false)
     // update sidebar state on layout change

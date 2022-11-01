@@ -271,10 +271,9 @@ export default class DataTable extends Component {
 		const { keywords = keywordsP, isMobile } = this.state
 		topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
 		onSelectMenu = (onSelectMenu || []).filter(x => !x.hidden)
-		const showSearch =
-			searchable && (keywords || totalRows > 0 || !searchHideOnEmpty)
-		if (topLeftMenu.length + onSelectMenu.length === 0 && !showSearch)
-			return
+		const showSearch = searchable
+			&& (keywords || totalRows > 0 || !searchHideOnEmpty)
+		if (topLeftMenu.length + onSelectMenu.length === 0 && !showSearch) return
 
 		const hasSearchOnChange = isFn(searchOnChange)
 		const showActions =
@@ -300,14 +299,12 @@ export default class DataTable extends Component {
 				<Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
 					{onSelectMenu.map((item, i) =>
 						React.isValidElement(item) && item || (
-							<Dropdown.Item
-								{...item}
-								key={i}
-								onClick={() =>
-									isFn(item.onClick) &&
-									item.onClick(selectedIndexes)
-								}
-							/>
+							<Dropdown.Item {...{
+								...item,
+								key: i,
+								onClick: () => isFn(item.onClick)
+									&& item.onClick(selectedIndexes)
+							}} />
 						)
 					)}
 				</Dropdown.Menu>
@@ -315,8 +312,7 @@ export default class DataTable extends Component {
 		)
 
 		// if searchable is a valid element search is assumed to be externally handled
-		const searchEl =
-			showSearch &&
+		const searchEl = showSearch &&
 			(React.isValidElement(searchable) && searchable || (
 				<Input {...{
 					action: !keywords
@@ -343,8 +339,8 @@ export default class DataTable extends Component {
 					type: 'search', // enables escape to clear
 					value: keywords || '',
 				}} />
-			))
-
+		))
+		
 		const leftBtns = (
 			<Grid.Column
 				tablet={16}

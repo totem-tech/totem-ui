@@ -185,8 +185,13 @@ export const confirmAsPromise = (props, ...args) => new PromisE((resolve, reject
             : { content: props }
         const { onCancel, onConfirm } = props
         const resolver = (defaultValue = false, func) => async (...args) => {
-            const value = isFn(func) && (await func(...args))
-            resolve(isDefined(value) ? value : defaultValue)
+            let value = isFn(func)
+                ? await func(...args)
+                : undefined
+            value = isBool(value)
+                ? value
+                : defaultValue
+            resolve(value)
         }
         props.onCancel = resolver(false, onCancel)
         props.onConfirm = resolver(true, onConfirm)
