@@ -26,6 +26,7 @@ import { translated } from './language'
 import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 import ClaimKAPEXForm from '../modules/rewards/claimKapex/ClaimKapexView'
+import { Icon } from 'semantic-ui-react'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -162,16 +163,6 @@ const gsName = 'getting-started'
 const sidebarItemNames = []
 export const sidebarItems = [
     {
-        // anchorStyle: {
-        //     background: 'deeppink',
-        // },
-        icon: 'rocket',
-        name: 'crowdloan',
-        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
-        target: '_blank',
-        title: textsCap.crowdloanTitle,
-    },
-    {
         content: GettingStarted,
         // headerDividerHidden: true,
         icon: 'play circle outline',
@@ -186,12 +177,6 @@ export const sidebarItems = [
         icon: 'gift',
         name: 'claim-kapex',
         title: textsCap.claimKapexTitle,
-    },
-    {
-        content: RewardsView,
-        icon: 'gift',
-        name: 'rewards',
-        title: textsCap.rewards,
     },
     // {
     //     content: KeyRegistryPlayground,
@@ -356,6 +341,27 @@ export const sidebarItems = [
         name: 'utilities',
         subHeader: textsCap.utilitiesSubheader,
         title: textsCap.utilitiesTitle,
+    },
+    {
+        // anchorStyle: {
+        //     background: 'deeppink',
+        // },
+        icon: 'rocket',
+        name: 'crowdloan',
+        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
+        target: '_blank',
+        title: (
+            <span>
+                {textsCap.crowdloanTitle} <Icon name='forward mail' />
+            </span>
+        ),
+        titleStr: textsCap.crowdloanTitle,
+    },
+    {
+        content: RewardsView,
+        icon: 'gift',
+        name: 'rewards',
+        title: textsCap.rewards,
     },
 ].map(item => {
     const {

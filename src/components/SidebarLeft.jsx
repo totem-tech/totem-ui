@@ -1,7 +1,7 @@
-import React, { Component, useCallback, useEffect, useState } from 'react'
+import React, { Component, isValidElement, useCallback, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
-import { deferred, isFn } from '../utils/utils'
+import { deferred, isFn, isStr } from '../utils/utils'
 import { translated } from '../services/language'
 import { useRxSubject } from '../services/react'
 import {
@@ -129,7 +129,7 @@ export const MainContentItem = React.memo(_MainContentItem)
 const _SidebarMenuItem = props => {
 	let { name, rxTrigger, sidebarCollapsed, style } = props
 	const [item, setItem] = useRxSubject(rxTrigger, () => getItem(name))
-	const {
+	let {
 		active,
 		anchorStyle,
 		anchorStyleActive,
@@ -140,9 +140,9 @@ const _SidebarMenuItem = props => {
 		onClick,
 		target,
 		title,
+		titleStr,
 	} = item || {}
 
-	
 	return !item || hidden
 		? ''
 		: (
@@ -167,20 +167,28 @@ const _SidebarMenuItem = props => {
 				},
 				onHold: e => e.stopPropagation() | setActiveExclusive(name, true),
 				style: {
+					textAlign: sidebarCollapsed
+						? 'center'
+						: undefined,
 					...style,
 					...anchorStyle,
 					...active && anchorStyleActive,
 				},
 				target,
-				title,
+				title: titleStr || title,
 			}}>
 				{badge && <Label color='red'>{badge}</Label>}
 				<span>
 					<Icon {...{
+						className: sidebarCollapsed
+							? 'no-margin'
+							: '',
+						color: badge && sidebarCollapsed
+							? 'red'
+							: undefined,
 						name: icon || 'folder',
-						color: badge && sidebarCollapsed ? 'red' : undefined,
 					}} />
-					{!sidebarCollapsed ? item.title : ''}
+					{!sidebarCollapsed && title}
 				</span>
 			</Holdable>
 		)
