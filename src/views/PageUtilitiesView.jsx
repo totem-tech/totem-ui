@@ -19,7 +19,7 @@ const PageUtilitiesView = () => (
 			<Button
 				onClick={() => confirm({
 					onConfirm: () => storage.clearNonEssentialData() | forceReloadPage(),
-					size: 'tiny',
+					size: 'mini',
 				})}
 				content={texts.clearCachedData}
 			/>

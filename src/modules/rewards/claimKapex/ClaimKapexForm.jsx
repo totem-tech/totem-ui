@@ -181,12 +181,12 @@ function ClaimKAPEXForm(props) {
 		return () => mounted = false
 	}, [setStatus])
 
-	if (!!message) return <Message {...message} />
 	if (loading) return <Message {...{
 		content: textsCap.loading,
 		icon: true,
 		status: statuses.LOADING,
 	}} />
+	if (!!message) return <Message {...message} />
 
 	let submitText, handleSubmit
 	switch (values[inputNames.step]) {
