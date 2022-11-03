@@ -19,26 +19,29 @@ function AddPartnerBtn(props) {
         userId,
     } = props
     const addressName = useMemo(() => getAddressName(address), [address])
-    const isName = !addressName.startsWith(address.slice(0, 3)) && !addressName.includes('...')
-    if (isName && !showNameIfExists) return ''
+    const exists = !addressName.startsWith(address.slice(0, 3))
+        && !addressName.includes('...')
+    if (exists && !showNameIfExists) return ''
 
-    const button = !isName && (
-        <Button {...{
-            icon: 'user plus',
-            onClick: () => showForm(
-                PartnerForm,
-                {
-                    values: {
-                        address,
-                        name: partnerName,
-                        userId,
-                    },
-                }
-            ),
-            size: 'mini',
-            title: textsCap.addPartner,
-        }} />
-    )
+    const button = exists
+        ? ''
+        : (
+            <Button {...{
+                icon: 'user plus',
+                onClick: () => showForm(
+                    PartnerForm,
+                    {
+                        values: {
+                            address,
+                            name: partnerName,
+                            userId,
+                        },
+                    }
+                ),
+                size: 'mini',
+                title: textsCap.addPartner,
+            }} />
+        )
     return <Component>{addressName} {button}</Component>
 }
 AddPartnerBtn.prototype = {

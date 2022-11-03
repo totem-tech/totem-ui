@@ -616,14 +616,21 @@ export default class TaskForm extends Component {
         const orderType = values[this.names.orderType]
         const thenCb = isLastInQueue => (success, err) => {
             if (!isLastInQueue && success) return
+            window.isDebug && console.trace(err)
             this.setState({
-                closeText: success ? textsCap.close : undefined,
+                closeText: success
+                    ? textsCap.close
+                    : undefined,
                 loading: false,
                 message: {
                     content: !success && `${err} `, // error can be string or Error object.
-                    header: success ? textsCap.submitSuccess : textsCap.submitFailed,
+                    header: success
+                        ? textsCap.submitSuccess
+                        : textsCap.submitFailed,
                     icon: true,
-                    status: success ? 'success' : 'error',
+                    status: success
+                        ? 'success'
+                        : 'error',
                 },
                 submitInProgress: false,
                 success,
@@ -634,11 +641,15 @@ export default class TaskForm extends Component {
             isHash(taskId) && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
         }
-        const fn = !doUpdate ? queueables.save : bcQueueables.bonsaiSaveToken
+        const fn = !doUpdate
+            ? queueables.save
+            : bcQueueables.bonsaiSaveToken
         const extraProps = {
             description,
             name: nameCreateTask,
-            title: !doUpdate ? textsCap.formHeader : textsCap.formHeaderUpdate,
+            title: !doUpdate
+                ? textsCap.formHeader
+                : textsCap.formHeaderUpdate,
             then: thenCb(false),
         }
         const queueProps = fn.apply(null, !doUpdate

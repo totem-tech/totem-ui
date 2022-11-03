@@ -45,7 +45,12 @@ const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
 const validIcon = { color: 'green', name: 'check circle', size: 'large' }
 const userIdRegex = /^[a-z][a-z0-9]+$/
 // removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
-export const getRawUserID = userId => !isStr(userId) ? '' : userId.trim().replace('@', '').toLowerCase()
+export const getRawUserID = userId => !isStr(userId)
+    ? ''
+    : userId
+        .trim()
+        .replace('@', '')
+        .toLowerCase()
 
 class UserIdInput extends Component {
     constructor(props) {

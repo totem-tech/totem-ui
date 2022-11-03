@@ -20,7 +20,7 @@ import RewardsView from '../modules/rewards/RewardsView'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
-import { isBool, isSubjectLike } from '../utils/utils'
+import { isBool, isSubjectLike, objToUrlParams, objWithoutKeys } from '../utils/utils'
 // services
 import { translated } from './language'
 import storage from './storage'
@@ -417,10 +417,13 @@ export const setActive = (name, active = true, contentProps, hidden, toggle = tr
  *                              Default: `true`
  */
 export const setActiveExclusive = (names = [], active = true) => {
+    const items = []
     sidebarItems.forEach(({ name }) => {
         const _active = names.includes(name) && !!active
-        setActive(name, _active)
+        const item = setActive(name, _active)
+        if (names.includes(name)) items.push(item)
     })
+    return items
 }
 
 export const setContentProps = (name, props = {}, scrollToItem = true) => {
@@ -491,22 +494,28 @@ const init = () => {
 
 setTimeout(() => {
     init()
-    const modules = (getUrlParam('module') || '').trim()
-    const exclusive = (getUrlParam('exclusive') || '').toLowerCase() === 'false'
+    let params = getUrlParam()
+    const modules = `${params.module || ''}`.trim()
+    const exclusive = `${params.exclusive || ''}`.toLowerCase() !== 'false'
     if (!modules) return
 
     const names = modules.split(',')
         .map(x => x.trim().toLowerCase())
-    const validNames = names.map(name => (setActive(name) || {}).name)
-        .filter(Boolean)
-    if (!validNames.length) return
+    const items = exclusive
+        ? setActiveExclusive(names)
+        : names
+            .map(name => setActive(name))
+    if (!items.filter(Boolean).length) return
 
     // hide all other modules
-    exclusive && sidebarItems.forEach(x =>
-        !validNames.includes(x.name) && setActive(x.name, false)
-    )
+
     // only reset URL if exclusive
-    exclusive && history.pushState({}, null, `${location.protocol}//${location.host}`)
+    if (!exclusive) return
+
+    params = objToUrlParams(
+        objWithoutKeys(params, ['module', 'exclusive'])
+    )
+    history.pushState({}, null, `${location.protocol}//${location.host}?${params}`)
 })
 export default {
     getItem,

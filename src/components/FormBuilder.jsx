@@ -186,7 +186,9 @@ class FormBuilder extends Component {
 				await formOnChange(event, values, formInvalid)
 			}
 		} catch (err) {
-			console.error(err)
+			window.isDebug
+				? console.trace(err)
+				: console.error(err)
 			this.setState({
 				message: {
 					content: `${err}`,
@@ -214,7 +216,9 @@ class FormBuilder extends Component {
 			isFn(onSubmit) && (await onSubmit(event, values))
 			this.setState({ message: null })
 		} catch (err) {
-			console.error(err)
+			window.isDebug
+				? console.trace(err)
+				: console.error(err)
 			this.setState({
 				message: {
 					content: `${err}`,

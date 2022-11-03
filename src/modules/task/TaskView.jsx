@@ -71,11 +71,14 @@ export default function TaskView({ address, activeType: _activeType }) {
         type,
     }))
 
-    const activeIndex = panes.findIndex(x => x.type === activeType)
+    const activeIndex = panes.findIndex(x =>
+        x.type === activeType
+    )
     const data = activeType !== listTypes.marketplace
         && allTasks
         && allTasks.get(activeType)
         || new Map()
+
     return message
         ? <Message {...message} />
         : (

@@ -21,6 +21,7 @@ export default function TaskDetailsForm(props = {}) {
                         {JSON.stringify({ taskId: id, ...values }, null, 4)}
                     </div>
                 ),
+                name: 'details',
                 type: 'html'
             }
         ]

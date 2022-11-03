@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
 import { format } from '../../utils/time'
-import { isFn, arrUnique, objCopy, isMap, isArr } from '../../utils/utils'
+import { isFn, arrUnique, objCopy, isMap, isArr, isObj } from '../../utils/utils'
 // services
 import { translated } from '../../services/language'
 import { getAddressName } from '../partner/partner'
 import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
+import { isAddress } from 'web3-utils'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -29,12 +30,17 @@ export const rxUpdater = new Subject()
  * @returns {Map}
  */
 const getCached = (address, types) => {
+    if (!isAddress(address) || !isArr(types)) return new Map()
+
     let cache = rwCache(address)
     if (!isArr(cache)) cache = []
     if (cache.length === 0) {
         cache = types.map(type => [type, []])
     }
-    return new Map(cache.map(([type, typeTasks]) => [type, new Map(typeTasks)]))
+    const arr2D = cache.map(([type, typeTasks]) =>
+        [type, new Map(typeTasks)]
+    )
+    return new Map(arr2D)
 }
 
 /**
@@ -55,15 +61,16 @@ const setCache = (address, allTasksArr) => rwCache(address, allTasksArr)
  * @param {Number} timeout (optional) timeout delay in milliseconds. Default: 5000
  * 
  */
-export default function useTasks(types, address, timeout = 5000) {
+export default function useTasks(types = [], address, timeout = 5000) {
     const [tasks, setTasks] = useState(new Map())
     const [message, setMessage] = useState()
 
     useEffect(() => {
         if (!address) return () => { }
+
         let mounted = true
         let done = false
-        const unsubscribers = {}
+        const subs = {}
         const loadingMsg = {
             content: textsCap.loadingMsg,
             icon: true,
@@ -74,77 +81,80 @@ export default function useTasks(types, address, timeout = 5000) {
             icon: true,
             status: 'error'
         }
+        const setError = err => setMessage({
+            ...errorMsg,
+            content: `${err}`,
+        })
+        const handleOrdersCb = (taskIds2d, uniqueTaskIds, detailsMap, types) =>
+            async (orders, ordersOrg) => {
+                if (!mounted) return
+                try {
+                    let uniqueTasks = new Map()
+                    orders.forEach((order, index) => {
+                        const taskId = uniqueTaskIds[index]
+                        let amountXTX = 0
+                        let {
+                            approvalStatus,
+                            approver,
+                            fulfiller,
+                            // order can be null if storage has changed, in that case, use inaccessible status
+                            orderStatus = statuses.inaccessible,
+                            owner,
+                        } = order || {}
+                        try {
+                            amountXTX = !order
+                                ? 0
+                                : ordersOrg[index]
+                                    .value
+                                    .get('amountXTX')
+                                    .toNumber()
+                        } catch (err) {
+                            // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
+                            console.log('amountXTX parse error', err)
+                        }
+                        const isOwner = address === owner
+                        const isSubmitted = orderStatus === statuses.submitted
+                        const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
+                        const isOwnerTheApprover = owner === approver
+                        let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
+                        const task = {
+                            ...order,
+                            amountXTX,
+                            allowEdit,
+                            // pre-process values for use with DataTable
+                            _approvalStatus: approvalStatusNames[approvalStatus],
+                            _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
+                            _orderStatus: statusNames[orderStatus],
+                            _taskId: taskId, // list search
+                            _owner: <AddPartnerBtn {...{ address: owner }} />,
+                        }
+                        uniqueTasks.set(taskId, task)
+                    })
 
-        const setError = err => setMessage({ ...errorMsg, content: `${err}` })
-        const handleOrdersCb = (taskIds2d, uniqueTaskIds, detailsMap, types) => async (orders, ordersOrg) => {
-            if (!mounted) return
-            try {
-                let uniqueTasks = new Map()
-                orders.forEach((order, index) => {
-                    const taskId = uniqueTaskIds[index]
-                    let amountXTX = 0
-                    let {
-                        approvalStatus,
-                        approver,
-                        fulfiller,
-                        // order can be null if storage has changed, in that case, use inaccessible status
-                        orderStatus = statuses.inaccessible,
-                        owner,
-                    } = order || {}
-                    try {
-                        amountXTX = !order
-                            ? 0
-                            : ordersOrg[index]
-                                .value
-                                .get('amountXTX')
-                                .toNumber()
-                    } catch (err) {
-                        // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
-                        console.log('amountXTX parse error', err)
-                    }
-                    const isOwner = address === owner
-                    const isSubmitted = orderStatus === statuses.submitted
-                    const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
-                    const isOwnerTheApprover = owner === approver
-                    let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
-                    const task = {
-                        ...order,
-                        amountXTX,
-                        allowEdit,
-                        // pre-process values for use with DataTable
-                        _approvalStatus: approvalStatusNames[approvalStatus],
-                        _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
-                        _orderStatus: statusNames[orderStatus],
-                        _taskId: taskId, // list search
-                        _owner: <AddPartnerBtn {...{ address: owner }} />,
-                    }
-                    uniqueTasks.set(taskId, task)
-                })
-
-                let newTasks = new Map()
-                types.map((type, i) => {
-                    const typeTaskIds = taskIds2d[i]
-                    const typeTasks = new Map(
-                        typeTaskIds.map(id => [id, uniqueTasks.get(id)])
-                    )
-                    newTasks.set(type, typeTasks)
-                })
-                newTasks = addDetails(address, newTasks, detailsMap, uniqueTaskIds)
-                done = true
-                setMessage(null)
-                setTasks(newTasks)
-            } catch (err) {
-                setError(err)
+                    let newTasks = new Map()
+                    types.map((type, i) => {
+                        const typeTaskIds = taskIds2d[i]
+                        const typeTasks = new Map(
+                            typeTaskIds.map(id => [id, uniqueTasks.get(id)])
+                        )
+                        newTasks.set(type, typeTasks)
+                    })
+                    newTasks = addDetails(address, newTasks, detailsMap, uniqueTaskIds)
+                    done = true
+                    setMessage(null)
+                    setTasks(newTasks)
+                } catch (err) {
+                    setError(err)
+                }
             }
-        }
         const handleTaskIds = async (taskIds2d) => {
             if (!mounted) return
             try {
-                unsubscribers.tasks && unsubscribers.tasks()
+                subs.tasks && subs.tasks()
                 // create single list of unique Task IDs
                 const uniqueTaskIds = arrUnique(taskIds2d.flat())
                 const detailsMap = await query.getDetailsByTaskIds(uniqueTaskIds)
-                unsubscribers.tasks = await query.orders(
+                subs.tasks = await query.orders(
                     uniqueTaskIds,
                     handleOrdersCb(
                         taskIds2d,
@@ -165,26 +175,32 @@ export default function useTasks(types, address, timeout = 5000) {
             setMessage(null)
             setTasks(getCached(address, types))
         }, timeout)
-        setMessage(loadingMsg)
-        window.isDbug && console.log({ address })
 
-        query.getTaskIds(types, address, handleTaskIds).then(
-            fn => unsubscribers.taskIds2d = fn,
-            setError,
-        )
+        setMessage(loadingMsg)
+        // window.isDebug && console.log({ address })
+
+        query
+            .getTaskIds(types, address, handleTaskIds)
+            .then(
+                fn => subs.taskIds2d = fn,
+                setError,
+            )
 
         return () => {
             mounted = false
-            Object.values(unsubscribers).forEach(fn => isFn(fn) && fn())
+            Object.values(subs)
+                .forEach(fn => isFn(fn) && fn())
         }
     }, [address]) // update subscriptions whenever address changes
 
 
     useEffect(() => {
         if (!address) return () => { }
+
         // listend for changes in rxUpdated and update task details from messaging service
         const subscribed = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return
+
             let msg = null
             let newTasks = null
             try {
@@ -202,6 +218,7 @@ export default function useTasks(types, address, timeout = 5000) {
             setMessage(msg)
             newTasks && setTasks(newTasks)
         })
+
         return () => subscribed.unsubscribe()
     }, [address, tasks, setTasks])
 
@@ -212,6 +229,7 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
     if (!isMap(tasks)) return new Map()
     // no off-chain details to attach
     if (!detailsMap.size) return tasks
+
     const newTasks = new Map()
     const cacheableAr = Array.from(tasks)
         .map(([type, typeTasks = new Map()]) => {

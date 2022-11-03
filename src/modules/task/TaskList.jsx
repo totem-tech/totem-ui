@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Label } from 'semantic-ui-react'
-import { isObj } from '../../utils/utils'
+import { isObj, objClean } from '../../utils/utils'
 // components
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
@@ -81,11 +81,21 @@ export default function TaskList(props) {
     const isMarketPlace = listType === listTypes.marketplace
     const keywordsKey = 'keywords' + listType
     const showCreate = isOwnedList || isMarketPlace
+    const tableProps = getTableProps(isMobile, isFulfillerList)
+
+    Array
+        .from(props.data)
+        .map(([_, value]) => {
+            const keyWithObj = Object.keys(value)
+                .find(iKey => !isValidElement(value[iKey]) && isObj(value[iKey]))
+            
+            if (keyWithObj) alert('found object on. Key', keyWithObj, '\n\nvalue:', JSON.stringify(value[keyWithObj], null, 4))
+        })
 
     return (
         <DataTable {...{
             ...props,
-            ...getTableProps(isMobile, isFulfillerList),
+            ...tableProps,
             columnsHidden: [
                 isOwnedList && '_owner',
                 isFulfillerList && '_fulfiller',
@@ -145,22 +155,34 @@ const getActions = (task, taskId, { inProgressIds, isOwnedList }) => [
     isOwnedList && task.allowEdit && {
         disabled: inProgressIds.has(taskId),
         icon: 'pencil',
-        onClick: () => showForm(TaskForm, { taskId, values: task }),
+        onClick: () => showForm(TaskForm, {
+            taskId,
+            values: task,
+        }),
         title: textsCap.update,
     },
     {
         icon: 'eye',
-        onClick: () => showForm(TaskDetailsForm, { id: taskId, values: task }),
+        onClick: () => showForm(TaskDetailsForm, {
+            id: taskId,
+            values: task,
+        }),
         title: textsCap.techDetails
     }
 ]
     .filter(Boolean)
-    .map((props, i) => <Button {...props} key={`${i}-${props.title}`} />)
+    .map((props, i) => (
+        <Button {...{
+            ...props,
+            key: `${i}-${props.title}`,
+        }} />
+    ))
 
 // status cell view (with status related action buttons where appropriate)
 const getStatusView = (task, taskId) => {
     const { fulfiller, isMarket, orderStatus, owner, _orderStatus } = task
-    if (isMarket) return _orderStatus
+    if (isMarket) return `${_orderStatus}`
+
     const { address } = getSelected()
     const isOwner = address === owner
     const isFulfiller = address === fulfiller
@@ -218,7 +240,7 @@ const getStatusView = (task, taskId) => {
             )
             break
     }
-    return _orderStatus
+    return `${_orderStatus}`
 }
 const getBounty = ({ amountXTX }) => (
     <Currency {...{
@@ -270,24 +292,25 @@ const getTableProps = (isMobile, isFulfillerList) => ({
                 title: textsCap.assignee,
             },
         !isMobile && {
-            content: ({ tags }) => [...tags || []].map(tag => (
-                <Label
-                    key={tag}
-                    draggable='true'
-                    onDragStart={e => {
-                        e.stopPropagation()
-                        e.dataTransfer.setData('Text', e.target.textContent)
-                    }}
-                    style={{
-                        cursor: 'grab',
-                        display: 'inline',
-                        // float: 'left',
-                        margin: 1,
-                    }}
-                >
-                    {tag}
-                </Label>
-            )),
+            content: ({ tags }) => [...tags || []]
+                .map(tag => (
+                    <Label
+                        key={tag}
+                        draggable='true'
+                        onDragStart={e => {
+                            e.stopPropagation()
+                            e.dataTransfer.setData('Text', e.target.textContent)
+                        }}
+                        style={{
+                            cursor: 'grab',
+                            display: 'inline',
+                            // float: 'left',
+                            margin: 1,
+                        }}
+                    >
+                        {tag}
+                    </Label>
+                )),
             key: 'tags',
             title: textsCap.tags,
             style: { textAlign: 'center' },
@@ -329,11 +352,17 @@ const getTableProps = (isMobile, isFulfillerList) => ({
     defaultSort: '_tsCreated',
     defaultSortAsc: false,
     // disable all actions if there is an unfinished queue item for this task ID
-    rowProps: (task, taskId, tasks, { inProgressIds }) => inProgressIds.has(taskId) && { disabled: true },
+    rowProps: (_task, taskId, _tasks, { inProgressIds }) =>
+        inProgressIds.has(taskId)
+        && { disabled: true }
+        || {},
     // perPage: 100,
     searchable: true,
     searchExtraKeys: ['_taskId'],
-    searchOnChange: (keywords, { listType }) => tempCache.set('keywords-' + listType, keywords),
+    searchOnChange: (keywords, { listType }) => tempCache.set(
+        'keywords-' + listType,
+        keywords,
+    ),
 })
 
 setTimeout(() => {
@@ -344,10 +373,12 @@ setTimeout(() => {
         const { func, recordId: taskId, status } = task
         // only handle queue tasks that are relevant for tasks
         if (!Object.values(queueableApis).includes(func) || !taskId) return
-        const isDone = [queueStatuses.ERROR, queueStatuses.SUCCESS].includes(status)
+
+        const isDone = [queueStatuses.ERROR, queueStatuses.SUCCESS]
+            .includes(status)
         const inProgressIds = rxInProgressIds.value
-        if (!isDone && inProgressIds.has(taskId)) return
-        if (isDone && !inProgressIds.has(taskId)) return
+        if (!isDone || !inProgressIds.has(taskId)) return
+
         // add/remove from list
         inProgressIds[isDone? 'delete' : 'add'](taskId)
         rxInProgressIds.next(new Set(inProgressIds))

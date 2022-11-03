@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import {
 	Button,
@@ -187,14 +187,12 @@ export default class DataTable extends Component {
 			pageNo,
 			perPage,
 			(item, key, items, isMap) => (
-				<Table.Row
-					{...{
-						key,
-						...(isFn(rowProps)
-							? rowProps(item, key, items, this.props)
-							: rowProps || {}),
-					}}
-				>
+				<Table.Row {...{
+					key,
+					...(isFn(rowProps)
+						? rowProps(item, key, items, this.props)
+						: rowProps || {}),
+				}} >
 					{selectable /* include checkbox to select items */ && (
 						<Table.Cell
 							onClick={() =>
@@ -213,10 +211,9 @@ export default class DataTable extends Component {
 							/>
 						</Table.Cell>
 					)}
-					{columns.filter(
-							({ hidden, name }) =>
-								!hidden && !columnsHidden.includes(name)
-						)
+					{columns.filter(({ hidden, name }) =>
+						!hidden && !columnsHidden.includes(name)
+					)
 						.map((cell, j) => {
 							let {
 								collapsing,
@@ -227,6 +224,7 @@ export default class DataTable extends Component {
 								onDragStart,
 								style,
 								textAlign = 'left',
+								title,
 							} = cell || {}
 							draggable = draggable !== false
 							content = isFn(content)
@@ -249,6 +247,15 @@ export default class DataTable extends Component {
 									: this.handleDragStartCb(dragValue, onDragStart, item),
 								style,
 								textAlign,
+							}
+							if (!isValidElement(content) && isObj(content)) {
+								// Prevents Objects being thrown on DOM which can cause error being thrown by React
+								console.error('DataTable: unwanted object found on', {
+									key: contentKey,
+									title: title,
+									content,
+								})
+								content = JSON.stringify(content, null, 4)
 							}
 							return <Table.Cell {...props}>{content}</Table.Cell>
 						})}
@@ -295,7 +302,7 @@ export default class DataTable extends Component {
 					textAlign: 'center',
 				},
 				text: textsCap.actions,
-			}} >
+			}}>
 				<Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
 					{onSelectMenu.map((item, i) =>
 						React.isValidElement(item) && item || (

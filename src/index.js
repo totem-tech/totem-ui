@@ -4,7 +4,7 @@ import { Loader } from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css'
 import '../public/styles.css'
 import PromisE from './utils/PromisE'
-import { generateHash, isArrLike, isError, objClean } from './utils/utils'
+import { generateHash, isArrLike, isError, isObj, objClean } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
@@ -35,7 +35,8 @@ if (!window.isInIFrame && window.isDebug) {
         ['log', console.log],
         ['info', console.info, 'teal'],
         ['error', console.error, 'red'],
-        ['warn', console.warn, 'orange']
+        ['trace', console.error, 'blue'],
+        ['warn', console.warn, 'orange'],
     ]
     document.body.insertAdjacentHTML(
         'afterbegin',
@@ -50,18 +51,18 @@ if (!window.isInIFrame && window.isDebug) {
                 try {
                     str = isError(x)
                         ? x.stack
-                        : typeof x !== 'object'
-                            ? x
-                            : JSON.stringify(
-                                isArrLike(x) ? Array.from(x) : x,
-                                null,
-                                4,
-                            )
+                        : JSON.stringify(
+                            isArrLike(x)
+                                ? Array.from(x)
+                                : x,
+                            null,
+                            4,
+                        )
                 } catch (e) {
                     // in case of Object circular dependency
                     str = `${x}`
                 }
-                return str.replace(/\\n/g, '<br />')
+                return `${str}`.replace(/\\n/g, '<br />')
             }).join(' ')
             const style = `white-space:pre-wrap;margin:0;padding:5px 15px;border-bottom:1px solid #ccc;color:${color}`
             content = `<pre style="${style}">${content}</pre>`
