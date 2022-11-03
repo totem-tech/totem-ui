@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import uuid from 'uuid'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, Subject } from 'rxjs'
 import { Table, Button } from 'semantic-ui-react'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { closeModal, confirm, showForm } from '../../services/modal'
@@ -16,8 +16,9 @@ import { decryptBackup } from '.'
 import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/ButtonDelayed'
 import { setToast } from '../../services/toast'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
-const [texts, textsCap] = translated({
+let textsCap = {
 	addFromBackup: 'add from backup',
 	backupNow: 'backup now',
 	backupValue: 'backup value',
@@ -47,6 +48,7 @@ const [texts, textsCap] = translated({
 	notifications: 'notifications',
 	partners: 'partners',
 	passwordFailed: 'incorrect password',
+	passwordFailed2: 'failed to enter a correct password after 3 attempts',
 	passwordLabel: 'password',
 	passwordPlaceholder: 'enter password for this backup',
 	preserveUser: 'preserve current credentials',
@@ -64,7 +66,8 @@ const [texts, textsCap] = translated({
 	titleNoConflict: 'existing entry',
 	titleNew: 'from backup',
 	userCredentials: 'user credentials',
-}, true)
+}
+textsCap = translated(textsCap, true)[1]
 // data that can be merged (must be 2D array that represents a Map)
 const MERGEABLES = [
 	'totem_contacts',
@@ -98,92 +101,94 @@ export default class RestoreBackupForm extends Component {
 
 		this.backupData = null
 		this.existingData = null
+		const inputs = [
+			{
+				hidden: true,
+				name: inputNames.confirmed,
+				onChange: (_, values = {}) => this.setState({
+					submitText: this.checkConfirmed(values)
+						? textsCap.restore
+						: textsCap.proceed,
+				}),
+				rxValue: new BehaviorSubject(''),
+				type: 'hidden',
+			},
+			{
+				hidden: this.checkConfirmed,
+				name: inputNames.confirmText,
+				type: 'html',
+				content: (
+					<div>
+						{textsCap.confirmRestoreContent}
+
+						{/* <div style={{ textAlign: 'center' }}> */}
+						<Button {...{
+							content: textsCap.backupNow,
+							primary: true,
+							size: 'mini',
+							onClick: e => {
+								e.preventDefault()
+								showForm(BackupForm, {
+									closeOnSubmit: true,
+									values: { confirmed: 'yes' }
+								})
+							},
+						}} />
+						<ul>
+							{[
+								textsCap.contacts,
+								textsCap.history,
+								textsCap.identities,
+								textsCap.locations,
+								textsCap.notifications,
+								textsCap.partners,
+								textsCap.chatMessages,
+								textsCap.settings,
+								textsCap.userCredentials,
+							]
+								.sort()
+								.map((str, i) =>
+								<li key={i}>{str}</li>
+							)}
+						</ul>
+					</div>
+				)
+			},
+			{
+				accept: '.json',
+				hidden: values => !this.checkConfirmed(values),
+				label: textsCap.fileLabel,
+				multiple: false,
+				name: inputNames.file,
+				onChange: this.handleFileChange,
+				required: true,
+				type: 'file',
+				useInput: true,
+			},
+			{
+				hidden: values => !this.checkConfirmed(values),
+				inputs: [],
+				grouped: true, // forces full width child inputs
+				name: inputNames.restoreOpitons,
+				type: 'group',
+			},
+			{
+				name: inputNames.redirectTo,
+				type: 'hidden',
+			}
+		]
 		this.state = {
-			onSubmit: this.handleSubmit,
+			inputs,
 			onClose: (...args) => {
 				let { values: { redirectTo } = {}} = props
                 isFn(props.onClose) && props.onClose(...args)
                 try { 
-                    redirectTo = new URL(redirectTo)
+					redirectTo = new URL(redirectTo)
                     window.location.href = redirectTo.href
                 } catch (err) {}
             },
-			inputs: [
-				{
-					hidden: true,
-					name: inputNames.confirmed,
-					onChange: (_, values = {}) => this.setState({
-						submitText: this.checkConfirmed(values)
-							? textsCap.restore
-							: textsCap.proceed,
-					}),
-					rxValue: new BehaviorSubject(''),
-					type: 'hidden',
-				},
-				{
-					hidden: this.checkConfirmed,
-					name: inputNames.confirmText,
-					type: 'html',
-					content: (
-						<div>
-							{texts.confirmRestoreContent}
-
-							{/* <div style={{ textAlign: 'center' }}> */}
-							<Button {...{
-								content: textsCap.backupNow,
-								primary: true,
-								size: 'mini',
-								onClick: e => {
-									e.preventDefault()
-									showForm(BackupForm, {
-										closeOnSubmit: true,
-										values: { confirmed: 'yes' }
-									})
-								},
-							}} />
-							<ul>
-								{[
-									textsCap.contacts,
-									textsCap.history,
-									textsCap.identities,
-									textsCap.locations,
-									textsCap.notifications,
-									textsCap.partners,
-									textsCap.chatMessages,
-									textsCap.settings,
-									textsCap.userCredentials,
-								]
-									.sort()
-									.map((str, i) =>
-									<li key={i}>{str}</li>
-								)}
-							</ul>
-						</div>
-					)
-				},
-				{
-					accept: '.json',
-					hidden: values => !this.checkConfirmed(values),
-					label: textsCap.fileLabel,
-					multiple: false,
-					name: inputNames.file,
-					onChange: this.handleFileChange,
-					required: true,
-					type: 'file',
-					useInput: true,
-				},
-				{
-					hidden: values => !this.checkConfirmed(values),
-					inputs: [],
-					grouped: true, // forces full width child inputs
-					name: inputNames.restoreOpitons,
-					type: 'group',
-				},
-				{
-					name: inputNames.redirectTo,
-					type: 'hidden',
-				}
-			],
+			onSubmit: this.handleSubmit,
+			submitDisabled: { file: false },
 		}
 
 		fillValues(this.state.inputs, props.values)
@@ -447,15 +452,23 @@ export default class RestoreBackupForm extends Component {
 	}
 
 	handleFileChange = async (e) => {
-		const { inputs } = this.state
+		const { inputs, submitDisabled } = this.state
 		const fileIn = findInput(inputs, 'file')
+		const rxError = new Subject()
+		const [promise, unsubscribe] = subjectAsPromise(rxError)
 		try {
 			const file = e.target.files[0]
 			const name = e.target.value
 			var reader = new FileReader()
 			if (name && !name.endsWith(fileIn.accept)) throw textsCap.invalidFileType
 
-			reader.onload = async (file) => {
+			submitDisabled.file = true
+			this.setState({ submitDisabled })
+
+			reader.onloadend = async (file) => {
+				// failed load file
+				if (reader.error) return rxError.next(reader.error)
+
 				let backup = file.target.result
 				const startRestore = () => {
 					if (this.generateInputs(backup)) return
@@ -467,7 +480,8 @@ export default class RestoreBackupForm extends Component {
 				const modalId = 'decrypt-backup'
 				let message
 				// encrypted file selected
-				const _showForm = () => showForm(FormBuilder, {
+				let attemptCount = 0
+				const _promptForPassword = () => showForm(FormBuilder, {
 					header: textsCap.passwordPlaceholder,
 					inputs: [{
 						autoComplete: 'current-password',
@@ -486,20 +500,35 @@ export default class RestoreBackupForm extends Component {
 							closeModal(modalId)
 							return startRestore()
 						}
+						attemptCount++
 						message = {
 							content: textsCap.passwordFailed,
 							status: statuses.ERROR,
 						}
-						_showForm()
+						if (attemptCount >= 3) {
+							// user failed to enter a correct password after 3rd try
+							// close the password prompt and reset the input
+							file.target.value = null
+							rxError.next(textsCap.passwordFailed2)
+							return closeModal(modalId)
+						}
+						_promptForPassword()
 					},
 				}, modalId)
-				_showForm()
+				_promptForPassword()
 			}
+			
 			reader.readAsText(file)
 			fileIn.message = null
+
+			// wait until file is loaded and show any error if error occured
+			const error = await promise
+			if (error) throw new Error(error)
 		} catch (err) {
+			unsubscribe()
+			rxError.complete()
 			fileIn.message = {
-				content: `${err}`,
+				content: `${err}`.replace('Error: ', ''),
 				icon: true,
 				status: 'error'
 			}
@@ -537,7 +566,16 @@ export default class RestoreBackupForm extends Component {
 		optionGroupIn.grouped = true // forces full width child inputs
 		optionGroupIn.groupValues = true // true => create an object with child input values
 		optionGroupIn.inputs = valueInputs
-		optionGroupIn.label = `${input.label}: ${numConflicts} ${texts.conflicts} / ${valueInputs.length} ${textsCap.entries}`
+		optionGroupIn.label = [
+			input.label + ':',
+			numConflicts,
+			textsCap.conflicts.toLowerCase(),
+			'/',
+			valueInputs.length,
+			textsCap.entries,
+		].join(' ')
+		
+		
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
 		restoreOptionsIn.inputs = exists
@@ -640,7 +678,7 @@ export default class RestoreBackupForm extends Component {
 		})
 	}
 
-	render = () => <FormBuilder {...{ ...this.props, ...this.state, }} />
+	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
 RestoreBackupForm.defaultProps = {
 	header: textsCap.formHeader,

@@ -492,7 +492,7 @@ const init = () => {
 setTimeout(() => {
     init()
     const modules = (getUrlParam('module') || '').trim()
-    const exclusive = (getUrlParam('exclusive') || '').toLowerCase() !== 'false'
+    const exclusive = (getUrlParam('exclusive') || '').toLowerCase() === 'false'
     if (!modules) return
 
     const names = modules.split(',')
@@ -505,7 +505,8 @@ setTimeout(() => {
     exclusive && sidebarItems.forEach(x =>
         !validNames.includes(x.name) && setActive(x.name, false)
     )
-    history.pushState({}, null, `${location.protocol}//${location.host}`)
+    // only reset URL if exclusive
+    exclusive && history.pushState({}, null, `${location.protocol}//${location.host}`)
 })
 export default {
     getItem,

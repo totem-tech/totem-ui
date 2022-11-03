@@ -265,7 +265,6 @@ export default function AssetsForm(props) {
 
         // set default functional currency 
         !rxAssetFrom.value && rxAssetFrom.next(rxSelected.value)
-        console.log(rxAssetFrom.value)
 
         return () => {
             mounted = false
