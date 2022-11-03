@@ -14,6 +14,7 @@ export default [
     "./src/components/Holdable.jsx",
     "./src/components/Invertible.jsx",
     "./src/components/JSONView.jsx",
+    "./src/components/Label.jsx",
     "./src/components/LabelCopy.jsx",
     "./src/components/Message.jsx",
     "./src/components/Modal.jsx",

@@ -1,7 +1,7 @@
 import React, { isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Button, Label } from 'semantic-ui-react'
+import { Button, Icon, Label } from 'semantic-ui-react'
 import { isObj, objClean } from '../../utils/utils'
 // components
 import { ButtonAcceptOrReject } from '../../components/buttons'
@@ -262,11 +262,15 @@ const getTableProps = (isMobile, isFulfillerList) => ({
                     <div>
                         {task.title}
                         <Text {...{
-                            children: <small>({getBounty(task)})</small>,
                             color: 'grey',
                             El: 'div',
                             invertedColor: 'lightgrey',
-                        }} />
+                        }}>
+                            <small>
+                                <Icon className='no-margin' name='money' />
+                                <span style={{ paddingLeft: 7 }}>{getBounty(task)}</span>
+                            </small>
+                        </Text>
                     </div>
                 ),
             key: 'title',

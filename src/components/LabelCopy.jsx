@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
-import { Label, Popup } from 'semantic-ui-react'
-import { copyToClipboard, isFn, isStr, isValidNumber, objWithoutKeys, textEllipsis } from '../utils/utils'
+import { Popup } from 'semantic-ui-react'
+import { copyToClipboard, deferred, isFn, isStr, isValidNumber, objWithoutKeys, textEllipsis } from '../utils/utils'
 import { translated } from '../services/language'
 import { iUseReducer, useRxSubject } from '../services/react'
 import { MOBILE, rxLayout } from '../services/window'
+import Invertible from './Invertible'
+import Label from './Label'
 
 const textsCap = translated({
     copiedMsg: 'copied to clipboard',
@@ -16,6 +18,10 @@ function LabelCopy(props) {
         copied: false,
         open: undefined,
     })
+    const closeDeferred = useCallback(deferred(
+        () => setState({ copied: false, open: false }),
+        1000,
+    ), [setState])
     let {
         content,
         El,
@@ -66,11 +72,8 @@ function LabelCopy(props) {
             onClick: e => {
                 isFn(onClick) && onClick(e, value)
                 copyToClipboard(value)
-                setState({ copied: true, open: true, })
-
-                setTimeout(() => {
-                    setState({ copied: false, open: false })
-                }, 1000)
+                setState({ copied: true, open: true })
+                closeDeferred()
             },
             onMouseEnter: () => setState({ open: true }),
             onMouseLeave: () => setState({ open: false }),
@@ -80,11 +83,13 @@ function LabelCopy(props) {
             }
         }} />
     )
+    
     return (
-        <Popup {...{
+        <Invertible {...{
             content: state.copied
                 ? textsCap.copiedMsg
                 : textsCap.copyMsg,
+            El: Popup,
             key: 'popup',
             eventsEnabled: false,
             hideOnScroll: true,

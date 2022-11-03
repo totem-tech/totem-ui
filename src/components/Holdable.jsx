@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
-import { isFn, objWithoutKeys } from '../utils/utils'
+import { isFn, isTouchable, objWithoutKeys } from '../utils/utils'
 
 function Holdable(props) {
     let {
@@ -33,12 +33,11 @@ function Holdable(props) {
             onHold(...args)
         }, duration)
     }, [state, duration])
-    const touchable = 'ontouchstart' in document.documentElement
     const eventHandlers = isFn(onHold) && {
         onClick: (...args) => state.allowClick
             && isFn(onClick)
             && onClick(...args),
-        ...!touchable
+        ...!isTouchable()
             ? {
                 onMouseDown: startTimeCb(onMouseDown),
                 onMouseLeave: clearTimerCb(onMouseLeave),

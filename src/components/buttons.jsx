@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { deferred, isFn, objWithoutKeys } from '../utils/utils'
+import { deferred, isFn, isTouchable, objWithoutKeys } from '../utils/utils'
 import { getRawUserID } from './UserIdInput'
 // forms
 import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
@@ -230,12 +230,12 @@ export const Reveal = React.memo(function Reveal(props){
 				</span>
 			]
 
-    const touchable = 'ontouchstart' in document.documentElement
+	const touchable = isTouchable()
 	const elProps = {
 		...objWithoutKeys(props, ignoreAttributes),
 		children,
 		...toggleOnClick && {
-			onClick: !touchable 
+			onClick: !touchable
 				? triggerEvent(onClick, !visible)
 				: onClick,
 			onTouchStart: touchable

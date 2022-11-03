@@ -1,7 +1,7 @@
 import React, { isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import {
-    isAddress, isArr, isArrLike, isBool, isHex, isObj, isStr, isValidNumber, textEllipsis
+    isAddress, isArr, isArrLike, isBool, isHex, isObj, isStr, isValidNumber, strFill, textEllipsis
 } from '../utils/utils'
 import LabelCopy from './LabelCopy'
 import { useRxSubject } from '../services/react'
@@ -13,8 +13,7 @@ function JSONView(props) {
     const [spaces, maxLength, size] = isMobile
         ? [2, 11, 'mini']
         : [4, 17, 'tiny']
-    const isDataObj = isObj(data)
-    const dataX = isDataObj
+    const dataX = isObj(data)
         ? { ...data }
         : isArrLike(data)
             ? [...Array.from(data)]
@@ -22,14 +21,28 @@ function JSONView(props) {
                 ? data
                 : [`${data}`]
     let ellipsed = {}
+    const elements = new Map()
+    const elementKeyPrefix = '_________ELEMENT_________'
 
     Object.keys(dataX)
         .forEach(key => {
             let value = dataX[key]
+            if (isValidElement(value)) {
+                const id = `${elementKeyPrefix}${strFill(elements.size + 1, 6, '_')}`
+                elements.set(id, value)
+                dataX[key] = id
+                return 
+            }
             if (isArr(value) || isArrLike(value) || isObj(value)) {
-                const res = JSONView({ data: value, asEl: false })
+                const res = JSONView({
+                    data: value,
+                    asEl: false,
+                })
                 value = res[0]
                 ellipsed = { ...ellipsed, ...res[1] }
+                Array
+                    .from(res[2])
+                    .forEach(([key, value]) => elements.set(key, value))
                 dataX[key] = value
                 return
             }
@@ -45,32 +58,47 @@ function JSONView(props) {
             dataX[key] = value
         })
     
-    if (!asEl) return [dataX, ellipsed]
+    if (!asEl) return [dataX, ellipsed, elements]
     
     const str = !isStr(dataX)
         ? JSON.stringify(dataX, null, spaces)
         : dataX
     let arr = [str]
 
-    Object.keys(ellipsed).forEach(shortValue => {
-        arr = arr.map(x => isValidElement(x)
-            ? x
-            : x.split(shortValue)
-                .map(next => [
-                    <LabelCopy {...{
-                        as: 'span',
-                        content: shortValue,
-                        size,
-                        style: { margin: 0 },
-                        value: ellipsed[shortValue],
-                    }} />,
-                    next,
-                ])
+    Object
+        .keys(ellipsed)
+        .forEach(shortValue => {
+            arr = arr.map(x => isValidElement(x)
+                ? x
+                : x.split(shortValue)
+                    .map(next => [
+                        <LabelCopy {...{
+                            as: 'span',
+                            content: shortValue,
+                            size,
+                            style: { margin: 0 },
+                            value: ellipsed[shortValue],
+                        }} />,
+                        next,
+                    ])
+                    .flat()
+                    // remove 
+                    .slice(1)
+            ).flat()
+        })
+    Array.from(elements)
+        .forEach(([elementId, element]) => {
+            arr = arr.map(x =>
+                isValidElement(x)
+                    ? x
+                    : x.split(elementId)
+                        .map(next => [element, next])
+                        .flat()
+                        // remove 
+                        .slice(1)
+            )
                 .flat()
-                // remove 
-                .slice(1)
-        ).flat()
-    })
+        })
 
     return (
         <span style={{
@@ -98,4 +126,5 @@ JSONView.propTypes = {
 JSONView.defaultProps = {
     asEl: true,
 }
+export const jsonView = JSONView
 export default React.memo(JSONView)
