@@ -51,8 +51,8 @@ export default class DataTable extends Component {
 	constructor(props) {
 		super(props)
 
-		let { columns, defaultSort, defaultSortAsc, pageNo } = props
-		if (!defaultSort) {
+		let { columns, defaultSort, defaultSortAsc, pageNo, sortBy } = props
+		if (!defaultSort && sortBy !== false) {
 			const { key, sortKey } = columns.find(x =>
 				!!x.key && x.sortable !== false
 			) || {}
@@ -108,7 +108,9 @@ export default class DataTable extends Component {
 	}
 
 	getHeaders(totalRows, columns, selectedIndexes) {
-		let { columnsHidden, selectable, tableProps: tp } = this.props
+		let { columnsHidden, headers: showHeaders, selectable, tableProps: tp } = this.props
+		if (!showHeaders) return
+
 		const { sortAsc, sortBy } = this.state
 		const { sortable } = { ...DataTable.defaultProps.tableProps, ...tp }
 
@@ -250,7 +252,7 @@ export default class DataTable extends Component {
 							}
 							if (!isValidElement(content) && isObj(content)) {
 								// Prevents Objects being thrown on DOM which can cause error being thrown by React
-								console.error('DataTable: unwanted object found on', {
+								console.warn('DataTable: unwanted object found on', {
 									key: contentKey,
 									title: title,
 									content,
@@ -453,7 +455,9 @@ export default class DataTable extends Component {
 				.map(x => x.key),
 			...(searchExtraKeys || []),
 		])
-		let filteredData = !keywords ? data : search(data, keywords, keys)
+		let filteredData = !keywords
+			? data
+			: search(data, keywords, keys)
 		filteredData = !sortBy
 			? filteredData
 			: sort(filteredData, sortBy, !sortAsc, false)
@@ -559,8 +563,7 @@ DataTable.propTypes = {
 			// indicates whether this column should be sortable
 			// if undefined, will use tableProps.sortable
 			sortable: PropTypes.bool,
-			title: PropTypes.oneOfType([PropTypes.string, PropTypes.element])
-				.isRequired,
+			title: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
 		})
 	).isRequired,
 	// array of column `name`s to hide
@@ -574,6 +577,7 @@ DataTable.propTypes = {
 		PropTypes.object,
 	]),
 	footerContent: PropTypes.any,
+	headers: PropTypes.bool,
 	// Search keywords. If search input is visible, this will set only the initial value.
 	keywords: PropTypes.string,
 	// total of page numbers to be visible including current
@@ -601,6 +605,7 @@ DataTable.defaultProps = {
 		content: textsCap.noDataAvailable,
 		status: 'basic',
 	},
+	headers: true,
 	navLimit: 5,
 	pageNo: 1,
 	perPage: 10,

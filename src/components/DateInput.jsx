@@ -65,10 +65,13 @@ function DateInput(props) {
         dropdownProps,
         icon,
         ignoreAttributes,
+        fluid,
         fluidOnMobile,
         onReset,
         resetIconTitle,
         rxValue,
+        showHint,
+        style,
         years,
         value,
     } = props
@@ -134,15 +137,23 @@ function DateInput(props) {
             })
             .filter(Boolean)
 
+    const gotValue = yyyy && mm && dd
     return (
         <div {...{
             ...objWithoutKeys(props, ignoreAttributes),
             className: className({
                 'ui button': true,
                 negative: props.invalid || invalid,
-                fluid: isMobile,
+                fluid: fluid || isMobile,
             }),
-            style: { cursor: 'unset' },
+            style: {
+                cursor: 'unset',
+                ...gotValue && showHint && {
+                    paddingTop: 5,
+                    paddingBottom: 2,
+                },
+                ...style,
+            },
             title: 'YYYY-MM-DD',
         }}>
             <Dropdown {...{
@@ -182,7 +193,7 @@ function DateInput(props) {
                 search: true,
                 value: dd || '',
             }} />
-            {clearable && yyyy && mm && dd && (
+            {clearable && !disabled && gotValue && (
                 <Icon {...{
                     className: 'no-margin',
                     name: 'x',
@@ -197,6 +208,15 @@ function DateInput(props) {
                     title: resetIconTitle,
                 }} />
             )}
+            {gotValue && showHint && (
+                <div style={{
+                    color: invalid
+                        ? 'white'
+                        : 'grey'
+                }}>
+                    <small>YYYY-MM-DD</small>
+                </div>
+            )}
         </div>
     )
 }
@@ -204,17 +224,30 @@ DateInput.propTypes = {
     clearable: PropTypes.bool,
     disabled: PropTypes.bool,
     dropdownProps: PropTypes.object,
+    fluid: PropTypes.bool,
+    fluidOnMobile: PropTypes.bool,
+    icon: PropTypes.oneOfType([
+        PropTypes.element,
+        PropTypes.object,
+        PropTypes.string,
+    ]),
+    ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
     // lowest value
     max: PropTypes.string,
     // highest value
     min: PropTypes.string,
-    ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
-    rxValue: PropTypes.instanceOf(BehaviorSubject),
     // triggered on date reset.
     onReset: PropTypes.func,
-    years: PropTypes.arrayOf(PropTypes.number),
+    resetIconTitle: PropTypes.oneOfType([
+        PropTypes.element,
+        PropTypes.string,
+    ]),
+    rxValue: PropTypes.instanceOf(BehaviorSubject),
+    showHint: PropTypes.bool,
+    style: PropTypes.object,
     // date value string in the following format: YYYY-DD-MM
     value: PropTypes.string,
+    years: PropTypes.arrayOf(PropTypes.number),
 }
 DateInput.defaultProps = {
     clearable: true,
@@ -223,6 +256,7 @@ DateInput.defaultProps = {
     ignoreAttributes: [
         'clearable',
         'dropdownProps',
+        'fluid',
         'fluidOnMobile',
         'icon',
         'ignoreAttributes',
@@ -230,9 +264,11 @@ DateInput.defaultProps = {
         'onReset',
         'resetIconTitle',
         'rxValue',
+        'showHint',
         'years',
     ],
     resetIconTitle: textsCap.reset,
+    showHint: false,
     style: {
         whiteSpace: 'nowrap',
     },

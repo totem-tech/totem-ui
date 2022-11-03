@@ -3,7 +3,7 @@ import { render } from 'react-dom'
 import uuid from 'uuid'
 import { Button, Confirm, Icon } from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
-import { isBool, isFn, className, isStr, isObj, isDefined } from '../utils/utils'
+import { isBool, isFn, className, isStr, isObj, isDefined, objWithoutKeys } from '../utils/utils'
 import { translated } from './language'
 import { toggleFullscreen, useInverted, getUrlParam } from './window'
 import PromisE from '../utils/PromisE'
@@ -112,7 +112,10 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                     <Icon {...{
                         className: 'grey large link icon no-margin',
                         name: 'times circle outline',
-                        onClick: () => closeModal(modalId) | (isFn(onCancel) && onCancel(e, d)),
+                        onClick: () => {
+                            closeModal(modalId)
+                            isFn(onCancel) && onCancel(e, d)
+                        },
                         ref: focusRef,
                     }} />
                 </div>
@@ -140,9 +143,12 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
     return add(
         modalId,
         <IConfirm {...{
-            ...confirmProps,
-            className: 'confirm-modal',
+            ...objWithoutKeys(confirmProps, ['contentProps']),
             cancelButton,
+            className: className([
+                'confirm-modal',
+                confirmProps.className,
+            ]),
             confirmButton,
             content: content && (
                 <div {...{
@@ -151,7 +157,7 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                     className: className([
                         'content',
                         contentProps.className,
-                    ])
+                    ]),
                 }} />
             ),
             open: !isBool(open) || open,

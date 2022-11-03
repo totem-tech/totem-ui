@@ -7,9 +7,7 @@ import LabelCopy from './LabelCopy'
 import { useRxSubject } from '../services/react'
 import { MOBILE, rxLayout } from '../services/window'
 
-function JSONView(props) {
-    const { asEl, data } = props
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {
     const [spaces, maxLength, size] = isMobile
         ? [2, 11, 'mini']
         : [4, 17, 'tiny']
@@ -34,7 +32,7 @@ function JSONView(props) {
                 return 
             }
             if (isArr(value) || isArrLike(value) || isObj(value)) {
-                const res = JSONView({
+                const res = toJSONView({
                     data: value,
                     asEl: false,
                 })
@@ -110,6 +108,12 @@ function JSONView(props) {
         </span>
     )
 }
+
+const JSONView = React.memo(({ asEl, data }) => {
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    
+    return toJSONView({asEl, data, isMobile})
+})
 JSONView.propTypes = {
     // @asEl whether to return as a plain text or element
     // If true, will include copy icon for shortened property values.
@@ -126,5 +130,4 @@ JSONView.propTypes = {
 JSONView.defaultProps = {
     asEl: true,
 }
-export const jsonView = JSONView
-export default React.memo(JSONView)
+export default JSONView

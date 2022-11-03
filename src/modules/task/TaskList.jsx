@@ -23,7 +23,7 @@ import {
     handleInvoicedResponse,
     handleUpdateStatus,
 } from './notificationHandlers'
-import TaskDetailsForm from './TaskDetailsForm'
+import TaskDetails from './TaskDetails'
 import { MOBILE, rxLayout } from '../../services/window'
 import Text from '../../components/Text'
 
@@ -163,10 +163,7 @@ const getActions = (task, taskId, { inProgressIds, isOwnedList }) => [
     },
     {
         icon: 'eye',
-        onClick: () => showForm(TaskDetailsForm, {
-            id: taskId,
-            values: task,
-        }),
+        onClick: () => TaskDetails.asModal(task, taskId),
         title: textsCap.techDetails
     }
 ]

@@ -522,18 +522,32 @@ body.inverted .chat-container {
 /* body.inverted > * > .ui.top.menu.inverted {
     background: red;
 } */
-/* Data Table */
+/* DataTable */
 body.inverted .data-table.inverted,
 body.inverted .ui.basic.inverted.segment.data-table {
 	background: #464646;
 	/* border: 1px solid #505050; */
 }
+/* Vertical DataTable */
+body.inverted .ui.table.vertical tbody tr td:first-child {
+    background: #696969 !important;
+    color: white !important;
+}
+body.inverted .ui.table.vertical tbody tr:not(:last-child) td:first-child {
+    border-bottom: 1px solid #80808045 !important;    
+}
 /* Modals */
+body.inverted .ui.modal,
 body.inverted .ui.modal > .content,
 body.inverted .ui.modal .accordion,
 body.inverted .ui.modal .accordion > * {
 	background: #464646;
 	color: white;
+}
+/* collapsing modal: no spacing on content */
+.ui.modal.collapsing > .content {
+	margin: -15px 0px !important;
+    padding: 0px !important;
 }
 /* body.inverted .ui.modal > .modal-close, */
 body.inverted .ui.modal > .header,

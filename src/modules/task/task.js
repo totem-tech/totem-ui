@@ -8,7 +8,7 @@ export const PRODUCT_HASH_LABOUR = generateHash('labour')
 const MODULE_KEY = 'task'
 // read and write to cached storage
 const TX_STORAGE = 'tx_storage'
-const textsCap = translated({
+let textsCap = {
     inaccessible: 'inaccessible',
     accepted: 'accepted',
     approved: 'approved',
@@ -19,7 +19,8 @@ const textsCap = translated({
     pendingApproval: 'pending approval',
     rejected: 'rejected',
     submitted: 'submitted',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 export const approvalStatuses = {
     pendingApproval: 0,
     approved: 1,
@@ -208,16 +209,16 @@ export const queueables = {
             token,
             txId,
         ] : [
-                approver,
-                fulfiller,
-                amountXTX,
-                deadline,
-                dueDate,
-                orderItems,
-                taskId,
-                token,
-                txId,
-            ]
+            approver,
+            fulfiller,
+            amountXTX,
+            deadline,
+            dueDate,
+            orderItems,
+            taskId,
+            token,
+            txId,
+        ]
 
         return {
             ...queueProps,
@@ -265,16 +266,16 @@ export const queueables = {
             token,
             txId,
         ] : [
-                approver,
-                fulfiller,
-                amountXTX,
-                deadline,
-                dueDate,
-                orderItem,
-                taskId,
-                token,
-                txId,
-            ]
+            approver,
+            fulfiller,
+            amountXTX,
+            deadline,
+            dueDate,
+            orderItem,
+            taskId,
+            token,
+            txId,
+        ]
 
         return {
             ...queueProps,

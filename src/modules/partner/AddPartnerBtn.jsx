@@ -5,6 +5,7 @@ import { Button } from 'semantic-ui-react'
 import { showForm } from '../../services/modal'
 import PartnerForm from './PartnerForm'
 import { translated } from '../../utils/languageHelper'
+import LabelCopy from '../../components/LabelCopy'
 
 const textsCap = translated({
     addPartner: 'add partner',
@@ -13,17 +14,15 @@ const textsCap = translated({
 function AddPartnerBtn(props) {
     const {
         address,
-        Component = 'span',
+        allowCopy,
+        Component,
         partnerName,
-        showNameIfExists = true,
         userId,
     } = props
     const addressName = useMemo(() => getAddressName(address), [address])
     const exists = !addressName.startsWith(address.slice(0, 3))
         && !addressName.includes('...')
-    if (exists && !showNameIfExists) return ''
-
-    const button = exists
+    const addBtn = exists
         ? ''
         : (
             <Button {...{
@@ -42,13 +41,34 @@ function AddPartnerBtn(props) {
                 title: textsCap.addPartner,
             }} />
         )
-    return <Component>{addressName} {button}</Component>
+    
+    return (
+        <Component>
+            {addBtn}{!!exists && ' '}
+            {exists
+                ? addressName
+                : !allowCopy
+                    ? address
+                    : (
+                        <LabelCopy {...{
+                            content: addressName,
+                            value: address,
+                        }} />
+                    )}
+        </Component>
+    )
 }
 AddPartnerBtn.prototype = {
-    address: PropTypes.string,
+    address: PropTypes.string.isRequired,
+    allowCopy: PropTypes.bool,
     Component: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.elementType,
-    ])
+    ]).isRequired,
+    userId: PropTypes.string,
+}
+AddPartnerBtn.defaultProps = {
+    allowCopy: true,
+    Component: 'span',
 }
 export default React.memo(AddPartnerBtn)

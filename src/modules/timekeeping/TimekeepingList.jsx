@@ -1,26 +1,42 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
-import { BehaviorSubject, map, Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
-import { BLOCK_DURATION_SECONDS, secondsToDuration, blockNumberToTS } from '../../utils/time'
-import { isArr, deferred, copyToClipboard, textEllipsis, isFn } from '../../utils/utils'
+import {
+    BLOCK_DURATION_SECONDS,
+    secondsToDuration,
+    blockNumberToTS,
+} from '../../utils/time'
+import { isArr, deferred, isFn } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
-import FormBuilder from '../../components/FormBuilder'
-import { hashTypes, queueables as bcQueueables, getCurrentBlock } from '../../services/blockchain'
+import {
+    hashTypes,
+    queueables as bcQueueables,
+    getCurrentBlock,
+} from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { closeModal, confirm, showForm } from '../../services/modal'
+import { confirm, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
-import identities, { getSelected, rxIdentities, rxSelected } from '../identity/identity'
+import identities, {
+    getSelected,
+    rxIdentities,
+    rxSelected,
+} from '../identity/identity'
 import { getAddressName, rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
-import { getProjects, statuses, query, queueables } from './timekeeping'
+import {
+    getProjects,
+    statuses,
+    query,
+    queueables,
+} from './timekeeping'
 import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
-import TimekeepingDetailsForm from './TimekeepingDetailsForm'
+import TimekeepingDetailsForm from './TimekeepingDetails'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -641,23 +657,17 @@ class TimeKeepingList extends Component {
         }
     }
 
-    showDetails = (recordId, record) => {
+    showDetails = (recordId) => {
         const { manage } = this.props
         const { isMobile } = this.state
-        const formProps = {
+        TimekeepingDetailsForm.asModal({
             getActionButtons: this.getActionButtons,
             isMobile,
             manage,
             recordId,
             rxData: this.rxData,
             rxInProgressIds,
-        }
-        
-        showForm(
-            TimekeepingDetailsForm,
-            formProps,
-            recordId,
-        )
+        })
     }
 
     updateTrigger = deferred(() => rxTrigger.next(uuid.v1()), 150)

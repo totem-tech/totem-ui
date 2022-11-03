@@ -14,7 +14,9 @@ export default function Label(props) {
                 [props.className]: true,
             }),
             style: {
-                background: '#333333',
+                background: inverted
+                    ? '#333333'
+                    : undefined,
                 ...props.style,
             }
         }} />

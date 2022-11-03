@@ -64,7 +64,7 @@ let textsCap = {
 	submitActivity: 'submit and wait until Activity is successfully created.',
     taskCompleted: 'Well done! You have completed this task.',
 	taskIncomplete: 'you have not completed this task',
-    transferToFriend: 'transfer any amount to one of your friend',
+    transferToFriend: 'transfer any amount to one of your friends',
 }
 textsCap = translated(textsCap, true)[1]
 
