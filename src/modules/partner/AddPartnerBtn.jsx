@@ -1,12 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
-import { getAddressName } from './partner'
+import { getAddressName, rxPartners } from './partner'
 import { Button } from 'semantic-ui-react'
 import { showForm } from '../../services/modal'
 import PartnerForm from './PartnerForm'
 import { translated } from '../../utils/languageHelper'
 import LabelCopy from '../../components/LabelCopy'
-import { objWithoutKeys } from '../../utils/utils'
+import { deferred, objWithoutKeys } from '../../utils/utils'
+import { useRxSubject } from '../../utils/reactHelper'
+import { rxIdentities } from '../identity/identity'
 
 const textsCap = translated({
     addPartner: 'add partner',
@@ -22,9 +24,15 @@ function AddPartnerBtn(props) {
         style,
         userId,
     } = props
-    const addressName = useMemo(() => getAddressName(address), [address])
-    const exists = !addressName.startsWith(address.slice(0, 3))
-        && !addressName.includes('...')
+    const [name, _setName] = useState('')
+    const setName = useCallback(
+        deferred(() => _setName(getAddressName(address)), 100),
+        [address],
+    )
+    useRxSubject(rxIdentities, setName)
+    useRxSubject(rxPartners, setName)
+    const exists = !name.startsWith(address.slice(0, 3))
+        && !name.includes('...')
     const addBtn = exists
         ? ''
         : (
@@ -52,12 +60,12 @@ function AddPartnerBtn(props) {
         }}>
             {addBtn}{!!exists && ' '}
             {exists
-                ? addressName
+                ? name
                 : !allowCopy
                     ? address
                     : (
                         <LabelCopy {...{
-                            content: addressName,
+                            content: name,
                             style: { padding: 7.5 },
                             value: address,
                         }} />

@@ -27,7 +27,7 @@ import Currency from '../currency/Currency'
 import { getById } from '../history/history'
 import { Balance } from '../identity/Balance'
 import { find as findIdentity, getSelected } from '../identity/identity'
-import { get as getPartner, getAll as getPartners } from '../partner/partner'
+import { get as getPartner, getAll as getPartners, rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { queueables } from './task'
 import { rxUpdater } from './useTasks'
@@ -37,8 +37,10 @@ import { subjectAsPromise } from '../../utils/reactHelper'
 
 const textsCap = translated({
     addedToQueue: 'request added to queue',
+    addPartner: 'add partner',
     advancedLabel: 'advanced options',
     assignee: 'select a partner to assign task',
+    assigneeErrPartner404: 'assignee is not a partner!',
     assigneeErrUserIdRequired: 'partner does not have an User ID associated.',
     assigneeErrOwnIdentitySelected: 'you cannot assign a task to your currently selected identity',
     assigneePlaceholder: 'select from partner list',
@@ -146,7 +148,7 @@ export default class TaskForm extends Component {
                 onMount: true,
             },
             submitDisabled: {
-                unchnaged: !!taskId,
+                unchanged: !!taskId,
             },
             onChange: !taskId
                 ? undefined
@@ -183,8 +185,12 @@ export default class TaskForm extends Component {
                             maxLength: 18,
                             min: 0, // allows bounty-free tasks
                             name: this.names.bounty,
-                            onChange: this.handleBountyChange,
-                            onInvalid: this.handleBountyInvalid,
+                            onChange: !taskId
+                                ? this.handleBountyChange
+                                : undefined,
+                            onInvalid: !taskId
+                                ? this.handleBountyInvalid
+                                : undefined,
                             placeholder: textsCap.bountyPlaceholder,
                             rxValue: new BehaviorSubject(),
                             required: true,
@@ -246,6 +252,19 @@ export default class TaskForm extends Component {
                     options: [],
                     placeholder: textsCap.assigneePlaceholder,
                     required: true,
+                    rxOptions: rxPartners,
+                    rxOptionsModifier: partners => arrSort(
+                        Array.from(partners)
+                            .map(([address, { name, userId }]) => ({
+                                description: !userId
+                                    ? ''
+                                    : `@${userId}`,
+                                key: address,
+                                text: name,
+                                value: address,
+                            })),
+                        'text',
+                    ), 
                     selection: true,
                     search: true,
                     type: 'dropdown',
@@ -383,17 +402,8 @@ export default class TaskForm extends Component {
         this._mounted = true
         const { taskId, values } = this.props
         const { inputs, loading } = this.state
-        const assigneeIn = findInput(inputs, this.names.assignee)
         const currencyIn = findInput(inputs, this.names.currency)
         const tagsIn = findInput(inputs, this.names.tags)
-        const assigneeOptions = Array.from(getPartners())
-            .map(([address, { name, userId }]) => ({
-                description: !userId ? '' : `@${userId}`,
-                key: address,
-                text: name,
-                value: address,
-            }))
-        assigneeIn.options = arrSort(assigneeOptions, 'text')
         if (!isObj(values)) {
             loading.onMount = false
             return this.setState({ inputs, loading })
@@ -569,7 +579,7 @@ export default class TaskForm extends Component {
     handleChange = deferred((_, newValues) => {
         const { submitDisabled } = this.state
         newValues = objClean(newValues, Object.values(this.names))
-        submitDisabled.unchnaged = JSON.stringify(this.oldValues) === JSON.stringify(newValues)
+        submitDisabled.unchanged = JSON.stringify(this.oldValues) === JSON.stringify(newValues)
         this.setState({ submitDisabled })
     }, 300)
 
@@ -755,33 +765,46 @@ export default class TaskForm extends Component {
 
     validateAssignee = (_, { value: assignee }) => {
         if (!assignee) return
+
         const { address } = getSelected() || {}
         if (assignee === address) return textsCap.assigneeErrOwnIdentitySelected
 
-        const partner = getPartner(assignee) || {}
+        const partner = getPartner(assignee)
+        const { userId } = partner || {}
         const { inputs } = this.state
         const assigneeIn = findInput(inputs, this.names.assignee)
-        const onClick = e => {
+        const userIdMissing = !!partner && !userId
+        const handleClick = e => {
             e.preventDefault() // prevents form being submitted
             showForm(PartnerForm, {
-                values: partner,
-                onSubmit: (success, { userId }) => {
+                values: partner || { address: assignee },
+                onSubmit: (success) => {
                     // partner wasn't updated with an user Id
-                    if (!success || !userId) return
+                    if (!success) return
                     // force assignee to be re-validated
                     assigneeIn.rxValue.next('')
-                    assigneeIn.rxValue.next(assignee)
+                    setTimeout(() => assigneeIn.rxValue.next(assignee), 100)
                 }
             })
         }
-        return partner.userId ? null : (
-            <div>
-                {textsCap.assigneeErrUserIdRequired}
+        
+        return partner && userId
+            ? null
+            : (
                 <div>
-                    <Button {...{ content: textsCap.updatePartner, onClick }} />
+                    {userIdMissing
+                        ? textsCap.assigneeErrUserIdRequired
+                        : textsCap.assigneeErrPartner404}
+                    <div>
+                        <Button {...{
+                            content: userIdMissing
+                                ? textsCap.updatePartner
+                                : textsCap.addPartner,
+                            onClick: handleClick,
+                        }} />
+                    </div>
                 </div>
-            </div>
-        )
+            )
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
