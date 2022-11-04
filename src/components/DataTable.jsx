@@ -274,15 +274,25 @@ export default class DataTable extends Component {
 			searchHideOnEmpty,
 			searchOnChange,
 			selectable,
+			showSelectedCount,
 			topLeftMenu: actionButtons,
 			topRightMenu: menuOnSelect,
 		} = this.props
-		const { keywords = keywordsP, isMobile } = this.state
-		actionButtons = (actionButtons || []).filter(x => !x.hidden)
-		menuOnSelect = (menuOnSelect || []).filter(x => !x.hidden)
-		const showSearch = searchable
-			&& (keywords || totalRows > 0 || !searchHideOnEmpty)
-		if (actionButtons.length + menuOnSelect.length === 0 && !showSearch) return
+		const {
+			isMobile,
+			keywords = keywordsP,
+		} = this.state
+		actionButtons = (actionButtons || [])
+			.filter(x => !x.hidden)
+		menuOnSelect = (menuOnSelect || [])
+			.filter(x => !x.hidden)
+		const showSearch = searchable && (
+			keywords
+			|| totalRows > 0
+			|| !searchHideOnEmpty
+		)
+		const numItems = actionButtons.length + menuOnSelect.length
+		if ( numItems === 0 && !showSearch) return
 
 		const hasSearchOnChange = isFn(searchOnChange)
 		const showActions = selectable
@@ -302,7 +312,16 @@ export default class DataTable extends Component {
 					margin: !isMobile ? undefined : '5px 0',
 					textAlign: 'center',
 				},
-				text: textsCap.actions,
+				text: (
+					<span>
+						{textsCap.actions}
+						{!!showSelectedCount && !!selectedIndexes.length && (
+							<span style={{ color: 'grey' }}>
+								{' '}({selectedIndexes.length})
+							</span>
+						)}
+					</span>
+				),
 			}}>
 				<Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
 					{menuOnSelect.map((item, i) =>
@@ -603,6 +622,8 @@ DataTable.propTypes = {
 	searchHideOnEmpty: PropTypes.bool,
 	searchOnChange: PropTypes.func,
 	selectable: PropTypes.bool,
+	// if truthy, will show number of items selected
+	showSelectedCount: PropTypes.bool,
 	tableProps: PropTypes.object.isRequired, // table element props
 	topLeftMenu: PropTypes.arrayOf(PropTypes.object),
 	topRightMenu: PropTypes.arrayOf(PropTypes.object),
@@ -623,6 +644,7 @@ DataTable.defaultProps = {
 	searchable: true,
 	searchHideOnEmpty: true,
 	selectable: false,
+	showSelectedCount: true,
 	tableProps: {
 		celled: true,
 		selectable: true,
