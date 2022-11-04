@@ -37,6 +37,7 @@ import {
 import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
 import TimekeepingDetailsForm from './TimekeepingDetails'
+import SumDuration from './SumDuration'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -111,46 +112,49 @@ class TimeKeepingList extends Component {
 
         this.recordIds = []
         this.rxData = new BehaviorSubject(new Map())
+        this.rxSelectedIds = new BehaviorSubject([])
         this.inProgressBtns = new Map()
+        const columns = [
+            {
+                hidden: () => this.state.isMobile,
+                collapsing: true,
+                key: '_end_block',
+                title: textsCap.finishedAt,
+            },
+            {
+                key: 'projectName',
+                title: textsCap.activity,
+                style: { minWidth: 125 }
+            },
+            { key: '_workerName', title: textsCap.workerIdentity },
+            { key: 'duration', textAlign: 'center', title: textsCap.duration },
+            // { key: 'start_block', title: texts.blockStart },
+            // { key: 'end_block', title: texts.blockEnd },
+            {
+                collapsing: true,
+                hidden: () => this.state.isMobile,
+                key: '_status',
+                textAlign: 'center',
+                title: textsCap.status,
+            },
+            {
+                collapsing: true,
+                content: this.getActionButtons,
+                draggable: false,
+                style: { padding: '0px 5px' },
+                textAlign: 'center',
+                title: textsCap.action,
+            }
+        ]
         this.state = {
             inprogressIds: [],
-            columns: [
-                {
-                    hidden: () => this.state.isMobile,
-                    collapsing: true,
-                    key: '_end_block',
-                    title: textsCap.finishedAt,
-                },
-                {
-                    key: 'projectName',
-                    title: textsCap.activity,
-                    style: { minWidth: 125 }
-                },
-                { key: '_workerName', title: textsCap.workerIdentity },
-                { key: 'duration', textAlign: 'center', title: textsCap.duration },
-                // { key: 'start_block', title: texts.blockStart },
-                // { key: 'end_block', title: texts.blockEnd },
-                {
-                    collapsing: true,
-                    hidden: () => this.state.isMobile,
-                    key: '_status',
-                    textAlign: 'center',
-                    title: textsCap.status,
-                },
-                {
-                    collapsing: true,
-                    content: this.getActionButtons,
-                    draggable: false,
-                    style: { padding: '0px 5px' },
-                    textAlign: 'center',
-                    title: textsCap.action,
-                }
-            ],
+            columns,
             data: new Map(),
             defaultSort: '_end_block',
             defaultSortAsc: false,
             loading: false,
             perPage: 10,
+            onRowSelect: selectedIds => this.rxSelectedIds.next([...selectedIds]),
             rowProps: item => {
                 const { approved, draft, rejected } = item
                 return !rejected && draft
@@ -177,6 +181,13 @@ class TimeKeepingList extends Component {
                         projectHash: this.props.projectHash,
                     })
                 },
+                (
+                    <SumDuration {...{
+                        data: this.rxData,
+                        ids: this.rxSelectedIds,
+                        key: 'sum'
+                    }} />
+                ),
             ],
             topRightMenu: [
                 {

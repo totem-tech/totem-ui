@@ -274,22 +274,21 @@ export default class DataTable extends Component {
 			searchHideOnEmpty,
 			searchOnChange,
 			selectable,
-			topLeftMenu,
-			topRightMenu: onSelectMenu,
+			topLeftMenu: actionButtons,
+			topRightMenu: menuOnSelect,
 		} = this.props
 		const { keywords = keywordsP, isMobile } = this.state
-		topLeftMenu = (topLeftMenu || []).filter(x => !x.hidden)
-		onSelectMenu = (onSelectMenu || []).filter(x => !x.hidden)
+		actionButtons = (actionButtons || []).filter(x => !x.hidden)
+		menuOnSelect = (menuOnSelect || []).filter(x => !x.hidden)
 		const showSearch = searchable
 			&& (keywords || totalRows > 0 || !searchHideOnEmpty)
-		if (topLeftMenu.length + onSelectMenu.length === 0 && !showSearch) return
+		if (actionButtons.length + menuOnSelect.length === 0 && !showSearch) return
 
 		const hasSearchOnChange = isFn(searchOnChange)
-		const showActions =
-			selectable &&
-			onSelectMenu &&
-			onSelectMenu.length > 0 &&
-			selectedIndexes.length > 0
+		const showActions = selectable
+			&& menuOnSelect
+			&& menuOnSelect.length > 0
+			&& selectedIndexes.length > 0
 		const triggerSearchChange = keywords => {
 			this.setState({ keywords })
 			hasSearchOnChange && searchOnChange(keywords, this.props)
@@ -306,13 +305,13 @@ export default class DataTable extends Component {
 				text: textsCap.actions,
 			}}>
 				<Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
-					{onSelectMenu.map((item, i) =>
+					{menuOnSelect.map((item, i) =>
 						React.isValidElement(item) && item || (
 							<Dropdown.Item {...{
 								...item,
 								key: i,
 								onClick: () => isFn(item.onClick)
-									&& item.onClick(selectedIndexes)
+									&& item.onClick(selectedIndexes) 
 							}} />
 						)
 					)}
@@ -322,7 +321,9 @@ export default class DataTable extends Component {
 
 		// if searchable is a valid element search is assumed to be externally handled
 		const searchEl = showSearch &&
-			(React.isValidElement(searchable) && searchable || (
+			(React.isValidElement(searchable)
+			&& searchable
+			|| (
 				<Input {...{
 					action: !keywords
 						? undefined
@@ -346,8 +347,8 @@ export default class DataTable extends Component {
 					},
 					placeholder: textsCap.search,
 					type: 'search', // enables escape to clear
-					value: keywords || '',
-				}} />
+				value: keywords || '',
+			}} />
 		))
 		
 		const leftBtns = (
@@ -357,7 +358,7 @@ export default class DataTable extends Component {
 				style={{ padding: 0 }}
 			>
 				{!isMobile && actions}
-				{topLeftMenu.map((item, i) => {
+				{actionButtons.map((item, i) => {
 					if (React.isValidElement(item) || !isObj(item)) return item
 					let { El = Button, onClick, style } = item
 					return (
@@ -414,11 +415,13 @@ export default class DataTable extends Component {
 		isFn(pageOnSelect) && pageOnSelect(pageNo, this.props)
 	}
 
-	handleRowSelect(key, selectedIndexes) {
+	handleRowSelect(currentIndex, selectedIndexes) {
 		const { onRowSelect } = this.props
-		const index = selectedIndexes.indexOf(key)
-		index < 0 ? selectedIndexes.push(key) : selectedIndexes.splice(index, 1)
-		isFn(onRowSelect) && onRowSelect(selectedIndexes, key)
+		const index = selectedIndexes.indexOf(currentIndex)
+		index < 0
+			? selectedIndexes.push(currentIndex)
+			: selectedIndexes.splice(index, 1)
+		isFn(onRowSelect) && onRowSelect(selectedIndexes, currentIndex)
 		this.setState({ selectedIndexes })
 	}
 
@@ -426,8 +429,9 @@ export default class DataTable extends Component {
 		const { data, onRowSelect } = this.props
 		const total = data.size || data.length
 		const n = selectedIndexes.length
-		selectedIndexes =
-			n === total || (n > 0 && n < total) ? [] : getKeys(data)
+		selectedIndexes = n === total || (n > 0 && n < total)
+			? []
+			: getKeys(data)
 		isFn(onRowSelect) && onRowSelect(selectedIndexes)
 		this.setState({ selectedIndexes })
 	}
@@ -582,6 +586,13 @@ DataTable.propTypes = {
 	keywords: PropTypes.string,
 	// total of page numbers to be visible including current
 	navLimit: PropTypes.number,
+	// event triggered whenever a row is de/selected.
+	// args: [selectedIndexes Array, currentIndex]
+	// If data is a Map, index is the key of the entry related to the row.
+	onRowSelect: PropTypes.func,
+	// event triggered when a page is selected by user.
+	// args: [pageNo Number, props Object]
+	pageOnSelect: PropTypes.func,
 	// loading: PropTypes.bool,
 	perPage: PropTypes.number,
 	rowProps: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),

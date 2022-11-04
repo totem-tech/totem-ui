@@ -135,6 +135,7 @@ export default [
     "./src/modules/task/notificationHandlers.jsx",
     "./src/modules/task/task.js",
     "./src/modules/task/useTasks.js",
+    "./src/modules/timekeeping/SumDuration.jsx",
     "./src/modules/timekeeping/TimekeepingDetails.jsx",
     "./src/modules/timekeeping/TimekeepingForm.jsx",
     "./src/modules/timekeeping/TimekeepingInviteForm.jsx",

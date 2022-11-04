@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { format } from '../utils/time'
 import { translated } from '../services/language'
@@ -25,53 +25,55 @@ const texts = translated({
 const TimeSince = props => {
     const {
         asDuration,
-        date,
+        date: dateFrom,
+        dateTo,
         durationConfig,
         El,
         ignoreAttributes,
-        updateFrequency
+        updateFrequency,
     } = props
-    const [formatted, setFormatted] = useState('')
     const inverted = asDuration && useInverted()
+    const doFormat = useCallback(() => !asDuration
+        ? _format(dateFrom)
+        : _formatDuration({
+            ...durationConfig,
+            dateFrom,
+            dateTo,
+            statisticProps: {
+                inverted,
+                ...(durationConfig || {}).statisticProps,
+            },
+        }))
+    const [formatted, setFormatted] = useState(doFormat()[0])
 
     useEffect(() => {
         let mounted = true
         let timeoutId
+        let autoUpdate = !dateTo && updateFrequency !== null
         const update = () => {
             if (!mounted) return
             
-            const [formatted, frequencyMS] = !asDuration
-                ? _format(date)
-                : _formatDuration(
-                    date,
-                    {
-                        ...durationConfig,
-                        statisticProps: {
-                            inverted,
-                            ...(durationConfig || {}).statisticProps,
-                        },
-                    }
-                )
-            const autoUpdate = updateFrequency !== null && frequencyMS !== null
+            const [formatted, frequencyMS] = doFormat()
+            autoUpdate = frequencyMS !== null
             const delay = updateFrequency || frequencyMS
             setFormatted(formatted)
             if (!autoUpdate || !delay) return
 
             timeoutId = setTimeout(update, delay)
         }
-        update()
+        autoUpdate && update()
         return () => {
             mounted = false
             clearTimeout(timeoutId)
         }
     }, [inverted])
 
-    return !date
+    return !dateFrom
         ? ''
         : <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
             children: formatted,
-            title: props.title || `${date}`,
+            title: props.title || `${dateFrom}`,
         }} />
 }
 TimeSince.propTypes = {
@@ -80,6 +82,11 @@ TimeSince.propTypes = {
     asDuration: PropTypes.bool,
     // @date the date to use to display the time
     date: PropTypes.oneOfType([
+        PropTypes.instanceOf(Date),
+        PropTypes.string,
+    ]).isRequired,
+    // @dateTo (optional) Default: `new Date()`
+    dateTo: PropTypes.oneOfType([
         PropTypes.instanceOf(Date),
         PropTypes.string,
     ]).isRequired,
@@ -121,6 +128,7 @@ TimeSince.defaultProps = {
         'asDuration',
         'durationConfig',
         'date',
+        'dateTo',
         'El',
         'ignoreAttributes',
         'updateFrequency',
@@ -132,7 +140,7 @@ export default React.memo(TimeSince)
  * @name    _format
  * @summary format time as count up
  * 
- * @param   {String|Date} date  Date or Unix timestamp
+ * @param   {String|Date} dateFrom  Date or Unix timestamp
  * 
  * @returns {Array} [
  *                      0: formatted string,
@@ -140,9 +148,9 @@ export default React.memo(TimeSince)
  *                          Eg: if formatted string is in seconds update frequency will be 1 second.
  *                  ]
  */  
-const _format = date => {
-    date = new Date(date)
-    let diffMS = new Date() - date
+const _format = (dateFrom, dateTo = new Date()) => {
+    dateFrom = new Date(dateFrom)
+    let diffMS = dateTo - dateFrom
     const isPast = diffMS >= 0
     diffMS = Math.abs(diffMS)
     const seconds = diffMS / secondMS
@@ -179,8 +187,15 @@ const hourMS = minuteMS * 60
 const dayMS = hourMS * 24
 const monthMS = dayMS * 30
 const yearMS = dayMS * 365
-const _calcDurationUnits = (date, withHours, withMinutes, withSeconds) => {
-    const diffMS = new Date() - new Date(date)
+const _calcDurationUnits = (durationConfig = {}) => {
+    const {
+        dateFrom,
+        dateTo = new Date(),
+        withHours = true,
+        withMinutes = true,
+        withSeconds = true,
+    } = durationConfig
+    const diffMS = dateTo - new Date(dateFrom)
     let x = 0
     const years = parseInt(diffMS / yearMS)
     x = years * yearMS
@@ -230,27 +245,36 @@ const _calcDurationUnits = (date, withHours, withMinutes, withSeconds) => {
                 : secondMS // update every second
     ]
 }
-const _formatDuration = (date, durationConfig = {}) => {
-    const { 
+const _formatDuration = (durationConfig = {}) => {
+    let { 
+        // dateFrom,
+        // dateTo,
         fill = true,
         statisticProps = {},
         titleBelow = true,
-        withHours = true,
-        withMinutes = true,
-        withSeconds = true,
+        // withHours = true,
+        // withMinutes = true,
+        // withSeconds = true,
     } = durationConfig
-    let [values, frequencyMS] = _calcDurationUnits(date, withHours, withMinutes, withSeconds)
+    let [values, frequencyMS] = _calcDurationUnits(durationConfig)
+    const { labelProps = {}, valueProps = {} } = statisticProps
+    statisticProps = objWithoutKeys(statisticProps, ['labelProps', 'valueProps'])
 
     return [
         values.map(([label, value]) => (
             <Statistic {...statisticProps} key={label}>
                 {arrReverse([
-                    <Statistic.Label content={label} key='label' />,
+                    <Statistic.Label {...{
+                        content: label,
+                        key: 'label',
+                        ...labelProps,
+                    }} />,
                     <Statistic.Value {...{
                         content: !fill
                             ? value
                             : strFill(value, 2, '0'),
                         key: 'value',
+                        ...valueProps,
                     }} />,
                 ], titleBelow)}
             </Statistic>
