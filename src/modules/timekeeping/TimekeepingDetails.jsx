@@ -9,6 +9,7 @@ import { isFn, objWithoutKeys } from '../../utils/utils'
 import { BehaviorSubject } from 'rxjs'
 import { confirmAsPromise } from '../../services/modal'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
+import { ButtonGroup } from '../../components/buttons'
 
 let textsCap = {
     blockCount: 'number of blocks',
@@ -97,12 +98,13 @@ const TimekeepingDetails = props => {
         return {
             columns,
             data: [record],
+            record,
         }
     })
     const [state] = useRxSubject(rxData, getFormProps, [])
     const [inProgressIds = []] = useRxSubject(rxInProgressIds)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    const { inputs, record } = state
+    const { record } = state
 
     const buttons = record && getActionButtons(record, recordId)
         .filter(({ props: { title } = {} }) =>
@@ -128,10 +130,6 @@ const TimekeepingDetails = props => {
                         args[0].preventDefault()
                         isFn(onClick) && onClick(...args)
                     },
-                    style: {
-                        ...style,
-                        margin: 5,
-                    }
                 }
             }
         })
@@ -147,8 +145,14 @@ const TimekeepingDetails = props => {
     return (
         <div>
             <DataTableVertical {...objWithoutKeys(state, ignoredAttrs)} />
-            <div style={{ textAlign: 'center' }}>
-                {buttons}
+            <div style={{ marginTop: -14, textAlign: 'center' }}>
+                <ButtonGroup {...{
+                    buttons,
+                    style: {
+                        margin: 3,
+                        width: 'calc( 100% - 6px )',
+                    }
+                }} />
             </div>
         </div>
     )

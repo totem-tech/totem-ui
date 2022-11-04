@@ -8,6 +8,7 @@ import { getAddressName } from '../partner/partner'
 import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
 import { isAddress } from 'web3-utils'
+import notification, { rxNewNotification } from '../notification/notification'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -182,7 +183,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
         query
             .getTaskIds(types, address, handleTaskIds)
             .then(
-                fn => subs.taskIds2d = fn,
+                unsub => subs.taskIds2d = unsub,
                 setError,
             )
 
@@ -250,6 +251,7 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
                     }} />
                 )
                 task = objCopy(detailsMap.get(id) || {}, task)
+                task = { ...task, ...detailsMap.get(id) }
                 task._tsCreated = format(task.tsCreated, true)
                 typeTasks.set(id, task)
             })
@@ -260,3 +262,11 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
     save && setCache(address, cacheableAr)
     return newTasks
 }
+
+// automatically update task details whenever a new notification is recieved about a task
+rxNewNotification.subscribe(([id, notification]) => {
+    const { data: { taskId } = {}, type } = notification || {}
+    if (!type !== 'tasks' || !taskId) return
+
+    rxUpdater.next([taskId])
+})

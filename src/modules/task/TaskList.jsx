@@ -68,7 +68,7 @@ export const listTypes = Object.freeze({
 })
 // preserves search keywords for each list type until page reloads
 const tempCache = new Map()
-const toBeImplemented = () => alert('to be implemented')
+// const toBeImplemented = () => alert('to be implemented')
 const rxInProgressIds = new BehaviorSubject(new Set())
 
 export default function TaskList(props) {
@@ -82,15 +82,6 @@ export default function TaskList(props) {
     const keywordsKey = 'keywords' + listType
     const showCreate = isOwnedList || isMarketPlace
     const tableProps = getTableProps(isMobile, isFulfillerList)
-
-    Array
-        .from(props.data)
-        .map(([_, value]) => {
-            const keyWithObj = Object.keys(value)
-                .find(iKey => !isValidElement(value[iKey]) && isObj(value[iKey]))
-            
-            if (keyWithObj) alert('found object on. Key', keyWithObj, '\n\nvalue:', JSON.stringify(value[keyWithObj], null, 4))
-        })
 
     return (
         <DataTable {...{
@@ -151,7 +142,7 @@ TaskList.defaultProps = {
     listType: listTypes.owner,
 }
 
-const getActions = (task, taskId, { inProgressIds, isOwnedList }) => [
+const getActions = (task, taskId, _, { inProgressIds, isOwnedList, rxTasks }) => [
     isOwnedList && task.allowEdit && {
         disabled: inProgressIds.has(taskId),
         icon: 'pencil',
@@ -163,7 +154,13 @@ const getActions = (task, taskId, { inProgressIds, isOwnedList }) => [
     },
     {
         icon: 'eye',
-        onClick: () => TaskDetails.asModal(task, taskId),
+        onClick: () => TaskDetails.asModal({
+            getStatusView,
+            rxInProgressIds,
+            rxTasks,
+            task,
+            taskId,
+        }),
         title: textsCap.techDetails
     }
 ]
@@ -174,16 +171,21 @@ const getActions = (task, taskId, { inProgressIds, isOwnedList }) => [
             key: `${i}-${props.title}`,
         }} />
     ))
-
 // status cell view (with status related action buttons where appropriate)
-const getStatusView = (task, taskId) => {
-    const { fulfiller, isMarket, orderStatus, owner, _orderStatus } = task
+const getStatusView = (task, taskId, _, { inProgressIds }) => {
+    const {
+        fulfiller,
+        isMarket,
+        orderStatus,
+        owner,
+        _orderStatus,
+     } = task
     if (isMarket) return `${_orderStatus}`
 
     const { address } = getSelected()
     const isOwner = address === owner
     const isFulfiller = address === fulfiller
-    const inProgress = rxInProgressIds.value.has(taskId)
+    const inProgress = inProgressIds && inProgressIds.has(taskId)
 
     switch (orderStatus) {
         // fulfiller hasn't accepted/rejected yet
@@ -193,7 +195,14 @@ const getStatusView = (task, taskId) => {
                 <ButtonAcceptOrReject
                     disabled={inProgress}
                     loading={inProgress}
-                    onAction={(_, accepted) => handleAssignmentResponse(taskId, address, accepted)}
+                    onAction={(e, accepted) => {
+                        e.preventDefault()
+                        handleAssignmentResponse(
+                            taskId,
+                            address,
+                            accepted,
+                        )
+                    }}
                 />
             )
             break
@@ -205,18 +214,23 @@ const getStatusView = (task, taskId) => {
                     content={textsCap.createInvoice}
                     disabled={inProgress}
                     loading={inProgress}
-                    onClick={() => confirm({
-                        confirmButton: textsCap.createInvoice,
-                        content: textsCap.createInvoiceDesc,
-                        header: textsCap.createInvoice,
-                        onConfirm: () => handleUpdateStatus(
-                            address,
-                            taskId,
-                            statuses.invoiced,
-                            textsCap.createInvoiceTitle,
-                        ),
-                        size: 'mini',
-                    })}
+                    onClick={e => {
+                        e.preventDefault()
+                        confirm({
+                            confirmButton: textsCap.createInvoice,
+                            content: textsCap.createInvoiceDesc,
+                            header: textsCap.createInvoice,
+                            onConfirm: () => {
+                                handleUpdateStatus(
+                                    address,
+                                    taskId,
+                                    statuses.invoiced,
+                                    textsCap.createInvoiceTitle,
+                                )
+                            },
+                            size: 'mini',
+                        })
+                    }}
                     positive
                     title={textsCap.createInvoiceDesc}
                 />
@@ -230,7 +244,10 @@ const getStatusView = (task, taskId) => {
                     acceptText={textsCap.pay}
                     disabled={inProgress}
                     loading={inProgress}
-                    onAction={(_, accepted) => handleInvoicedResponse(taskId, address, accepted)}
+                    onAction={(e, accepted) => {
+                        e.preventDefault()
+                        handleInvoicedResponse(taskId, address, accepted)
+                    }}
                     rejectText={textsCap.dispute}
                     title={textsCap.acceptInvoiceDesc}
                 />
@@ -378,7 +395,8 @@ setTimeout(() => {
         const isDone = [queueStatuses.ERROR, queueStatuses.SUCCESS]
             .includes(status)
         const inProgressIds = rxInProgressIds.value
-        if (!isDone || !inProgressIds.has(taskId)) return
+        if (!isDone && inProgressIds.has(taskId)) return
+        if (isDone && !inProgressIds.has(taskId)) return
 
         // add/remove from list
         inProgressIds[isDone? 'delete' : 'add'](taskId)

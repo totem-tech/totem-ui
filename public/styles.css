@@ -464,6 +464,18 @@ body.mobile .ui.modals::-webkit-scrollbar {
 .ui.modal > .actions:empty {
 	display: none;
 }
+/* border radius */
+.ui.moda,
+.ui.modal > .header, 
+.ui.modal > .content,
+ .ui.modal > .actions {
+    border-radius: 3px !important;
+}
+/* collapsing modal: no spacing on content */
+.ui.modal.collapsing > .content {
+	margin: -15px 0px !important;
+    padding: 0px !important;
+}
 
 /* Page header:
  * identity dropdown style fix
@@ -543,11 +555,6 @@ body.inverted .ui.modal .accordion,
 body.inverted .ui.modal .accordion > * {
 	background: #464646;
 	color: white;
-}
-/* collapsing modal: no spacing on content */
-.ui.modal.collapsing > .content {
-	margin: -15px 0px !important;
-    padding: 0px !important;
 }
 /* body.inverted .ui.modal > .modal-close, */
 body.inverted .ui.modal > .header,

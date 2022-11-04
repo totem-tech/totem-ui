@@ -6,6 +6,7 @@ import { showForm } from '../../services/modal'
 import PartnerForm from './PartnerForm'
 import { translated } from '../../utils/languageHelper'
 import LabelCopy from '../../components/LabelCopy'
+import { objWithoutKeys } from '../../utils/utils'
 
 const textsCap = translated({
     addPartner: 'add partner',
@@ -16,7 +17,9 @@ function AddPartnerBtn(props) {
         address,
         allowCopy,
         Component,
+        ignoreAttributes,
         partnerName,
+        style,
         userId,
     } = props
     const addressName = useMemo(() => getAddressName(address), [address])
@@ -27,23 +30,26 @@ function AddPartnerBtn(props) {
         : (
             <Button {...{
                 icon: 'user plus',
-                onClick: () => showForm(
-                    PartnerForm,
-                    {
-                        values: {
-                            address,
-                            name: partnerName,
-                            userId,
-                        },
-                    }
-                ),
+                onClick: () => showForm(PartnerForm, {
+                    values: {
+                        address,
+                        name: partnerName,
+                        userId,
+                    },
+                }),
                 size: 'mini',
                 title: textsCap.addPartner,
             }} />
         )
     
     return (
-        <Component>
+        <Component {...{
+            ...objWithoutKeys(props, ignoreAttributes),
+            style: {
+                whiteSpace: 'nowrap',
+                ...style,
+            }
+        }}>
             {addBtn}{!!exists && ' '}
             {exists
                 ? addressName
@@ -52,6 +58,7 @@ function AddPartnerBtn(props) {
                     : (
                         <LabelCopy {...{
                             content: addressName,
+                            style: { padding: 7.5 },
                             value: address,
                         }} />
                     )}
@@ -65,10 +72,19 @@ AddPartnerBtn.prototype = {
         PropTypes.string,
         PropTypes.elementType,
     ]).isRequired,
+    ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
     userId: PropTypes.string,
 }
 AddPartnerBtn.defaultProps = {
     allowCopy: true,
     Component: 'span',
+    ignoreAttributes: [
+        'address',
+        'allowCopy',
+        'Component',
+        'ignoreAttributes',
+        'partnerName',
+        'userId',
+    ],
 }
 export default React.memo(AddPartnerBtn)

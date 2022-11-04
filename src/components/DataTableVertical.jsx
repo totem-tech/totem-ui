@@ -3,15 +3,15 @@ import { isFn, isMap, isObj } from '../utils/utils'
 import DataTable from './DataTable'
 
 const DataTableVertical = (props) => {
-    let { columns = [], data = [] } = props
-    if (isObj(data)) data = [data]
+    let { columns = [], data: items = [] } = props
+    if (isObj(items)) items = [items]
     columns = columns.filter(x => !!x && !x.hidden)
 
     const vData = columns.map(column => {
         const { content, key, title } = column
-        const isAMap = isMap(data)
+        const isAMap = isMap(items)
         const row = Array
-            .from(data)
+            .from(items)
             .map((x, i) => {
                 const index = isAMap
                     ? x[0]
@@ -20,7 +20,7 @@ const DataTableVertical = (props) => {
                     ? x[1]
                     : x
                 return isFn(content)
-                    ? content(item, index, data, props)
+                    ? content(item, index, items, props)
                     : item[key]
             })
         return [title, ...row]

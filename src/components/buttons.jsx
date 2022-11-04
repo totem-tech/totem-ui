@@ -1,7 +1,7 @@
-import React, { useCallback, useState } from 'react'
+import React, { isValidElement, useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { deferred, isFn, isTouchable, objWithoutKeys } from '../utils/utils'
+import { deferred, isFn, isObj, isTouchable, objWithoutKeys } from '../utils/utils'
 import { getRawUserID } from './UserIdInput'
 // forms
 import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
@@ -125,7 +125,9 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 			),
 			<Button {...{
 				key: 'btn',
-				...button,
+				...(isValidElement(button)
+					? button.props
+					: button),
 				disabled: button.disabled || disabled,
 				loading: button.loading || loading,
 				onClick: event => {

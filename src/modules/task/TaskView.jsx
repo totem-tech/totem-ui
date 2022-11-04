@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Menu, Tab } from 'semantic-ui-react'
 import Message from '../../components/Message'
@@ -10,6 +10,7 @@ import useTasks from './useTasks'
 import { rwSettings } from './task'
 import { useInverted } from '../../services/window'
 import { useRxSubject } from '../../services/react'
+import { BehaviorSubject } from 'rxjs'
 
 const textsCap = translated({
     approver: 'to approve',
@@ -26,6 +27,7 @@ const textsCap = translated({
 export default function TaskView({ address, activeType: _activeType }) {
     const inverted = useInverted()
     address = address || useRxSubject(rxSelected)[0]
+    const [rxTasks] = useState(() => new BehaviorSubject(new Map()))
     const [allTasks = new Map(), message] = useTasks(
         Object
             .values(listTypes)
@@ -37,6 +39,16 @@ export default function TaskView({ address, activeType: _activeType }) {
         || rwSettings().activeType
         || 'owner'
     )
+    const data = activeType !== listTypes.marketplace
+        && allTasks
+        && allTasks.get(activeType)
+        || new Map()
+
+    // update rxTasks so that task details view gets re-rendered if open
+    useEffect(() => {
+        rxTasks.next(new Map(data))
+    }, [data])
+
     const panes = [
         {
             name: textsCap.ownerTasks,
@@ -74,10 +86,6 @@ export default function TaskView({ address, activeType: _activeType }) {
     const activeIndex = panes.findIndex(x =>
         x.type === activeType
     )
-    const data = activeType !== listTypes.marketplace
-        && allTasks
-        && allTasks.get(activeType)
-        || new Map()
 
     return message
         ? <Message {...message} />
@@ -94,6 +102,7 @@ export default function TaskView({ address, activeType: _activeType }) {
                     asTabPane: true,
                     data,
                     key: activeType,
+                    rxTasks,
                     style: { marginTop: 15 },
                     type: activeType,
                 }} />

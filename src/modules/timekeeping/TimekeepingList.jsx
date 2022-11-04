@@ -535,10 +535,10 @@ class TimeKeepingList extends Component {
         addToQueue(task)
     }
 
-    handleArchive = (hash, archive = true, title) => {
+    handleArchive = (recordId, archive = true, title) => {
         const { manage } = this.props
         const { data } = this.state
-        const { projectOwnerAddress, workerAddress } = data.get(hash) || {}
+        const { projectOwnerAddress, workerAddress } = data.get(recordId) || {}
         const address = manage
             ? projectOwnerAddress
             : workerAddress
@@ -548,11 +548,11 @@ class TimeKeepingList extends Component {
         const queueProps = bcQueueables.archiveRecord(
             address,
             hashTypes.timeRecordHash,
-            hash,
+            recordId,
             archive,
             {
                 title: textsCap.archiveRecord,
-                description: `${textsCap.hash}: ${hash}`,
+                description: `${textsCap.hash}: ${recordId}`,
                 then: () => {
                     this.setBtnInprogress(recordId)
                     this.updateTrigger()

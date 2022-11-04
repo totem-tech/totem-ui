@@ -158,6 +158,7 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                         'content',
                         contentProps.className,
                     ]),
+                    style: {}
                 }} />
             ),
             open: !isBool(open) || open,
