@@ -114,8 +114,11 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 		orText,
 		values = [],
 	} = props
-	const buttonsEl = buttons.map((button, i) =>
-		[
+	const buttonsEl = buttons.map((button, i) => {
+		const props = (isValidElement(button)
+			? button.props
+			: button)
+		return [
 			or && i > 0 && (
 				<Button.Or {...{
 					key: 'or',
@@ -125,20 +128,18 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 			),
 			<Button {...{
 				key: 'btn',
-				...(isValidElement(button)
-					? button.props
-					: button),
+				...props,
 				disabled: button.disabled || disabled,
 				loading: button.loading || loading,
 				onClick: event => {
 					event.stopPropagation()
 					event.preventDefault()
-					isFn(button.onClick) && button.onClick(event, values[i])
+					isFn(props.onClick) && props.onClick(event, values[i])
 					isFn(onAction) && onAction(event, values[i])
 				},
 			}} />,
 		].filter(Boolean)
-	)
+	})
 	return (
 		<El {...objWithoutKeys(
 			{ ...props, children: buttonsEl, inverted },

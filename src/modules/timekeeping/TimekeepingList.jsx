@@ -430,14 +430,17 @@ class TimeKeepingList extends Component {
 
         records = records.map((record, i) => {
             if (!record) return
+            
             const {
                 end_block,
                 project_hash: projectHash,
+                start_block,
                 total_blocks,
                 worker,
             } = record
             const recordId = recordIds[i]
             const { name, ownerAddress } = projects.get(projectHash) || {}
+            
             return [
                 recordId,
                 {
@@ -450,6 +453,7 @@ class TimeKeepingList extends Component {
                     projectOwnerAddress: ownerAddress,
                     projectName: name,
                     _end_block: blockNumberToTS(end_block, currentBlock),
+                    _start_block: blockNumberToTS(start_block, currentBlock),
                 }
             ]
         })

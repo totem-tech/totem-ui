@@ -21,6 +21,7 @@ let textsCap = {
     numberOfBreaks: 'number of breaks',
     projectName: 'activity name',
     projectOwner: 'activity owner',
+    startedAt: 'started at',
     status: 'status',
     recordDetails: 'record details',
     recordId: 'record ID',
@@ -79,21 +80,25 @@ const TimekeepingDetails = props => {
                 title: textsCap.numberOfBreaks,
             },
             {
+                key: '_start_block',
+                title: textsCap.startedAt,
+            },
+            {
                 key: '_end_block',
                 title: textsCap.finishedAt,
             },
-            {
-                key: 'total_blocks',
-                title: textsCap.blockCount,
-            },
-            {
-                key: 'start_block',
-                title: textsCap.blockStart,
-            },
-            {
-                key: 'end_block',
-                title: textsCap.blockEnd,
-            },
+            // {
+            //     key: 'total_blocks',
+            //     title: textsCap.blockCount,
+            // },
+            // {
+            //     key: 'start_block',
+            //     title: textsCap.blockStart,
+            // },
+            // {
+            //     key: 'end_block',
+            //     title: textsCap.blockEnd,
+            // },
         ]
         return {
             columns,
@@ -115,7 +120,6 @@ const TimekeepingDetails = props => {
             let {
                 disabled,
                 onClick,
-                style,
                 title,
             } = props
             disabled = disabled || inProgressIds.includes(recordId)
