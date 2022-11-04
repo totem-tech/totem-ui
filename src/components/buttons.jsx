@@ -115,7 +115,7 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 		values = [],
 	} = props
 	const buttonsEl = buttons.map((button, i) => {
-		const props = (isValidElement(button)
+		button = (isValidElement(button)
 			? button.props
 			: button)
 		return [
@@ -128,13 +128,13 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 			),
 			<Button {...{
 				key: 'btn',
-				...props,
+				...button,
 				disabled: button.disabled || disabled,
 				loading: button.loading || loading,
 				onClick: event => {
 					event.stopPropagation()
 					event.preventDefault()
-					isFn(props.onClick) && props.onClick(event, values[i])
+					isFn(button.onClick) && button.onClick(event, values[i])
 					isFn(onAction) && onAction(event, values[i])
 				},
 			}} />,
@@ -142,7 +142,11 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 	})
 	return (
 		<El {...objWithoutKeys(
-			{ ...props, children: buttonsEl, inverted },
+			{
+				...props,
+				children: buttonsEl,
+				inverted,
+			},
 			ignoreAttributes
 		)} />
 	)
