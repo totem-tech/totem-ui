@@ -3,10 +3,10 @@ import PropTypes from 'prop-types'
 import { Button, Icon } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import { useRxSubject } from '../../utils/reactHelper'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
+// import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
 import { MOBILE, rxLayout } from '../../services/window'
 // import TimeSince from '../../components/TimeSince'
-import { blocksToDuration, rxDurtionPreference, statuses } from './timekeeping'
+import { blocksToDuration, statuses } from './timekeeping'
 // import Invertible from '../../components/Invertible'
 import { translated } from '../../utils/languageHelper'
 
@@ -21,8 +21,8 @@ const SumDuration = props => {
     const [data = new Map()] = useRxSubject(props.data)
     const [ids = []] = useRxSubject(props.ids)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    // forces re-render whenever time preference changes
-    useRxSubject(rxDurtionPreference)
+    
+    if (!data.size) return ''
 
     const sum = (sum, item) => sum + item.total_blocks
     const selectedItems = !ids.length

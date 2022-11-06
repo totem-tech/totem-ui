@@ -20,35 +20,35 @@ function AddPartnerBtn(props) {
         allowCopy,
         Component,
         ignoreAttributes,
+        partnerFormProps,
         partnerName,
         style,
         userId,
     } = props
     const [name, _setName] = useState('')
     const setName = useCallback(
-        deferred(() => _setName(getAddressName(address)), 100),
+        deferred(() => _setName(getAddressName(address)), 50),
         [address],
     )
     useRxSubject(rxIdentities, setName)
     useRxSubject(rxPartners, setName)
     const exists = !name.startsWith(address.slice(0, 3))
         && !name.includes('...')
-    const addBtn = exists
-        ? ''
-        : (
-            <Button {...{
-                icon: 'user plus',
-                onClick: () => showForm(PartnerForm, {
-                    values: {
-                        address,
-                        name: partnerName,
-                        userId,
-                    },
-                }),
-                size: 'mini',
-                title: textsCap.addPartner,
-            }} />
-        )
+    const addBtn = !exists && (
+        <Button {...{
+            icon: 'user plus',
+            onClick: () => showForm(PartnerForm, {
+                values: {
+                    address,
+                    name: partnerName,
+                    userId,
+                    ...partnerFormProps,
+                },
+            }),
+            size: 'mini',
+            title: textsCap.addPartner,
+        }} />
+    )
     
     return (
         <Component {...{
@@ -81,6 +81,8 @@ AddPartnerBtn.prototype = {
         PropTypes.elementType,
     ]).isRequired,
     ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
+    partnerName: PropTypes.string,
+    partnerFormProps: PropTypes.object,
     userId: PropTypes.string,
 }
 AddPartnerBtn.defaultProps = {
@@ -91,6 +93,7 @@ AddPartnerBtn.defaultProps = {
         'allowCopy',
         'Component',
         'ignoreAttributes',
+        'partnerFormProps',
         'partnerName',
         'userId',
     ],

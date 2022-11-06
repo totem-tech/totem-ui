@@ -49,7 +49,8 @@ let textsCap = {
 	introducedByLabel: 'introduced by',
 	includeRegNumber: 'include registered number',
 	includeVATNumber: 'include VAT number',
-	nameLabel: 'change partner name (this will be seen by recipients)',
+	nameLabel: 'change partner name',
+	nameLabelDetails: 'this will be seen by recipients',
 	namePlaceholder: 'enter a name to be shared',
 	partner: 'partner',
 	partners: 'partners',
@@ -96,6 +97,16 @@ export default class IdentityShareForm extends Component {
 				},
 				{
 					label: textsCap.nameLabel,
+					labelDetails: (
+						<span {...{
+							children: textsCap.nameLabelDetails,
+							style: {
+								fontWeight: 'bold',
+								fontSize: '105%',
+								color: 'deeppink',
+							},
+						}} />
+					),
 					maxLength: 64,
 					minLength: 3,
 					name: inputNames.name,

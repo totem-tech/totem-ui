@@ -36,6 +36,7 @@ import SumDuration from './SumDuration'
 import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
 import TimekeepingDetailsForm from './TimekeepingDetails'
+import PartnerBtn from '../partner/AddPartnerBtn'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -167,7 +168,12 @@ class TimeKeepingList extends Component {
                                 : ''
                     }
             },
-            searchExtraKeys: ['address', 'hash', 'approved'],
+            searchExtraKeys: [
+                'address',
+                'hash',
+                'approved',
+                'workerAddress',
+            ],
             selectable: true,
             topLeftMenu: [
                 {
@@ -234,7 +240,6 @@ class TimeKeepingList extends Component {
         // reset everything on selected address change
         this.subs.selected = rxSelected.subscribe(this.init)
         this.subs.preference = rxDurtionPreference.subscribe(this.updateRecords)
-        this.init()
     }
 
     componentWillUnmount() {
@@ -243,10 +248,8 @@ class TimeKeepingList extends Component {
     }
 
     init = deferred(async () => {
-        if (!this._mounted) return
         this.subs = this.subs || {}
         unsubscribe(this.subs)
-        this.ignoredFirst = false
         const { archive, manage, projectId } = this.props
         const {
             list,
@@ -275,6 +278,7 @@ class TimeKeepingList extends Component {
                 ? listByProject
                 : list
         this.loaded = false
+
         // subscribe to changes on the list of recordIds
         const handleResult = deferred((...args) => {
             this.loaded = true
@@ -284,25 +288,34 @@ class TimeKeepingList extends Component {
 
         if (manage) {
             // auto update partner/identity names
-            this.subs.identities = rxIdentities.subscribe(() =>
-                this._mounted && this.setTableData(this.state.data)
-            )
-            this.subs.partners = rxPartners.subscribe(() =>
-                this._mounted && this.setTableData(this.state.data)
-            )
+            let idIgnrFirst = false
+            this.subs.identities = rxIdentities.subscribe(() => {
+                if (!idIgnrFirst) {
+                    idIgnrFirst = true
+                    return
+                }
+                this.setTableData(this.rxData.value)
+            })
+            let partIgnrFirst = false
+            this.subs.partners = rxPartners.subscribe(() => {
+                if (!partIgnrFirst) {
+                    partIgnrFirst = true
+                    return
+                }
+                this.setTableData(this.rxData.value)
+            })
         }
 
         this.subs.inProgressIds = rxInProgressIds.subscribe(ar => {
-            if (!this._mounted) return
             this.setState({ inprogressIds: ar })
             // this.updateRecords()
         })
         // update record details whenever triggered
         this.subs.trigger = rxTrigger.subscribe(() => {
-            this._mounted && this.updateRecords()
+            this.updateRecords()
         })
         this.subs.isMobile = rxLayout.subscribe(l =>
-            this._mounted && this.setState({ isMobile: l === MOBILE })
+            this.setState({ isMobile: l === MOBILE })
         )
     }, 500)
 
@@ -422,15 +435,13 @@ class TimeKeepingList extends Component {
     }
 
     updateRecords = deferred(async (recordIds) => {
-        if (!this._mounted) return
-
         recordIds = [
             ...isArr(recordIds)
                 ? recordIds || []
                 : this.recordIds || []
         ].flat()
         this.recordIds = recordIds
-        if (!this.recordIds.length) return this.setState({ data: new Map() })
+        if (!this.recordIds.length) return this.setTableData({ data: new Map() })
 
         // retrieve all record details
         let [records, projects, currentBlock] = await PromisE.all(
@@ -472,7 +483,7 @@ class TimeKeepingList extends Component {
     }, 150)
 
     // add extra information to records like worker name etc and then set table data
-    setTableData = records => {
+    setTableData = deferred(records => {
         Array
             .from(records || new Map())
             .forEach(([recordId, record]) => {
@@ -486,28 +497,23 @@ class TimeKeepingList extends Component {
                 record.approved = submit_status === statuses.accept
                 record.rejected = submit_status === statuses.reject
                 record.draft = submit_status === statuses.draft
-                record.workerName = getAddressName(workerAddress)
                 record.projectName = projectName || textsCap.unknown
-                // banned = ....
-                // if worker is not in the partner or identity lists, show button to add as partner
-                record._workerName = record.workerName || (
-                    <Button
-                        content='Add Partner'
-                        onClick={() => showForm(PartnerForm, {
-                            values: {
-                                address: workerAddress,
-                                associatedIdentity: projectOwnerAddress,
-                            }
-                        })}
-                    />
+                record._workerName = getAddressName(workerAddress) || (
+                    <PartnerBtn {...{
+                        address: workerAddress,
+                        partnerFormProps: {
+                             associatedIdentity: projectOwnerAddress,
+                        }
+                    }} />
                 )
                 record._status = locked
                     ? textsCap.locked
                     : statusTexts[submit_status]
             })
-        this.setState({ data: records })
+        records = new Map(Array.from(records))
         this.rxData.next(records)
-    }
+        this.setState({ data: records })
+    }, 200)
 
     handleApprove = (hash, approve = false, title) => {
         const { data } = this.state
@@ -684,7 +690,7 @@ class TimeKeepingList extends Component {
             rxInProgressIds,
         })
     }
-
+    
     updateTrigger = deferred(() => rxTrigger.next(uuid.v1()), 150)
 
     render() {
