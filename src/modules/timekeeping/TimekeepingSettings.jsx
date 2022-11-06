@@ -1,6 +1,5 @@
 import React from 'react'
 import FormBuilder from '../../components/FormBuilder'
-import FormInput from '../../components/FormInput'
 import { translated } from '../../utils/languageHelper'
 import { objWithoutKeys } from '../../utils/utils'
 import { rxDurtionPreference, durationPreferences } from './timekeeping'

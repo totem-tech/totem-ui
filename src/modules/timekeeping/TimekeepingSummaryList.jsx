@@ -1,14 +1,19 @@
-import React, { Component } from 'react'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
-import { isFn } from '../../utils/utils'
+import React, { useCallback, useEffect } from 'react'
+import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
 import DataTable from '../../components/DataTable'
+import { statuses } from '../../components/Message'
 import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
-import { getSelected, rxSelected } from '../identity/identity'
-import { getProjects, query } from './timekeeping'
+import { rxSelected } from '../identity/identity'
+import {
+    blocksToDuration,
+    getProjects,
+    query,
+} from './timekeeping'
 
 const textsCap = translated({
     activity: 'activity',
+    loading: 'loading...',
     percentage: 'percentage',
     noTimeRecords: 'you have not yet booked time on an activity',
     totalBlocks: 'total time in blocks',
@@ -17,88 +22,91 @@ const textsCap = translated({
     unnamed: 'unnamed',
 }, true)[1]
 
-export default class TimekeepingSummaryList extends Component {
-    constructor(props) {
-        super(props)
-
-        this.state = {
-            data: [],
-            emptyMessage: {
-                content: textsCap.noTimeRecords,
-                status: 'warning',
+const TimekeepingSummaryList = () => {
+    const [address] = useRxSubject(rxSelected)
+    const [state, setState] = iUseReducer(null, {
+        columns: [
+            {
+                key: 'name',
+                title: textsCap.activity,
+                style: { minWidth: 125 }
             },
-            searchable: false,
-            columns: [
-                {
-                    key: 'name',
-                    title: textsCap.activity,
-                    style: { minWidth: 125 }
-                },
-                {
-                    key: 'totalHours',
-                    textAlign: 'center',
-                    title: textsCap.totalHours,
-                },
-                {
-                    key: 'totalBlocks',
-                    textAlign: 'center',
-                    title: textsCap.totalBlocks,
-                },
-                {
-                    key: 'percentage',
-                    textAlign: 'center',
-                    title: textsCap.yourContribution,
-                }
-            ]
-        }
-        this.originalSetState = this.setState
-        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
-    }
-
-    componentWillMount() {
-        this._mounted = true
-        this.subscriptions = {
-            selected: rxSelected.subscribe(() => this._mounted && this.getSummary())
-        }
-    }
-
-    componentWillUnmount() {
-        this._mounted = false
-        unsubscribe(this.subscriptions)
-    }
-
-    getSummary = async (arrTotalBlocks) => {
-        const projects = await getProjects()
-        const { address } = getSelected()
-        const recordIds = Array.from(projects).map(([hash]) => hash)
-        if (!arrTotalBlocks || address !== this.address) {
-            this.address = address
-            const { totalBlocks } = this.subscriptions
-            // unsubscribe from existing subscription
-            isFn(totalBlocks) && totalBlocks()
-            this.subscriptions.totalBlocks = query.worker.totalBlocksByProject(
-                recordIds.map(() => address),
-                recordIds, // for multi query needs to be a 2D array of arguments
-                this.getSummary,
-                true,
-            )
-            return
-        }
-        const sumTotalBlocks = arrTotalBlocks.reduce((sum, next) => sum + next, 0)
+            {
+                key: 'totalHours',
+                textAlign: 'center',
+                title: textsCap.totalHours,
+            },
+            {
+                key: 'totalBlocks',
+                textAlign: 'center',
+                title: textsCap.totalBlocks,
+            },
+            {
+                key: 'percentage',
+                textAlign: 'center',
+                title: textsCap.yourContribution,
+            }
+        ],
+        emptyMessage: {
+            content: textsCap.loading,
+            icon: true,
+            status: statuses.LOADING,
+        },
+        searchable: false,
+    })
+    const updateData = useCallback(async (arrTotalBlocks = []) => {
+        const activities = await getProjects()
+        const activityIds = Array
+            .from(activities)
+            .map(([id]) => id)
+        const sumTotalBlocks = arrTotalBlocks
+            .reduce((sum, next) => sum + next, 0)
         const data = arrTotalBlocks.map((totalBlocks, i) => ({
-            name: projects
-                .get(recordIds[i])
+            name: activities
+                .get(activityIds[i])
                 .name
                 || textsCap.unnamed,
             totalBlocks,
-            totalHours: secondsToDuration(totalBlocks * BLOCK_DURATION_SECONDS),
+            totalHours: blocksToDuration(totalBlocks),
             percentage: totalBlocks === 0
                 ? '0%'
                 : (totalBlocks * 100 / sumTotalBlocks)
                     .toFixed(0) + '%',
         }))
-        this.setState({ data })
-    }
+        setState({
+            data,
+            emptyMessage: {
+                content: textsCap.noTimeRecords,
+                status: 'warning',
+            },
+        })
+    }, [])
 
-    render = () => <DataTable {...this.state} />
+    useEffect(() => {
+        let mounted = true
+        const subs = {}
+        const doSubscribe = async () => {
+            const activities = await getProjects()
+            const activityIds = Array
+                .from(activities)
+                .map(([id]) => id)
+            // unsubscribe from existing subscription
+            subs.totalBlocks = query.worker.totalBlocksByProject(
+                activityIds.map(() => address),
+                activityIds, // for multi query needs to be a 2D array of arguments
+                updateData,
+                true,
+            )
+        }
+        !!address && doSubscribe()
+
+        return () => {
+            mounted = false
+            unsubscribe(subs)
+        } 
+    }, [address])
+
+    return <DataTable {...state} />
 }
+
+export default React.memo(TimekeepingSummaryList)

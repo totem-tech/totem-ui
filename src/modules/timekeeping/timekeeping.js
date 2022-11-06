@@ -5,7 +5,7 @@ import storage from '../../utils/storageHelper'
 import { isObj, mapJoin, isFn, isDefined } from '../../utils/utils'
 import { getConnection, query as queryBlockchain } from '../../services/blockchain'
 import { fetchProjects, getProjects as getUserProjects } from '../activity/activity'
-import { getSelected, set } from '../identity/identity'
+import { getSelected } from '../identity/identity'
 import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
 
 // to sumbit a new time record must submit with this hash | DO NOT CHANGE
@@ -24,11 +24,11 @@ export const rxTimerInProgress = new BehaviorSubject(timerFormValues().inprogres
 const rxProjects = new Subject()
 export const durationPreferences = {
     blocks: 'blocks',
-    hhmmss: 'hh:mm:ss',
-    hhmm05: 'hh:mm-05',
-    hhmm10: 'hh:mm-10',
-    hhmm15: 'hh:mm-15',
-    hhmm30: 'hh:mm-30',
+    hhmmss: 'hhmmss',
+    hhmm05: 'hhmm05',
+    hhmm10: 'hhmm10',
+    hhmm15: 'hhmm15',
+    hhmm30: 'hhmm30',
 }
 export const rxDurtionPreference = new BehaviorSubject(
     rw().timeConversion || durationPreferences.hhmmss
@@ -53,16 +53,14 @@ export const statuses = {
  * 
  * @returns {String|Number}
  */
-export const blocksToDuration = (numBlocks, preference) => {
-    preference = !!durationPreferences[preference]
+export const blocksToDuration = (numBlocks, preference, blockDurationSeconds = BLOCK_DURATION_SECONDS) => {
+    preference = !!Object.values(durationPreferences).includes(preference)
         ? preference
         : rxDurtionPreference.value
     if (preference === durationPreferences.blocks) return numBlocks
 
-    let numMinutes = numBlocks * BLOCK_DURATION_SECONDS / 60
-    let roundToMins = parseInt(preference.split('-')[1])
-    // round to 15 minutes if 30 is selected
-    if (roundToMins === 30) roundToMins = 15
+    let numMinutes = numBlocks * blockDurationSeconds / 60
+    let roundToMins = parseInt(preference.split('hhmm')[1])
 
     numMinutes = !roundToMins
         ? numMinutes
@@ -89,7 +87,6 @@ export function timerFormValues(values) {
 
     rxTimerInProgress.next(values.inprogress)
     values = rwCache('formData', values)
-    console.log(values)
     return values
 }
 
@@ -216,7 +213,7 @@ export const query = {
         ),
         // check if worker is owner of the record | unused
         isOwner: (recordId, workerAddress, callback, multi) => queryBlockchain(
-            queryPrefix + 'workerTimeRecordsHashList',
+            queryPrefix + 'timeHashOwner',
             [recordId, workerAddress, callback].filter(isDefined),
             multi,
         ),
@@ -471,9 +468,16 @@ setTimeout(() => {
 })
 
 export default {
-    formData: timerFormValues,
-    rxTimerInProgress,
+    blocksToDuration,
+    durationPreferences,
+    forceUpdate,
     getProjects,
+    MODULE_KEY,
+    NEW_RECORD_HASH,
     query,
     queueables,
+    rxDurtionPreference,
+    rxTimerInProgress,
+    statuses,
+    timerFormValues,
 }

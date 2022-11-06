@@ -1,33 +1,42 @@
 import React from 'react'
 import uuid from 'uuid'
-import { BehaviorSubject, Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
+import { Icon } from 'semantic-ui-react'
 // Views (including lists and forms)
 import AssetFormView from '../modules/assets/AssetsFormView'
+import ActivityList from '../modules/activity/ActivityList'
+import ClaimKAPEXForm from '../modules/rewards/claimKapex/ClaimKapexView'
 import FinancialStatement from '../modules/financialStatement/FinancialStatement'
 import GettingStarted from '../modules/gettingStarted/GettingStarted'
 import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
 import PartnerList from '../modules/partner/PartnerList'
-import ActivityList from '../modules/activity/ActivityList'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
 import TransferForm from '../modules/identity/Transfer'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
-import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
+// import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
 import RewardsView from '../modules/rewards/RewardsView'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
 import storage from '../utils/storageHelper'
-import { isBool, isSubjectLike, objToUrlParams, objWithoutKeys } from '../utils/utils'
+import {
+    isBool,
+    isSubjectLike,
+    objToUrlParams,
+    objWithoutKeys,
+} from '../utils/utils'
 // services
 import { translated } from './language'
-import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
-import ClaimKAPEXForm from '../modules/rewards/claimKapex/ClaimKapexView'
-import { Icon } from 'semantic-ui-react'
-import { TimekeepingSettings } from '../modules/timekeeping/TimekeepingSettings'
+import {
+    getUrlParam,
+    MOBILE,
+    rxLayout,
+    setClass,
+} from './window'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -245,6 +254,7 @@ export const sidebarItems = [
         name: 'timekeeping',
         settings: () => (
             <SettingsForm {...{
+                // only show timekeeping settings
                 inputsHidden: Object
                     .values(inputNames)
                     .filter(x => x !== inputNames.timekeeping),
@@ -267,6 +277,15 @@ export const sidebarItems = [
         icon: 'send',
         header: textsCap.transferHeader,
         name: 'transfer',
+        settings: () => (
+            <SettingsForm {...{
+                // only show timekeeping settings
+                inputsHidden: Object
+                    .values(inputNames)
+                    .filter(x => x !== inputNames.currency),
+                style: { maxWidth: 350 }
+            }} />
+        ),
         subHeader: textsCap.transferSubheader,
         subHeaderDetails: textsCap.transferSubheaderDetails,
         title: textsCap.transferTitle,
@@ -334,6 +353,15 @@ export const sidebarItems = [
         content: HistoryList,
         icon: 'history',
         name: 'history',
+        settings: () => (
+            <SettingsForm {...{
+                // only show timekeeping settings
+                inputsHidden: Object
+                    .values(inputNames)
+                    .filter(x => x !== inputNames.historyLimit),
+                style: { maxWidth: 350 }
+            }} />
+        ),
         title: textsCap.historyTitle,
         subHeader: textsCap.historySubheader
     },

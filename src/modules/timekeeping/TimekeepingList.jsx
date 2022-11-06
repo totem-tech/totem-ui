@@ -4,11 +4,7 @@ import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
-import {
-    BLOCK_DURATION_SECONDS,
-    secondsToDuration,
-    blockNumberToTS,
-} from '../../utils/time'
+import { blockNumberToTS } from '../../utils/time'
 import { isArr, deferred, isFn } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import {
@@ -34,11 +30,12 @@ import {
     query,
     queueables,
     blocksToDuration,
+    rxDurtionPreference,
 } from './timekeeping'
+import SumDuration from './SumDuration'
 import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
 import TimekeepingDetailsForm from './TimekeepingDetails'
-import SumDuration from './SumDuration'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -104,7 +101,7 @@ statusTexts[statuses.invoice] = textsCap.invoiced
 statusTexts[statuses.delete] = textsCap.deleted
 
 // trigger refresh on not-archived records tables if multiple open at the same time 
-const rxTrigger = new BehaviorSubject()
+export const rxTrigger = new BehaviorSubject()
 const rxInProgressIds = new BehaviorSubject([])
 
 class TimeKeepingList extends Component {
@@ -236,6 +233,7 @@ class TimeKeepingList extends Component {
         this.subs = this.subs || {}
         // reset everything on selected address change
         this.subs.selected = rxSelected.subscribe(this.init)
+        this.subs.preference = rxDurtionPreference.subscribe(this.updateRecords)
         this.init()
     }
 
@@ -245,6 +243,7 @@ class TimeKeepingList extends Component {
     }
 
     init = deferred(async () => {
+        if (!this._mounted) return
         this.subs = this.subs || {}
         unsubscribe(this.subs)
         this.ignoredFirst = false

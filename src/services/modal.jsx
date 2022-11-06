@@ -84,7 +84,15 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
     confirmProps = !isStr(confirmProps)
         ? confirmProps
         : { content: confirmProps }
-    let { cancelButton, confirmButton, content, header, open, onCancel, onConfirm } = confirmProps
+    let {
+        cancelButton,
+        confirmButton,
+        content,
+        header,
+        open,
+        onCancel,
+        onConfirm,
+    } = confirmProps
     if (confirmButton !== null && !confirmButton) {
         // use default translated text for confirm button
         confirmButton = textsCap.ok
@@ -112,9 +120,9 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                     <Icon {...{
                         className: 'grey large link icon no-margin',
                         name: 'times circle outline',
-                        onClick: () => {
+                        onClick: (...args) => {
                             closeModal(modalId)
-                            isFn(onCancel) && onCancel(e, d)
+                            isFn(onCancel) && onCancel(...args)
                         },
                         ref: focusRef,
                     }} />
