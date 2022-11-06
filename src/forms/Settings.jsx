@@ -37,7 +37,8 @@ let textsCap = {
     gridLabel: 'main content columns',
     gsCurrencyLabel: 'display currency',
     gsLanguageLabel: 'language (experimental)',
-    historyLimitLabel: 'history limit',
+    historyLbl: 'history limit',
+    historyLblDetails: 'maximum number items to keep',
     kbShortcuts: 'keyboard shortcuts',
     langConfirmCancelBtn: 'later',
     langConfirmHeader: 'page reload required',
@@ -173,7 +174,8 @@ export default class SettingsForm extends Component {
                     type: 'html',
                 }),
                 {
-                    label: textsCap.historyLimitLabel,
+                    label: textsCap.historyLbl,
+                    labelDetails: textsCap.historyLblDetails,
                     name: inputNames.historyLimit,
                     onChange: this.handleHistoryLimitChange,
                     options: [0, 10, 50, 100, 500, 1000]

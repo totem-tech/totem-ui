@@ -21,7 +21,14 @@ export default function AssetFormView() {
             },
         }
     })
-    const { date, handleChange, keywords, rxCurrencyId, showList } = state
+    const {
+        date,
+        handleChange,
+        keywords,
+        rxCurrencyId,
+        showList,
+    } = state
+    
     return (
         <div>
             <AssetsForm {...{ onChange: handleChange }} />

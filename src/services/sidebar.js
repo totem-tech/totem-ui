@@ -277,15 +277,15 @@ export const sidebarItems = [
         icon: 'send',
         header: textsCap.transferHeader,
         name: 'transfer',
-        settings: () => (
-            <SettingsForm {...{
-                // only show timekeeping settings
-                inputsHidden: Object
-                    .values(inputNames)
-                    .filter(x => x !== inputNames.currency),
-                style: { maxWidth: 350 }
-            }} />
-        ),
+        // settings: () => (
+        //     <SettingsForm {...{
+        //         // only show timekeeping settings
+        //         inputsHidden: Object
+        //             .values(inputNames)
+        //             .filter(x => x !== inputNames.currency),
+        //         style: { maxWidth: 350 }
+        //     }} />
+        // ),
         subHeader: textsCap.transferSubheader,
         subHeaderDetails: textsCap.transferSubheaderDetails,
         title: textsCap.transferTitle,

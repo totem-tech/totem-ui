@@ -110,7 +110,7 @@ export default function AssetsForm(props) {
                             rxValue: rxDate,
                             dropdownProps: { selectOnNavigation: false },
                             type: 'date',
-                            width: 4,
+                            width: 12,
                             years,
                             rxValue: rxDate,
                             onReset: () => {

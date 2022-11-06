@@ -109,6 +109,7 @@ export default function HistoryList(props) {
                 },
                 {
                     headerProps,
+                    hidden: isMobile,
                     key: '_description',
                     style: {
                         minWidth: 200,
@@ -126,7 +127,14 @@ export default function HistoryList(props) {
                     collapsing: true,
                     content: (item, id) => [
                         {
-                            icon: 'close',
+                            icon: 'eye',
+                            negative: item.status === 'error',
+                            onClick: () => showForm(HistoryItemDetailsForm, { values: item }),
+                            title: textsCap.techDetails
+                        },
+                        {
+                            icon: 'trash',
+                            // negative: true,
                             onClick: () => {
                                 const { groupId } = item
                                 const rootTask = getQueueItemById(groupId)
@@ -148,12 +156,6 @@ export default function HistoryList(props) {
                             },
                             title: textsCap.delete,
                         },
-                        {
-                            icon: 'eye',
-                            negative: item.status === 'error',
-                            onClick: () => showForm(HistoryItemDetailsForm, { values: item }),
-                            title: textsCap.techDetails
-                        }
                     ].map((props, i) => <Button {...props} key={i} />),
                     textAlign: 'center',
                     title: textsCap.action
@@ -192,7 +194,6 @@ export default function HistoryList(props) {
                     size: 'mini',
                 })
                     .then(ok => ok && clearAll()),
-
             }],
             // on select menu
             topRightMenu: [{

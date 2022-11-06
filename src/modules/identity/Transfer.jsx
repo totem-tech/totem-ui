@@ -29,7 +29,7 @@ import PartnerForm from '../partner/PartnerForm'
 import Balance from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 import AddPartnerBtn from '../partner/AddPartnerBtn'
-import { subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
+import { copyRxSubject, subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { statuses } from '../../components/Message'
 
@@ -88,7 +88,7 @@ export default class TransferForm extends Component {
         this.rxAddress = new BehaviorSubject()
         this.rxCurrencies = new BehaviorSubject()
         this.rxCurrencyReceived = new BehaviorSubject(rxSelectedCurrency.value)
-        this.rxCurrencySent = new BehaviorSubject(rxSelectedCurrency.value)
+        this.rxCurrencySent = copyRxSubject(rxSelectedCurrency)
         this.rxCurrencyOptions = new BehaviorSubject([])
         this.state = {
             loading: {
@@ -166,7 +166,7 @@ export default class TransferForm extends Component {
                     inputs: [
                         {
                             ...asInlineLabel({
-                                readOnly: true,
+                                // readOnly: true,
                                 rxValue: this.rxCurrencySent,
                             }),
                             label: textsCap.amountSentLabel,

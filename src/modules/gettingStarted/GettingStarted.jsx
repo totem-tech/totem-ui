@@ -4,7 +4,7 @@ import { Button, Icon, Step } from 'semantic-ui-react'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
-import { isFn, isValidNumber } from '../../utils/utils'
+import { className, isFn, isValidNumber } from '../../utils/utils'
 // forms and components
 import { Invertible } from '../../components/Invertible'
 import RestoreBackupForm from './RestoreBackupForm'
@@ -135,6 +135,62 @@ export default function GetingStarted() {
 	})
 	const [activeStep] = useRxSubject(rxActiveStep)
 
+	const socialLinks = [ // [anchor, icon]
+		[
+			{ href: 'https://twitter.com/intent/follow?screen_name=Totem_Live_'  },
+			{ name: 'twitter' },
+		],
+		[
+			{ href: 'https://discord.gg/Vx7qbgn' },
+			{ name: 'discord' },
+		],
+		[
+			{ href: 'https://t.me/totemchat' },
+			{ name: 'telegram' },
+		],
+		[
+			{ href: 'https://www.linkedin.com/company/totem-live-accounting' },
+			{ name: 'linkedin' },
+		],
+		[
+			{ href: 'https://medium.com/totemlive' },
+			{
+				dynamicProps: inverted => ({
+					color: !inverted
+						? 'black'
+						: undefined
+				}),
+				name: 'medium',
+			},
+		],
+		[
+			{ href: 'https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' },
+			{
+				dynamicProps: inverted => ({
+					className: className({
+						'no-margin': isMobile,
+						red: !inverted,
+					}),
+				}),
+				name: 'youtube',
+			},
+		],
+		[
+			{ href: 'https://www.reddit.com/r/totemlive' },
+			{
+				dynamicProps: inverted => ({
+					style: {
+						...styles.appIconStyle,
+						color: inverted
+							? undefined
+							: '#FF4500'
+					},
+				}),
+				name: 'reddit',
+			},
+		],
+	]
+
 	return (
 		<div>
 			<h3>{texts.quickGuideTitle}</h3>
@@ -226,49 +282,23 @@ export default function GetingStarted() {
 					</div>
 				</div>
 				{texts.supportChatDesc2}
-				<div>
-					<a href='https://twitter.com/intent/follow?screen_name=Totem_Live_' target='_blank'>
-						<Invertible El={Icon} name='twitter' style={styles.appIconStyle} />
-					</a>
-					<a href='https://discord.gg/Vx7qbgn' target='_blank'>
-						<Invertible El={Icon} name='discord' style={styles.appIconStyle} />
-					</a>
-					<a href='https://t.me/totemchat' target='_blank'>
-						<Invertible El={Icon} name='telegram' style={styles.appIconStyle} />
-					</a>
-					<a href='https://www.linkedin.com/company/totem-live-accounting' target='_blank'>
-						<Invertible El={Icon} name='linkedin' style={styles.appIconStyle} />
-					</a>
-					<a href='https://medium.com/totemlive' target='_blank'>
-						<Invertible {...{
-							dynamicProps: inverted => ({ color: !inverted ? 'black' : undefined }),
-							El: Icon,
-							name: 'medium',
-							style: styles.appIconStyle,
+				<div style={{ textAlign: isMobile ? 'center' : undefined }}>
+					{socialLinks.map(([anchor, icon]) => (
+						<a {...{
+							...anchor,
+							children: (
+								<Invertible {...{
+									...icon,
+									className: className({
+										'no-margin': isMobile,
+									}),
+									El: Icon,
+									style: styles.appIconStyle,
+								}} />
+							),
+							target: '_blank',
 						}} />
-					</a>
-					<a href='https://www.youtube.com/channel/UCV0ZV3kCLfi3AnlNR1Eyr0A' target='_blank'>
-						<Invertible {...{
-							dynamicProps: inverted => ({
-								className: !inverted ? 'red' : undefined,
-							}),
-							El: Icon,
-							name: 'youtube',
-							style: styles.appIconStyle,
-						}} />
-					</a>
-					<a href='https://www.reddit.com/r/totemlive' target='_blank'>
-						<Invertible {...{
-							dynamicProps: inverted => ({
-								style: {
-									...styles.appIconStyle,
-									color: inverted ? undefined : '#FF4500'
-								},
-							}),
-							El: Icon,
-							name: 'reddit',
-						}} />
-					</a>
+					))}
 				</div>
 			</div>
 		</div >
