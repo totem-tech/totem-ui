@@ -58,7 +58,8 @@ const SumDuration = props => {
             <Button {...{
                 content,
                 key: title,
-                title: 'hh:mm:ss'
+                style: { cursor: 'initial' },
+                title: 'hh:mm:ss',
             }} />
         </div>
     )

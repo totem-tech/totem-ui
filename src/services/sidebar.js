@@ -524,7 +524,16 @@ setTimeout(() => {
     params = objToUrlParams(
         objWithoutKeys(params, ['module', 'exclusive'])
     )
-    history.pushState({}, null, `${location.protocol}//${location.host}?${params}`)
+    const url = [
+        location.protocol,
+        '//',
+        location.host,
+        params && '?',
+        params
+    ]
+        .filter(Boolean)
+        .join('')
+    history.pushState({}, null, url)
 })
 export default {
     getItem,
