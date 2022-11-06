@@ -101,7 +101,7 @@ export const getRewards = async () => {
         rxRewardsChanged.next(rxRewardsChanged.value + 1)
         return result
     } catch (err) {
-        console.trace(err)
+        console.log(err)
     }
 }
 

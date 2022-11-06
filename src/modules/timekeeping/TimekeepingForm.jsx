@@ -211,7 +211,6 @@ export default class TimekeepingForm extends Component {
         super(props)
 
         const values = timerFormValues() || {}
-        console.log(values)
         const { breakCount, duration, durationValid, inprogress, projectHash, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO

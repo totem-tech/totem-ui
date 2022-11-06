@@ -626,7 +626,6 @@ export default class TaskForm extends Component {
         const orderType = values[this.names.orderType]
         const thenCb = isLastInQueue => (success, err) => {
             if (!isLastInQueue && success) return
-            window.isDebug && console.trace(err)
             this.setState({
                 closeText: success
                     ? textsCap.close

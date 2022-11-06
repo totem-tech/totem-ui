@@ -1,19 +1,24 @@
 import React from 'react'
-import { remove, rxNotifications, rxVisible, toggleRead } from './notification'
+import { translated } from '../../utils/languageHelper'
+import { arrReverse } from '../../utils/utils'
+import { ButtonGroup } from '../../components/buttons'
+import { confirm } from '../../services/modal'
+import { useRxSubject } from '../../services/react'
+import { MOBILE, rxLayout } from '../../services/window'
+import {
+	remove,
+	rxNotifications,
+	rxVisible,
+	toggleRead,
+} from './notification'
 import ListItem from './NotificationItem'
 import './style.css'
-import { useRxSubject } from '../../services/react'
-import { arrReverse } from '../../utils/utils'
-import { MOBILE, rxLayout } from '../../services/window'
-import { Button } from 'semantic-ui-react'
-import { ButtonGroup } from '../../components/buttons'
-import modalService from '../../services/modal'
-import { translated } from '../../utils/languageHelper'
 
 const textsCap = translated({
 	btnDelete: 'delete all',
 	btnRead: 'mark all as read',
 }, true)[1]
+
 export default function NotificationView() {
 	const [visible] = useRxSubject(rxVisible, visible => {
 		const { classList } = document.body
@@ -32,50 +37,52 @@ export default function NotificationView() {
 		}
 		return visible
 	})
-	const [items] = useRxSubject(rxNotifications, map => {
+	const [[items, allRead]] = useRxSubject(rxNotifications, map => {
 		const isMobile = rxLayout.value === MOBILE
 		const items = Array.from(map)
 			//// dummy notifications for testing only
-			.concat(
-				[
-					// {
-					//     from: 'jackie',
-					//     type: 'task',
-					//     childType: 'invoiced',
-					//     message: 'this is a test message',
-					//     data: {
-					//         ownerAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-					//         taskId: '0x00',
-					//         taskTitle: 'dummy task'
-					//     },
-					//     tsCreated: new Date().toISOString(),
-					//     deleted: false,
-					//     read: false,
-					// },
-					// {
-					//     from: 'jackie',
-					//     type: 'task',
-					//     childType: 'invitation',
-					//     message: 'this is a test message',
-					//     data: {},
-					//     tsCreated: new Date().toISOString(),
-					//     deleted: false,
-					//     read: false,
-					// },
-				].map((n, id) => [`${id}`, n])
-			)
+			// .concat(
+			// 	[
+			// 		{
+			// 		    from: 'jackie',
+			// 		    type: 'task',
+			// 		    childType: 'invoiced',
+			// 		    message: 'this is a test message',
+			// 		    data: {
+			// 		        ownerAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+			// 		        taskId: '0x00',
+			// 		        taskTitle: 'dummy task'
+			// 		    },
+			// 		    tsCreated: new Date().toISOString(),
+			// 		    deleted: false,
+			// 		    read: false,
+			// 		},
+			// 		{
+			// 		    from: 'jackie',
+			// 		    type: 'task',
+			// 		    childType: 'invitation',
+			// 		    message: 'this is a test message',
+			// 		    data: {},
+			// 		    tsCreated: new Date().toISOString(),
+			// 		    deleted: false,
+			// 		    read: false,
+			// 		},
+			// 	].map((n, id) => [`${id}`, n])
+			// )
 			.map(([id, notification]) => (
-				<ListItem
-					{...{
-						id,
-						key: id + notification.read,
-						notification,
-					}}
-				/>
+				<ListItem {...{
+					id,
+					key: id + notification.read,
+					notification,
+				}} />
 			))
-		return arrReverse(items, isMobile)
+		return [
+			arrReverse(items, isMobile),
+			Array
+				.from(map)
+				.every(([_, x]) => !!x.read)
+		]
 	})
-
 	const buttons = [
 		{
 			basic: true,
@@ -84,51 +91,50 @@ export default function NotificationView() {
 			icon: 'trash',
 			key: 'all',
 			labelPosition: 'left',
-			onClick: () =>
-				modalService.confirm({
-					confirmButton: {
-						content: textsCap.btnDelete,
-						negative: true,
-					},
-					onConfirm: () =>
-						remove(
-							Array.from(rxNotifications.value).map(([id]) => id)
-						),
-					size: 'mini',
-				}),
+			onClick: () => confirm({
+				confirmButton: {
+					content: textsCap.btnDelete,
+					negative: true,
+				},
+				onConfirm: () => remove(
+					Array
+						.from(rxNotifications.value)
+						.map(([id]) => id)
+				),
+				size: 'mini',
+			}),
 		},
 		{
 			basic: true,
 			compact: true,
 			content: textsCap.btnRead,
+			disabled: allRead,
 			icon: 'envelope open',
 			key: 'all',
 			labelPosition: 'right',
-			onClick: () =>
-				modalService.confirm({
-					confirmButton: {
-						content: textsCap.btnRead,
-						positive: true,
-					},
-					onConfirm: () =>
-						Array.from(rxNotifications.value).map(
-							([id, { read }]) => !read && toggleRead(id, true)
-						),
-					size: 'mini',
-				}),
+			onClick: () => confirm({
+				confirmButton: {
+					content: textsCap.btnRead,
+					positive: true,
+				},
+				onConfirm: () => Array
+					.from(rxNotifications.value)
+					.map(([id, { read }]) =>
+						!read && toggleRead(id, true)
+					),
+				size: 'mini',
+			}),
 		},
 	]
 
 	return (
 		<div className='notification-list'>
 			{visible && (
-				<ButtonGroup
-					{...{
-						buttons,
-						className: 'actions',
-						fluid: true,
-					}}
-				/>
+				<ButtonGroup {...{
+					buttons,
+					className: 'actions',
+					fluid: true,
+				}} />
 			)}
 			{visible && items}
 		</div>

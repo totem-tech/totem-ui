@@ -501,7 +501,6 @@ export default class IdentityForm extends Component {
 				content: `${err}`,
 				status: statuses.ERROR,
 			}
-			console.log({err})
 			return this.setState({ inputs })
 		}
 
