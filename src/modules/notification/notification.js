@@ -1,11 +1,11 @@
 import { BehaviorSubject, Subject } from 'rxjs'
 import DataStorage from '../../utils/DataStorage'
+import storage from '../../utils/storageHelper'
 import { arrSort, isArr, isBool, isFn, isObj } from '../../utils/utils'
 // services
 import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES, rxOnSave } from '../../services/queue'
-import storage from '../../services/storage'
 import TotemLogo from '../../assets/totem-button-grey.png'
 import { MOBILE, rxLayout, rxVisible as rxWindowVisbile } from '../../services/window'
 

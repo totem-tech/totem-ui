@@ -1,26 +1,24 @@
 import React from 'react'
 import { render } from 'react-dom'
-import { Loader } from 'semantic-ui-react'
 import 'semantic-ui-css/semantic.min.css'
 import '../public/styles.css'
 import PromisE from './utils/PromisE'
-import { generateHash, isArrLike, isError, isObj, objClean } from './utils/utils'
+import storage from './utils/storageHelper'
+import {
+    generateHash,
+    isArrLike,
+    isError,
+} from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
 import { getConnection } from './services/blockchain'
 import client from './modules/chat/ChatClient'
 import { fetchNSaveTexts } from './services/language'
-import storage from './services/storage'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
-import Invertible from './components/Invertible'
-import { translated } from './utils/languageHelper'
 import { subjectAsPromise } from './utils/reactHelper'
 import { rxIsRegistered } from './utils/chatClient'
 
-const textsCap = translated({
-    loading: 'loading',
-}, true)[1]
 const urlParams = getUrlParam()
 const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')
 const debug = getUrlParam('debug').toLowerCase()
@@ -118,23 +116,6 @@ const doRender = () => {
     render(<App />, document.getElementById('app'))
 }
 
-// show loading spinner if it takes longer than 100ms to initialize
-// const showLoader = () => {
-//     const loader = (
-//         <Invertible {...{
-//             active: true,
-//             children: `${textsCap.loading}...`,
-//             El: Loader,
-//             size: 'big',
-//             style: {
-//                 paddingBottom: 3,
-//             },
-//         }} />
-//     )
-//     render(loader, document.getElementById('app'))
-// }
-// PromisE.timeout(initPromise, 100)
-//     .catch(showLoader)
 initPromise
     .then(doRender)
     .catch(doRender)

@@ -1,20 +1,26 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import FormBuilder, {
-	checkFormInvalid,
-	fillValues,
-	findInput,
-} from '../../components/FormBuilder'
+import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { statuses } from '../../components/Message'
 import { closeModal, confirm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
-import { arrSort, deferred, isFn, objSetPropUndefined } from '../../utils/utils'
+import {
+	arrSort,
+	isFn,
+	objSetPropUndefined,
+} from '../../utils/utils'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
-import { get, newId, remove, set as save, validationConf } from './contact'
+import {
+	get,
+	newId,
+	remove,
+	set as save,
+	validationConf,
+} from './contact'
 import FormInput from '../../components/FormInput'
 
 const textsCap = translated(

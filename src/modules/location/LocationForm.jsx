@@ -1,11 +1,17 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { arrSort, deferred, isBool, isFn, objHasKeys } from '../../utils/utils'
+import storage from '../../utils/storageHelper'
+import {
+	arrSort,
+	deferred,
+	isBool,
+	isFn,
+	objHasKeys,
+} from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { closeModal, confirm } from '../../services/modal'
-import storage from '../../services/storage'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
 import { get, remove, set } from './location'

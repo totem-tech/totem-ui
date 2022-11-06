@@ -1,9 +1,16 @@
 import { BehaviorSubject, Subject } from 'rxjs'
-import { generateHash, arrSort, isValidNumber, isValidDate, arrUnique, isArr } from '../../utils/utils'
 import PromisE from '../../utils/PromisE'
+import storage from '../../utils/storageHelper'
+import {
+    arrSort,
+    arrUnique,
+    generateHash,
+    isArr,
+    isValidDate,
+    isValidNumber,
+} from '../../utils/utils'
 import client, { rxIsConnected, rxIsInMaintenanceMode } from '../chat/ChatClient'
 import { translated } from '../../services/language'
-import storage from '../../services/storage'
 import { subjectAsPromise } from '../../services/react'
 
 const [texts, textsCap] = translated({

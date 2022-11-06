@@ -140,6 +140,7 @@ export default [
     "./src/modules/timekeeping/TimekeepingForm.jsx",
     "./src/modules/timekeeping/TimekeepingInviteForm.jsx",
     "./src/modules/timekeeping/TimekeepingList.jsx",
+    "./src/modules/timekeeping/TimekeepingSettings.jsx",
     "./src/modules/timekeeping/TimekeepingSummaryList.jsx",
     "./src/modules/timekeeping/TimekeepingView.jsx",
     "./src/modules/timekeeping/notificationHandlers.jsx",

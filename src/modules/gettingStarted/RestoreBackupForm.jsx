@@ -9,7 +9,14 @@ import { getUser, setUser } from '../../utils/chatClient'
 import { rxForeUpdateCache } from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
 import storage, { backup, essentialKeys } from '../../utils/storageHelper'
-import { objClean, textCapitalize, isFn, objWithoutKeys, hasValue, deferred, textEllipsis } from '../../utils/utils'
+import {
+	objClean,
+	textCapitalize,
+	isFn,
+	objWithoutKeys,
+	hasValue,
+	textEllipsis,
+} from '../../utils/utils'
 import BackupForm from './BackupForm'
 import { isHex } from 'web3-utils'
 import { decryptBackup } from '.'

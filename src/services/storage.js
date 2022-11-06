@@ -1,6 +1,6 @@
-import * as storageHelper from '../utils/storageHelper'
+// import * as storageHelper from '../utils/storageHelper'
 
-module.exports = storageHelper
+// module.exports = storageHelper
 // /*
 //  * Storage Service: to handle all interactions with browser's localStorage.
 //  * Typically this should be used by other services

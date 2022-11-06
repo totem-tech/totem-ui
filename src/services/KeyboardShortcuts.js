@@ -52,7 +52,8 @@ const handlers = {
         type: 'func',
     }
 }
-const getModalId = activeKeys => (handlers[activeKeys] || {}).modalId || `shortcutKey-${activeKeys}`
+const getModalId = activeKeys => (handlers[activeKeys] || {}).modalId
+    || `shortcutKey-${activeKeys}`
 const handleKeypress = deferred(shiftKey => {
     let activeKeys = (shiftKey ? 'SHIFT_' : '') + [...keys].sort()
     keys.clear()
@@ -62,6 +63,7 @@ const handleKeypress = deferred(shiftKey => {
     const modalId = getModalId(activeKeys)
     // close modal form if already open
     if (get(modalId)) return closeModal(modalId)
+
     switch (type) {
         case 'func':
             // handler is a function
@@ -89,6 +91,3 @@ window.addEventListener('keypress', e => {
     keys.add(key)
     handleKeypress(e.shiftKey)
 })
-// document.onkeydown = function (evt) {
-//     console.log('keyCode', evt.keyCode);
-// }

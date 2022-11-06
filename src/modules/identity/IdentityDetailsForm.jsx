@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 //utils
+import storage from '../../utils/storageHelper'
 import { copyToClipboard, isFn } from '../../utils/utils'
 // components
 import FormBuilder, {
@@ -15,7 +16,6 @@ import { confirm } from '../../services/modal'
 import Balance from './Balance'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
-import storage from '../../utils/storageHelper'
 
 const textsCap = translated({
 	advanced: 'advanced',

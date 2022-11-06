@@ -1,15 +1,15 @@
 
 import { BehaviorSubject, Subject } from 'rxjs'
 import PromisE from '../../utils/PromisE'
+import storage from '../../utils/storageHelper'
 import { isObj, mapJoin, isFn, isDefined } from '../../utils/utils'
 import { getConnection, query as queryBlockchain } from '../../services/blockchain'
-import storage from '../../services/storage'
-import { fetchProjects, getProjects as getUserProjects} from '../activity/activity'
-import { getSelected } from '../identity/identity'
+import { fetchProjects, getProjects as getUserProjects } from '../activity/activity'
+import { getSelected, set } from '../identity/identity'
 
-// to sumbit a new time record must submit with this hash
+// to sumbit a new time record must submit with this hash | DO NOT CHANGE
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
-export const MODULE_KEY = 'time-keeping'
+export const MODULE_KEY = 'timekeeping'
 const queryPrefix = 'api.query.timekeeping.'
 const txPrefix = 'api.tx.timekeeping.'
 // transaction queue item type
@@ -17,10 +17,11 @@ const TX_STORAGE = 'tx_storage'
 // read/write to module settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
-const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
+const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value)
 const cacheKeyProjects = address => `projects-${address}`
-export const rxTimerInProgress = new BehaviorSubject(saveFormData().inprogress)
+export const rxTimerInProgress = new BehaviorSubject(formData().inprogress)
 const rxProjects = new Subject()
+export const rxTimeConversion = new BehaviorSubject(rw().timeConversion || 'hh:mm:ss')
 // record status codes
 export const statuses = {
     draft: 0,
@@ -30,13 +31,6 @@ export const statuses = {
     accept: 300,
     invoice: 400,
     delete: 999,
-}
-// timeKeeping form values and states for use with the Timekeeping form
-export function saveFormData(data) {
-    if (!isObj(data)) return rw().formData || {}
-
-    rxTimerInProgress.next(data.inprogress)
-    return rw({ formData: data }).formData
 }
 
 // @forceUpdate updates only specified @recordIds in the projects list.
@@ -50,6 +44,14 @@ export const forceUpdate = async (recordIds, ownerAddress) => {
         .forEach(([recordId, project]) =>
             projects.set(recordId, project)
         )
+}
+
+// timeKeeping form values and states for use with the Timekeeping form
+export function formData(data) {
+    if (!isObj(data)) return rwCache().formData || {}
+
+    rxTimerInProgress.next(data.inprogress)
+    return rwCache({ formData: data }).formData
 }
 
 // getProjects retrieves projects along with relevant details owned by selected identity.
@@ -90,7 +92,7 @@ export const getProjects = async (forceUpdate, callback, timeout = 30000) => {
     if (!address) return
     const cacheKey = cacheKeyProjects(address)
 
-    if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
+    if (!navigator.onLine) return new Map(rwCache(cacheKey) || [])
     if (address !== addressPrev || !updatePromise || updatePromise.rejected) {
         // selected identity changed
         config.address = address
@@ -110,7 +112,7 @@ export const getProjects = async (forceUpdate, callback, timeout = 30000) => {
                 // reset update promise
                 config.updatePromise = null
                 // use cache if not connected
-                return resolve(new Map(cacheRW(cacheKey) || []))
+                return resolve(new Map(rwCache(cacheKey) || []))
             })
 
         })
@@ -129,7 +131,7 @@ export const getProjects = async (forceUpdate, callback, timeout = 30000) => {
         // if timed out, return cached. Otherwise, throw error
         if (!promise.timeout.rejected) throw err
     }
-    return result || new Map(cacheRW(cacheKey) || [])
+    return result || new Map(rwCache(cacheKey) || [])
 }
 
 // save projects to local storage and trigger change on `rxProjects`
@@ -140,7 +142,7 @@ export const getProjects = async (forceUpdate, callback, timeout = 30000) => {
 const saveProjects = (projects, ownerAddress) => {
     if (!projects || !ownerAddress) return
     const cacheKey = cacheKeyProjects(ownerAddress)
-    cacheRW(cacheKey, projects)
+    rwCache(cacheKey, projects)
     // update rxProjects
     rxProjects.next(projects)
 }
@@ -274,7 +276,6 @@ export const query = {
         ),
     },
 }
-
 
 // Save timekeeping record related data to blockchain storage.
 // Each function returns an object that can be used to create a queued transaction.
@@ -411,8 +412,26 @@ export const queueables = {
     },
 }
 
+setTimeout(() => {
+    rxTimeConversion.ignoredFirst = !isDefined(rxTimeConversion.value)
+    rxTimeConversion.subscribe(value => {
+        if (!value || rw().timeConversion === value) return
+        rw({ timeConversion: value })
+    })
+
+    const existingValue = storage.settings.module('time-keeping')
+    if (!existingValue) return
+
+    // migrate to new module key
+    if (!!existingValue.formData) rwCache(existingValue.formData)
+    delete existingValue.formData
+    rw(existingValue)
+
+    // remove legacy module key
+    storage.settings.module('time-keeping', null)
+})
 export default {
-    saveFormData,
+    formData,
     rxTimerInProgress,
     getProjects,
     query,

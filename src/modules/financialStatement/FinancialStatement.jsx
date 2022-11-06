@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { Button } from 'semantic-ui-react'
 // utils
+import storage from '../../utils/storageHelper'
 import { isArr, objClean, textEllipsis } from '../../utils/utils'
 // components
 import DrillDownList from '../../components/DrillDownList'
 import Message from '../../components/Message'
 // services
-import storage from '../../services/storage'
 import { translated } from '../../services/language'
 // components
 import Currency from '../currency/Currency'

@@ -1,7 +1,6 @@
-import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { getUrlParam as _getUrlParam, isBool, isDefined, isFn } from '../utils/utils'
-import storage from './storage'
+import storage from '../utils/storageHelper'
 import { useRxSubject } from './react'
 
 const MODULE_KEY = 'window'

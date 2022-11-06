@@ -1,9 +1,8 @@
 import React from 'react'
 import { Button } from 'semantic-ui-react'
-// services
+import storage from '../utils/storageHelper'
 import { translated } from '../services/language'
 import { confirm } from '../services/modal'
-import storage from '../services/storage'
 
 const [texts] = translated({
 	clearCachedData: 'Clear Cached Data',

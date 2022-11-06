@@ -1,7 +1,7 @@
+import storage from '../../utils/storageHelper'
 import { generateHash, isDefined } from "../../utils/utils"
 import { query as queryHelper, randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import storage from '../../services/storage'
 import client from '../chat/ChatClient'
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')

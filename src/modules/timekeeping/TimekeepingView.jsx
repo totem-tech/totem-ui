@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
+import storage from '../../utils/storageHelper'
+import { isArr, isStr } from '../../utils/utils'
 import ContentSegment from '../../components/ContentSegment'
 import CheckboxGroup from '../../components/CheckboxGroup'
 // forms
@@ -12,11 +14,9 @@ import TimekeepingSummaryList from './TimekeepingSummaryList'
 // services
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
-import storage from '../../services/storage'
 import { MOBILE, rxLayout } from '../../services/window'
 import { MODULE_KEY } from './timekeeping'
 import { unsubscribe } from '../../services/react'
-import { isArr, isStr } from '../../utils/utils'
 
 const textsCap = translated({
     archive: 'archive',
@@ -57,13 +57,37 @@ export default class TimekeepingView extends Component {
                 },
                 toggle: true,
                 options: [
-                    { label: textsCap.overview, style, value: 'summary' },
-                    { label: textsCap.myRecords, style, value: 'records' },
-                    { label: textsCap.manageTeamTime, style, value: 'manage' },
-                    { label: textsCap.myRecordsArchive, style, value: 'records-archive' },
-                    { label: textsCap.manageArchive, style, value: 'manage-archive' },
+                    {
+                        label: textsCap.overview,
+                        style,
+                        value: 'summary',
+                    },
+                    {
+                        label: textsCap.myRecords,
+                        style,
+                        value: 'records',
+                    },
+                    {
+                        label: textsCap.manageTeamTime,
+                        style,
+                        value: 'manage',
+                    },
+                    {
+                        label: textsCap.myRecordsArchive,
+                        style,
+                        value: 'records-archive',
+                    },
+                    {
+                        label: textsCap.manageArchive,
+                        style,
+                        value: 'manage-archive',
+                    },
                 ],
-                style: { display: 'inline', paddingTop: 7, textAlign: 'center' },
+                style: {
+                    display: 'inline',
+                    paddingTop: 7,
+                    textAlign: 'center',
+                },
             },
             timerButton: {
                 active: false,

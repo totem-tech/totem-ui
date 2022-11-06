@@ -1,8 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, {
+    useCallback,
+    useEffect,
+    useState,
+} from 'react'
 import PropTypes from 'prop-types'
 import { format } from '../utils/time'
 import { translated } from '../services/language'
-import { arrReverse, isValidNumber, objWithoutKeys, strFill } from '../utils/utils'
+import {
+    arrReverse,
+    isValidNumber,
+    objWithoutKeys,
+    strFill,
+} from '../utils/utils'
 import { Statistic } from 'semantic-ui-react'
 import { useInverted } from '../services/window'
 
@@ -32,6 +41,12 @@ const TimeSince = props => {
         ignoreAttributes,
         updateFrequency,
     } = props
+    const [title] = useState(() => props.title || format(
+        new Date(dateFrom),
+        true,
+        false,
+        true,
+    ))
     const inverted = asDuration && useInverted()
     const doFormat = useCallback(() => !asDuration
         ? _format(dateFrom)
@@ -73,7 +88,7 @@ const TimeSince = props => {
         : <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
             children: formatted,
-            title: props.title || `${dateFrom}`,
+            title,
         }} />
 }
 TimeSince.propTypes = {
@@ -89,7 +104,7 @@ TimeSince.propTypes = {
     dateTo: PropTypes.oneOfType([
         PropTypes.instanceOf(Date),
         PropTypes.string,
-    ]).isRequired,
+    ]),
     durationConfig: PropTypes.shape({
         // whether to prefix with 0 when number is less than 10
         fill: PropTypes.bool,

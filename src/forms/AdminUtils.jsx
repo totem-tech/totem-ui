@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { csvToMap } from '../utils/convert'
+import storage from '../utils/storageHelper'
 import { downloadFile } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // services
 import client from '../modules/chat/ChatClient'
 import { downloadTextListCSV, translated } from '../services/language'
-import storage from '../services/storage'
 
 export default class AdminUtils extends Component {
 	constructor() {

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Button, Icon } from 'semantic-ui-react'
+import storage from '../../utils/storageHelper'
 import { format } from '../../utils/time'
 // components
 import { ButtonGroup } from '../../components/buttons'
@@ -9,6 +10,7 @@ import Tags from '../../components/Tags'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
+import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import { showLocations } from '../location/LocationsList'
 import { rxIdentities, USAGE_TYPES } from './identity'
@@ -16,9 +18,7 @@ import IdentityDetailsForm from './IdentityDetailsForm'
 import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
 import Balance from './Balance'
-import storage from '../../utils/storageHelper'
 import { UserContactList } from '../contact/UserContactList'
-import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated(
 	{

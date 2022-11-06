@@ -20,13 +20,14 @@ import RewardsView from '../modules/rewards/RewardsView'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
 import DataStorage from '../utils/DataStorage'
+import storage from '../utils/storageHelper'
 import { isBool, isSubjectLike, objToUrlParams, objWithoutKeys } from '../utils/utils'
 // services
 import { translated } from './language'
-import storage from './storage'
 import { getUrlParam, MOBILE, rxLayout, setClass } from './window'
 import ClaimKAPEXForm from '../modules/rewards/claimKapex/ClaimKapexView'
 import { Icon } from 'semantic-ui-react'
+import { TimekeepingSettings } from '../modules/timekeeping/TimekeepingSettings'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -242,6 +243,7 @@ export const sidebarItems = [
         content: TimekeepingView,
         icon: 'clock outline',
         name: 'timekeeping',
+        settings: () => <TimekeepingSettings asDropdown={false} />,
         subHeader: textsCap.timekeepingSubheader,
         title: textsCap.timekeepingTitle,
     },

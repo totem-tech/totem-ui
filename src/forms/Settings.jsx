@@ -27,6 +27,7 @@ import { gridColumns } from '../services/window'
 import { confirm, confirmAsPromise } from '../services/modal'
 import { copyRxSubject } from '../services/react'
 import CurrencyDropdown, { asInput } from '../modules/currency/CurrencyDropdown'
+import { TimekeepingSettings } from '../modules/timekeeping/TimekeepingSettings'
 
 const [texts, textsCap] = translated({
     chatLimitLabel: 'chat message limit per conversation',
@@ -222,12 +223,17 @@ export default class SettingsForm extends Component {
                     value: this.connectedNodeUrl || this.defaultNodeUrl,
                 },
                 {
+                    content: <TimekeepingSettings />,
+                    name: 'timekeeping',
+                    type: 'html',
+                },
+                {
                     content: `${textsCap.kbShortcuts} (K)`,
                     icon: 'keyboard',
                     name: inputNames.kbShortcutsBtn,
                     onClick: showKeyboardShortcuts,
                     type: 'button'
-                },
+                }
             ]
         }
 

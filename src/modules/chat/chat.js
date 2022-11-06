@@ -1,11 +1,30 @@
 import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
-import { arrUnique, isObj, isValidNumber, isDefined, objClean, isArr } from '../../utils/utils'
-import client, { getUser, rxIsLoggedIn } from './ChatClient'
-import { addToQueue, QUEUE_TYPES, rxOnSave, statuses } from '../../services/queue'
-import storage from '../../services/storage'
-import { getLayout, MOBILE, setClass } from '../../services/window'
+import storage from '../../utils/storageHelper'
+import {
+    arrUnique,
+    isArr,
+    isDefined,
+    isObj,
+    isValidNumber,
+    objClean,
+} from '../../utils/utils'
+import client, {
+    getUser,
+    rxIsLoggedIn,
+} from './ChatClient'
+import {
+    addToQueue,
+    QUEUE_TYPES,
+    rxOnSave,
+    statuses,
+} from '../../services/queue'
+import {
+    getLayout,
+    MOBILE,
+    setClass,
+} from '../../services/window'
 import { subjectAsPromise } from '../../utils/reactHelper'
 
 const PREFIX = 'totem_'

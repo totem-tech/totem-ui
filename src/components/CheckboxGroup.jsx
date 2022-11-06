@@ -21,8 +21,8 @@ function CheckboxGroup(props) {
         style,
         title,
     } = props
-    const [value, setValue] = useRxSubject(rxValue || props.value)
-    
+    const [value, setValue] = useRxSubject(rxValue, null, props.value)
+
     return (
         <div {...{ style, title }}>
             {getCheckboxes(props, value, setValue)}

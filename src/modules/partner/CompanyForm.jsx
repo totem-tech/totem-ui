@@ -2,13 +2,12 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { ss58Decode } from '../../utils/convert'
+import storage from '../../utils/storageHelper'
 import { deferred, isFn, generateHash } from '../../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
-import storage from '../../services/storage'
 import client from '../chat/ChatClient'
 import { setPublic } from './partner'
-import { FormInput } from '../../components/FormInput'
 
 const textsCap = translated({
     companyExistsMsg: 'An entity already exists with the following name. You cannot resubmit.',

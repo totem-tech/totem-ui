@@ -5,10 +5,10 @@
 import { Subject } from 'rxjs'
 import { bytesToHex } from '../../utils/convert'
 import PromisE from '../../utils/PromisE'
+import storage from '../../utils/storageHelper'
 import { arrUnique, isFn, isStr } from '../../utils/utils'
 // services
 import { hashTypes, query as queryBlockchain, getConnection } from '../../services/blockchain'
-import storage from '../../services/storage'
 import client from '../chat/ChatClient'
 import identities, { getSelected, rxSelected } from '../identity/identity'
 import partners from '../partner/partner'

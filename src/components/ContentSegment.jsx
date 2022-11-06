@@ -1,157 +1,193 @@
-import React, { Component } from 'react'
+import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
-import { Divider, Header, Icon, Placeholder, Rail, Segment } from 'semantic-ui-react'
-import { unsubscribe } from '../utils/reactHelper'
+import {
+	Divider,
+	Header,
+	Icon,
+	Placeholder,
+	Rail,
+	Segment,
+} from 'semantic-ui-react'
+import {
+	isMemo,
+	iUseReducer,
+	useRxSubject,
+} from '../utils/reactHelper'
 import { isSubjectLike, isFn } from '../utils/utils'
+import { toggleFullscreen } from '../services/window'
 import ErrorBoundary from './CatchReactErrors'
 import { Invertible } from './Invertible'
 import Text from './Text'
-import { toggleFullscreen } from '../services/window'
 
-class ContentSegment extends Component {
-	constructor(props) {
-		super(props)
+const ContentSegment = props => {
+	const {
+		active,
+		basic,
+		color,
+		compact,
+		contentPadding,
+		header,
+		headerDivider,
+		headerDividerHidden,
+		headerTag,
+		headerInverted,
+		icon,
+		inverted,
+		name,
+		onClose,
+		rxTrigger,
+		settings,
+		style,
+		subHeader,
+		subHeaderDetails,
+		title,
+		vertical,
+	} = props
+	const getContent = useCallback(() => {
+		const {
+			content: Content,
+			contentProps,
+		} = props
 
-		this.state = {
-			content: this.getContent(props),
-			contentProps: props.contentProps,
-			showSubHeader: false,
-		}
-		this.originalSetState = this.setState
-		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
-	}
-
-	componentWillMount() {
-		this._mounted = true
-		const { rxTrigger } = this.props
-		this.subscription = isSubjectLike(rxTrigger)
-			&& rxTrigger.subscribe(() => {
-				const { contentProps } = this.props
-				const content = this.getContent()
-				this.setState({ content, contentProps: {...contentProps} })
-			})
-	}
-
-	componentWillUnmount() {
-		this._mounted = false
-		unsubscribe(this.subscription)
-	}
-
-	getContent = props => {
-		const { content: Content, contentProps } = props || this.props
-		return isFn(Content) || Content['$$typeof'] === React.memo('div')['$$typeof']
+		return isFn(Content) || isMemo(Content)
 			? <Content {...contentProps} />
 			: Content || contentPlaceholder
-	}
+	}, [props])
+	const [state, setState] = iUseReducer(null, {
+		content: getContent(),
+		contentProps: props.contentProps,
+		showSettings: false,
+		showSubHeader: false,
+	})
+	if (!active) return ''
 
-	toggleSubHeader = e => {
-		e.preventDefault()
-		e.stopPropagation()
-		this.setState({ showSubHeader: !this.state.showSubHeader})
-	}
+	const {
+		content,
+		contentProps,
+		showSettings,
+		showSubHeader,
+	} = state
+	const headerText = header || title
+	const _settings = active && (
+		isFn(settings)
+			? settings(contentProps)
+			: settings
+	)
 
-	render() {
-		const {
-			active,
-			basic,
-			color,
-			compact,
-			contentPadding,
-			header,
-			headerDivider,
-			headerDividerHidden,
-			headerTag,
-			headerInverted,
-			icon,
+	// subscribe to changes on content component props
+	isSubjectLike(rxTrigger) && useRxSubject(rxTrigger, () => {
+		const { contentProps } = props
+		const content = getContent()
+		setState({
+			content,
+			contentProps: { ...contentProps },
+		})
+	})
+
+	return (
+		<Invertible {...{
+			El: Segment,
+			basic: basic,
+			color: color,
+			compact: !!compact,
 			inverted,
-			name,
-			onClose,
-			style,
-			subHeader,
-			subHeaderDetails,
-			title,
-			vertical,
-		} = this.props
-		const { content, showSubHeader } = this.state
-		const headerText = header || title
-		return !!active && (
-			<Invertible {...{
-				El: Segment,
-				basic: basic,
-				color: color,
-				compact: !!compact,
-				inverted,
-				padded: true,
-				style: { ...styles.segment, ...style },
-				vertical: vertical,
-			}}>
-				<Rail internal position='right' close style={styles.closeButtonRail}>
-					{name && (
-						<Icon
-							color='grey'
-							link
-							name='expand'//'expand arrows alternate' 'compress'
-							onClick={() => {
-								toggleFullscreen(`#main-content div[name="${name}"]`)
-							}}
-							size='mini'
-							style={{ display: 'inline' }}
-						/>
-					)}
-
-					{isFn(onClose) && (
-						<Icon
-							color='grey'
-							link
-							name='times circle outline'
-							onClick={() => onClose(name)}
-							size='mini'
-							style={{ display: 'inline' }}
-						/>
-					)}
-				</Rail>
-
-				{!!headerText && (
-					<Header as={headerTag || 'h2'} inverted={headerInverted}>
-						{icon && <Icon name={icon} />}
-						<Header.Content>
-							<div>
-								<Text>{headerText}</Text>
-								{subHeader && (
-									<Icon
-										// className='text-deselect'
-										color='grey'
-										link
-										name='question circle outline'
-										onClick={this.toggleSubHeader}
-										size='small'
-									/>
-								)}
-							</div>
-						</Header.Content>
-						{showSubHeader && (
-							<React.Fragment>
-								<Header.Subheader style={styles.subHeader}>
-									<Text>{subHeader}</Text>
-								</Header.Subheader>
-								{subHeaderDetails && (
-									<div style={styles.subHeaderDetails}>
-										{subHeaderDetails}
-									</div>
-								)}
-							</React.Fragment>
-						)}
-					</Header>
+			padded: true,
+			style: { ...styles.segment, ...style },
+			vertical: vertical,
+		}}>
+			<Rail internal position='right' close style={styles.closeButtonRail}>
+				{name && (
+					<Icon
+						color='grey'
+						link
+						name='expand'//'expand arrows alternate' 'compress'
+						onClick={() => {
+							toggleFullscreen(`#main-content div[name="${name}"]`)
+						}}
+						size='mini'
+						style={{ display: 'inline' }}
+					/>
 				)}
 
-				{!!headerText && !!headerDivider && <Divider hidden={!!headerDividerHidden} />}
+				{isFn(onClose) && (
+					<Icon
+						color='grey'
+						link
+						name='times circle outline'
+						onClick={() => onClose(name)}
+						size='mini'
+						style={{ display: 'inline' }}
+					/>
+				)}
+			</Rail>
 
-				<div style={{ padding: contentPadding || 0 }}>
-					<ErrorBoundary>{content}</ErrorBoundary>
-				</div>
-			</Invertible>
-		)
-	}
+			{!!headerText && (
+				<Header as={headerTag || 'h2'} inverted={headerInverted}>
+					{icon && <Icon name={icon} />}
+					<Header.Content>
+						<div>
+							<Text style={{ paddingRight: 5 }}>
+								{headerText}
+							</Text>
+							{subHeader && (
+								<Icon {...{
+									// className='text-deselect'
+									className: 'no-margin',
+									color: 'grey',
+									link: true,
+									loading: showSubHeader,
+									name: 'question circle outline',
+									onClick: () => setState({
+										showSettings: false,
+										showSubHeader: !showSubHeader,
+									}),
+									size: 'small',
+								}} />
+							)}
+							{!!_settings && (
+								<Icon {...{
+									// className='text-deselect'
+									className: 'no-margin',
+									color: 'grey',
+									link: true,
+									loading: showSettings,
+									name: 'cog',
+									onClick: () => setState({
+										showSettings: !showSettings,
+										showSubHeader: false,
+									}),
+									size: 'small',
+								}} />
+							)}
+						</div>
+					</Header.Content>
+					{showSubHeader && (
+						<React.Fragment>
+							<Header.Subheader style={styles.subHeader}>
+								<Text>{subHeader}</Text>
+							</Header.Subheader>
+							{subHeaderDetails && (
+								<div style={styles.subHeaderDetails}>
+									{subHeaderDetails}
+								</div>
+							)}
+						</React.Fragment>
+					)}
+					{showSettings && (
+						<Header.Subheader style={styles.subHeader}>
+							<Text>{_settings}</Text>
+						</Header.Subheader>
+					)}
+				</Header>
+			)}
+
+			{!!headerText && !!headerDivider && <Divider hidden={!!headerDividerHidden} />}
+
+			<div style={{ padding: contentPadding || 0 }}>
+				<ErrorBoundary>{content}</ErrorBoundary>
+			</div>
+		</Invertible>
+	)
 }
 ContentSegment.propTypes = {
 	active: PropTypes.bool,
