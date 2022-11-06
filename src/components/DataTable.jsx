@@ -303,6 +303,7 @@ export default class DataTable extends Component {
 			this.setState({ keywords })
 			hasSearchOnChange && searchOnChange(keywords, this.props)
 		}
+		const showCount = !!showSelectedCount && !!selectedIndexes.length
 		const actions = showActions && (
 			<Dropdown {...{
 				button: true,
@@ -312,16 +313,18 @@ export default class DataTable extends Component {
 					margin: !isMobile ? undefined : '5px 0',
 					textAlign: 'center',
 				},
-				text: (
-					<span>
-						{textsCap.actions}
-						{!!showSelectedCount && !!selectedIndexes.length && (
-							<span style={{ color: 'grey' }}>
-								{' '}({selectedIndexes.length})
-							</span>
-						)}
-					</span>
-				),
+				// // Semantic only allows string. Grrrr!
+				// text: (
+				// 	<span>
+				// 		{textsCap.actions}
+				// 		{showCount && (
+				// 			<span style={{ color: 'grey' }}>
+				// 				{' '}({selectedIndexes.length})
+				// 			</span>
+				// 		)}
+				// 	</span>
+				// ),
+				text: `${textsCap.actions}${!showCount ? '' : ' (' + selectedIndexes.length + ')'}`
 			}}>
 				<Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
 					{menuOnSelect.map((item, i) =>

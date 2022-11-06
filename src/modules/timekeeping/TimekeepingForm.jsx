@@ -52,7 +52,6 @@ const textsCap = translated({
     checkingProjectStatus: 'checking activity status...',
     errRejectedDurationUnchanged: 'rejected record requires duration change in order to re-sumbit',
     goBack: 'go Back',
-    hhmmss: 'hh:mm:ss', //????
     inactiveWorkerHeader1: 'you are not part of this Team! Request an invitation',
     inactiveWorkerHeader2: 'action required',
     inactiveWorkerMsg1: 'please select an activity you have been invited to and already accepted.',
@@ -87,7 +86,6 @@ const textsCap = translated({
     updateFormHeader: 'update Record',
     workerBannedMsg: 'permission denied',
 }, true)[1]
-textsCap.hhmmss = textsCap.hhmmss.toLowerCase()
 
 const handleValidateDuration = (_1, _2, values) => {
     const { duration, manualEntry } = values
@@ -100,7 +98,7 @@ const handleValidateDuration = (_1, _2, values) => {
         content: (
             <span>
                 {textsCap.invalidDurationMsgPart1}<br />
-                <b>{textsCap.hhmmss}</b><br />
+                <b>hh:mm:ss</b><br />
             </span>
         ),
         header: textsCap.invalidDuration,
@@ -123,7 +121,15 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
     }
 
     const { onSubmit } = this.props
-    const { blockCount, blockEnd, blockStart, breakCount, duration, projectHash, workerAddress } = values
+    const {
+        blockCount,
+        blockEnd,
+        blockStart,
+        breakCount,
+        duration,
+        projectHash,
+        workerAddress,
+    } = values
     const extraProps = {
         title: textsCap.newRecord,
         description: `${textsCap.activity}: ${projectName} | ${textsCap.duration}: ${values.duration}`,
@@ -132,10 +138,16 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
             this.setState({
                 closeText: undefined,
                 message: {
-                    content: success ? textsCap.recordSubmittedSuccessfully : textsCap.transactionFailed,
-                    header: success ? textsCap.success : textsCap.error,
+                    content: success
+                        ? textsCap.recordSubmittedSuccessfully
+                        : textsCap.transactionFailed,
+                    header: success
+                        ? textsCap.success
+                        : textsCap.error,
                     icon: true,
-                    status: success ? 'success' : 'error',
+                    status: success
+                        ? 'success'
+                        : 'error',
                 },
                 submitDisabled: false,
                 success,
@@ -243,7 +255,7 @@ export default class TimekeepingForm extends Component {
                     label: textsCap.duration,
                     name: 'duration',
                     // onChange: handleDurationChange.bind(this),
-                    placeholder: textsCap.hhmmss,
+                    placeholder: 'hh:mm:ss',
                     readOnly: values.manualEntry !== true,
                     type: 'text',
                     validate: handleValidateDuration,
