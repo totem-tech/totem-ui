@@ -6,6 +6,7 @@ import { isObj, mapJoin, isFn, isDefined } from '../../utils/utils'
 import { getConnection, query as queryBlockchain } from '../../services/blockchain'
 import { fetchProjects, getProjects as getUserProjects } from '../activity/activity'
 import { getSelected, set } from '../identity/identity'
+import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
 
 // to sumbit a new time record must submit with this hash | DO NOT CHANGE
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
@@ -19,9 +20,19 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
 const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value)
 const cacheKeyProjects = address => `projects-${address}`
-export const rxTimerInProgress = new BehaviorSubject(formData().inprogress)
+export const rxTimerInProgress = new BehaviorSubject(timerFormValues().inprogress)
 const rxProjects = new Subject()
-export const rxTimeConversion = new BehaviorSubject(rw().timeConversion || 'hh:mm:ss')
+export const durationPreferences = {
+    blocks: 'blocks',
+    hhmmss: 'hh:mm:ss',
+    hhmm05: 'hh:mm-05',
+    hhmm10: 'hh:mm-10',
+    hhmm15: 'hh:mm-15',
+    hhmm30: 'hh:mm-30',
+}
+export const rxDurtionPreference = new BehaviorSubject(
+    rw().timeConversion || durationPreferences.hhmmss
+)
 // record status codes
 export const statuses = {
     draft: 0,
@@ -31,6 +42,32 @@ export const statuses = {
     accept: 300,
     invoice: 400,
     delete: 999,
+}
+
+/**
+ * @name    blocksToDuration
+ * @summary convert number of blocks rounded to specified/user-selected preference
+ * 
+ * @param   {Number} numBlocks 
+ * @param   {String} preference 
+ * 
+ * @returns {String|Number}
+ */
+export const blocksToDuration = (numBlocks, preference) => {
+    preference = !!durationPreferences[preference]
+        ? preference
+        : rxDurtionPreference.value
+    if (preference === durationPreferences.blocks) return numBlocks
+
+    let numMinutes = numBlocks * BLOCK_DURATION_SECONDS / 60
+    let roundToMins = parseInt(preference.split('-')[1])
+    // round to 15 minutes if 30 is selected
+    if (roundToMins === 30) roundToMins = 15
+
+    numMinutes = !roundToMins
+        ? numMinutes
+        : Math.round(numMinutes / roundToMins) * roundToMins
+    return secondsToDuration(numMinutes * 60)
 }
 
 // @forceUpdate updates only specified @recordIds in the projects list.
@@ -47,11 +84,13 @@ export const forceUpdate = async (recordIds, ownerAddress) => {
 }
 
 // timeKeeping form values and states for use with the Timekeeping form
-export function formData(data) {
-    if (!isObj(data)) return rwCache().formData || {}
+export function timerFormValues(values) {
+    if (!isObj(values)) return rwCache('formData') || {}
 
-    rxTimerInProgress.next(data.inprogress)
-    return rwCache({ formData: data }).formData
+    rxTimerInProgress.next(values.inprogress)
+    values = rwCache('formData', values)
+    console.log(values)
+    return values
 }
 
 // getProjects retrieves projects along with relevant details owned by selected identity.
@@ -413,8 +452,8 @@ export const queueables = {
 }
 
 setTimeout(() => {
-    rxTimeConversion.ignoredFirst = !isDefined(rxTimeConversion.value)
-    rxTimeConversion.subscribe(value => {
+    rxDurtionPreference.ignoredFirst = !isDefined(rxDurtionPreference.value)
+    rxDurtionPreference.subscribe(value => {
         if (!value || rw().timeConversion === value) return
         rw({ timeConversion: value })
     })
@@ -430,8 +469,9 @@ setTimeout(() => {
     // remove legacy module key
     storage.settings.module('time-keeping', null)
 })
+
 export default {
-    formData,
+    formData: timerFormValues,
     rxTimerInProgress,
     getProjects,
     query,

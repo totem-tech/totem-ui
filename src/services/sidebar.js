@@ -9,7 +9,7 @@ import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
 import PartnerList from '../modules/partner/PartnerList'
 import ActivityList from '../modules/activity/ActivityList'
-import SettingsForm from '../forms/Settings'
+import SettingsForm, { inputNames } from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
 import TransferForm from '../modules/identity/Transfer'
@@ -243,7 +243,14 @@ export const sidebarItems = [
         content: TimekeepingView,
         icon: 'clock outline',
         name: 'timekeeping',
-        settings: () => <TimekeepingSettings asDropdown={false} />,
+        settings: () => (
+            <SettingsForm {...{
+                inputsHidden: Object
+                    .values(inputNames)
+                    .filter(x => x !== inputNames.timekeeping),
+                style: { maxWidth: 350 }
+            }} />
+        ),
         subHeader: textsCap.timekeepingSubheader,
         title: textsCap.timekeepingTitle,
     },
@@ -332,7 +339,7 @@ export const sidebarItems = [
     },
     {
         content: SettingsForm,
-        contentProps: { style: { maxWidth: 450 } },
+        contentProps: { style: { maxWidth: 350 } },
         icon: 'cogs',
         name: 'settings',
         title: textsCap.settingsTitle,

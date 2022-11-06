@@ -133,7 +133,7 @@ const ContentSegment = props => {
 								<Icon {...{
 									// className='text-deselect'
 									className: 'no-margin',
-									color: 'grey',
+									color: showSubHeader ? undefined : 'grey',
 									link: true,
 									loading: showSubHeader,
 									name: 'question circle outline',
@@ -148,7 +148,7 @@ const ContentSegment = props => {
 								<Icon {...{
 									// className='text-deselect'
 									className: 'no-margin',
-									color: 'grey',
+									color: showSettings ? undefined : 'grey',
 									link: true,
 									loading: showSettings,
 									name: 'cog',

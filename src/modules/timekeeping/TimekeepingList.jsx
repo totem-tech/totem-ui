@@ -33,6 +33,7 @@ import {
     statuses,
     query,
     queueables,
+    blocksToDuration,
 } from './timekeeping'
 import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
@@ -457,7 +458,7 @@ class TimeKeepingList extends Component {
                 {
                     ...record,
                     // add extra information including duration in hh:mm:ss format
-                    duration: secondsToDuration(total_blocks * BLOCK_DURATION_SECONDS),
+                    duration: blocksToDuration(total_blocks),
                     hash: recordId, // 
                     projectHash,
                     workerAddress: worker || '',// && ss58Encode(worker) || '',

@@ -15,7 +15,7 @@ import { unsubscribe } from '../../services/react'
 import { openStatuses, query as queryProject } from '../activity/activity'
 import identities, { getSelected } from '../identity/identity'
 import { getAddressName } from '../partner/partner'
-import { formData, getProjects, NEW_RECORD_HASH, query, queueables, statuses } from './timekeeping'
+import { timerFormValues, getProjects, NEW_RECORD_HASH, query, queueables, statuses } from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
 
 // Hash that indicates creation of new record
@@ -210,7 +210,8 @@ export default class TimekeepingForm extends Component {
     constructor(props) {
         super(props)
 
-        const values = formData() || {}
+        const values = timerFormValues() || {}
+        console.log(values)
         const { breakCount, duration, durationValid, inprogress, projectHash, workerAddress } = values
         values.durationValid = !isDefined(durationValid) ? true : durationValid
         values.duration = duration || DURATION_ZERO
@@ -432,7 +433,7 @@ export default class TimekeepingForm extends Component {
             values.breakCount = 0
             inputs.find(x => x.name === 'duration').value = DURATION_ZERO
             this.setState({ values, inputs })
-            formData(values)
+            timerFormValues(values)
         }
 
         !doConfirm ? reset() : confirm({
@@ -520,7 +521,7 @@ export default class TimekeepingForm extends Component {
         duraIn.value = values.duration
         values.durationValid = BLOCK_DURATION_REGEX.test(values.duration) && values.duration !== DURATION_ZERO
         this.setState({ blockNumber: currentBlockNumber, inputs, message: {}, values })
-        formData(values)
+        timerFormValues(values)
     }
 
     setIdentityOptions = async (projectId, workerAddress) => {

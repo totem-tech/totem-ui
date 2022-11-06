@@ -26,17 +26,17 @@ import {
 import { gridColumns } from '../services/window'
 import { confirm, confirmAsPromise } from '../services/modal'
 import { copyRxSubject } from '../services/react'
-import CurrencyDropdown, { asInput } from '../modules/currency/CurrencyDropdown'
-import { TimekeepingSettings } from '../modules/timekeeping/TimekeepingSettings'
+import { asInput } from '../modules/currency/CurrencyDropdown'
+import TimekeepingSettings from '../modules/timekeeping/TimekeepingSettings'
 
-const [texts, textsCap] = translated({
-    chatLimitLabel: 'chat message limit per conversation',
+let textsCap = {
+    chatLimitLabel: 'messages per chat',
     column: 'column',
     columns: 'columns',
     error: 'error',
-    gridColumnsLabel: 'number of columns on main content (experimental)',
+    gridLabel: 'main content columns',
     gsCurrencyLabel: 'display currency',
-    gsLanguageLabel: 'display language (experimental)',
+    gsLanguageLabel: 'language (experimental)',
     historyLimitLabel: 'history limit',
     kbShortcuts: 'keyboard shortcuts',
     langConfirmCancelBtn: 'later',
@@ -66,7 +66,8 @@ const [texts, textsCap] = translated({
     _shiftT: 'timekeeping form',
     _header: 'keyboard shortcuts',
     _subheader: 'not available when an input field is on focus',
-}, true)
+}
+textsCap = translated(textsCap, true)[1]
 const savedMsg = {
     content: textsCap.saved,
     status: 'success',
@@ -80,6 +81,7 @@ export const inputNames = {
     kbShortcutsBtn: 'kbShortcutsBtn',
     languageCode: 'languageCode',
     nodeUrl: 'nodeUrl',
+    timekeeping: 'timekeeping',
 }
 
 export const showKeyboardShortcuts = () => confirm(
@@ -138,7 +140,6 @@ export default class SettingsForm extends Component {
         const values = {}
         values[inputNames.nodeUrl] = this.connectedNodeUrl
         this.rxCurrency = copyRxSubject(rxSelectedCurrency)
-        this.rxCurrencyOptions = new BehaviorSubject()
         this.state = {
             values,
             submitText: null,
@@ -201,14 +202,18 @@ export default class SettingsForm extends Component {
                     value: chatHistoryLimit(),
                 },
                 {
-                    label: textsCap.gridColumnsLabel,
+                    label: textsCap.gridLabel,
                     name: inputNames.gridCols,
                     onChange: this.handleGridCollumnsChange,
                     options: [1, 2, 3, 4, 5, 6]
                         .map(n => ({
                             icon: n === 1 ? 'bars' : 'grid layout',
                             key: n,
-                            text: `${n} ${n > 1 ? texts.columns : texts.column}`,
+                            text: `${n} ${(
+                                n > 1
+                                    ? textsCap.columns
+                                    : textsCap.column
+                            ).toLowerCase()}`,
                             value: n,
                         })),
                     selection: true,
@@ -223,8 +228,8 @@ export default class SettingsForm extends Component {
                     value: this.connectedNodeUrl || this.defaultNodeUrl,
                 },
                 {
-                    content: <TimekeepingSettings />,
-                    name: 'timekeeping',
+                    content: <TimekeepingSettings El='div' />,
+                    name: inputNames.timekeeping,
                     type: 'html',
                 },
                 {
@@ -236,16 +241,6 @@ export default class SettingsForm extends Component {
                 }
             ]
         }
-
-        getCurrencies().then(currencies => {
-            const options = currencies.map(c => ({
-                description: c.currency,
-                key: c.currency,
-                text: c.name,
-                value: c.currency,
-            }))
-            this.rxCurrencyOptions.next(options)
-        })
 
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)

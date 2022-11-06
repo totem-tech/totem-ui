@@ -76,6 +76,10 @@ const TimekeepingDetails = props => {
                 title: textsCap.duration,
             },
             {
+                key: 'total_blocks',
+                title: textsCap.blockCount,
+            },
+            {
                 key: 'nr_of_breaks',
                 title: textsCap.numberOfBreaks,
             },
@@ -87,10 +91,6 @@ const TimekeepingDetails = props => {
                 key: '_end_block',
                 title: textsCap.finishedAt,
             },
-            // {
-            //     key: 'total_blocks',
-            //     title: textsCap.blockCount,
-            // },
             // {
             //     key: 'start_block',
             //     title: textsCap.blockStart,

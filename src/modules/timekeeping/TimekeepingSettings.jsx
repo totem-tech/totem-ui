@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React from 'react'
+import FormBuilder from '../../components/FormBuilder'
 import FormInput from '../../components/FormInput'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
-import { isArr } from '../../utils/utils'
-import { rxTimeConversion, settings } from './timekeeping'
+import { objWithoutKeys } from '../../utils/utils'
+import { rxDurtionPreference, durationPreferences } from './timekeeping'
 
 let textsCap = {
     title: 'time conversion setting',
@@ -16,50 +16,58 @@ let textsCap = {
 }
 textsCap = translated(textsCap, true)[1]
 
-export const TimekeepingSettings = ({ asDropdown = true }) => {
+const TimekeepingSettings = props => {
+    const { asDropdown = true } = props
     const options = [
         {
             label: textsCap.labelBlocks,
-            value: 'blocks',
+            value: durationPreferences.blocks,
         },
         {
             label: textsCap.labelDuration,
-            value: 'hh:mm:ss',
-        },
-        {
-            label: textsCap.labelHours30,
-            value: 'hours-30',
-        },
-        {
-            label: textsCap.labelHours15,
-            value: 'hours-15',
-        },
-        {
-            label: textsCap.labelHours10,
-            value: 'hours-10',
+            value: durationPreferences.hhmmss,
         },
         {
             label: textsCap.labelHours5,
-            value: 'hours-5',
+            value: durationPreferences.hhmm05,
+        },
+        {
+            label: textsCap.labelHours10,
+            value: durationPreferences.hhmm10,
+        },
+        {
+            label: textsCap.labelHours15,
+            value: durationPreferences.hhmm15,
+        },
+        {
+            label: textsCap.labelHours30,
+            value: durationPreferences.hhmm30,
         },
     ]
 
     return (
-        <FormInput {...{
-            label: <b>{textsCap.title} </b>,
-            multiple: false,
-            name: 'timeConversion',
-            options,
-            rxValue: rxTimeConversion,
-            type: 'checkbox-group',
-            ...asDropdown  && {
-                options: options.map(({ label, value }) => ({
-                    text: label,
-                    value,
-                })),
-                selection: true,
-                type: 'dropdown',
-            },
+        <FormBuilder {...{
+            ...objWithoutKeys(props, ['asDropdown']),
+            closeText: null,
+            closeOnEscape: true,
+            inputs: [{
+                label: <b>{textsCap.title} </b>,
+                multiple: false,
+                name: 'timeConversion',
+                options,
+                rxValue: rxDurtionPreference,
+                type: 'checkbox-group',
+                ...asDropdown  && {
+                    options: options.map(({ label, value }) => ({
+                        text: label,
+                        value,
+                    })),
+                    selection: true,
+                    type: 'dropdown',
+                    },
+            }],
+            submitText: null,
         }} />
     )
 }
+export default React.memo(TimekeepingSettings)
