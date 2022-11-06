@@ -153,7 +153,6 @@ export default [
     "./src/services/queue.js",
     "./src/services/react.js",
     "./src/services/sidebar.js",
-    "./src/services/storage.js",
     "./src/services/toast.jsx",
     "./src/services/window.js",
     "./src/views/PageUtilitiesView.jsx",

@@ -1,4 +1,4 @@
-import storage from "../../services/storage"
+import storage from '../../utils/storageHelper'
 import { isDefined } from '../../utils/utils'
 import { query as queryHelper } from '../../services/blockchain'
 import client from '../chat/ChatClient'

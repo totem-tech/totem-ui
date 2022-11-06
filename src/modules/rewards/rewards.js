@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { generateHash, isArr, isDefined } from "../../utils/utils"
-import { subjectAsPromise, unsubscribe, useRxSubject } from "../../services/react"
-import storage from "../../services/storage"
-import client, { getUser, rxIsLoggedIn } from "../chat/ChatClient"
-import { rxNewNotification } from "../notification/notification"
+import storage from '../../utils/storageHelper'
+import { generateHash, isArr, isDefined } from '../../utils/utils'
+import { subjectAsPromise, unsubscribe, useRxSubject } from '../../services/react'
+import client, { getUser, rxIsLoggedIn } from '../chat/ChatClient'
+import { rxNewNotification } from '../notification/notification'
 
 const moduleKey = 'rewards'
 const notificationType = 'rewards'
