@@ -128,7 +128,12 @@ export const MainContentItem = React.memo(_MainContentItem)
 
 const _SidebarMenuItem = props => {
 	let { name, rxTrigger, sidebarCollapsed, style } = props
-	const [item, setItem] = useRxSubject(rxTrigger, () => getItem(name))
+	const [item, setItem] = useRxSubject(
+		rxTrigger,
+		() => getItem(name),
+		{},
+		true,
+	)
 	let {
 		active,
 		anchorStyle,
@@ -163,7 +168,7 @@ const _SidebarMenuItem = props => {
 						return scrollTo(name)
 					}
 					const { active } = toggleActive(name)
-					setItem({ ...item, active })
+					setItem({ active })
 				},
 				onHold: e => e.stopPropagation() | setActiveExclusive(name, true),
 				style: {

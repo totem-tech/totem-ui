@@ -283,7 +283,7 @@ export default function GetingStarted() {
 				</div>
 				{texts.supportChatDesc2}
 				<div style={{ textAlign: isMobile ? 'center' : undefined }}>
-					{socialLinks.map(([anchor, icon]) => (
+					{socialLinks.map(([anchor, icon], i) => (
 						<a {...{
 							...anchor,
 							children: (
@@ -296,6 +296,7 @@ export default function GetingStarted() {
 									style: styles.appIconStyle,
 								}} />
 							),
+							key: i,
 							target: '_blank',
 						}} />
 					))}
@@ -330,17 +331,11 @@ const handleRegister = (redirectTo) => showForm(
 	{
 		closeOnSubmit: true,
 		silent: false,
-		onSubmit: ok => {
-			if (!ok) return
-			setToast({
-				content: texts.registrationSuccess,
-				status: 'success',
-			})
-
-			// open rewards module
-			// setActive('rewards')
-		},
-		values: { redirectTo }
+		onSubmit: ok => ok && setToast({
+			content: texts.registrationSuccess,
+			status: 'success',
+		}),
+		values: { redirectTo },
 	},
 )
 

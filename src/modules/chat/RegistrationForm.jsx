@@ -2,13 +2,14 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
-import { isFn } from '../../utils/utils'
+import { isBool, isFn, isObj } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import { stepIndexes, setActiveStep } from '../gettingStarted/GettingStarted'
 import { rxSelected } from '../identity/identity'
 import client, { referralCode, rxIsRegistered } from './ChatClient'
+import { iUseReducer } from '../../utils/reactHelper'
 
 const textsCap = translated({
     alreadyRegistered: 'you have already registered!',
@@ -38,10 +39,14 @@ export const inputNames = {
 export default function RegistrationForm(props) {
     const [state, setState] = useRxSubject(
         rxIsRegistered,
-        isRegistered => ({
-            inputs: getInputs(props, isRegistered),
-            submitDisabled: { isRegistered },
-        }),
+        isRegistered => isObj(isRegistered)
+            ? isRegistered // state update using setState
+            : { // value of isRegistered changed
+                inputs: getInputs(props, isRegistered),
+                submitDisabled: { isRegistered },
+            },
+        {},
+        true,
     )
 
     return (
@@ -111,23 +116,6 @@ const getInputs = (props, isRegistered) => {
         {
             disabled: isRegistered,
             label: textsCap.userId,
-            // message: {
-            //     content: isRegistered ? '' : (
-            //         <div>
-            //             {textsCap.userIdCriteria}
-            //             <ul>
-            //                 <li>{textsCap.userIdCriteria1}</li>
-            //                 <li>{textsCap.userIdCriteria2}</li>
-            //                 <li>{textsCap.userIdCriteria3}</li>
-            //             </ul>
-            //         </div>
-            //     ),
-            //     header: !isRegistered ? '' : textsCap.alreadyRegistered,
-            //     icon: isRegistered,
-            //     status: isRegistered ? 'error' : 'warning',
-            //     style: { textAlign: 'left' },
-            // },
-            // minLength: 0,
             multiple: false,
             name: inputNames.userId,
             newUser: true,
@@ -165,7 +153,12 @@ const handleSubmit = (props, setState) => async (_, values) => {
     const address = rxSelected.value
 
     setState({ submitInProgress: true })
-    const err = await client.register.promise(userId, secret, address, referredBy)
+    const err = await client.register.promise(
+        userId,
+        secret,
+        address,
+        referredBy,
+    )
     const success = !err
     const message = {
         content: err,
