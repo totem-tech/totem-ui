@@ -585,6 +585,8 @@ BackupForm.defaultProps = {
  * @param	{Boolean} criticalOnly	  (optional) warn only if one or more critical data (eg: user creds, identities) 
  * 									  is not backed up.
  * @param 	{Boolean} allowPageReload (optional) whether to allow BackupForm to reload to page in order to prompt user to save password by the password manager
+ * 
+ * @returns	{Boolean}	indicates whether a backup was downloaded & confirmed. `Undefined` means backup not required.
  */
 BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) => {
 	const { id, fileBackupTS } = getUser() || {}
