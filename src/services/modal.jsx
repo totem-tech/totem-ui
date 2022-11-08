@@ -92,6 +92,7 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
         open,
         onCancel,
         onConfirm,
+        subheader,
     } = confirmProps
     if (confirmButton !== null && !confirmButton) {
         // use default translated text for confirm button
@@ -147,11 +148,26 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
     } else if (confirmButton) {
         confirmButton = attachRef(confirmButton)
     }
+    if (subheader) {
+        header = (
+            <div className='header'>
+                {header}
+                <div style={{
+                    fontWeight: 'initial',
+                    fontSize: '75%',
+                    lineHeight: 1,
+                    color: 'grey',
+                }}>
+                    {subheader}
+                </div>
+            </div>
+        )
+    }
 
     return add(
         modalId,
         <IConfirm {...{
-            ...objWithoutKeys(confirmProps, ['contentProps']),
+            ...objWithoutKeys(confirmProps, ['contentProps', 'subheader']),
             cancelButton,
             className: className([
                 'confirm-modal',
@@ -166,9 +182,9 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                         'content',
                         contentProps.className,
                     ]),
-                    style: {}
                 }} />
             ),
+            header,
             open: !isBool(open) || open,
             onCancel: (...args) => {
                 closeModal(modalId)
