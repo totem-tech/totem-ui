@@ -206,22 +206,21 @@ export default function BackupForm(props) {
 									{textsCap.backupSuccessContent}
 									<br />
 									<br />
-									<div style={{ color: 'red' }}>
-										<big>
-											<ButtonDelayed El='span'>
-												{textsCap.reloadingPage}
-											</ButtonDelayed>
-										</big>
-									</div>
+									{reload && (
+										<div style={{ color: 'red' }}>
+											<big>
+												<ButtonDelayed El='span'>
+													{textsCap.reloadingPage}
+												</ButtonDelayed>
+											</big>
+										</div>
+									)}
 								</div>
 							),
 							header: textsCap.backupSuccessHeader,
 							status: statuses.SUCCESS,
 						}
-						rxState.next({
-							message,
-							success: true,
-						})
+						rxState.next({ message, success: true })
 						// additionally show toast in case form message is out of sight (ie: on mobile)
 						setToast(message, 5000, 'BackupForm')
 						isFn(onSubmit) && onSubmit(true, values)
@@ -588,7 +587,7 @@ BackupForm.defaultProps = {
  * 
  * @returns	{Boolean}	indicates whether a backup was downloaded & confirmed. `Undefined` means backup not required.
  */
-BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) => {
+BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, closeOnSubmit = false) => {
 	const { id, fileBackupTS } = getUser() || {}
 	const query = { fileBackupTS: undefined }
 	const warnContacts = contact.search(query)
@@ -690,6 +689,7 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true) =
 	const backupAsPromise = proceed => proceed
 		&& new Promise(resolve => {
 			showForm(BackupForm, {
+				closeOnSubmit,
 				onClose: () => resolve(false),
 				onSubmit: ok => resolve(!!ok),
 				// prevent reloading page?
