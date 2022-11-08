@@ -2,10 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
-import chatClient, {
-	rxIsLoggedIn,
-} from '../../../utils/chatClient'
+import chatClient, { rxIsLoggedIn } from '../../../utils/chatClient'
 import { bytesToHex } from '../../../utils/convert'
+import { rxForeUpdateCache } from '../../../utils/DataStorage'
 import { translated } from '../../../utils/languageHelper'
 import { keyring } from '../../../utils/polkadotHelper'
 import PromisE from '../../../utils/PromisE'
@@ -29,7 +28,11 @@ import identities, {
 	rxSelected,
 } from '../../identity/identity'
 import { rxPartners } from '../../partner/partner'
-import { generateTweet, getRewardIdentity, statusCached } from './claimKapex'
+import {
+	generateTweet,
+	getRewardIdentity,
+	statusCached,
+} from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
 import BackupForm from '../../gettingStarted/BackupForm'
 
@@ -217,12 +220,10 @@ function ClaimKAPEXForm(props) {
 						message: null,
 						submitInProgress: true,
 					})
-					const backupDone = await BackupForm.checkAndWarn(true)
+					const backupDone = await BackupForm.checkAndWarn(true, false)
 					if (backupDone === false) throw new Error(textsCap.errWarnBackup)
-					
 
 					await chatClient.rewardsClaimKAPEX.promise(values)
-
 					status.submitted = true
 					statusCached(status)
 					// setStatus(status)
@@ -241,6 +242,8 @@ function ClaimKAPEXForm(props) {
 							</a>
 						</div>
 					)
+
+					rxForeUpdateCache.next(true)
 				} catch (err) {
 					message.status = statuses.ERROR
 					message.content = `${err}`
