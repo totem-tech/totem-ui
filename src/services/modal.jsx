@@ -188,17 +188,17 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
  * @summary opens a confirm modal and returns a promise that resolves with `true` or `false`
  *          indicating user accepted or rejected respectively
  * 
- * @param   {Object|String} props 
+ * @param   {Object|String} confirmProps 
  * @param   {...any}        args    see `confirm` for rest of the accepted arguments
  * 
  * @returns {Promise}       promise will reject only if there was an uncaught error 
  */
-export const confirmAsPromise = (props, ...args) => new PromisE((resolve, reject) => {
+export const confirmAsPromise = (confirmProps, ...args) => new PromisE((resolve, reject) => {
     try {
-        props = !isStr(props)
-            ? props
-            : { content: props }
-        const { onCancel, onConfirm } = props
+        confirmProps = !isStr(confirmProps)
+            ? confirmProps
+            : { content: confirmProps }
+        const { onCancel, onConfirm } = confirmProps
         const resolver = (defaultValue = false, func) => async (...args) => {
             let value = isFn(func)
                 ? await func(...args)
@@ -208,9 +208,9 @@ export const confirmAsPromise = (props, ...args) => new PromisE((resolve, reject
                 : defaultValue
             resolve(value)
         }
-        props.onCancel = resolver(false, onCancel)
-        props.onConfirm = resolver(true, onConfirm)
-        confirm(props, ...args)
+        confirmProps.onCancel = resolver(false, onCancel)
+        confirmProps.onConfirm = resolver(true, onConfirm)
+        confirm(confirmProps, ...args)
     } catch (err) {
         reject(err)
     }

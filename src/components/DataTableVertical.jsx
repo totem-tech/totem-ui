@@ -1,9 +1,13 @@
 import React from 'react'
-import { isFn, isMap, isObj } from '../utils/utils'
+import { className, isFn, isMap, isObj } from '../utils/utils'
 import DataTable from './DataTable'
 
 const DataTableVertical = (props) => {
-    let { columns = [], data: items = [] } = props
+    let {
+        columns = [],
+        data: items = [],
+        tableProps = {},
+    } = props
     if (isObj(items)) items = [items]
     columns = columns.filter(x => !!x && !x.hidden)
 
@@ -50,7 +54,11 @@ const DataTableVertical = (props) => {
             searchable: false,
             sortBy: false,
             tableProps: {
-                className: 'vertical',
+                className: className([
+                    tableProps.className,
+                    'vertical',
+                ]),
+                ...tableProps,
             }
         }} />
     )

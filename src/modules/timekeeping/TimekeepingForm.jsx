@@ -9,7 +9,7 @@ import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder
 // services
 import { query as queryBlockchain, getCurrentBlock } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { confirm, closeModal, showForm } from '../../services/modal'
+import { confirm, closeModal, showForm, confirmAsPromise } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { openStatuses, query as queryProject } from '../activity/activity'
@@ -17,6 +17,7 @@ import identities, { getSelected } from '../identity/identity'
 import { getAddressName } from '../partner/partner'
 import { timerFormValues, getProjects, NEW_RECORD_HASH, query, queueables, statuses } from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
+import DataTableVertical from '../../components/DataTableVertical'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -175,34 +176,55 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         status: 'loading',
         icon: true
     }
+    const content = (
+        <DataTableVertical {...{
+            columns: [
+                { title: textsCap.submit, key: 'submit'},
+                { title: textsCap.activity, key: 'activity'},
+                { title: textsCap.duration, key: 'duration'},
+                { title: textsCap.numberOfBlocks, key: 'numberOfBlocks'},
+                { title: textsCap.numberOfBreaks, key: 'numberOfBreaks'},
+                { title: textsCap.blockStart, key: 'blockStart'},
+                { title: textsCap.blockEnd, key: 'blockEnd'},
+            ],
+            data: [{
+                submit: getAddressName(workerAddress),
+                activity: projectName,
+                duration: duration,
+                numberOfBlocks: blockCount,
+                numberOfBreaks: breakCount,
+                blockStart: blockStart,
+                blockEnd: blockEnd,
+            }],
+            // remove spacing around content
+            style: {
+                margin: '-36px -21px',
+                padding: 0,
+            }
+        }} />
+    )
 
-    this.confirmId = showForm(FormBuilder, {
+    const proceed = await confirmAsPromise({
+        cancelButton: textsCap.goBack,
+        confirmButton: (
+            <Button {...{
+                content: textsCap.proceed,
+                positive: true,
+            }} />
+        ),
+        content,
         header: `${textsCap.submitTime}?`,
-        inputs: [
-            [textsCap.submit, getAddressName(workerAddress)],
-            [textsCap.activity, projectName],
-            [textsCap.duration, duration],
-            [textsCap.numberOfBlocks, blockCount],
-            [textsCap.numberOfBreaks, breakCount],
-            [textsCap.blockStart, blockStart],
-            [textsCap.blockEnd, blockEnd],
-        ].map(x => ({
-            readOnly: true,
-            label: x[0],
-            name: x[0],
-            type: 'text',
-            value: x[1]
-        })),
-        onSubmit: () => {
-            closeModal(this.confirmId)
-            // send task to queue service
-            addToQueue(queueProps)
-            this.setState({ closeText: textsCap.close, message, submitDisabled: true })
-        },
-        size: 'tiny',
+        size: 'mini',
         subheader: textsCap.submitConfirmationMsg,
-        submitText: textsCap.proceed,
-        closeText: textsCap.goBack,
+    })
+    // send task to queue service
+    if (!proceed) return
+
+    addToQueue(queueProps)
+    this.setState({
+        closeText: textsCap.close,
+        message,
+        submitDisabled: true,
     })
 }
 
@@ -574,7 +596,7 @@ export default class TimekeepingForm extends Component {
         const closeBtn = (
             <Button
                 content={closeText || closeTextP}
-                size="massive"
+                size='massive'
                 style={btnStyle}
                 onClick={(e, d) => {
                     const { values: { inprogress } } = this.state
@@ -591,24 +613,41 @@ export default class TimekeepingForm extends Component {
                 }}
             />
         )
+        const icon = {
+            loading: inprogress,
+            name: !inprogress
+                ? done
+                    ? 'thumbs up'
+                    : 'play'
+                : 'clock outline',
+            // style: { background: 'transparent' },
+        }
         const submitBtn = (
-            <Button
-                icon
-                disabled={(manualEntry || stopped) && !durationValid ? true : undefined}
-                labelPosition={!!inprogress ? "right" : undefined}
-                onClick={() => inprogress ? this.handleStop() : (done ? this.handleSubmit() : this.handleStart())}
-                positive={!inprogress}
-                color={inprogress ? 'grey' : undefined}
-                size="massive"
-                style={btnStyle}
-            >
-                {!inprogress ? (done ? textsCap.submit : textsCap.start) : (
-                    <React.Fragment>
-                        <Icon name="clock outline" loading={true} style={{ background: 'transparent' }} />
-                        {textsCap.stop}
-                    </React.Fragment>
-                )}
-            </Button>
+            <Button {...{
+                content: !inprogress
+                    ? done
+                        ? textsCap.submit
+                        : textsCap.start
+                    : textsCap.stop,
+                icon,
+                disabled: (manualEntry || stopped) && !durationValid
+                    ? true
+                    : undefined,
+                // labelPosition: !!inprogress
+                //     ? 'right'
+                //     : undefined,
+                onClick: () => inprogress
+                    ? this.handleStop()
+                    : done
+                        ? this.handleSubmit()
+                        : this.handleStart(),
+                positive: !inprogress,
+                color: inprogress
+                    ? 'grey'
+                    : undefined,
+                size: 'massive',
+                style: btnStyle,
+            }} />
         )
 
         return (
@@ -635,7 +674,7 @@ TimekeepingForm.defaultProps = {
     header: textsCap.timekeeping,
     // prevents multiple modal being open
     modalId: 'TimekeepingForm',
-    size: 'tiny'
+    size: 'tiny',
 }
 
 TimekeepingForm.propTypes = {
