@@ -99,7 +99,7 @@ export default [
     "./src/modules/identity/IdentityList.jsx",
     "./src/modules/identity/IdentityRequestForm.jsx",
     "./src/modules/identity/IdentityShareForm.jsx",
-    "./src/modules/identity/Transfer.jsx",
+    "./src/modules/identity/TransferFundsForm.jsx",
     "./src/modules/identity/identity.js",
     "./src/modules/identity/notificationHandlers.jsx",
     "./src/modules/location/LocationForm.jsx",

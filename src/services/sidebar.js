@@ -14,7 +14,7 @@ import PartnerList from '../modules/partner/PartnerList'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import TaskView from '../modules/task/TaskView'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
-import TransferForm from '../modules/identity/Transfer'
+import TransferFundsForm from '../modules/identity/TransferFundsForm'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 // import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
@@ -272,7 +272,7 @@ export const sidebarItems = [
         subHeader: textsCap.tasksSubheader,
     },
     {
-        content: TransferForm,
+        content: TransferFundsForm,
         contentProps: { style: { maxWidth: 450 } },
         icon: 'send',
         header: textsCap.transferHeader,

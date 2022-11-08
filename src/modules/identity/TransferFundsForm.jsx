@@ -70,7 +70,7 @@ const textsCap = translated({
 // notification type
 const TRANSFER_TYPE = 'transfer'
 
-export default class TransferForm extends Component {
+export default class TransferFundsForm extends Component {
     constructor(props) {
         super(props)
 
@@ -128,7 +128,6 @@ export default class TransferForm extends Component {
                     label: textsCap.toLabel,
                     name: this.names.to,
                     noResultsMessage: textsCap.partnerEmptyMsg1,
-                    rxValue: new BehaviorSubject(),
                     onAddItem: (_, { value: address }) => {
                         // in case, if partner is not added or user cancels modal makes sure to remove the item
                         const { inputs } = this.state
@@ -155,6 +154,7 @@ export default class TransferForm extends Component {
                     options: [],
                     placeholder: textsCap.partnerPlaceholder,
                     required: true,
+                    rxValue: new BehaviorSubject(),
                     search: ['text', 'value'],
                     selection: true,
                     selectOnBlur: false,
@@ -282,8 +282,10 @@ export default class TransferForm extends Component {
 
     clearForm = () => {
         const { inputs } = this.state
-        fillValues(inputs, { to: null, amount: '' }, true)
-        this.setState({ inputs })
+        const toIn = findInput(inputs, this.names.to)
+        const amtIn = findInput(inputs, this.names.amountReceived)
+        toIn.rxValue.next('')
+        amtIn.rxValue.next('')
     }
 
     getTxFeeEl = feeAmount => (
@@ -428,7 +430,7 @@ export default class TransferForm extends Component {
             {
                 description: description.join('\n'),
                 title: textsCap.queueTitle,
-                next: !userId ? null : {
+                next: userId && {
                     args: [
                         [userId],
                         TRANSFER_TYPE,
@@ -468,17 +470,28 @@ export default class TransferForm extends Component {
         let header = textsCap.submitInprogressHeader
         let status = 'loading'
         if (!submitInProgress) {
-            content = err ? `${err}` : description && (
-                <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
-                    {description.map((content, i) => <li key={i}>{content}</li>)}
-                </ul>
-            )
-            header = err ? textsCap.submitErrorHeader : textsCap.submitSuccessHeader
-            status = err ? 'error' : 'success'
+            content = err
+                ? `${err}`
+                : description && (
+                    <ul style={{ listStyleType: 'none', margin: 0, paddingLeft: 0 }}>
+                        {description.map((content, i) => <li key={i}>{content}</li>)}
+                    </ul>
+                )
+            header = err
+                ? textsCap.submitErrorHeader
+                : textsCap.submitSuccessHeader
+            status = err
+                ? 'error'
+                : 'success'
         }
         // submitDisabled.submission = submitInProgress
         this.setState({
-            message: { content, header, icon: true, status },
+            message: {
+                content,
+                header,
+                icon: true,
+                status,
+            },
             submitDisabled,
             submitInProgress,
         })
@@ -486,7 +499,7 @@ export default class TransferForm extends Component {
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-TransferForm.propTypes = {
+TransferFundsForm.propTypes = {
     values: PropTypes.shape({
         amount: PropTypes.number,
         from: PropTypes.string,
@@ -494,7 +507,7 @@ TransferForm.propTypes = {
         currency: PropTypes.string,
     })
 }
-TransferForm.defaultProps = {
+TransferFundsForm.defaultProps = {
     inputsDisabled: ['from'],
     header: textsCap.queueTitle,
     size: 'tiny',
