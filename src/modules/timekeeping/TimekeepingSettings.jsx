@@ -56,14 +56,14 @@ const TimekeepingSettings = props => {
                 options,
                 rxValue: rxDurtionPreference,
                 type: 'checkbox-group',
-                ...asDropdown  && {
+                ...asDropdown && {
                     options: options.map(({ label, value }) => ({
                         text: label,
                         value,
                     })),
                     selection: true,
                     type: 'dropdown',
-                    },
+                },
             }],
             submitText: null,
         }} />

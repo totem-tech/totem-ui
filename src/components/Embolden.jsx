@@ -18,7 +18,7 @@ import { isStr } from '../utils/utils'
  * 
  * @returns {[]Element}
  */
-const Embolden = ({ children, regex = /"[^"]+"/g }, keepQuotes = true) => {
+const Embolden = ({ children, keepQuotes = true, regex = /"[^"]+"/g }) => {
     if (isValidElement(children)) return children
     
     children = isStr(children)
@@ -38,24 +38,27 @@ const Embolden = ({ children, regex = /"[^"]+"/g }, keepQuotes = true) => {
             </b>
         )
 		matches.forEach((quoted, i) => {
-			arr = arr.map(s =>
-                `${s}`
-                    .split(quoted)
-                    .map((x, j) =>
-                        j === 0
-                            ? [x]
-                            : [replacements[i], x])
+            arr = arr.map(s =>
+                isValidElement(s) // already replaced
+                    ? s 
+                    : `${s}`
+                        .split(quoted)
+                        .map((x, j) =>
+                            j === 0
+                                ? [x]
+                                : [replacements[i], x])
             )
                 // double flattening required due to 3-dimentional Array
                 .flat().flat()
 		})
     }
-	return arr.map((children, i) =>
+    arr = arr.map((children, i) =>
         <React.Fragment {...{
             children,
             key: i
         }} />
     )
+	return arr
 }
 
 export default React.memo(Embolden)
