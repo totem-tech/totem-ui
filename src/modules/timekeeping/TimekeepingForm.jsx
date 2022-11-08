@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
 import { deferred, hasValue, isBool, isDefined, isFn, isValidNumber, objCopy } from '../../utils/utils'
-import { BLOCK_DURATION_SECONDS, BLOCK_DURATION_REGEX, durationToSeconds, secondsToDuration } from '../../utils/time'
+import { BLOCK_DURATION_SECONDS, BLOCK_DURATION_REGEX, durationToSeconds, secondsToDuration, blockNumberToTS } from '../../utils/time'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 // services
@@ -26,7 +26,7 @@ const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration)
     ? 0
     : parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
 
-const textsCap = translated({
+let textsCap = {
     activity: 'activity',
     close: 'close',
     duration: 'duration',
@@ -52,6 +52,7 @@ const textsCap = translated({
     cancelWarning: 'you have a running timer. Would you like to stop and exit?',
     checkingProjectStatus: 'checking activity status...',
     errRejectedDurationUnchanged: 'rejected record requires duration change in order to re-sumbit',
+    finishedAt: 'finished at',
     goBack: 'go Back',
     inactiveWorkerHeader1: 'you are not part of this Team! Request an invitation',
     inactiveWorkerHeader2: 'action required',
@@ -77,6 +78,7 @@ const textsCap = translated({
     selectAProject: 'select an Activity',
     selectActiveProject: 'please select an active Activity',
     saveAsDraft: 'save as draft',
+    startedAt: 'started at',
     submitForApproval: 'submit for approval',
     submitConfirmationMsg: 'please verify the following information and click "Proceed" to submit your time record',
     submitTime: 'submit time',
@@ -86,7 +88,8 @@ const textsCap = translated({
     transactionFailed: 'blockchain transaction failed!',
     updateFormHeader: 'update Record',
     workerBannedMsg: 'permission denied',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 
 const handleValidateDuration = (_1, _2, values) => {
     const { duration, manualEntry } = values
@@ -176,25 +179,26 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         status: 'loading',
         icon: true
     }
+    const currentBlock = await getCurrentBlock()
     const content = (
         <DataTableVertical {...{
             columns: [
-                { title: textsCap.submit, key: 'submit'},
+                { title: textsCap.identity, key: 'identity'},
                 { title: textsCap.activity, key: 'activity'},
                 { title: textsCap.duration, key: 'duration'},
                 { title: textsCap.numberOfBlocks, key: 'numberOfBlocks'},
                 { title: textsCap.numberOfBreaks, key: 'numberOfBreaks'},
-                { title: textsCap.blockStart, key: 'blockStart'},
-                { title: textsCap.blockEnd, key: 'blockEnd'},
+                { title: textsCap.startedAt, key: 'startedAt'},
+                { title: textsCap.finishedAt, key: 'finishedAt'},
             ],
             data: [{
-                submit: getAddressName(workerAddress),
+                identity: getAddressName(workerAddress),
                 activity: projectName,
                 duration: duration,
                 numberOfBlocks: blockCount,
                 numberOfBreaks: breakCount,
-                blockStart: blockStart,
-                blockEnd: blockEnd,
+                startedAt: blockNumberToTS(currentBlock, blockStart),
+                finishedAt: blockNumberToTS(currentBlock, blockEnd),
             }],
             // remove spacing around content
             style: {
@@ -656,12 +660,14 @@ export default class TimekeepingForm extends Component {
                 ...this.state,
                 closeText: closeBtn,
                 inputs,
-                message: !inprogress ? message : {
-                    content: `${textsCap.timerRunningMsg1} ${textsCap.timerRunningMsg2}`,
-                    header: textsCap.timerStarted,
-                    icon: true,
-                    status: 'info'
-                },
+                message: !inprogress
+                    ? message
+                    : {
+                        content: `${textsCap.timerRunningMsg1} ${textsCap.timerRunningMsg2}`,
+                        header: textsCap.timerStarted,
+                        icon: true,
+                        status: 'info'
+                    },
                 onChange: this.handleValuesChange,
                 submitText: submitBtn
             }} />
