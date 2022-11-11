@@ -284,10 +284,10 @@ export default class IdentityForm extends Component {
 		]
 		this.state = {
 			closeText: autoSave
-				? null
+				? null // hide close button
 				: undefined,
 			header: this.header,
-			subheader: autoSave
+			subheader: this.doUpdate && autoSave
 				? textsCap.autoSaved
 				: undefined,
 			message,
@@ -386,6 +386,7 @@ export default class IdentityForm extends Component {
 							e.preventDefault()
 							e.stopPropagation()
 							showForm(LocationForm, {
+								autoUpdate: true,
 								id,
 								values: l,
 							})
@@ -465,7 +466,9 @@ export default class IdentityForm extends Component {
 			: undefined
 		this.setState({
 			inputs,
-			header: restore ? textsCap.headerRestore : this.header,
+			header: restore
+				? textsCap.headerRestore
+				: this.header,
 		})
 		if (restore) {
 			uriInput.rxValue.next('')
@@ -603,7 +606,7 @@ IdentityForm.propTypes = {
 	}),
 }
 IdentityForm.defaultProps = {
-	autoSave: false,
+	autoSave: true,
 	closeOnSubmit: true,
 	size: 'tiny',
 	warnBackup: true,

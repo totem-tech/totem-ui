@@ -4,6 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 import storage from '../../utils/storageHelper'
 import {
 	arrSort,
+	className,
 	deferred,
 	isBool,
 	isFn,
@@ -18,6 +19,7 @@ import { get, remove, set } from './location'
 import { statuses } from '../../components/Message'
 import FormInput from '../../components/FormInput'
 import { Reveal } from '../../components/buttons'
+import { useRxSubject } from '../../utils/reactHelper'
 
 const textsCap = translated(
 	{
@@ -106,6 +108,7 @@ export default class LocationForm extends Component {
 			'sx',
 			'xk',
 		].map(x => x.toUpperCase())
+		const rxCountryDDOpen = new BehaviorSubject(false)
 		const inputs = [
 			{
 				hidden: true,
@@ -203,23 +206,29 @@ export default class LocationForm extends Component {
 							<FormInput {...{
 								label: textsCap.countryLabel,
 								name: inputNames.countryCode,
+								onClose: () => rxCountryDDOpen.next(false),
+								onOpen: () => rxCountryDDOpen.next(true),
 								options: arrSort(
 									storage.countries.map(([_, c]) => ({
 										altspellings: c.altSpellings.join(' '),
-										// description: c.name,
+										description: c.name,
 										flag: !noFlags.includes(c.code)
 											? c.code.toLowerCase()
 											: '',
 										key: c.code,
 										name: c.name,
-										// text: c.code,
-										text: (
-											<Reveal {...{
-												content: c.code,
-												contentHidden: c.name,
-												El: 'span',
-											}} />
-										),
+										text: c.code,
+										// text: (
+										// 	<Reveal {...{
+										// 		content: c.code,
+										// 		contentHidden: ` - ${c.name}`,
+										// 		El: 'div',
+										// 		style: {
+										// 			display: 'inline-block',
+										// 			whiteSpace: 'pre-wrap'
+										// 		},
+										// 	}} />
+										// ),
 										value: c.code,
 									})),
 									'text'
@@ -422,5 +431,5 @@ LocationForm.propTypes = {
 }
 LocationForm.defaultProps = {
 	closeOnSubmit: true,
-	size: 'mini', // modal size
+	size: 'tiny', // modal size
 }

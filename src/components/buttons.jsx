@@ -217,6 +217,7 @@ export const Reveal = React.memo(function Reveal(props){
 		content = children,
 		contentHidden,
 		defaultVisible,
+		defer,
 		El,
 		exclusive,
 		ignoreAttributes,
@@ -234,7 +235,12 @@ export const Reveal = React.memo(function Reveal(props){
 	} = props
 	const [visible, setVisible] = useState(defaultVisible)
 	const getContent = useCallback(c => isFn(c) ? c() : c)
-	const _setVisible = useCallback(deferred(setVisible, 200), [setVisible])
+	const _setVisible = useCallback(
+		defer > 0 
+			? deferred(setVisible, defer)
+			: setVisible,
+		[setVisible]
+	)
 	const triggerEvent = useCallback((func, show) => async (...args) => {
 		const _ready = await (isFn(ready) ? ready() : ready)
 		if (!_ready) return
@@ -249,7 +255,12 @@ export const Reveal = React.memo(function Reveal(props){
 			? getContent(contentHidden)
 			: [
 				<span key='c'>{getContent(content)}</span>,
-				<span key='ch' onClick={exclusive && (e => e.preventDefault() | e.stopPropagation())}>
+				<span {...{
+					key: 'ch',
+					onClick: !exclusive
+						? undefined
+						: (e => e.preventDefault() | e.stopPropagation())
+				}}>
 					{getContent(contentHidden)}
 				</span>
 			]
@@ -291,6 +302,7 @@ Reveal.propTypes = {
 	contentHidden: PropTypes.any.isRequired,
 	// initial state of `hiddenContent`
 	defaultVisible: PropTypes.any,
+	defer: PropTypes.number,
 	El: PropTypes.oneOfType([
 		PropTypes.elementType,
 		PropTypes.func,
@@ -313,6 +325,7 @@ Reveal.propTypes = {
 }
 Reveal.defaultProps = {
 	defaultVisible: false,
+	defer: 200,
 	El: 'span',
 	exclusive: true,
 	ignoreAttributes: [

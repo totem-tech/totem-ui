@@ -1,6 +1,6 @@
 import React, { Component, useState } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, defer } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
 // utils
 import { ss58Decode } from '../../utils/convert'
@@ -113,7 +113,7 @@ export default class TransferFundsForm extends Component {
                         }} />
                     ),
                     name: this.names.from,
-                    onChange: this.handleCurrencyReceivedChange,
+                    onChange: this.handleCurrencyChange,
                     options: [],
                     required: true,
                     rxValue: this.rxAddress,
@@ -179,7 +179,7 @@ export default class TransferFundsForm extends Component {
                         {
                             hidden: true,
                             name: this.names.currencySent,
-                            onChange: this.handleCurrencyReceivedChange,
+                            onChange: this.handleCurrencyChange,
                             rxValue: this.rxCurrencySent,
                         },
                     ],
@@ -223,7 +223,7 @@ export default class TransferFundsForm extends Component {
                         {
                             hidden: true,
                             name: this.names.currencyReceived,
-                            onChange: this.handleCurrencyReceivedChange,
+                            onChange: this.handleCurrencyChange,
                             rxValue: this.rxCurrencyReceived,
                         },
                     ],
@@ -396,7 +396,7 @@ export default class TransferFundsForm extends Component {
         this.setState({ inputs })
     }, 100)
 
-    handleCurrencyReceivedChange = deferred(async (_, values) => {
+    handleCurrencyChange = deferred(async (_, values) => {
         const { inputs } = this.state
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
@@ -408,8 +408,10 @@ export default class TransferFundsForm extends Component {
 
         if (!isValidNumber(amountReceived)) return
 
-        this.handleAmountReceivedChange(_, values)      
-    }, 500)
+        // this.handleAmountReceivedChange(_, values)
+        amountReceivedIn.rxValue.next('')
+        amountReceivedIn.rxValue.next(amountReceived)
+    }, 300)
 
     handleSubmit = (_, values) => {
         const amountReceived = values[this.names.amountReceived]
