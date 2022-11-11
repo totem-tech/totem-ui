@@ -76,9 +76,7 @@ export default class TransferFundsForm extends Component {
 
         this.names = {
             amountReceived: 'amountReceived',
-            amountReceivedGroup: 'amountReceivedGroup',
             amountSent: 'amountSent',
-            amountSentGroup: 'amountSentGroup',
             currencyReceived: 'currencyReceived',
             currencySent: 'currencySent',
             from: 'from',
@@ -162,29 +160,22 @@ export default class TransferFundsForm extends Component {
                     type: 'dropdown',
                 },
                 {
-                    name: this.names.amountSentGroup,
-                    inputs: [
-                        {
-                            ...asInlineLabel({
-                                // readOnly: true,
-                                rxValue: this.rxCurrencySent,
-                            }),
-                            label: textsCap.amountSentLabel,
-                            min: 0,
-                            name: this.names.amountSent,
-                            readOnly: true,
-                            rxValue: new BehaviorSubject(''),
-                            type: 'number',
-                        },
-                        {
-                            hidden: true,
-                            name: this.names.currencySent,
-                            onChange: this.handleCurrencyChange,
-                            rxValue: this.rxCurrencySent,
-                        },
-                    ],
-                    type: 'group',
-                    unstackable: true,
+                    ...asInlineLabel({
+                        // readOnly: true,
+                        rxValue: this.rxCurrencySent,
+                    }),
+                    label: textsCap.amountSentLabel,
+                    min: 0,
+                    name: this.names.amountSent,
+                    readOnly: true,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'number',
+                },
+                {
+                    hidden: true,
+                    name: this.names.currencySent,
+                    onChange: this.handleCurrencyChange,
+                    rxValue: this.rxCurrencySent,
                 },
                 {
                     content: undefined,
@@ -192,41 +183,34 @@ export default class TransferFundsForm extends Component {
                     type: 'html',
                 },
                 {
-                    name: this.names.amountReceivedGroup,
-                    type: 'group',
-                    unstackable: true,
-                    inputs: [
-                        {
-                            ...asInlineLabel({
-                                onCurrencies: currencies => {
-                                    this.rxCurrencies.next(currencies)
-                                    const { loading } = this.state
-                                    loading.currencies = false
-                                    this.setState({ loading })
-                                },
-                                rxValue: this.rxCurrencyReceived,
-                                upward: true,
-                            }),
-                            icon: 'money',
-                            iconPosition: 'left',
-                            label: textsCap.amountReceivedLabel,
-                            maxLength: 12,
-                            min: 0,
-                            name: this.names.amountReceived,
-                            onChange: this.handleAmountReceivedChange,
-                            onInvalid: this.handleAmountReceivedInvalid,
-                            placeholder: textsCap.amountReceivedPlaceholder,
-                            required: true,
-                            rxValue: new BehaviorSubject(''),
-                            type: 'number',
+                    ...asInlineLabel({
+                        onCurrencies: currencies => {
+                            this.rxCurrencies.next(currencies)
+                            const { loading } = this.state
+                            loading.currencies = false
+                            this.setState({ loading })
                         },
-                        {
-                            hidden: true,
-                            name: this.names.currencyReceived,
-                            onChange: this.handleCurrencyChange,
-                            rxValue: this.rxCurrencyReceived,
-                        },
-                    ],
+                        rxValue: this.rxCurrencyReceived,
+                        upward: true,
+                    }),
+                    icon: 'money',
+                    iconPosition: 'left',
+                    label: textsCap.amountReceivedLabel,
+                    maxLength: 12,
+                    min: 0,
+                    name: this.names.amountReceived,
+                    onChange: this.handleAmountReceivedChange,
+                    onInvalid: this.handleAmountReceivedInvalid,
+                    placeholder: textsCap.amountReceivedPlaceholder,
+                    required: true,
+                    rxValue: new BehaviorSubject(''),
+                    type: 'number',
+                },
+                {
+                    hidden: true,
+                    name: this.names.currencyReceived,
+                    onChange: this.handleCurrencyChange,
+                    rxValue: this.rxCurrencyReceived,
                 },
             ],
         }
@@ -316,14 +300,13 @@ export default class TransferFundsForm extends Component {
         const identity = getIdentity(from)
         const { inputs, submitDisabled } = this.state
         const amountIn = findInput(inputs, this.names.amountReceived)
-        const amountGroupIn = findInput(inputs, this.names.amountReceivedGroup)
         const amountSentIn = findInput(inputs, this.names.amountSent)
         const txFeeIn = findInput(inputs, this.names.txFee)
         amountIn.invalid = false
         amountIn.loading = valid
         amountIn.message = null
         submitDisabled.loadingAmount = valid
-        amountGroupIn.message = null
+        amountIn.message = null
         this.setState({ inputs, submitDisabled })
         if (!valid) return
 
@@ -376,7 +359,7 @@ export default class TransferFundsForm extends Component {
         amountIn.loading = false
         amountIn.icon = gotFund ? 'check' : 'exclamation circle'
         amountIn.iconPosition = 'left'
-        amountGroupIn.message = gotFund ? null : {
+        amountIn.message = gotFund ? null : {
             content: textsCap.insufficientBalance,
             status: 'error',
         }
@@ -388,11 +371,10 @@ export default class TransferFundsForm extends Component {
     handleAmountReceivedInvalid = deferred(() => {
         const { inputs } = this.state
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
-        const amountReceivedGrpIn = findInput(inputs, this.names.amountReceivedGroup)
         const amountSentIn = findInput(inputs, this.names.amountSent)
         amountSentIn.rxValue.next('')
         amountReceivedIn.icon = 'money'
-        amountReceivedGrpIn.message = null
+        amountReceivedIn.message = null
         this.setState({ inputs })
     }, 100)
 
