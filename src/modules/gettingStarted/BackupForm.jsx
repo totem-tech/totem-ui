@@ -34,7 +34,7 @@ import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/ButtonDelayed'
 import { setToast } from '../../services/toast'
 
-const textsCap = translated({
+let textsCap = {
 	backupLater: 'backup later',
 	backupNow: 'backup now',
 	backupConfirmHeader: 'confirm backup',
@@ -62,6 +62,7 @@ const textsCap = translated({
 	downloadAgain: 'download again',
 	downloadFailed: 'download not working?',
 	fileName: 'file name',
+	goBack: 'go back',
 	history: 'history',
 	identities: 'identities',
 	invalidData: 'invalid data',
@@ -90,13 +91,18 @@ const textsCap = translated({
 	passwordBtnTitle: 'generate a random password',
 	passwordGenWarnContent: 'please make sure to save the newly generated password in a secure place, preferably a password manager.',
 	passwordGenWarnHeader: 'have you saved your newly generated password?',
-	passwordGenWarnBtn: 'yes, proceed!',
-	passwordGenWarnClose: 'go back',
 	passwordLabel: 'password',
 	passwordPlaceholder: 'enter a password for this backup',
 	proceed: 'proceed',
 	reloadingPage: 'reloading page...',
 	settings: 'settings',
+	skipPasswordLabel: 'download without encryption',
+	skipPasswordWarn0: 'caution advised',
+	skipPasswordWarn1: 'we only recommend encrypted backups.',
+	skipPasswordWarn2: 'you are about to download your entire Totem account data in plain text.',
+	skipPasswordWarn3: 'this includes your identities, partners, chat history and other information.',
+	skipPasswordWarn4: 'anyone who has access to the downloaded file will have complete access to your entire Totem account including identities and any funds you have in them!',
+	skipPasswordWarn5: 'you can proceed at your own risk!',
 	userCredentials: 'user credentials',
 	warnBackupContent1: 'you are at risk of accidental data loss!',
 	warnBackupContent2: 'the following items are not backed up:',
@@ -104,15 +110,18 @@ const textsCap = translated({
 	warnBackupHeader: 'backup recommended!',
 	warnCriticalA: 'you may be at risk of losing your account!',
 	warnCriticalB: 'you may be at risk of losing your funds!',
-}, true)[1]
+	yesProceed: 'yes, proceed!',
+}
+textsCap = translated(textsCap, true)[1]
 const inputNames = {
-	confirmed: 'confirmed',
+	step: 'confirmed',
 	downloadData: 'downloadData',
 	file: 'file',
 	notes: 'notes',
 	password: 'password',
 	passwordConfirm: 'passwordConfirm',
 	redirectTo: 'redirectTo',
+	skipPassword: 'skipPassword',
 }
 export const steps = {
 	unconfirmed: 'no', // initial state
@@ -144,11 +153,14 @@ export default function BackupForm(props) {
 		]
 
 		const handleConfirmChange = deferred((_, values) => {
-			const step = values[inputNames.confirmed]
+			const step = values[inputNames.step]
+			const skipPassword = values[inputNames.skipPassword] === true
 			const isDownload = step === steps.download
-			const downloadData = isDownload && backup.download(
+			let downloadData = isDownload && backup.download(
 				filename,
-				data => encryptBackup(data, values[inputNames.password]),
+				data => skipPassword 
+					? data
+					: encryptBackup(data, values[inputNames.password]),
 			)
 			const ddIn = findInput(inputs, inputNames.downloadData)
 			// store downloaded data for confirmation
@@ -193,7 +205,7 @@ export default function BackupForm(props) {
 						backup.updateFileBackupTS(timestamp)
 
 						// set as verified
-						findInput(inputs, inputNames.confirmed)
+						findInput(inputs, inputNames.step)
 							.rxValue
 							.next(steps.verified)
 						
@@ -296,7 +308,8 @@ export default function BackupForm(props) {
 				customMessages: { regex: true },
 				// // delay before showing error message
 				// defer: 500,
-				hidden: values => values[inputNames.confirmed] !== steps.confirmed,
+				hidden: values => values[inputNames.step] !== steps.confirmed
+					|| values[inputNames.skipPassword] === true,
 				inlineLabel: {
 					color: 'green',
 					icon: {
@@ -343,22 +356,23 @@ export default function BackupForm(props) {
 			},
 			{
 				autoComplete: 'new-password',
-				hidden: values => values[inputNames.confirmed] !== steps.confirmed
-					|| `${values[inputNames.password] || ''}`.length < 8
-					|| rxPassword.value === rxPasswordGen.value,
+				hidden: values => values[inputNames.step] !== steps.confirmed
+					|| values[inputNames.skipPassword] === true
+					|| (rxPassword.value && rxPassword.value === rxPasswordGen.value),
+					// || `${values[inputNames.password] || ''}`.length < 8
 				label: textsCap.passwordConfirmLabel,
 				name: inputNames.passwordConfirm,
-				onPaste: (e, d) => {
-					const pastedStr = e.clipboardData.getData('text/plain')
-					// only allow pasting generated and/or medium to large passwords
-					if (pastedStr < 12) e.preventDefault()
-				},
+				// onPaste: (e, d) => {
+				// 	const pastedStr = `${e.clipboardData.getData('text/plain') || ''}`
+				// 	// only allow pasting generated and/or medium to large passwords
+				// 	if (pastedStr.length < 12) e.preventDefault()
+				// },
 				placeholder: textsCap.passwordConfirmPlaceholder,
 				required: true,
 				rxValue: new BehaviorSubject(''),
 				type: 'password',
 				validate: (e, _, values) => {
-					const isConfirmed = values[inputNames.confirmed] === steps.confirmed
+					const isConfirmed = values[inputNames.step] === steps.confirmed
 					const pw = `${values[inputNames.password] || ''}`
 					const pwConf = values[inputNames.passwordConfirm]
 					
@@ -369,7 +383,14 @@ export default function BackupForm(props) {
 				},
 			},
 			{
-				name: inputNames.confirmed,
+				label: textsCap.skipPasswordLabel,
+				hidden: values => values[inputNames.step] !== steps.confirmed,
+				name: inputNames.skipPassword,
+				toggle: true,
+				type: 'checkbox',
+			},
+			{
+				name: inputNames.step,
 				onChange: handleConfirmChange,
 				rxValue: new BehaviorSubject('no'),
 				type: 'hidden',
@@ -385,7 +406,7 @@ export default function BackupForm(props) {
 				type: 'hidden',
 			},
 			{
-				hidden: values => values[inputNames.confirmed] !== steps.unconfirmed,
+				hidden: values => values[inputNames.step] !== steps.unconfirmed,
 				name: inputNames.notes,
 				type: 'html',
 				content: (
@@ -403,9 +424,9 @@ export default function BackupForm(props) {
 			},
 			{
 				accept: '.json',
-				disabled: values => steps.verified === values[inputNames.confirmed],
+				disabled: values => steps.verified === values[inputNames.step],
 				hidden: values => ![steps.download, steps.verified]
-					.includes(values[inputNames.confirmed]),
+					.includes(values[inputNames.step]),
 				label: textsCap.backupFileLabel,
 				labelDetails: (
 					<div>
@@ -433,7 +454,7 @@ export default function BackupForm(props) {
 			},
 			{
 				content: textsCap.downloadFailed,
-				hidden: values => values[inputNames.confirmed] !== steps.download,
+				hidden: values => values[inputNames.step] !== steps.download,
 				name: 'download-text',
 				negative: true,
 				onClick: () => {
@@ -490,43 +511,61 @@ export default function BackupForm(props) {
 				if (success) return null
 
 				const btn = { disabled }
-				const confirmedIn = findInput(inputs, inputNames.confirmed)
-				switch (values[inputNames.confirmed]) {
+				const stepIn = findInput(inputs, inputNames.step)
+				switch (values[inputNames.step]) {
 					default:
 					case steps.unconfirmed:
 						// initial info text displayed
 						btn.content = textsCap.backupNow
 						btn.primary = true
-						btn.onClick = () => confirmedIn.rxValue.next(steps.confirmed)
+						btn.onClick = () => stepIn.rxValue.next(steps.confirmed)
 						break
 					case steps.confirmed:
 						// user enters password
 						btn.content = textsCap.proceed
-						btn.primary = true
+						const skipPassword = values[inputNames.skipPassword] === true
+						btn.primary = !skipPassword
+						btn.negative = skipPassword
 						btn.onClick = () => {
-							const proceed = () => confirmedIn.rxValue.next(steps.download)
-							const isGenerated = rxPasswordGen.value === rxPassword.value
-							if (!isGenerated) return proceed()
+							const proceed = () => stepIn.rxValue.next(steps.download)
+							const skipPassword = values[inputNames.skipPassword] === true
+							const shouldConfirm = rxPasswordGen.value
+								&& rxPasswordGen.value === rxPassword.value
+								|| skipPassword
+							if (!shouldConfirm) return proceed()
 
 							confirm({
-								cancelButton: textsCap.passwordGenWarnClose,
+								cancelButton: textsCap.goBack,
 								confirmButton: (
-									<ButtonDelayed seconds={10}>
-										{textsCap.passwordGenWarnBtn}
+									<ButtonDelayed {...{
+										negative: skipPassword,
+										seconds: skipPassword ? 15 : 10,
+									}}>
+										{textsCap.yesProceed}
 									</ButtonDelayed>
 								),
 								content: (
-									<div>
+									<div style={{whiteSpace: 'pre-line'}}>
 										<Text {...{
 											color: 'red',
 											invertedColor: 'orange',
 											style: { fontWeight: 'bold' },
 										}}>
-											{textsCap.passwordCopiedToCB}
+											{!skipPassword
+												? textsCap.passwordCopiedToCB
+												: textsCap.skipPasswordWarn1}
 										</Text>
 										<br />
 										<br />
-										{textsCap.passwordGenWarnContent}
+										{!skipPassword
+											? textsCap.passwordGenWarnContent
+											: [
+												textsCap.skipPasswordWarn2,
+												textsCap.skipPasswordWarn3,
+												'\n\n',
+												textsCap.skipPasswordWarn4,
+												textsCap.skipPasswordWarn5,
+											].join(' ')}
 									</div>
 								),
 								header: (
@@ -539,7 +578,9 @@ export default function BackupForm(props) {
 											textTransform: 'initial',
 										},
 									}}>
-										{textsCap.passwordGenWarnHeader}
+										{!skipPassword
+											? textsCap.passwordGenWarnHeader
+											: textsCap.skipPasswordWarn0}
 									</span>
 								),
 								onConfirm: proceed,
@@ -552,7 +593,7 @@ export default function BackupForm(props) {
 						btn.content = textsCap.downloadAgain
 						btn.icon = 'download'
 						btn.positive = false
-						btn.onClick = () => confirmedIn.rxValue.next('no')
+						btn.onClick = () => stepIn.rxValue.next('no')
 						break
 				}
 				return btn
