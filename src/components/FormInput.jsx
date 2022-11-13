@@ -38,6 +38,7 @@ import DateInput from './DateInput'
 import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 import { randomHex } from '../services/blockchain'
+import Text from './Text'
 
 // Memo-ify everything
 const Accordion = React.memo(S_Accordion)
@@ -429,7 +430,11 @@ export class FormInput extends Component {
 			case 'radio':
 				attrs.toggle = typeLC !== 'radio' && attrs.toggle
 				attrs.type = 'checkbox'
-				attrs.label = label
+				attrs.label = (
+					<label>
+						<Text children={label} />
+					</label>
+				)
 				delete attrs.value
 				hideLabel = true
 				inputEl = <Checkbox {...attrs} />
