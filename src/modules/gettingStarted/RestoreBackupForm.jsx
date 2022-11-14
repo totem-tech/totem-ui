@@ -473,6 +473,8 @@ export default class RestoreBackupForm extends Component {
 			this.setState({ submitDisabled })
 
 			reader.onloadend = async (file) => {
+				submitDisabled.file = false
+				this.setState({ submitDisabled })
 				// failed load file
 				if (reader.error) return rxError.next(reader.error)
 
