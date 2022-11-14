@@ -1,6 +1,6 @@
 {
   "name": "totem-meccano-ui",
-  "version": "1.10.1001",
+  "version": "1.20.0000",
   "description": "Totem Meccano UI",
   "main": "./src/index.js",
   "scripts": {
