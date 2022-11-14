@@ -117,7 +117,7 @@ export default function HistoryItemDetailsForm(props) {
                             <h5 style={{ margin: 0 }}>{textsCap.dataSent}</h5>
                             {isTx
                                 ? <Icon loading={true} name='spinner' />
-                                : <jsonView data={data} />
+                                : <JSONView data={data} />
                             }
                         </div>
                     ),
@@ -128,7 +128,7 @@ export default function HistoryItemDetailsForm(props) {
                     content: (
                         <div style={{ padding: '0 10px' }}>
                             <h5 style={{ margin: 0 }}>{textsCap.dataReceived}</h5>
-                            <jsonView data={result} />
+                            <JSONView data={result} />
                         </div>
                     ),
                     name: 'result',
@@ -209,7 +209,7 @@ export default function HistoryItemDetailsForm(props) {
                 data: args.map((arg, i) => ({
                     ...arg,
                     value: data[i],
-                    _value: <jsonView data={data[i]} />,
+                    _value: <JSONView data={data[i]} />,
                 })),
                 columns: [
                     { key: '_value', title: textsCap.value },

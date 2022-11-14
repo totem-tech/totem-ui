@@ -64,7 +64,8 @@ const TimekeepingDetails = props => {
                 title: textsCap.recordId,
             },
             {
-                content: x => x.workerName || x.workerAddress,
+                content: x => <AddPartnerBtn address={x.workerAddress} />,
+                
                 title: textsCap.worker,
             },
             {
