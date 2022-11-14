@@ -12,7 +12,7 @@ import { confirm } from '../services/modal'
 const [texts, textsCap] = translated({
 	activateMaintenanceMode: 'activate maintenance mode',
 	blockchainRuntime: 'Connected Host Runtime Version',
-	blockNr: 'Block Nr.',
+	blockNr: 'Block Number',
 	chainType: 'Chain type',
 	deactivateMainenanceMode: 'deactivate maintenance mode',
 	hostConneced: 'Connected to host',

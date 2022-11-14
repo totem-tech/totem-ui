@@ -51,7 +51,6 @@ const textsCap = translated({
     close: 'close',
     conversionErrorHeader: 'currency conversion failed',
     currency: 'currency',
-    dateForamt: 'YYYY-MM-DD',
     deadlineLabel: 'deadline to accept task',
     deadlineMinErrorMsg: 'deadline must be at least 48 hours from now',
     dueDateLabel: 'due date',
@@ -273,7 +272,7 @@ export default class TaskForm extends Component {
                 {
                     // hidden: true,//delete
                     name: this.names.dates,
-                    title: textsCap.dateForamt,
+                    title: 'YYYY-MM-DD',
                     type: 'group',
                     inputs: [
                         {

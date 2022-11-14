@@ -52,6 +52,7 @@ export default function UtilitiesView() {
         BUILD_MODE && {
             content: AdminUtilsForm,
             header: 'Admin Tools',
+            contentProps: { style: { maxWidth: 400 } },
         },
         // keeps runtime upgrade form hidden if user does not own the sudo key
         isAdmin && {
