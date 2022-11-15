@@ -151,13 +151,7 @@ export default function SystemStatus() {
 				<GridColumn width={6}>
 					<FormInput {...{
 						checked: msMaintenanceMode,
-						label: (
-							<label>
-								<Text>
-									{textsCap.maintenanceMode}
-								</Text>
-							</label>
-						),
+						label: textsCap.maintenanceMode,
 						name: 'maintenance-mode',
 						readOnly: !isAdmin,
 						toggle: true,

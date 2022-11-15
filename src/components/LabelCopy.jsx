@@ -70,6 +70,7 @@ function LabelCopy(props) {
             icon,
             key: 'El',
             onClick: e => {
+                e.preventDefault()
                 isFn(onClick) && onClick(e, value)
                 copyToClipboard(value)
                 setState({ copied: true, open: true })
