@@ -16,7 +16,7 @@ const textsCap = translated({
 
 function AddPartnerBtn(props) {
     const {
-        address,
+        address = '',
         allowCopy,
         Component,
         ignoreAttributes,
@@ -25,7 +25,7 @@ function AddPartnerBtn(props) {
         style,
         userId,
     } = props
-    const [name, _setName] = useState('')
+    const [name = '', _setName] = useState('')
     const setName = useCallback(
         deferred(() => _setName(getAddressName(address)), 50),
         [address],

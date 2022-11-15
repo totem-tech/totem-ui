@@ -91,46 +91,48 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 if (!mounted) return
                 try {
                     let uniqueTasks = new Map()
-                    orders.forEach((order, index) => {
-                        const taskId = uniqueTaskIds[index]
-                        let amountXTX = 0
-                        let {
-                            approvalStatus,
-                            approver,
-                            fulfiller,
-                            // order can be null if storage has changed, in that case, use inaccessible status
-                            orderStatus = statuses.inaccessible,
-                            owner,
-                        } = order || {}
-                        try {
-                            amountXTX = !order
-                                ? 0
-                                : ordersOrg[index]
-                                    .value
-                                    .get('amountXTX')
-                                    .toNumber()
-                        } catch (err) {
-                            // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
-                            console.log('amountXTX parse error', err)
-                        }
-                        const isOwner = address === owner
-                        const isSubmitted = orderStatus === statuses.submitted
-                        const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
-                        const isOwnerTheApprover = owner === approver
-                        let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
-                        const task = {
-                            ...order,
-                            amountXTX,
-                            allowEdit,
-                            // pre-process values for use with DataTable
-                            _approvalStatus: approvalStatusNames[approvalStatus],
-                            _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
-                            _orderStatus: statusNames[orderStatus],
-                            _taskId: taskId, // list search
-                            _owner: <AddPartnerBtn {...{ address: owner }} />,
-                        }
-                        uniqueTasks.set(taskId, task)
-                    })
+                    orders
+                        .filter(Boolean)
+                        .forEach((order, index) => {
+                            const taskId = uniqueTaskIds[index]
+                            let amountXTX = 0
+                            let {
+                                approvalStatus,
+                                approver,
+                                fulfiller,
+                                // order can be null if storage has changed, in that case, use inaccessible status
+                                orderStatus = statuses.inaccessible,
+                                owner,
+                            } = order || {}
+                            try {
+                                amountXTX = !order
+                                    ? 0
+                                    : ordersOrg[index]
+                                        .value
+                                        .get('amountXTX')
+                                        .toNumber()
+                            } catch (err) {
+                                // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
+                                console.log('amountXTX parse error', err)
+                            }
+                            const isOwner = address === owner
+                            const isSubmitted = orderStatus === statuses.submitted
+                            const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
+                            const isOwnerTheApprover = owner === approver
+                            let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
+                            const task = {
+                                ...order,
+                                amountXTX,
+                                allowEdit,
+                                // pre-process values for use with DataTable
+                                _approvalStatus: approvalStatusNames[approvalStatus],
+                                _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
+                                _orderStatus: statusNames[orderStatus],
+                                _taskId: taskId, // list search
+                                _owner: <AddPartnerBtn {...{ address: owner }} />,
+                            }
+                            uniqueTasks.set(taskId, task)
+                        })
 
                     let newTasks = new Map()
                     types.map((type, i) => {
