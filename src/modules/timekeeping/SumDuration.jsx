@@ -29,7 +29,9 @@ const SumDuration = props => {
         ? Array
             .from(data)
             .map(([_, item]) => item)
-        : ids.map(id => data.get(id))
+        : ids
+            .map(id => data.get(id))
+            .filter(Boolean)
     
     const approved = blocksToDuration(
         selectedItems
