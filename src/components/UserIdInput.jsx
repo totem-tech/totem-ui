@@ -149,6 +149,7 @@ class UserIdInput extends Component {
         if (!options) return this.setState({ value })
 
         const userIds = options.map(x => x.value)
+        // include user IDs from partners list
         if (includePartners) {
             const partnerOptions = []
             Array.from(partners.getAll())
@@ -167,6 +168,8 @@ class UserIdInput extends Component {
                 })
             options = options.concat(arrSort(partnerOptions, 'text'))
         }
+
+        // include user IDs from chat history
         if (includeFromChat) {
             const historyUserIds = getChatUserIds()
                 .filter(id => !userIds.includes(id))
@@ -179,7 +182,13 @@ class UserIdInput extends Component {
             })), 'text')
             options = options.concat(huiOptions)
         }
-        if (excludeOwnId) options = options.filter(x => x.value !== (getUser() || {}).id)
+        // prevents user from selecting their own ID
+        if (excludeOwnId) options = options.filter(x =>
+            x.value !== (getUser() || {}).id
+        )
+
+        // sort by user ID
+        options = arrSort(options, 'value')
         this.setState({ options, value })
     }
 
