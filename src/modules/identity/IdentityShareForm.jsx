@@ -8,6 +8,7 @@ import {
 	isArr,
 	isStr,
 	deferred,
+	arrSort,
 } from '../../utils/utils'
 import FormBuilder, {
 	fillValues,
@@ -164,7 +165,6 @@ export default class IdentityShareForm extends Component {
 		const getIdentityOption = ({ address, name }) => ({
 			key: address,
 			name, // keep
-			text: name,
 			value: address,
 			text: (
 				<span style={{ paddingLeft: 25 }}>
@@ -206,7 +206,10 @@ export default class IdentityShareForm extends Component {
 					text: textsCap.identities,
 					value: '', // keep
 				})
-			identityIn.options.push(...getIdentities().map(getIdentityOption))
+			identityIn.options.push(
+				...getIdentities()
+					.map(getIdentityOption)
+			)
 		}
 		if (includePartners) {
 			includeOwnIdentities &&
@@ -217,12 +220,14 @@ export default class IdentityShareForm extends Component {
 					value: '', // keep
 				})
 			identityIn.options.push(
-				...Array.from(getPartners()).map(([address, { name }]) => ({
-					key: address,
-					name, // keep
-					text: name,
-					value: address,
-				}))
+				...Array
+					.from(getPartners())
+					.map(([address, { name }]) => ({
+						key: address,
+						name, // keep
+						text: name,
+						value: address,
+					}))
 			)
 		}
 
@@ -238,19 +243,24 @@ export default class IdentityShareForm extends Component {
 		// add User Ids as options if supplied in values
 		if (isArr(userIds) && userIds.length > 0) {
 			const userIdIn = findInput(inputs, inputNames.userIds)
-			userIdIn.options = (userIds || []).map(id => ({
-				key: id,
-				text: id,
-				value: id,
-			}))
+			userIdIn.options = (userIds || [])
+				.map(id => ({
+					key: id,
+					text: id,
+					value: id,
+				}))
+			userIdIn.options = arrSort(userIdIn.options, 'value')
 		}
+
+		// sort identity options by name
+		identityIn.options = arrSort(identityIn.options, 'name')
 
 		// prefill values
 		fillValues(inputs, values)
 
 		// show introducedBy only if value exists
-		findInput(inputs, inputNames.introducedBy).hidden =
-			!values[inputNames.introducedBy]
+		const introducedByIn = findInput(inputs, inputNames.introducedBy)
+		introducedByIn.hidden = !values[inputNames.introducedBy]
 		this.setState({ header, inputs })
 
 		if (!address) return
