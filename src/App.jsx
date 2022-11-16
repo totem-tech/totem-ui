@@ -64,6 +64,7 @@ export default function App() {
 				queue,
 				sidebar,
 				storage,
+				task: require('./modules/task/task'),
 				timeKeeping,
 				toast,
 				window: windowService,

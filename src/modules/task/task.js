@@ -104,7 +104,7 @@ export const query = {
      * @summary retrieve a list of orders by Task IDs
      * 
      * @param {String|Array}    address user identity
-     * @param {String|Array}    taskId
+     * @param {String|Array}    taskId  single task ID or array of task IDs
      * @param {Function|null}   callback (optional) callback function to subscribe to changes.
      *                              If supplied, once result is retrieved function will be invoked with result.
      *                              Default: null

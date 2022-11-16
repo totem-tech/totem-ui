@@ -45,8 +45,11 @@ class FormBuilder extends Component {
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (values, parentIndex) => (input, index) => {
-		parentIndex = isDefined(parentIndex) ? parentIndex : null
+		parentIndex = isDefined(parentIndex)
+			? parentIndex
+			: null
 		const {
+			inputNamePrefix = '',
 			inputsDisabled = [],
 			inputsHidden = [],
 			inputsReadOnly = [],
@@ -110,6 +113,7 @@ class FormBuilder extends Component {
 				  )
 				: undefined,
 			key: key || name,
+			name: `${inputNamePrefix}${name}`,
 			readOnly: inputsReadOnly.includes(name) || readOnly,
 			onChange: isGroup
 				? undefined

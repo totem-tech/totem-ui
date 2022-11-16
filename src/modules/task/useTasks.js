@@ -86,75 +86,76 @@ export default function useTasks(types = [], address, timeout = 5000) {
             ...errorMsg,
             content: `${err}`,
         })
-        const handleOrdersCb = (taskIds2d, uniqueTaskIds, detailsMap, types) =>
-            async (orders, ordersOrg) => {
-                if (!mounted) return
-                try {
-                    let uniqueTasks = new Map()
-                    orders
-                        .filter(Boolean)
-                        .forEach((order, index) => {
-                            const taskId = uniqueTaskIds[index]
-                            let amountXTX = 0
-                            let {
-                                amountXTX: amountHex,
-                                approvalStatus,
-                                approver,
-                                fulfiller,
-                                // order can be null if storage has changed, in that case, use inaccessible status
-                                orderStatus = statuses.inaccessible,
-                                owner,
-                            } = order || {}
-                            try {
-                                amountXTX = !order
-                                    ? 0
-                                    : Number(amountHex) >= 0
-                                        ? Number(amountHex)
-                                        : ordersOrg[index].value
-                                            ? ordersOrg[index]
-                                                .value
-                                                .get('amountXTX')
-                                                .toNumber()
-                                            : 0
-                            } catch (err) {
-                                // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
-                                console.log('amountXTX parse error', err)
-                            }
-                            const isOwner = address === owner
-                            const isSubmitted = orderStatus === statuses.submitted
-                            const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
-                            const isOwnerTheApprover = owner === approver
-                            let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
-                            const task = {
-                                ...order,
-                                amountXTX,
-                                allowEdit,
-                                // pre-process values for use with DataTable
-                                _approvalStatus: approvalStatusNames[approvalStatus],
-                                _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
-                                _orderStatus: statusNames[orderStatus],
-                                _taskId: taskId, // list search
-                                _owner: <AddPartnerBtn {...{ address: owner }} />,
-                            }
-                            uniqueTasks.set(taskId, task)
-                        })
-
-                    let newTasks = new Map()
-                    types.map((type, i) => {
-                        const typeTaskIds = taskIds2d[i]
-                        const typeTasks = new Map(
-                            typeTaskIds.map(id => [id, uniqueTasks.get(id)])
-                        )
-                        newTasks.set(type, typeTasks)
+        const handleOrdersCb = (taskIds2d, uniqueTaskIds, detailsMap, types) => async (orders, ordersOrg) => {
+            if (!mounted) return
+            try {
+                let uniqueTasks = new Map()
+                console.warn({ orders })
+                orders
+                    .filter(Boolean)
+                    .forEach((order, index) => {
+                        const taskId = uniqueTaskIds[index]
+                        let amountXTX = 0
+                        let {
+                            amountXTX: amountHex,
+                            approvalStatus,
+                            approver,
+                            fulfiller,
+                            // order can be null if storage has changed, in that case, use inaccessible status
+                            orderStatus = statuses.inaccessible,
+                            owner,
+                        } = order || {}
+                        try {
+                            amountXTX = !order
+                                ? 0
+                                : Number(amountHex) >= 0
+                                    ? Number(amountHex)
+                                    : ordersOrg[index].value
+                                        ? ordersOrg[index]
+                                            .value
+                                            .get('amountXTX')
+                                            .toNumber()
+                                        : 0
+                        } catch (err) {
+                            // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
+                            console.log('amountXTX parse error', err)
+                        }
+                        const isOwner = address === owner
+                        const isSubmitted = orderStatus === statuses.submitted
+                        const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
+                        const isOwnerTheApprover = owner === approver
+                        let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
+                        const task = {
+                            ...order,
+                            amountXTX,
+                            allowEdit,
+                            // pre-process values for use with DataTable
+                            _approvalStatus: approvalStatusNames[approvalStatus],
+                            _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
+                            _orderStatus: statusNames[orderStatus],
+                            _taskId: taskId, // list search
+                            _owner: <AddPartnerBtn {...{ address: owner }} />,
+                        }
+                        uniqueTasks.set(taskId, task)
                     })
-                    newTasks = addDetails(address, newTasks, detailsMap, uniqueTaskIds)
-                    done = true
-                    setMessage(null)
-                    setTasks(newTasks)
-                } catch (err) {
-                    setError(err)
-                }
+
+                let newTasks = new Map()
+                types.map((type, i) => {
+                    const typeTaskIds = taskIds2d[i]
+                    const typeTasks = new Map(
+                        typeTaskIds.map(id => [id, uniqueTasks.get(id)])
+                    )
+                    newTasks.set(type, typeTasks)
+                })
+                newTasks = addDetails(address, newTasks, detailsMap, uniqueTaskIds)
+                done = true
+                setMessage(null)
+                console.log('handleOrdersCb', { newTasks })
+                setTasks(newTasks)
+            } catch (err) {
+                setError(err)
             }
+        }
         const handleTaskIds = async (taskIds2d) => {
             if (!mounted) return
             try {
@@ -162,6 +163,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 // create single list of unique Task IDs
                 const uniqueTaskIds = arrUnique(taskIds2d.flat())
                 const detailsMap = await query.getDetailsByTaskIds(uniqueTaskIds)
+                console.log({ uniqueTaskIds })
                 subs.tasks = await query.orders(
                     uniqueTaskIds,
                     handleOrdersCb(
@@ -181,7 +183,9 @@ export default function useTasks(types = [], address, timeout = 5000) {
         setTimeout(() => {
             if (!mounted || done) return
             setMessage(null)
-            setTasks(getCached(address, types))
+            const tasks = getCached(address, types)
+            console.log('handleOrdersCb: setTimeout -> cached', { tasks })
+            setTasks(tasks)
         }, timeout)
 
         setMessage(loadingMsg)
@@ -213,6 +217,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
             let newTasks = null
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
+                console.log({ detailsMap })
                 newTasks = addDetails(address, tasks, detailsMap, taskIds)
             } catch (err) {
                 //ignore error
@@ -224,12 +229,14 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 }
             }
             setMessage(msg)
+            console.log('useEffect', { newTasks })
             newTasks && setTasks(newTasks)
         })
 
         return () => subscribed.unsubscribe()
     }, [address, tasks, setTasks])
 
+    console.log({ tasks })
     return [tasks, message]
 }
 
@@ -243,24 +250,24 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
         .map(([type, typeTasks = new Map()]) => {
             uniqueTaskIds.forEach(id => {
                 let task = typeTasks.get(id)
-                if (!task) return
-
-                task._fulfiller = (
-                    <AddPartnerBtn {...{
-                        address: task.fulfiller,
-                        userId: task.createdBy
-                    }} />
-                )
-                task._owner = (
-                    <AddPartnerBtn {...{
-                        address: task.owner,
-                        userId: task.createdBy
-                    }} />
-                )
-                task = objCopy(detailsMap.get(id) || {}, task)
-                task = { ...task, ...detailsMap.get(id) }
-                task._tsCreated = format(task.tsCreated, true)
-                typeTasks.set(id, task)
+                if (task) {
+                    task._fulfiller = (
+                        <AddPartnerBtn {...{
+                            address: task.fulfiller,
+                            userId: task.createdBy
+                        }} />
+                    )
+                    task._owner = (
+                        <AddPartnerBtn {...{
+                            address: task.owner,
+                            userId: task.createdBy
+                        }} />
+                    )
+                    task = objCopy(detailsMap.get(id) || {}, task)
+                    task = { ...task, ...detailsMap.get(id) }
+                    task._tsCreated = format(task.tsCreated, true)
+                }
+                typeTasks.set(id, task || {})
             })
             // tasks.set(type, typeTasks)
             newTasks.set(type, typeTasks)
