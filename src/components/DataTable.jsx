@@ -188,7 +188,7 @@ export default class DataTable extends Component {
 			filteredData,
 			pageNo,
 			perPage,
-			(item, key, items, isMap) => isObj(item) && (
+			(item, key, items, isMap) => (
 				<Table.Row {...{
 					key,
 					...(isFn(rowProps)

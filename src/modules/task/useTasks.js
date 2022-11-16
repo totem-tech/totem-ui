@@ -90,9 +90,13 @@ export default function useTasks(types = [], address, timeout = 5000) {
             if (!mounted) return
             try {
                 let uniqueTasks = new Map()
+                const invalidIds = new Map()
                 orders
-                    .filter(Boolean)
                     .forEach((order, index) => {
+                        if (!order) {
+                            invalidIds.set(uniqueTaskIds[index], true)
+                            return
+                        }
                         const taskId = uniqueTaskIds[index]
                         let amountXTX = 0
                         let {
@@ -110,6 +114,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                                 : Number(amountHex) >= 0
                                     ? Number(amountHex)
                                     : ordersOrg[index].value
+                                        && isFn(ordersOrg[index].value.get)
                                         ? ordersOrg[index]
                                             .value
                                             .get('amountXTX')
@@ -142,7 +147,10 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 types.map((type, i) => {
                     const typeTaskIds = taskIds2d[i]
                     const typeTasks = new Map(
-                        typeTaskIds.map(id => [id, uniqueTasks.get(id)])
+                        typeTaskIds
+                            .map(id => !invalidIds.get(id) && [id, uniqueTasks.get(id)])
+                            .filter(Boolean)
+
                     )
                     newTasks.set(type, typeTasks)
                 })
