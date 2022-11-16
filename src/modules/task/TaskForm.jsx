@@ -120,7 +120,10 @@ export default class TaskForm extends Component {
         const { taskId, values } = this.props
         // list of input names
         this.names = inputNames
-        this.rxCurrency = copyRxSubject(rxSelectedCurrency)
+        this.rxCurrency = new BehaviorSubject(
+            (values || {})[inputNames.currency]
+            || rxSelectedCurrency.value
+        )
         this.rxCurrencies = new BehaviorSubject()
         // keys used to generate BONSAI token hash
         // keep it in the same order as in the `VALID_KEYS` array in the messaging service
@@ -172,6 +175,7 @@ export default class TaskForm extends Component {
                     inputs: [
                         {
                             ...asInlineLabel({
+                                disabled: true,
                                 onCurrencies: currencies => {
                                     this.rxCurrencies.next(currencies)
                                     const { loading } = this.state

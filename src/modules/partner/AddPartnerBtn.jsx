@@ -27,7 +27,7 @@ function AddPartnerBtn(props) {
     } = props
     const [identity] = useRxSubject(rxIdentities, map => map.get(address))
     const [partner] = useRxSubject(rxPartners, map => map.get(address))
-    const { name } = identity || partner || {}
+    const { name = '' } = identity || partner || {}
     const exists = !name.startsWith(address.slice(0, 3))
         && !name.includes('...')
     const addBtn = !exists && (
