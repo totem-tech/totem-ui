@@ -244,7 +244,9 @@ export const queueables = {
         token, // BONSAI token hash
         queueProps,
     ) => {
-        const func = !!taskId ? queueableApis.changeSpfso : queueableApis.createSpfso
+        const func = !!taskId
+            ? queueableApis.changeSpfso
+            : queueableApis.createSpfso
         const orderItem = {
             Product: PRODUCT_HASH_LABOUR,
             UnitPrice: amountXTX,

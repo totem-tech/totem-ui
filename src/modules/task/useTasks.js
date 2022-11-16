@@ -90,7 +90,6 @@ export default function useTasks(types = [], address, timeout = 5000) {
             if (!mounted) return
             try {
                 let uniqueTasks = new Map()
-                console.warn({ orders })
                 orders
                     .filter(Boolean)
                     .forEach((order, index) => {
@@ -150,7 +149,6 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 newTasks = addDetails(address, newTasks, detailsMap, uniqueTaskIds)
                 done = true
                 setMessage(null)
-                console.log('handleOrdersCb', { newTasks })
                 setTasks(newTasks)
             } catch (err) {
                 setError(err)
@@ -163,7 +161,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 // create single list of unique Task IDs
                 const uniqueTaskIds = arrUnique(taskIds2d.flat())
                 const detailsMap = await query.getDetailsByTaskIds(uniqueTaskIds)
-                console.log({ uniqueTaskIds })
+                console.log({ taskIds2d, uniqueTaskIds })
                 subs.tasks = await query.orders(
                     uniqueTaskIds,
                     handleOrdersCb(
@@ -217,7 +215,6 @@ export default function useTasks(types = [], address, timeout = 5000) {
             let newTasks = null
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
-                console.log({ detailsMap })
                 newTasks = addDetails(address, tasks, detailsMap, taskIds)
             } catch (err) {
                 //ignore error
@@ -229,14 +226,12 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 }
             }
             setMessage(msg)
-            console.log('useEffect', { newTasks })
             newTasks && setTasks(newTasks)
         })
 
         return () => subscribed.unsubscribe()
     }, [address, tasks, setTasks])
 
-    console.log({ tasks })
     return [tasks, message]
 }
 
@@ -250,23 +245,23 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
         .map(([type, typeTasks = new Map()]) => {
             uniqueTaskIds.forEach(id => {
                 let task = typeTasks.get(id)
-                if (task) {
-                    task._fulfiller = (
-                        <AddPartnerBtn {...{
-                            address: task.fulfiller,
-                            userId: task.createdBy
-                        }} />
-                    )
-                    task._owner = (
-                        <AddPartnerBtn {...{
-                            address: task.owner,
-                            userId: task.createdBy
-                        }} />
-                    )
-                    task = objCopy(detailsMap.get(id) || {}, task)
-                    task = { ...task, ...detailsMap.get(id) }
-                    task._tsCreated = format(task.tsCreated, true)
-                }
+                if (!task) return
+
+                task._fulfiller = (
+                    <AddPartnerBtn {...{
+                        address: task.fulfiller,
+                        userId: task.createdBy
+                    }} />
+                )
+                task._owner = (
+                    <AddPartnerBtn {...{
+                        address: task.owner,
+                        userId: task.createdBy
+                    }} />
+                )
+                task = objCopy(detailsMap.get(id) || {}, task)
+                task = { ...task, ...detailsMap.get(id) }
+                task._tsCreated = format(task.tsCreated, true)
                 typeTasks.set(id, task || {})
             })
             // tasks.set(type, typeTasks)
