@@ -25,13 +25,9 @@ function AddPartnerBtn(props) {
         style,
         userId,
     } = props
-    const [name = '', _setName] = useState('')
-    const setName = useCallback(
-        deferred(() => _setName(getAddressName(address)), 50),
-        [address],
-    )
-    useRxSubject(rxIdentities, setName)
-    useRxSubject(rxPartners, setName)
+    const [identity] = useRxSubject(rxIdentities, map => map.get(address))
+    const [partner] = useRxSubject(rxPartners, map => map.get(address))
+    const { name } = identity || partner || {}
     const exists = !name.startsWith(address.slice(0, 3))
         && !name.includes('...')
     const addBtn = !exists && (

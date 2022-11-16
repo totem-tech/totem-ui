@@ -97,6 +97,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                             const taskId = uniqueTaskIds[index]
                             let amountXTX = 0
                             let {
+                                amountXTX: amountHex,
                                 approvalStatus,
                                 approver,
                                 fulfiller,
@@ -107,10 +108,14 @@ export default function useTasks(types = [], address, timeout = 5000) {
                             try {
                                 amountXTX = !order
                                     ? 0
-                                    : ordersOrg[index]
-                                        .value
-                                        .get('amountXTX')
-                                        .toNumber()
+                                    : Number(amountHex) >= 0
+                                        ? Number(amountHex)
+                                        : ordersOrg[index].value
+                                            ? ordersOrg[index]
+                                                .value
+                                                .get('amountXTX')
+                                                .toNumber()
+                                            : 0
                             } catch (err) {
                                 // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
                                 console.log('amountXTX parse error', err)
