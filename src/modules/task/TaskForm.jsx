@@ -121,8 +121,7 @@ export default class TaskForm extends Component {
         // list of input names
         this.names = inputNames
         this.rxCurrency = new BehaviorSubject(
-            (values || {})[inputNames.currency]
-            || rxSelectedCurrency.value
+            (values || {})[inputNames.currency] || rxSelectedCurrency.value
         )
         this.rxCurrencies = new BehaviorSubject()
         // keys used to generate BONSAI token hash

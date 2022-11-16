@@ -188,7 +188,7 @@ export default class DataTable extends Component {
 			filteredData,
 			pageNo,
 			perPage,
-			(item, key, items, isMap) => (
+			(item = {}, key, items, isMap) => (
 				<Table.Row {...{
 					key,
 					...(isFn(rowProps)
@@ -230,7 +230,7 @@ export default class DataTable extends Component {
 							} = cell || {}
 							draggable = draggable !== false
 							content = isFn(content)
-								? content(item, key, items, this.props)
+								? content(item = {}, key, items, this.props)
 								: cell.content || item[contentKey]
 							style = {
 								cursor: draggable ? 'grab' : undefined,
