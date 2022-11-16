@@ -273,7 +273,7 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
 // automatically update task details whenever a new notification is recieved about a task
 rxNewNotification.subscribe(([id, notification]) => {
     const { data: { taskId } = {}, type } = notification || {}
-    if (!type !== 'tasks' || !taskId) return
+    if (type !== 'tasks' || !taskId) return
 
     rxUpdater.next([taskId])
 })
