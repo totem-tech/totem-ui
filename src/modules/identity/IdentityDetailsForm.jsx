@@ -16,7 +16,7 @@ import { confirm } from '../../services/modal'
 import Balance from './Balance'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
-import AddressName from '../partner/AddressName'
+import IdentityIcon from './IdentityIcon'
 
 const textsCap = translated({
 	advanced: 'advanced',
@@ -67,7 +67,7 @@ class IdentityDetailsForm extends Component {
 		this.state = {
 			// closeText: { content: textsCap.close, negative: false },
 			headerIcon: (
-				<AddressName {...{
+				<IdentityIcon {...{
 					address, 
 					size: 'large',
 					usageType,
