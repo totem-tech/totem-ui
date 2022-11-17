@@ -608,9 +608,10 @@ export default class PartnerForm extends Component {
 		addressIn.loading = true
 		this.setState({ inputs })
 
-		const AddressOptionText = React.memo(({ name, subText }) => (
+		const OptionText = React.memo(({ name, subText }) => (
 			<div>
-				{name}
+				<PartnerIcon {...{ visibility: visibilityTypes.PUBLIC }} />
+				{' ' + name}
 				<div style={{ color: 'grey' }}>
 					<small>{subText}</small>
 				</div>
@@ -627,7 +628,12 @@ export default class PartnerForm extends Component {
 				: Array
 					.from(companies)
 					.map(([hash, company]) => {
-						const { countryCode, identity, name, regAddress = {} } = company
+						const {
+							countryCode,
+							identity,
+							name,
+							regAddress = {},
+						} = company
 						const { addressLine1, county, postCode, postTown } = regAddress 
 						const key = identity
 						const ar = [addressLine1, postTown, postCode, county]
@@ -641,9 +647,19 @@ export default class PartnerForm extends Component {
 							description: countryCode,
 							key, // also used for DropDown's search
 							name,
-							search: [name, identity, subText].join(' '),
+							search: [
+								name,
+								identity,
+								subText,
+							].join(' '),
 							style: { margin: '-6px 0' },
-							text: <AddressOptionText {...{ key, name, subText }} />,
+							text: (
+								<OptionText {...{
+									key,
+									name,
+									subText,
+								}} />
+							),
 							value: identity,
 						}
 					})

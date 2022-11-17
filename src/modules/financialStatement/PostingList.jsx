@@ -50,8 +50,9 @@ const PostingList = props => {
                 title: textsCap.credit,
             },
             {
+                content: ({ partnerAddress }) => <AddressName {...{ address: partnerAddress }} />,
                 draggableValueKey: 'partnerAddress',
-                key: '_partnerName',
+                key: 'partnerAddress',
                 textAlign: 'center',
                 title: textsCap.partner,
             },
@@ -100,13 +101,20 @@ const getActions = (posting) => (
 )
 
 const postingModifier = (posting = {}) => {
-    const { blockNrSubmitted, blockNrEffective, id, isCredit, amount, partnerAddress } = posting
+    const {
+        blockNrSubmitted,
+        blockNrEffective,
+        id,
+        isCredit,
+        amount,
+        partnerAddress,
+    } = posting
     posting.tsSubmitted = blockNumberToTS(blockNrSubmitted, rxBlockNumber.value)
     posting.tsEffective = blockNumberToTS(blockNrEffective, rxBlockNumber.value)
     posting.credit = isCredit && amount || 0
     posting.debit = !isCredit && amount || 0
     posting.key = id
-    posting._partnerName = <AddressName {...{ address: partnerAddress }} />
+    // posting._partnerName = <AddressName {...{ address: partnerAddress }} />
     posting._credit = !isCredit
         ? 0
         : (

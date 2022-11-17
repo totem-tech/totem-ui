@@ -18,6 +18,7 @@ import { getAddressName } from '../partner/partner'
 import { timerFormValues, getProjects, NEW_RECORD_HASH, query, queueables, statuses } from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
 import DataTableVertical from '../../components/DataTableVertical'
+import AddressName from '../partner/AddressName'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -268,7 +269,7 @@ export default class TimekeepingForm extends Component {
                     type: 'dropdown',
                     options: [],
                     required: true,
-                    search: true,
+                    search: ['keywords'],
                     selection: true,
                     value: '',
                 },
@@ -554,9 +555,14 @@ export default class TimekeepingForm extends Component {
         const options = allIdentities
             // exclude projects that hasn't been accepted yet
             .filter(({ address }) => workers.includes(address))
-            .map(({ address, name }) => ({
+            .map(({ address, name, usageType }) => ({
                 key: address,
-                text: name,
+                keyworkds: [
+                    address,
+                    name,
+                    usageType,
+                ].join(' '),
+                text: <AddressName {...{ address }} />,
                 value: address,
             }))
         identityIn.options = options

@@ -29,6 +29,7 @@ import LocationForm, {
 } from '../location/LocationForm'
 import { find as findIdentity, getAll as getIdentities } from './identity'
 import IdentityForm, { inputNames as idInputNames } from './IdentityForm'
+import AddressName from '../partner/AddressName'
 
 const notificationType = 'identity'
 const childType = 'share'
@@ -92,7 +93,7 @@ export default class IdentityShareForm extends Component {
 					placeholder: textsCap.identityPlaceholder,
 					required: true,
 					rxValue: new BehaviorSubject(),
-					search: ['name', 'value'],
+					search: ['keywords'],
 					selection: true,
 					type: 'dropdown',
 				},
@@ -162,8 +163,15 @@ export default class IdentityShareForm extends Component {
 		// add identity options
 		identityIn.options = []
 
-		const getIdentityOption = ({ address, name }) => ({
+		const getIdentityOption = ({ address, name, usageType }) => ({
 			key: address,
+			keywords: [
+				address,
+				name,
+				usageType,
+				'identity',
+				textsCap.identity,
+			].join(' '),
 			name, // keep
 			value: address,
 			text: (
@@ -193,7 +201,7 @@ export default class IdentityShareForm extends Component {
 							margin: '-5px -30px',
 						},
 					}} />
-					{name}
+					<AddressName {...{ address }} />
 				</span>
 			),
 		})
@@ -222,10 +230,18 @@ export default class IdentityShareForm extends Component {
 			identityIn.options.push(
 				...Array
 					.from(getPartners())
-					.map(([address, { name }]) => ({
+					.map(([address, { name, type, visibility }]) => ({
 						key: address,
+						keywords: [
+							address,
+							name,
+							type,
+							visibility,
+							'partner',
+							textsCap.partner,
+						].join(' '),
 						name, // keep
-						text: name,
+						text: <AddressName {...{ address }} />,
 						value: address,
 					}))
 			)
@@ -352,9 +368,9 @@ export default class IdentityShareForm extends Component {
 		const identity = findIdentity(address)
 		const sharePartner = !identity
 		const includeArr = values[inputNames.include] || []
-		const name =
-			values[inputNames.name] ||
-			addressIn.options.find(x => x.value === address).name
+		const name = values[inputNames.name] || addressIn
+			.options
+			.find(x => x.value === address).name
 		const userIds = values[inputNames.userIds]
 		const data = {
 			address,

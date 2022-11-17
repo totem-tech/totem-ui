@@ -29,6 +29,7 @@ import {
 import HistoryItemDetailsForm from './HistoryItemDetailsForm'
 import { MOBILE, rxLayout } from '../../services/window'
 import { useRxSubject } from '../../utils/reactHelper'
+import AddressName from '../partner/AddressName'
 
 const textsCap = translated({
     action: 'action',
@@ -119,8 +120,10 @@ export default function HistoryList(props) {
                 },
                 {
                     collapsing: true,
+                    content: ({ identity }) => <AddressName {...{ address: identity }} />,
+                    draggableValueKey: 'identity',
                     hidden: isMobile,
-                    key: '_identity',
+                    key: 'identity',
                     title: textsCap.identity,
                 },
                 {
@@ -215,8 +218,6 @@ export default function HistoryList(props) {
                     .split(' ')
                     .map(x => textEllipsis(x, 20))
                     .join(' ')
-                // add identity name if available
-                item._identity = getAddressName(item.identity)
                 item._timestamp = format(item.timestamp, true)
                 // to make the entire object searchable
                 item._search = JSON.stringify(item)

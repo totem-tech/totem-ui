@@ -95,7 +95,12 @@ export default class ActivityList extends Component {
             defaultSort: 'status',
             perPage: 5,
             onRowSelect: this.handleRowSelection,
-            searchExtraKeys: ['ownerAddress', 'status', '_statusText'],
+            searchExtraKeys: [
+                'description',
+                'ownerAddress',
+                'status',
+                '_statusText',
+            ],
             selectable: true,
             columns: [
                 {
@@ -113,6 +118,7 @@ export default class ActivityList extends Component {
                                 }} />
                             </div>
                         ),
+                    draggableValueKey: 'name',
                     key: 'name',
                     title: textsCap.name,
                     style: { minWidth: 125 }

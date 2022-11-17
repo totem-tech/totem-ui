@@ -130,11 +130,7 @@ class TimeKeepingList extends Component {
             },
             {
                 content: ({ workerAddress }) => <AddressName {...{ address: workerAddress }} />,
-                draggable: true,
-                onDragStart: (e, _, { workerAddress }) => {
-                    e.stopPropagation()
-                    e.dataTransfer.setData('text', workerAddress)
-                },
+                draggableValueKey: 'workerAddress',
                 key: 'workerAddress',
                 title: textsCap.workerIdentity,
             },

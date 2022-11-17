@@ -31,6 +31,7 @@ import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
 import { useInverted, rxInverted, rxLayout, MOBILE, setInvertedBrowser } from '../services/window'
 import IdentityShareForm from '../modules/identity/IdentityShareForm'
+import IdentityIcon from '../modules/identity/IdentityIcon'
 
 const [texts, textsCap] = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -123,8 +124,8 @@ const PageHeaderView = React.memo(props => {
 	} = props
 	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
-	const walletOptions = arrSort(wallets || [], 'name')
-		.map(({ address, name }) => ({
+	const identityOptions = arrSort(wallets || [], 'name')
+		.map(({ address, name, usageType }) => ({
 			key: address,
 			text: (
 				<React.Fragment>
@@ -133,7 +134,11 @@ const PageHeaderView = React.memo(props => {
 						fontWeight: 'bold',
 						marginRight: 15,
 					}}>
-						{name}
+						<IdentityIcon {...{
+							address,
+							usageType,
+						}} />
+						{' ' + name}
 					</div>
 
 					<Balance {...{
@@ -152,7 +157,7 @@ const PageHeaderView = React.memo(props => {
 	const langCode = getSelectedLang() || ''
 	const topBar = (
 		<Menu
-			attached="top"
+			attached='top'
 			inverted
 			style={{
 				border: 'none',
@@ -162,9 +167,9 @@ const PageHeaderView = React.memo(props => {
 			}}
 		>
 			<Menu.Item onClick={!isRegistered || !isMobile ? undefined : toggleSidebarState}>
-				<Image size="mini" src={logoSrc} />
+				<Image size='mini' src={logoSrc} />
 			</Menu.Item>
-			<Menu.Menu position="right">
+			<Menu.Menu position='right'>
 				{!isMobile && isRegistered && buttons}
 				<Dropdown {...{
 					className: 'identity-dropdown',
@@ -181,7 +186,7 @@ const PageHeaderView = React.memo(props => {
 						rxNotifVisible.next(false)
 					},
 					open,
-					options: walletOptions,
+					options: identityOptions,
 					selectOnNavigation: false,
 					style: { paddingRight: 0 },
 					text: textEllipsis(selected.name, isMobile ? 25 : 50, 3, false),

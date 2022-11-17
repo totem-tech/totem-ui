@@ -115,7 +115,7 @@ export default class TransferFundsForm extends Component {
                     options: [],
                     required: true,
                     rxValue: this.rxAddress,
-                    search: ['text', 'value'],
+                    search: ['keywords'],
                     selection: true,
                     type: 'dropdown',
                 },
@@ -153,7 +153,7 @@ export default class TransferFundsForm extends Component {
                     placeholder: textsCap.partnerPlaceholder,
                     required: true,
                     rxValue: new BehaviorSubject(),
-                    search: ['text', 'value'],
+                    search: ['keywords'],
                     selection: true,
                     selectOnBlur: false,
                     selectOnNavigation: false,
@@ -236,23 +236,38 @@ export default class TransferFundsForm extends Component {
         this.subscriptions.selected = rxSelected.subscribe(v => fromIn.rxValue.next(v))
         // re-/populate options if identity list changes
         this.subscriptions.identities = rxIdentities.subscribe(map => {
-            const options = Array.from(map).map(([address, { name }]) => ({
-                key: address,
-                text: name,
-                value: address,
-            }))
+            const options = Array
+                .from(map)
+                .map(([address, { name, usageType }]) => ({
+                    key: address,
+                    keywords: [
+                        address,
+                        name,
+                        usageType,
+                    ].join(' '),
+                    text: <AddressName {...{ address}} />,
+                    value: address,
+                }))
             fromIn.options = arrSort(options, 'text')
             this.setState({ inputs })
         })
         // repopulate options if partners list changes
         this.subscriptions.partners = rxPartners.subscribe(map => {
             toIn.options = arrSort(
-                Array.from(map).map(([address, { name }]) => ({
-                    description: textEllipsis(address, 20),
-                    key: address,
-                    text: name,
-                    value: address,
-                })),
+                Array
+                    .from(map)
+                    .map(([address, { name, type, visibility }]) => ({
+                        description: textEllipsis(address, 20),
+                        key: address,
+                        keywords: [
+                            address,
+                            name,
+                            type,
+                            visibility,
+                        ].join(' '),
+                        text: <AddressName {...{ address }} />,
+                        value: address,
+                    })),
                 'text'
             )
             this.setState({ inputs })

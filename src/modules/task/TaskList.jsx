@@ -257,10 +257,6 @@ const getBounty = ({ amountXTX }) => (
         value: amountXTX,
     }} />
 )
-const copyOnDragCb = key => (e, _, item) => {
-    e.stopPropagation()
-    e.dataTransfer.setData('Text', item[key])
-}
 const getTableProps = (isMobile, isFulfillerList) => ({
     columns: [
         !isMobile && {
@@ -286,8 +282,7 @@ const getTableProps = (isMobile, isFulfillerList) => ({
                         </Text>
                     </div>
                 ),
-            draggable: true,
-            onDragStart: copyOnDragCb('title'),
+            draggableValueKey: 'title',
             key: 'title',
             style: { minWidth: 125 },
             title: textsCap.title,
@@ -295,15 +290,13 @@ const getTableProps = (isMobile, isFulfillerList) => ({
         !isMobile && {
             collapsing: true,
             content: getBounty,
-            draggable: true,
-            onDragStart: copyOnDragCb('amountXTX'),
+            draggableValueKey: 'amountXTX',
             key: 'amountXTX',
             title: textsCap.bounty,
         },
         !isMobile && {
             content: ({ _owner }) => _owner,
-            draggable: true,
-            onDragStart: copyOnDragCb('owner'),
+            draggableValueKey: 'owner',
             key: 'owner',
             // name: '_owner',
             textAlign: 'center',
@@ -311,31 +304,11 @@ const getTableProps = (isMobile, isFulfillerList) => ({
         },
         !(isMobile && isFulfillerList) && {
             content: ({ _fulfiller }) => _fulfiller,
-            draggable: true,
-            onDragStart: copyOnDragCb('fulfiller'),
+            draggableValueKey: 'fulfiller',
             key: 'fulfiller',
             title: textsCap.assignee,
         },
         !isMobile && {
-            // content: ({ tags }) => [...tags || []]
-            //     .map(tag => (
-            //         <Label
-            //             key={tag}
-            //             draggable='true'
-            //             onDragStart={e => {
-            //                 e.stopPropagation()
-            //                 e.dataTransfer.setData('Text', e.target.textContent)
-            //             }}
-            //             style={{
-            //                 cursor: 'grab',
-            //                 display: 'inline',
-            //                 // float: 'left',
-            //                 margin: 1,
-            //             }}
-            //         >
-            //             {tag}
-            //         </Label>
-            //     )),
             content: ({tags = []}) => <Tags tags={tags} />,
             key: 'tags',
             title: textsCap.tags,
@@ -344,8 +317,7 @@ const getTableProps = (isMobile, isFulfillerList) => ({
         {
             content: getStatusView,
             collapsing: true,
-            draggable: true,
-            onDragStart: copyOnDragCb('_orderStatus'),
+            draggableValueKey: '_orderStatus',
             key: '_orderStatus',
             textAlign: 'center',
             title: textsCap.status,
