@@ -25,17 +25,22 @@ const PostingList = props => {
     const { address, ledgerAccount } = props
     if (!address || !ledgerAccount) return ''
 
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state] = useState(() => ({
         columns: [
-            {
+            !isMobile && {
+                collapsing: true,
                 textAlign: 'center',
                 key: 'tsEffective',
                 title: textsCap.date,
             },
             {
-                textAlign: 'center',
-                key: 'id',
-                title: textsCap.postingId,
+                collapsing: true,
+                content: ({ partnerAddress }) => <AddressName {...{ address: partnerAddress }} />,
+                draggableValueKey: 'partnerAddress',
+                key: 'partnerAddress',
+                textAlign: 'left',
+                title: textsCap.partner,
             },
             {
                 textAlign: 'center',
@@ -49,12 +54,10 @@ const PostingList = props => {
                 sortKey: 'credit',
                 title: textsCap.credit,
             },
-            {
-                content: ({ partnerAddress }) => <AddressName {...{ address: partnerAddress }} />,
-                draggableValueKey: 'partnerAddress',
-                key: 'partnerAddress',
+            !isMobile && {
                 textAlign: 'center',
-                title: textsCap.partner,
+                key: 'id',
+                title: textsCap.postingId,
             },
             {
                 collapsing: true,
@@ -62,10 +65,9 @@ const PostingList = props => {
                 textAlign: 'center',
                 title: textsCap.actions,
             },
-        ],
+        ].filter(Boolean),
     }))
     const data = useLedgerAcPostings(address, ledgerAccount, postingModifier)
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 
     return (
         <DataTable {...{
