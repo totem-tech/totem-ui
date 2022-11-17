@@ -200,15 +200,11 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
                 startedAt: blockNumberToTS(currentBlock, blockStart),
                 finishedAt: blockNumberToTS(currentBlock, blockEnd),
             }],
-            // remove spacing around content
-            style: {
-                margin: '-36px -21px',
-                padding: 0,
-            }
         }} />
     )
 
     const proceed = await confirmAsPromise({
+        collapsing: true,
         cancelButton: textsCap.goBack,
         confirmButton: (
             <Button {...{

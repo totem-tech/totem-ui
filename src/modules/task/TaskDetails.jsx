@@ -3,19 +3,22 @@
  */
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import { Button } from 'semantic-ui-react'
 import { getUser } from '../../utils/chatClient'
+import { useRxSubject } from '../../utils/reactHelper'
 import { blockNumberToTS, format } from '../../utils/time'
 import { getCurrentBlock } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { confirmAsPromise } from '../../services/modal'
+import { showForm, showInfo } from '../../services/modal'
 import { UserID } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
 import { statuses } from '../../components/Message'
 import Currency from '../currency/Currency'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
-import { approvalStatusNames, statusNames } from './task'
-import { useRxSubject } from '../../utils/reactHelper'
+import AddressName from '../partner/AddressName'
+import { approvalStatusNames } from './task'
+import TaskForm from './TaskForm'
+import { BehaviorSubject } from 'rxjs'
 
 let textsCap = {
     amount: 'bounty amount',
@@ -31,26 +34,28 @@ let textsCap = {
     orderStatus: 'order status',
     owner: 'creator by',
     title: 'title',
+    updateTask: 'update task',
     updated: 'updated',
 }
 textsCap = translated(textsCap, true)[1]
 
 export default function TaskDetails(props = {}) {
     const {
+        allowEdit,
         getStatusView,
         rxInProgressIds,
         rxTasks,
         taskId = '',
     } = props
     const [blockNum, setBlockNum] = useState()
-    const [inProgressIds] = useRxSubject(rxInProgressIds)
+    const [inProgressIds = new Set()] = useRxSubject(rxInProgressIds)
     const [task] = useRxSubject(rxTasks, tasks => ({ ...tasks.get(taskId) }))
     const [tableProps, setTableProps] = useState({ 
         emptyMessage: {
             content: textsCap.loading,
             icon: true,
             status: statuses.LOADING,
-        }
+        },
     })
 
     useEffect(() => {
@@ -101,13 +106,13 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.approvalStatus,
             },
             {
-                content: x => <AddPartnerBtn {...{ address: x.fulfiller }} />,
+                content: x => <AddressName {...{ address: x.fulfiller }} />,
                 key: 'fulfiller',
                 title: textsCap.fulfiller,
             },
             {
                 content: x => [
-                    <AddPartnerBtn {...{ address: x.owner, key: 0 }} />,
+                    <AddressName {...{ address: x.owner, key: 0 }} />,
                     <span key='1'>
                         {!userIsOwner && <UserID prefix=' (' suffix=')' userId={x.createdBy} />}
                     </span>,
@@ -116,7 +121,7 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.owner,
             },
             {
-                content: x => <AddPartnerBtn {...{ address: x.approver }} />,
+                content: x => <AddressName {...{ address: x.approver }} />,
                 hidden: ownerIsApprover,
                 key: 'approver',
                 title: textsCap.approver,
@@ -147,9 +152,32 @@ export default function TaskDetails(props = {}) {
         setTableProps(tableProps)   
     }, [setTableProps, getStatusView, blockNum, inProgressIds, task])
 
-    return <DataTableVertical {...tableProps} />
+    return (
+        <div>
+            <DataTableVertical {...tableProps} />
+            {allowEdit && !!taskId && (
+                <div style={{ 
+                    marginBottom: 14,
+                    marginTop: -14,
+                    padding: 1,
+                    textAlign: 'center',
+                }}>
+                    <Button {...{
+                        fluid: true,
+                        content: textsCap.updateTask,
+                        icon: 'pencil',
+                        onClick: () => showForm(TaskForm, {
+                            taskId,
+                            values: task,
+                        }, taskId),
+                    }} />
+                </div>
+            )}
+        </div>
+    )
 }
-TaskDetails.defaultProps = {
+TaskDetails.propTypes = {
+    rxInProgressIds: PropTypes.instanceOf(BehaviorSubject),
     // Task ID
     taskId: PropTypes.string,
     // task
@@ -158,16 +186,16 @@ TaskDetails.defaultProps = {
 /**
  * @name    TaskDetails.asModal
  * 
- * @param   {Object} task 
- * @param   {String} id 
+ * @param   {Object}            props
+ * @param   {Object}            props.task 
+ * @param   {String}            props.taskId
+ * @param   {BehaviorSubject}   props.rxInProgressIds
  * 
  * @returns {Promise}
  */
-TaskDetails.asModal = props => confirmAsPromise({
-    className: 'collapsing',
-    cancelButton: null,
-    confirmButton: null,
+TaskDetails.asModal = props => showInfo({
+    collapsing: true,
     content: <TaskDetails {...props} />,
     header: textsCap.header,
     size: 'mini',
-}, props.modalId)
+}, props.taskId)

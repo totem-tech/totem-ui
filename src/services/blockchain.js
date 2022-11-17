@@ -223,6 +223,7 @@ export const queueables = {
         address: ownerAddress,
         args: [recordTypeCode, recordId, token],
         func: 'api.tx.bonsai.updateRecord',
+        recordId,
         type: QUEUE_TYPES.TX_STORAGE,
     }),
     // add a key to the key registry

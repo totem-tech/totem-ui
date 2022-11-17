@@ -26,8 +26,9 @@ import {
 import TaskDetails from './TaskDetails'
 import { MOBILE, rxLayout } from '../../services/window'
 import Text from '../../components/Text'
+import Tags from '../../components/Tags'
 
-const textsCap = translated({
+let textsCap = {
     acceptInvoice: 'accept invoice',
     acceptInvoiceDesc: 'accept the invoice and pay the assignee?',
     acceptInvoiceTitle: 'task - accept invoice',
@@ -56,9 +57,9 @@ const textsCap = translated({
     tags: 'tags',
     taskOwner: 'task owner',
     title: 'title',
-    update: 'update',
     yes: 'yes',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 
 export const listTypes = Object.freeze({
     approver: 'approver',
@@ -104,7 +105,9 @@ export default function TaskList(props) {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
-                        values: !isMarketPlace ? undefined : { isMarket: false },
+                        values: !isMarketPlace
+                            ? undefined
+                            : { isMarket: false },
                         size: 'tiny',
                     }),
                 }
@@ -142,23 +145,15 @@ TaskList.defaultProps = {
     listType: listTypes.owner,
 }
 
-const getActions = (task, taskId, _, { inProgressIds, isOwnedList, rxTasks }) => [
-    isOwnedList && task.allowEdit && {
-        disabled: inProgressIds.has(taskId),
-        icon: 'pencil',
-        onClick: () => showForm(TaskForm, {
-            taskId,
-            values: task,
-        }),
-        title: textsCap.update,
-    },
+const getActions = (_task, taskId, _, { isOwnedList, rxTasks }) => [
     {
         icon: 'eye',
         onClick: () => TaskDetails.asModal({
+            allowEdit: isOwnedList,
             getStatusView,
             rxInProgressIds,
             rxTasks,
-            task,
+            // task,
             taskId,
         }),
         title: textsCap.techDetails
@@ -262,6 +257,10 @@ const getBounty = ({ amountXTX }) => (
         value: amountXTX,
     }} />
 )
+const copyOnDragCb = key => (e, _, item) => {
+    e.stopPropagation()
+    e.dataTransfer.setData('Text', item[key])
+}
 const getTableProps = (isMobile, isFulfillerList) => ({
     columns: [
         !isMobile && {
@@ -287,6 +286,8 @@ const getTableProps = (isMobile, isFulfillerList) => ({
                         </Text>
                     </div>
                 ),
+            draggable: true,
+            onDragStart: copyOnDragCb('title'),
             key: 'title',
             style: { minWidth: 125 },
             title: textsCap.title,
@@ -294,51 +295,60 @@ const getTableProps = (isMobile, isFulfillerList) => ({
         !isMobile && {
             collapsing: true,
             content: getBounty,
+            draggable: true,
+            onDragStart: copyOnDragCb('amountXTX'),
             key: 'amountXTX',
             title: textsCap.bounty,
         },
         !isMobile && {
-            key: '_owner',
-            name: '_owner',
+            content: ({ _owner }) => _owner,
+            draggable: true,
+            onDragStart: copyOnDragCb('owner'),
+            key: 'owner',
+            // name: '_owner',
             textAlign: 'center',
             title: textsCap.taskOwner,
         },
-        isMobile && isFulfillerList 
-            ? false
-            : {
-                key: '_fulfiller',
-                title: textsCap.assignee,
-            },
+        !(isMobile && isFulfillerList) && {
+            content: ({ _fulfiller }) => _fulfiller,
+            draggable: true,
+            onDragStart: copyOnDragCb('fulfiller'),
+            key: 'fulfiller',
+            title: textsCap.assignee,
+        },
         !isMobile && {
-            content: ({ tags }) => [...tags || []]
-                .map(tag => (
-                    <Label
-                        key={tag}
-                        draggable='true'
-                        onDragStart={e => {
-                            e.stopPropagation()
-                            e.dataTransfer.setData('Text', e.target.textContent)
-                        }}
-                        style={{
-                            cursor: 'grab',
-                            display: 'inline',
-                            // float: 'left',
-                            margin: 1,
-                        }}
-                    >
-                        {tag}
-                    </Label>
-                )),
+            // content: ({ tags }) => [...tags || []]
+            //     .map(tag => (
+            //         <Label
+            //             key={tag}
+            //             draggable='true'
+            //             onDragStart={e => {
+            //                 e.stopPropagation()
+            //                 e.dataTransfer.setData('Text', e.target.textContent)
+            //             }}
+            //             style={{
+            //                 cursor: 'grab',
+            //                 display: 'inline',
+            //                 // float: 'left',
+            //                 margin: 1,
+            //             }}
+            //         >
+            //             {tag}
+            //         </Label>
+            //     )),
+            content: ({tags = []}) => <Tags tags={tags} />,
             key: 'tags',
             title: textsCap.tags,
             style: { textAlign: 'center' },
         },
         {
+            content: getStatusView,
             collapsing: true,
+            draggable: true,
+            onDragStart: copyOnDragCb('_orderStatus'),
             key: '_orderStatus',
             textAlign: 'center',
             title: textsCap.status,
-            content: getStatusView,
         },
         // {
         //     content: (task, taskId) => {
@@ -390,16 +400,21 @@ setTimeout(() => {
         const { task = {} } = value
         const { func, recordId: taskId, status } = task
         // only handle queue tasks that are relevant for tasks
-        if (!Object.values(queueableApis).includes(func) || !taskId) return
+        const taskRelated = Object
+            .values(queueableApis)
+            .includes(func)
+        if (!taskRelated || !taskId) return
 
-        const isDone = [queueStatuses.ERROR, queueStatuses.SUCCESS]
-            .includes(status)
+        const isDone = [
+            queueStatuses.ERROR,
+            queueStatuses.SUCCESS,
+        ].includes(status)
         const inProgressIds = rxInProgressIds.value
         if (!isDone && inProgressIds.has(taskId)) return
         if (isDone && !inProgressIds.has(taskId)) return
 
         // add/remove from list
-        inProgressIds[isDone? 'delete' : 'add'](taskId)
+        inProgressIds[isDone ? 'delete' : 'add'](taskId)
         rxInProgressIds.next(new Set(inProgressIds))
     })  
 })

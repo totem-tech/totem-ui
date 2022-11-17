@@ -9,7 +9,7 @@ const Tags = ({ tags = [], ...props }) =>
             content: tag,
             key: tag,
             draggable: 'true',
-            onDragStart: e => e.stopPropagation() | e.dataTransfer.setData("Text", e.target.textContent),
+            onDragStart: e => e.stopPropagation() | e.dataTransfer.setData('Text', e.target.textContent),
             style: {
                 cursor: 'grab',
                 display: 'inline',

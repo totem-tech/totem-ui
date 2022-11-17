@@ -16,6 +16,7 @@ import { confirm } from '../../services/modal'
 import Balance from './Balance'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
+import AddressName from '../partner/AddressName'
 
 const textsCap = translated({
 	advanced: 'advanced',
@@ -61,10 +62,17 @@ class IdentityDetailsForm extends Component {
 		super(props)
 
 		this.identity = get((props.values || {}).address) || {}
-		const { address, tags } = this.identity
+		const { address, usageType } = this.identity
 		this.showSeed = false
 		this.state = {
 			// closeText: { content: textsCap.close, negative: false },
+			headerIcon: (
+				<AddressName {...{
+					address, 
+					size: 'large',
+					usageType,
+				}} />
+			),
 			subheader: <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>,
 			submitText: null, // hide submit button
 			success: false, // sets true  when identity removed and modal will be auto closed

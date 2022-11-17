@@ -48,12 +48,12 @@ const SumDuration = props => {
     )    
 
     const getBtn = (content, title) => (
-        <div style={{ display: 'inline-block' }}>
+        <div style={{ display: 'inline-block', position: 'relative' }}>
             <div style={{
                 fontSize: '80%',
                 fontWeight: 'bold',
                 position: 'absolute',
-                top: 0,
+                top: -18,
             }}>
                 {title}
             </div>
@@ -73,7 +73,7 @@ const SumDuration = props => {
             marginBottom: isMobile
                 ? 5
                 : undefined,
-            marginTop: 20,
+            // marginTop: 20,
             textAlign: 'center',
             whiteSpace: 'nowrap',
         }}>

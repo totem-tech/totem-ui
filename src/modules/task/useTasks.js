@@ -6,7 +6,7 @@ import { isFn, arrUnique, objCopy, isMap, isArr, isObj } from '../../utils/utils
 import { translated } from '../../services/language'
 import { getAddressName } from '../partner/partner'
 import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
+import AddressName from '../partner/AddressName'
 import { isAddress } from 'web3-utils'
 import notification, { rxNewNotification } from '../notification/notification'
 
@@ -135,10 +135,10 @@ export default function useTasks(types = [], address, timeout = 5000) {
                             allowEdit,
                             // pre-process values for use with DataTable
                             _approvalStatus: approvalStatusNames[approvalStatus],
-                            _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
+                            _fulfiller: <AddressName {...{ address: fulfiller }} />,
                             _orderStatus: statusNames[orderStatus],
                             _taskId: taskId, // list search
-                            _owner: <AddPartnerBtn {...{ address: owner }} />,
+                            _owner: <AddressName {...{ address: owner }} />,
                         }
                         uniqueTasks.set(taskId, task)
                     })
@@ -169,7 +169,6 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 // create single list of unique Task IDs
                 const uniqueTaskIds = arrUnique(taskIds2d.flat())
                 const detailsMap = await query.getDetailsByTaskIds(uniqueTaskIds)
-                console.log({ taskIds2d, uniqueTaskIds })
                 subs.tasks = await query.orders(
                     uniqueTaskIds,
                     handleOrdersCb(
@@ -190,12 +189,10 @@ export default function useTasks(types = [], address, timeout = 5000) {
             if (!mounted || done) return
             setMessage(null)
             const tasks = getCached(address, types)
-            console.log('handleOrdersCb: setTimeout -> cached', { tasks })
             setTasks(tasks)
         }, timeout)
 
         setMessage(loadingMsg)
-        // window.isDebug && console.log({ address })
 
         query
             .getTaskIds(types, address, handleTaskIds)
@@ -256,13 +253,13 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
                 if (!task) return
 
                 task._fulfiller = (
-                    <AddPartnerBtn {...{
+                    <AddressName {...{
                         address: task.fulfiller,
                         userId: task.createdBy
                     }} />
                 )
                 task._owner = (
-                    <AddPartnerBtn {...{
+                    <AddressName {...{
                         address: task.owner,
                         userId: task.createdBy
                     }} />

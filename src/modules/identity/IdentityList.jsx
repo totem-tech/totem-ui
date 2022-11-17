@@ -19,50 +19,63 @@ import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
 import Balance from './Balance'
 import { UserContactList } from '../contact/UserContactList'
+import IdentityIcon from './IdentityIcon'
 
-const textsCap = translated(
-	{
-		actions: 'actions',
-		balance: 'balance',
-		business: 'business',
-		contacts: 'contacts',
-		create: 'create',
-		locations: 'locations',
-		name: 'name',
-		never: 'never',
-		personal: 'personal',
-		tags: 'tags',
-		usage: 'usage',
-		rewardsIdentity: 'this is your rewards identity',
-		emptyMessage: 'no matching identity found', // assumes there will always be an itentity
-		lastBackup: 'last backup',
-		showDetails: 'show details',
-		shareIdentityDetails: 'share your identity with other Totem users',
-		txAllocations: 'transaction balance',
-		updateIdentity: 'update your identity',
-	},
-	true
-)[1]
+let textsCap = {
+	actions: 'actions',
+	balance: 'balance',
+	contacts: 'contacts',
+	create: 'create',
+	locations: 'locations',
+	name: 'name',
+	never: 'never',
+	tags: 'tags',
+	usage: 'usage',
+	emptyMessage: 'no matching identity found', // assumes there will always be an itentity
+	lastBackup: 'last backup',
+	showDetails: 'show details',
+	shareIdentityDetails: 'share your identity with other Totem users',
+	txAllocations: 'transaction balance',
+	updateIdentity: 'update your identity',
+}
+textsCap = translated(textsCap, true)[1]
 
 export default function IdentityList(props) {
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [data] = useRxSubject(rxIdentities, map => {
-		const settings = storage.settings.module('messaging') || {}
-		const { user: { address: rewardsIdentity = '' } = '' } = settings
+		const settings = storage
+			.settings
+			.module('messaging') || {}
+		const {
+			user: {
+				address: rewardsIdentity = '',
+			} = '',
+		} = settings
 
-		return Array.from(map).map(([_, identityOrg]) => {
-			const identity = { ...identityOrg }
-			const { address, fileBackupTS, tags = [], usageType } = identity
-			const isPersonal = usageType === USAGE_TYPES.PERSONAL
-			identity._isReward = address === rewardsIdentity
-			identity._fileBackupTS = format(fileBackupTS) || textsCap.never
-			identity._tagsStr = tags.join(' ') // for tags search
-			identity._tags = <Tags key={address} tags={tags} />
-			return identity
-		})
+		return Array
+			.from(map)
+			.map(([_, identityOrg]) => {
+				const identity = { ...identityOrg }
+				const {
+					address,
+					fileBackupTS,
+					tags = [],
+				} = identity
+				identity._isReward = address === rewardsIdentity
+				identity._fileBackupTS = format(fileBackupTS) || textsCap.never
+				identity._tagsStr = tags.join(' ') // for tags search
+				identity._tags = <Tags key={address} tags={tags} />
+				return identity
+			})
 	})
 
-	return <DataTable {...{ ...props, ...getTableProps(isMobile), data }} />
+	return (
+		<DataTable {...{
+			...props,
+			...getTableProps(isMobile),
+			data,
+		}} />
+	)
 }
 
 const getActions = ({ address, name }) =>
@@ -115,41 +128,13 @@ const getTableProps = isMobile => {
 		columns: [
 			{
 				collapsing: true,
-				content: p => {
-					let icon
-					const ut = p._isReward
-						? USAGE_TYPES.REWARD
-						: p.usageType
-					switch (ut) {
-						case USAGE_TYPES.BUSINESS:
-							icon = {
-								name: 'building',
-								title: textsCap.business,
-							}
-							break
-						case USAGE_TYPES.PERSONAL:
-							icon = {
-								name: 'user circle',
-								title: textsCap.personal,
-							}
-							break
-						case USAGE_TYPES.REWARD:
-							icon = {
-								color: 'orange',
-								name: 'gift',
-								title: textsCap.rewardsIdentity,
-							}
-							break
-					}
-
-					return (
-						<Icon {...{
-							className: 'no-margin',
-							size: 'large',
-							...icon,
-						}} />
-					)
-				},
+				content: ({ address, usageType }) => (
+					<IdentityIcon {...{
+						address,
+						size: 'large',
+						usageType,
+					}} />
+				),
 				draggable: false,
 				headerProps: { style: { borderRight: 'none' } },
 				style: {

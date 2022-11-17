@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Button } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
-import chatClient, { rxIsLoggedIn } from '../../../utils/chatClient'
+import chatClient, { rxIsLoggedIn, rxUserIdentity } from '../../../utils/chatClient'
 import { bytesToHex } from '../../../utils/convert'
 import { rxForeUpdateCache } from '../../../utils/DataStorage'
 import { translated } from '../../../utils/languageHelper'
@@ -28,11 +28,7 @@ import identities, {
 	rxSelected,
 } from '../../identity/identity'
 import { rxPartners } from '../../partner/partner'
-import {
-	generateTweet,
-	getRewardIdentity,
-	statusCached,
-} from './claimKapex'
+import { generateTweet, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
 import BackupForm from '../../gettingStarted/BackupForm'
 
@@ -150,7 +146,7 @@ function ClaimKAPEXForm(props) {
 			// makes sure reward identity is saved to storage
 			await PromisE.delay(100)
 			
-			const rewardId = !!identities.get(getRewardIdentity())
+			const rewardId = !!identities.get(rxUserIdentity.value)
 			// check if the reward identity exists in the identities module
 			if (!rewardId) throw `${textsCap.errIneligible1} ${textsCap.errRewardId404}`
 
@@ -402,8 +398,9 @@ const updateInputs = inputs => {
 	const tokenIn = findInput(inputs, inputNames.token)
 	const tweetBtn = findInput(inputs, inputNames.tweetBtn)
 	const selectedIdentity = rxSelected.value
-	const rewardIdentity = getRewardIdentity()
-	const switchIdenity = !!identities.get(rewardIdentity)
+	const rewardIdentity = rxUserIdentity.value
+	const rewardIdEntry = identities.get(rewardIdentity)
+	const switchIdenity = !!rewardIdEntry
 		&& rewardIdentity !== selectedIdentity
 	rewardIdIn.rxValue.next(rewardIdentity)
 	// If rewards identity is available it will be selected automatically.
@@ -463,11 +460,10 @@ const updateInputs = inputs => {
 	tokenIn.rxValue.next(uuid.v1())
 
 	// generate and attach signature
-	const address = getRewardIdentity()
-	const { uri } = identities.get(address) || {}
+	const { uri } = rewardIdEntry || {}
 	if (isStr(uri) && !isHex(uri)) {
-		keyring.add([identities.get(address).uri])
-		const pair = keyring.getPair(address)
+		keyring.add([identities.get(rewardIdentity).uri])
+		const pair = keyring.getPair(rewardIdentity)
 		const signature = bytesToHex(pair.sign(tokenIn.rxValue))
 		signatureIn.rxValue.next(signature)
 	}

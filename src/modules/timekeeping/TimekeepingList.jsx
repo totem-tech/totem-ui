@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
 import { blockNumberToTS } from '../../utils/time'
-import { isArr, deferred, isFn } from '../../utils/utils'
+import { isArr, deferred, isFn, isBool } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import {
     hashTypes,
@@ -36,7 +36,8 @@ import SumDuration from './SumDuration'
 import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
 import TimekeepingDetailsForm from './TimekeepingDetails'
-import PartnerBtn from '../partner/AddPartnerBtn'
+import PartnerBtn from '../partner/AddressName'
+import AddressName from '../partner/AddressName'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -109,23 +110,34 @@ class TimeKeepingList extends Component {
     constructor(props) {
         super(props)
 
+        const { manage } = props
         this.recordIds = []
         this.rxData = new BehaviorSubject(new Map())
         this.rxSelectedIds = new BehaviorSubject([])
         this.inProgressBtns = new Map()
         const columns = [
             {
-                hidden: () => this.state.isMobile,
                 collapsing: true,
+                hidden: () => this.state.isMobile,
                 key: '_end_block',
                 title: textsCap.finishedAt,
             },
             {
+                hidden: () => manage && this.state.isMobile,
                 key: 'projectName',
                 title: textsCap.activity,
                 style: { minWidth: 125 }
             },
-            { key: '_workerName', title: textsCap.workerIdentity },
+            {
+                content: ({ workerAddress }) => <AddressName {...{ address: workerAddress }} />,
+                draggable: true,
+                onDragStart: (e, _, { workerAddress }) => {
+                    e.stopPropagation()
+                    e.dataTransfer.setData('text', workerAddress)
+                },
+                key: 'workerAddress',
+                title: textsCap.workerIdentity,
+            },
             { key: 'duration', textAlign: 'center', title: textsCap.duration },
             // { key: 'start_block', title: texts.blockStart },
             // { key: 'end_block', title: texts.blockEnd },
@@ -146,11 +158,12 @@ class TimeKeepingList extends Component {
             }
         ]
         this.state = {
-            inprogressIds: [],
             columns,
             data: new Map(),
             defaultSort: '_end_block',
             defaultSortAsc: false,
+            inProgressIds: [],
+            isMobile: props.isMobile,
             loading: false,
             perPage: 10,
             onRowSelect: selectedIds => this.rxSelectedIds.next([...selectedIds]),
@@ -250,7 +263,12 @@ class TimeKeepingList extends Component {
     init = deferred(async () => {
         this.subs = this.subs || {}
         unsubscribe(this.subs)
-        const { archive, manage, projectId } = this.props
+        const {
+            archive,
+            isMobile,
+            manage,
+            projectId,
+        } = this.props
         const {
             list,
             listArchive,
@@ -307,13 +325,14 @@ class TimeKeepingList extends Component {
         }
 
         this.subs.inProgressIds = rxInProgressIds.subscribe(ar => {
-            this.setState({ inprogressIds: ar })
+            this.setState({ inProgressIds: ar })
             // this.updateRecords()
         })
         // update record details whenever triggered
         this.subs.trigger = rxTrigger.subscribe(() => {
             this.updateRecords()
         })
+        if (isBool(isMobile)) return // externally controlled
         this.subs.isMobile = rxLayout.subscribe(l =>
             this.setState({ isMobile: l === MOBILE })
         )
@@ -321,7 +340,7 @@ class TimeKeepingList extends Component {
 
     getActionButtons = (record, hash, asButton = true) => {
         const { archive, manage } = this.props
-        const { inprogressIds = [] } = this.state
+        const { inProgressIds = [] } = this.state
         const {
             approved,
             locked,
@@ -334,7 +353,7 @@ class TimeKeepingList extends Component {
             statuses.reject,
         ]
         const isSubmitted = submit_status === statuses.submit
-        const inProgress = inprogressIds.includes(hash)
+        const inProgress = inProgressIds.includes(hash)
         const isOwner = projectOwnerAddress === getSelected().address
         const isBtnInprogress = title =>  this.inProgressBtns.get(hash) === title
         const buttons = [
@@ -498,14 +517,6 @@ class TimeKeepingList extends Component {
                 record.rejected = submit_status === statuses.reject
                 record.draft = submit_status === statuses.draft
                 record.projectName = projectName || textsCap.unknown
-                record._workerName = getAddressName(workerAddress) || (
-                    <PartnerBtn {...{
-                        address: workerAddress,
-                        partnerFormProps: {
-                             associatedIdentity: projectOwnerAddress,
-                        }
-                    }} />
-                )
                 record._status = locked
                     ? textsCap.locked
                     : statusTexts[submit_status]
@@ -696,7 +707,7 @@ class TimeKeepingList extends Component {
     render() {
         const { archive, hideTimer, manage } = this.props
         const { columns, topLeftMenu, topRightMenu } = this.state
-        columns.find(x => x.key === '_workerName').hidden = !manage
+        columns.find(x => x.key === 'workerAddress').hidden = !manage
         topLeftMenu.find(x => x.key === 'timer').hidden = hideTimer
         topRightMenu.forEach(item => {
             // un/archive action is always visible
@@ -739,6 +750,11 @@ class TimeKeepingList extends Component {
                         ? column.hidden()
                         : column.hidden
                 })),
+                style: {
+                    paddingTop: 15,
+                    ...this.props.style,
+                    ...this.state.style,
+                },
             }} />
         )
     }

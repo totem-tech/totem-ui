@@ -2,13 +2,12 @@ import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
-import { MOBILE, rxLayout } from '../../services/window'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
 import { isFn, objWithoutKeys } from '../../utils/utils'
 import { BehaviorSubject } from 'rxjs'
-import { confirmAsPromise } from '../../services/modal'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
+import { showInfo } from '../../services/modal'
+import AddressName from '../partner/AddressName'
 import { ButtonGroup } from '../../components/buttons'
 
 let textsCap = {
@@ -51,7 +50,7 @@ const TimekeepingDetails = props => {
             },
             // user is assignee
             !manage && {
-                content: x => <AddPartnerBtn address={x.projectOwnerAddress} />,
+                content: x => <AddressName address={x.projectOwnerAddress} />,
                 title: textsCap.projectOwner,
             },
             {
@@ -64,7 +63,7 @@ const TimekeepingDetails = props => {
                 title: textsCap.recordId,
             },
             {
-                content: x => <AddPartnerBtn address={x.workerAddress} />,
+                content: x => <AddressName address={x.workerAddress} />,
                 
                 title: textsCap.worker,
             },
@@ -109,7 +108,6 @@ const TimekeepingDetails = props => {
     })
     const [state] = useRxSubject(rxData, getFormProps, [])
     const [inProgressIds = []] = useRxSubject(rxInProgressIds)
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const { record } = state
 
     const buttons = record && getActionButtons(record, recordId)
@@ -130,7 +128,6 @@ const TimekeepingDetails = props => {
                     ...props,
                     content: title,
                     disabled,
-                    fluid: isMobile,
                     onClick: (...args) => {
                         args[0].preventDefault()
                         isFn(onClick) && onClick(...args)
@@ -150,13 +147,15 @@ const TimekeepingDetails = props => {
     return (
         <div>
             <DataTableVertical {...objWithoutKeys(state, ignoredAttrs)} />
-            <div style={{ marginTop: -14, textAlign: 'center' }}>
+            <div style={{
+                marginBottom: 14,
+                marginTop: -14,
+                padding: 1,
+                textAlign: 'center',
+            }}>
                 <ButtonGroup {...{
                     buttons,
-                    style: {
-                        margin: 3,
-                        width: 'calc( 100% - 6px )',
-                    }
+                    fluid: true,
                 }} />
             </div>
         </div>
@@ -169,10 +168,8 @@ TimekeepingDetails.propTypes = {
     rxData: PropTypes.instanceOf(BehaviorSubject),
     rxInProgressIds: PropTypes.instanceOf(BehaviorSubject),
 }
-TimekeepingDetails.asModal = (props) => confirmAsPromise({
-    confirmButton: null,
-    cancelButton: null,
-    className: 'collapsing',
+TimekeepingDetails.asModal = (props) => showInfo({
+    collapsing: true,
     content: <TimekeepingDetails {...props} />,
     header: textsCap.header,
     size: 'mini',

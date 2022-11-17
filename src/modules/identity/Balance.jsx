@@ -34,7 +34,6 @@ export const Balance = props => {
 	const balance = useBalance(address)
 	const locks = userLocks(address)
 	const isLoading = !isValidNumber(balance)
-	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
 	const freeBalance = isLoading
 		? undefined
@@ -74,7 +73,7 @@ export const Balance = props => {
 						prefix: (
 							<span>
 								{lockSeparator}
-								<b>{textsCap.locked}:</b>{' '}
+								<b>{textsCap.locked}: </b>
 							</span>
 						),
 						suffix: detailsSuffix,

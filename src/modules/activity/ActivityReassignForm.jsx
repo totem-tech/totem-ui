@@ -11,27 +11,31 @@ import { find as findIdentity, getAll as getIdentities } from '../identity/ident
 import partners from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { queueables } from './activity'
+import AddressName from '../partner/AddressName'
 
-const textsCap = translated({
+let textsCap = {
     cancel: 'cancel',
-    proceed: 'proceed',
     confirmHeader: 'are you sure you want to reassign this activity?',
     confirmMsg1: 'you are about to assign the ownership of this activity to an Identity that does not belong to you.',
     confirmMsg2: 'if you proceed, you will no longer be able to update or manage this activity.',
     formHeader: 're-assign activity Owner',
     activityIdLabel: 'activity ID',
+    identity: 'identity',
     identityOptionsHeader: 'select own identity',
     nameLabel: 'activity Name',
     newOwnerLabel: 'new activity Owner',
     newOwnerPlaceholder: 'select new owner',
     newOwnerReassignSelfMsg: 'cannot reassign activity to yourself',
     ownerLabel: 'current Activity Owner',
+    partner: 'partner',
     partnerOptionsHeader: 'select a partner',
+    proceed: 'proceed',
     queueDescription: 'activity Name: ',
     queuedMsgHeader: 're-assign request added to queue',
     queuedMsgContent: 'your request to reassign the activity has been added to queue',
     queueTitle: 're-assign activity owner',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 
 export default class ActivityReassignForm extends Component {
     constructor(props) {
@@ -63,7 +67,7 @@ export default class ActivityReassignForm extends Component {
                     label: textsCap.ownerLabel,
                     name: 'ownerAddress',
                     required: true,
-                    search: true,
+                    search: ['keywords'],
                     selection: true,
                     type: 'dropdown',
                 },
@@ -73,7 +77,7 @@ export default class ActivityReassignForm extends Component {
                     onChange: this.handleNewOwnerChange,
                     placeholder: textsCap.newOwnerPlaceholder,
                     rxValue: new BehaviorSubject(),
-                    search: ['text', 'value'], // search both name and project hash
+                    search: ['keywords'], // search both name and project hash
                     selection: true,
                     required: true,
                     type: 'dropdown',
@@ -110,17 +114,30 @@ export default class ActivityReassignForm extends Component {
             .map(({ address, name }) => ({
                 description: textEllipsis(address, 15),
                 key: 'identity-' + address,
-                text: name,
+                keywords: [
+                    address,
+                    name,
+                    'identity',
+                    textsCap.identity,
+                ].join(' '),
+                text: <AddressName {...{ address }} />,
                 value: address
             }))
 
         const partnerOptions = Array.from(partners.getAll())
             // exclude any possible duplicates (if any identity is also in partner list)
             .filter(([address]) => !findIdentity(address))
-            .map(([address, { name }]) => ({
+            .map(([address, { name, userId }]) => ({
                 description: textEllipsis(address, 15),
                 key: 'partner-' + address,
-                text: name,
+                keywords: [
+                    address,
+                    name,
+                    userId,
+                    'partner',
+                    textsCap.partner,
+                ].join(' '),
+                text: <AddressName {...{ address }} />,
                 value: address
             }))
 

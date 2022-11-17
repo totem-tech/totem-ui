@@ -28,7 +28,7 @@ import { get as getPartner, getAddressName, rxPartners } from '../partner/partne
 import PartnerForm from '../partner/PartnerForm'
 import Balance from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
+import AddressName from '../partner/AddressName'
 import { copyRxSubject, subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { statuses } from '../../components/Message'
@@ -559,7 +559,7 @@ setItemViewHandler(
                     }} />
                     <div>
                         <b>{textsCap.payerIdentity}: </b>
-                        <AddPartnerBtn {...{
+                        <AddressName {...{
                             address: addressFrom,
                             userId: senderId,
                         }} />

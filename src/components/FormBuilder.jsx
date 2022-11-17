@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
@@ -442,7 +442,9 @@ class FormBuilder extends Component {
 					<Header as={Modal.Header}>
 						<Header.Content style={styles.header}>
 							{headerIcon && (
-								<Icon name={headerIcon} size='large' />
+								isValidElement(headerIcon)
+								? headerIcon
+								: <Icon name={headerIcon} size='large' />
 							)}
 							{header}
 						</Header.Content>
@@ -490,7 +492,10 @@ FormBuilder.propTypes = {
 	// read only inputs
 	inputsReadOnly: PropTypes.arrayOf(PropTypes.string),
 	header: PropTypes.string,
-	headerIcon: PropTypes.string,
+	headerIcon: PropTypes.oneOfType([
+		PropTypes.element,
+		PropTypes.string,
+	]),
 	hideFooter: PropTypes.bool,
 	message: PropTypes.object,
 	// show loading spinner

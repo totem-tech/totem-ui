@@ -10,7 +10,6 @@ import {
 	arrUnique,
 	objHasKeys,
 	isObj,
-	randomInt,
 	objClean,
 } from '../../utils/utils'
 import FormBuilder, {
@@ -29,6 +28,7 @@ import {
 import ContactForm, {
 	inputNames as contactInputNames,
 } from '../contact/ContactForm'
+import BackupForm from '../gettingStarted/BackupForm'
 import identityService from '../identity/identity'
 import locations, {
 	newId as newLocationId,
@@ -41,7 +41,6 @@ import LocationForm, {
 import CompanyForm from './CompanyForm'
 import {
 	get,
-	getAddressName,
 	getAllTags,
 	getByName,
 	set,
@@ -49,55 +48,52 @@ import {
 	types,
 	visibilityTypes,
 } from './partner'
-import { Icon } from 'semantic-ui-react'
-import BackupForm from '../gettingStarted/BackupForm'
+import PartnerIcon from './PartnerIcon'
 
-const textsCap = translated(
-	{
-		addressAdditionLabel: 'use',
-		addressLabel: 'search for Company or Identity',
-		addressEmptySearchMessage: 'enter a compnay name to search',
-		addressPlaceholder: 'search by company details or identity',
-		addressValidationMsg1:
-			'partner already exists with the following name:',
-		addressValidationMsg2: 'please enter a valid Totem Identity',
-		associatedIdentityLabel: 'associated with your identity',
-		associatedIdentityPlaceholder: 'select one of your identities',
-		autoSaved: 'changes will be auto saved',
-		business: 'business',
-		contactGroupLabel: 'contact details',
-		close: 'close',
-		companyFormOnOpenMsg: `
-        You have chosen to make this partner public.
-        Please ensure you fill in the correct details.
-        Click cancel to abort making public.`,
-		header1: 'add partner',
-		header2: 'update partner',
-		locationGroupLabel: 'location',
-		nameLabel: 'partner name',
-		namePlaceholder: 'enter a name for this partner',
-		nameValidationMsg: 'please choose an unique partner name.',
-		personal: 'personal',
-		private: 'private',
-		public: 'public',
-		regNumberLabel: 'registered number',
-		regNumberPlaceholder: 'company registration number',
-		submitFailedMsg: 'failed to save partner',
-		submitSuccessMsg1: 'partner created successfully',
-		submitSuccessMsg2: 'partner updated successfully',
-		tags: 'tags',
-		tagsNoResultsMsg: 'enter tag and press enter to add, to tags list.',
-		tagsPlaceholder: 'enter tags',
-		typeLabel: 'partner usage type',
-		userIdInvalidMsg: 'please enter a valid user ID',
-		userIdLabel: 'user ID for this partner',
-		userIdPlaceholder: 'enter user ID for this partner',
-		visibilityLabel: 'decide partner visibility (on the network)',
-		vatNumberLabel: 'VAT number',
-		vatNumberPlaceholder: 'VAT registration number',
-	},
-	true
-)[1]
+let textsCap = {
+	addressAdditionLabel: 'use',
+	addressLabel: 'search for Company or Identity',
+	addressEmptySearchMessage: 'enter a compnay name to search',
+	addressPlaceholder: 'search by company details or identity',
+	addressValidationMsg1:
+		'partner already exists with the following name:',
+	addressValidationMsg2: 'please enter a valid Totem Identity',
+	associatedIdentityLabel: 'associated with your identity',
+	associatedIdentityPlaceholder: 'select one of your identities',
+	autoSaved: 'changes will be auto saved',
+	business: 'business',
+	contactGroupLabel: 'contact details',
+	close: 'close',
+	companyFormOnOpenMsg: `
+	You have chosen to make this partner public.
+	Please ensure you fill in the correct details.
+	Click cancel to abort making public.`,
+	header1: 'add partner',
+	header2: 'update partner',
+	locationGroupLabel: 'location',
+	nameLabel: 'partner name',
+	namePlaceholder: 'enter a name for this partner',
+	nameValidationMsg: 'please choose an unique partner name.',
+	personal: 'personal',
+	private: 'private',
+	public: 'public',
+	regNumberLabel: 'registered number',
+	regNumberPlaceholder: 'company registration number',
+	submitFailedMsg: 'failed to save partner',
+	submitSuccessMsg1: 'partner created successfully',
+	submitSuccessMsg2: 'partner updated successfully',
+	tags: 'tags',
+	tagsNoResultsMsg: 'enter tag and press enter to add, to tags list.',
+	tagsPlaceholder: 'enter tags',
+	typeLabel: 'partner usage type',
+	userIdInvalidMsg: 'please enter a valid user ID',
+	userIdLabel: 'user ID for this partner',
+	userIdPlaceholder: 'enter user ID for this partner',
+	visibilityLabel: 'decide partner visibility (on the network)',
+	vatNumberLabel: 'VAT number',
+	vatNumberPlaceholder: 'VAT registration number',
+}
+textsCap = translated(textsCap, true)[1]
 
 export const requiredFields = {
 	address: 'address',
@@ -133,7 +129,7 @@ export default class PartnerForm extends Component {
 		this.partner = values && get(values.address)
 		this.doUpdate = !!this.partner
 		values = { ...this.partner, ...values }
-		const { address, name, tags = [], visibility } = values
+		const { address, name, tags = [], type, visibility } = values
 		const query = { partnerIdentity: address }
 		const [locationId, location] = Array.from(
 			!address
@@ -157,8 +153,18 @@ export default class PartnerForm extends Component {
 		this.customAddresses = []
 		this.state = {
 			closeText: this.doUpdate && autoSave ? null : closeText,
-			header:
-				header || (this.doUpdate ? textsCap.header2 : textsCap.header1),
+			header: header || (
+				this.doUpdate
+					? textsCap.header2
+					: textsCap.header1
+			),
+			headerIcon: (
+				<PartnerIcon {...{
+					size: 'large',
+					type,
+					visibility,
+				}} />
+			),
 			message: {},
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,

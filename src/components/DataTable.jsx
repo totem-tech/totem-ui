@@ -23,7 +23,7 @@ import {
 	isDefined,
 } from '../utils/utils'
 import { Invertible } from './Invertible'
-import Message from './Message'
+import Message, { statuses } from './Message'
 import Paginator from './Paginator'
 import { translated } from '../services/language'
 import { MOBILE, rxLayout } from '../services/window'
@@ -344,41 +344,52 @@ export default class DataTable extends Component {
 		// if searchable is a valid element search is assumed to be externally handled
 		const searchEl = showSearch &&
 			(React.isValidElement(searchable)
-			&& searchable
-			|| (
-				<Input {...{
-					action: !keywords
-						? undefined
-						: {
-								basic: true,
-								icon: {
-									className: 'no-margin',
-									name: 'close',
-								},
-								onClick: () => triggerSearchChange(''),
+			&& searchable || (
+			<Input {...{
+				action: !keywords
+					? undefined
+					: {
+							basic: true,
+							icon: {
+								className: 'no-margin',
+								name: 'close',
 							},
-					fluid: isMobile,
-					icon: 'search',
-					iconPosition: 'left',
-					onChange: (_, d) => triggerSearchChange(d.value),
-					onDragOver: e => e.preventDefault(),
-					onDrop: e => {
-						const keywords = e.dataTransfer.getData('Text')
-						if (!keywords.trim()) return
-						triggerSearchChange(keywords)
-					},
-					placeholder: textsCap.search,
-					type: 'search', // enables escape to clear
+							onClick: () => triggerSearchChange(''),
+						},
+				fluid: isMobile,
+				icon: 'search',
+				iconPosition: 'left',
+				onChange: (_, d) => triggerSearchChange(d.value),
+				onDragOver: e => e.preventDefault(),
+				onDrop: e => {
+					const keywords = e.dataTransfer.getData('Text')
+					if (!keywords.trim()) return
+					triggerSearchChange(keywords)
+				},
+				placeholder: textsCap.search,
+				style: { maxWidth: '100%' },
+				type: 'search', // enables escape to clear
 				value: keywords || '',
 			}} />
 		))
 		
+		const { topGrid = {} } = this.props
+		const {
+			left: {
+				computer:  computerL = showSearch ? 9 : 16,
+				tablet: tabletL = 16,
+			} = { },
+			right: {
+				computer = 7,
+				tablet = 16,
+			} = {},
+		} = topGrid
 		const leftBtns = (
-			<Grid.Column
-				tablet={16}
-				computer={showSearch ? 9 : 16}
-				style={{ padding: 0 }}
-			>
+			<Grid.Column {...{
+				tablet: tabletL, //16,
+				computer: computerL,// showSearch ? 9 : 16,
+				style: { padding: 0 },
+			}} >
 				{!isMobile && actions}
 				{actionButtons.map((item, i) => {
 					if (React.isValidElement(item) || !isObj(item)) return item
@@ -405,14 +416,14 @@ export default class DataTable extends Component {
 			<Grid columns={showSearch ? 2 : 1} style={styles.tableTopContent}>
 				<Grid.Row>
 					{leftBtns}
-					<Grid.Column
-						tablet={16}
-						computer={7}
-						style={{
+					<Grid.Column {...{
+						tablet,//: 16,
+						computer,//: 7,
+						style: {
 							padding: 0,
 							textAlign: 'right',
-						}}
-					>
+						},
+					}} >
 						{searchEl}
 						{isMobile && actions}
 					</Grid.Column>
@@ -511,6 +522,8 @@ export default class DataTable extends Component {
 		} else if (isStr(emptyMessage)) {
 			emptyMessage = { content: emptyMessage }
 		}
+		const isEmpty = totalRows === 0
+		const isLoading = isEmpty && (emptyMessage || {}).status === statuses.LOADING
 		
 		return (
 			<Invertible {...{
@@ -523,10 +536,10 @@ export default class DataTable extends Component {
 					...style,
 				},
 			}} >
-				{this.getTopContent(totalRows, selectedIndexes)}
+				{!isLoading && this.getTopContent(totalRows, selectedIndexes)}
 
 				<div style={styles.tableContent}>
-					{totalRows === 0 && emptyMessage && (
+					{isEmpty && emptyMessage && (
 						<Message {...emptyMessage} />
 					)}
 					{totalRows > 0 && (
@@ -559,6 +572,10 @@ export default class DataTable extends Component {
 		)
 	}
 }
+const gridProps = PropTypes.shape({
+	computer: PropTypes.number,
+	tablet: PropTypes.number,
+})
 DataTable.propTypes = {
 	// data: PropTypes.oneOfType([
 	//     PropTypes.array,
@@ -628,6 +645,10 @@ DataTable.propTypes = {
 	// if truthy, will show number of items selected
 	showSelectedCount: PropTypes.bool,
 	tableProps: PropTypes.object.isRequired, // table element props
+	topGrid: PropTypes.shape({
+		left: gridProps,
+		right: gridProps,
+	}),
 	topLeftMenu: PropTypes.arrayOf(PropTypes.object),
 	topRightMenu: PropTypes.arrayOf(PropTypes.object),
 }

@@ -9,7 +9,7 @@ import { MOBILE, rxLayout } from '../../services/window'
 import { blockNumberToTS } from '../../utils/time'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
+import AddressName from '../partner/AddressName'
 import useLedgerAcPostings from './useLedgerAcPostings'
 
 const textsCap = translated({
@@ -106,7 +106,7 @@ const postingModifier = (posting = {}) => {
     posting.credit = isCredit && amount || 0
     posting.debit = !isCredit && amount || 0
     posting.key = id
-    posting._partnerName = <AddPartnerBtn {...{ address: partnerAddress }} />
+    posting._partnerName = <AddressName {...{ address: partnerAddress }} />
     posting._credit = !isCredit
         ? 0
         : (

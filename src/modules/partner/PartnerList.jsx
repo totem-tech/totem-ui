@@ -14,35 +14,31 @@ import {
 	remove,
 	rxPartners,
 	setPublic,
-	types,
 	visibilityTypes,
 } from './partner'
 import CompanyForm from './CompanyForm'
 import PartnerForm, { inputNames } from './PartnerForm'
 import { MOBILE, rxLayout } from '../../services/window'
+import PartnerIcon from './PartnerIcon'
 
-const textsCap = translated(
-	{
-		add: 'add',
-		business: 'business',
-		chat: 'chat',
-		delete: 'delete',
-		edit: 'edit',
-		personal: 'personal',
-		public: 'public',
-		request: 'request',
-		tags: 'tags',
-		update: 'update',
-		usage: 'usage',
-		columnPublicTitle1: 'a public company cannot be changed to private.',
-		columnPublicTitle2:
-			'click to add a company with this identity to the public database',
-		partnerName: 'partner name',
-		removePartner: 'remove partner',
-		usedBy: 'used by',
-	},
-	true
-)[1]
+let textsCap = {
+	add: 'add',
+	chat: 'chat',
+	delete: 'delete',
+	edit: 'edit',
+	public: 'public',
+	request: 'request',
+	tags: 'tags',
+	update: 'update',
+	usage: 'usage',
+	columnPublicTitle1: 'a public company cannot be changed to private.',
+	columnPublicTitle2:
+		'click to add a company with this identity to the public database',
+	partnerName: 'partner name',
+	removePartner: 'remove partner',
+	usedBy: 'used by',
+}
+textsCap = translated(textsCap, true)[1]
 
 export default function PartnerList(props = {}) {
 	const [tableProps] = useRxSubject(rxLayout, getTableProps)
@@ -93,32 +89,13 @@ const getTableProps = layout => {
 		columns: [
 			{
 				collapsing: true,
-				content: p => {
-					const { type, visibility } = p
-					const isPersonal = type === types.PERSONAL
-					const isPublic = visibility === visibilityTypes.PUBLIC
-					const icons = {
-						business: { name: 'building', title: textsCap.business },
-						personal: { name: 'user circle', title: textsCap.personal },
-						public: {
-							color: 'blue',
-							name: 'certificate',
-							title: textsCap.public,
-						},
-					}
-					const icon = isPublic
-						? icons.public
-						: isPersonal
-							? icons.personal
-							: icons.business
-					return (
-						<Icon {...{
-							className: 'no-margin',
-							size: 'large',
-							...icon,
-						}} />
-					)
-				},
+				content: ({ type, visibility }) => (
+					<PartnerIcon {...{
+						size: 'large',
+						type,
+						visibility,
+					}} />
+				),
 				draggable: false,
 				headerProps: { style: { borderRight: 'none' } },
 				style: {
@@ -178,28 +155,6 @@ const getTableProps = layout => {
 					{ content: textsCap.add, icon: 'plus' },
 					{ content: textsCap.request },
 				],
-				// onAction: (_, addPartner) => {
-				// // Immediately re-opens the form on update mode
-				// 	const handleSubmit = (ok, partner) => ok && _showForm({
-				// 			autoSave: true,
-				// 			key: 'saved',
-				// 			values: partner,
-				// 		})
-				// 	const _showForm = (props = {}) => showForm(
-				// 		addPartner
-				// 			? PartnerForm
-				// 			: IdentityRequestForm,
-				// 		props,
-				// 		addPartner ? 'add-partner' : 'request-identity',
-				// 	)
-
-				// 	_showForm({
-				//		closeOnSubmit: false,
-				// 		onSubmit: addPartner
-				// 			? handleSubmit
-				// 			: undefined,
-				// 	})
-				// },
 				onAction: (_, addPartner) => showForm(
 					addPartner
 						? PartnerForm
