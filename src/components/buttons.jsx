@@ -22,6 +22,7 @@ import {
 	confirm,
 	showForm,
 	closeModal,
+	showInfo,
 } from '../services/modal'
 import { createInbox } from '../modules/chat/chat'
 import {
@@ -32,6 +33,7 @@ import PartnerForm from '../modules/partner/PartnerForm'
 import { getUser } from '../modules/chat/ChatClient'
 import { useInverted } from '../services/window'
 import Holdable from './Holdable'
+import PartnerIcon from '../modules/partner/PartnerIcon'
 
 let textsCap = {
 	accept: 'accept',
@@ -429,11 +431,15 @@ UserID.defaultProps = {
 	],
 }
 UserID.showModal = (userId, partnerAddress) => {
-	const { address, name = '' } = (
-		partnerAddress
-			? getPartner(partnerAddress)
-			: getByUserId(userId)
-	) || {}
+	const partner = partnerAddress
+		? getPartner(partnerAddress)
+		: getByUserId(userId)
+	const {
+		address,
+		name = '',
+		type,
+		visibility,
+	} = partner || {}
 	const addButtons = !name && [
 		{
 			content: textsCap.partnerAdd,
@@ -473,62 +479,73 @@ UserID.showModal = (userId, partnerAddress) => {
 		},
 	].filter(Boolean)
 
-	const modalId = confirm({
-		cancelButton: null, //textsCap.close,
-		confirmButton: null,
-		content: (
-			<div style={{ margin: '-20px -18px' }}>
-				<div>
-					{addButtons && (
-						<ButtonGroupOr {...{
-							fluid: true,
-							buttons: addButtons
-						}} />
-					)}
-					<ButtonGroup {...{
+	const content = (
+		<div>
+			<div>
+				{addButtons && (
+					<ButtonGroupOr {...{
 						fluid: true,
-						buttons: buttons.map(props => ({
-							key: props.content,
-							style: { margin: '3px 0' },
-							...props,
-						}))
+						buttons: addButtons
 					}} />
-				</div>
-			</div>
-		),
-		header: (
-			<div className='header'>
-				<span style={{ textTransform: 'lowercase' }}>
-					@{userId + ' '}
-				</span>
-				<Button {...{
-					circular: true,
-					icon: 'chat',
-					onClick: () =>
-						closeModal(modalId) |
-						createInbox([userId], null, true),
-					size: 'mini',
-					title: textsCap.clickToChat,
+				)}
+				<ButtonGroup {...{
+					fluid: true,
+					buttons: buttons.map(props => ({
+						key: props.content,
+						...props,
+					})),
 				}} />
-				{/* {!!name && ' | '} */}
-				<div>
-					{name && (
-						<small>
-							<b>{textsCap.partner}:</b> {`${name} `}
-							<Button {...{
-								circular: true,
-								icon: 'pencil',
-								size: 'mini',
-								title: textsCap.partnerUpdate,
-								onClick: () => showForm(PartnerForm, {
-									values: { address, userId, name },
-								}),
-							}} />
-						</small>
-					)}
-				</div>
 			</div>
-		),
-		size: 'mini',
-	})
+		</div>
+	)
+	const header = (
+		<div className='header'>
+			<span style={{ textTransform: 'lowercase' }}>
+				@{userId + ' '}
+			</span>
+			<Button {...{
+				circular: true,
+				icon: 'chat',
+				onClick: () =>
+					closeModal(modalId) |
+					createInbox([userId], null, true),
+				size: 'mini',
+				title: textsCap.clickToChat,
+			}} />
+			<div>
+				{name && (
+					<small>
+						<b>{textsCap.partner}: </b>
+						<PartnerIcon {...{ type, visibility }} />
+						{` ${name} `}
+						<Button {...{
+							circular: true,
+							icon: 'pencil',
+							size: 'mini',
+							title: textsCap.partnerUpdate,
+							onClick: () => showForm(PartnerForm, {
+								autoSave: true,
+								values: {
+									address,
+									userId,
+									name,
+								},
+							}),
+						}} />
+					</small>
+				)}
+			</div>
+		</div>
+	)
+	const modalId = showInfo(
+		{
+			content,
+			header,
+			size: 'mini',
+		},
+		undefined,
+		{
+			style: { padding: 1 },
+		},
+	)
 }

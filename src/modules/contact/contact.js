@@ -171,6 +171,7 @@ export const set = (contact, replace = false, silent) => {
         id,
         objClean(contact, Object.keys(validationConf))
     )
+    return id
 }
 
 /**

@@ -170,23 +170,42 @@ class FormBuilder extends Component {
 
 	handleChange = async (event, data, input, index, childIndex) => {
 		try {
-			const { onChange: formOnChange } = this.props
-			const { name, onChange: onInputChange, onInvalid } = input
+			const {
+				onChange: formOnChange,
+				inputsHidden = [],
+			} = this.props
+			const {
+				name,
+				onChange: onInputChange,
+				onInvalid,
+			} = input
 			let { inputs } = this.props
 			let { values } = this.state
 			const { invalid = false, value } = data
 			// for FormBuilder internal use
 			input._invalid = invalid
 			input.value = value
-			values = this.getValues(inputs, values, name, value)
+			values = this.getValues(
+				inputs,
+				values,
+				name,
+				value,
+			)
 			this.setState({ message: null, values })
 
 			// trigger input `onchange` callback if valid, otherwise `onInvalid` callback
-			const fn = invalid ? onInvalid : onInputChange
-			isFn(fn) && (await fn(event, values, index, childIndex))
+			const fn = invalid
+				? onInvalid
+				: onInputChange
+			isFn(fn) && await fn(
+				event,
+				values,
+				index,
+				childIndex,
+			)
 			// trigger form's onchange callback
 			if (isFn(formOnChange)) {
-				const formInvalid = checkFormInvalid(inputs, values)
+				const formInvalid = checkFormInvalid(inputs, values, inputsHidden)
 				await formOnChange(event, values, formInvalid)
 			}
 		} catch (err) {
@@ -647,7 +666,7 @@ export const inputsForEach = (inputs = [], callback) => {
  *
  * @returns	{Boolean}
  */
-export const checkInputInvalid = (formValues = {}, input) => {
+export const checkInputInvalid = (formValues = {}, input, inputsHidden = []) => {
 	let {
 		_invalid,
 		groupValues,
@@ -664,10 +683,12 @@ export const checkInputInvalid = (formValues = {}, input) => {
 	type = (type || 'text').toLowerCase()
 
 	// ignore if hidden
-	const isHidden = isFn(hidden)
-		? !!hidden(formValues, name)
-		: !!hidden
-	if (isHidden || type === 'hidden') return false
+	const isHidden = inputsHidden.includes(name) || type === 'hidden'
+		? true
+		: isFn(hidden)
+			? !!hidden(formValues, name)
+			: !!hidden
+	if (isHidden) return false
 
 	// ignore if input is a button or html type and doesn't have rxValue
 	const gotSubject = isSubjectLike(rxValue)
@@ -683,7 +704,8 @@ export const checkInputInvalid = (formValues = {}, input) => {
 		inputs,
 		!groupValues
 			? formValues
-			: formValues[name] || {}
+			: formValues[name] || {},
+		inputsHidden,
 	)
 
 	// if input is set invalid externally or internally by FormInput
@@ -709,8 +731,10 @@ export const checkInputInvalid = (formValues = {}, input) => {
  *
  * @returns	{Boolean}
  */
-export const checkFormInvalid = (inputs = [], values = {}) =>
-	!!inputs.find(input => checkInputInvalid(values, input))
+export const checkFormInvalid = (inputs = [], values = {}, inputsHidden = []) => {
+	const input = inputs.find(input => checkInputInvalid(values, input, inputsHidden))
+	return !!input
+}
 
 // findInput returns the first item matching supplied name.
 // If any input type is group it will recursively search in the child inputs as well
