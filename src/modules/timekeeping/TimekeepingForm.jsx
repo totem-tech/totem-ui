@@ -1,24 +1,43 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Button, Icon } from 'semantic-ui-react'
-import { deferred, hasValue, isBool, isDefined, isFn, isValidNumber, objCopy } from '../../utils/utils'
-import { BLOCK_DURATION_SECONDS, BLOCK_DURATION_REGEX, durationToSeconds, secondsToDuration, blockNumberToTS } from '../../utils/time'
+import { Button } from 'semantic-ui-react'
+import {
+    deferred,
+    hasValue,
+    isDefined,
+    isFn,
+} from '../../utils/utils'
+import {
+    BLOCK_DURATION_SECONDS,
+    BLOCK_DURATION_REGEX,
+    durationToSeconds,
+    secondsToDuration,
+    blockNumberToTS,
+} from '../../utils/time'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import DataTableVertical from '../../components/DataTableVertical'
 // services
-import { query as queryBlockchain, getCurrentBlock } from '../../services/blockchain'
+import { getCurrentBlock } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { confirm, closeModal, showForm, confirmAsPromise } from '../../services/modal'
+import { confirm, confirmAsPromise } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { openStatuses, query as queryProject } from '../activity/activity'
 import identities, { getSelected } from '../identity/identity'
-import { getAddressName } from '../partner/partner'
-import { timerFormValues, getProjects, NEW_RECORD_HASH, query, queueables, statuses } from './timekeeping'
-import { handleInvitation } from './notificationHandlers'
-import DataTableVertical from '../../components/DataTableVertical'
+import IdentityIcon from '../identity/IdentityIcon'
 import AddressName from '../partner/AddressName'
+import { getAddressName } from '../partner/partner'
+import {
+    timerFormValues,
+    getProjects,
+    NEW_RECORD_HASH,
+    query,
+    queueables,
+    statuses,
+} from './timekeeping'
+import { handleInvitation } from './notificationHandlers'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -184,7 +203,16 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
     const content = (
         <DataTableVertical {...{
             columns: [
-                { title: textsCap.identity, key: 'identity'},
+                {
+                    content: ({ identity, usageType }) => (
+                        <span>
+                            <IdentityIcon {...{ address: identity, usageType }} />
+                            {' ' + identity}
+                        </span>
+                    ),
+                    title: textsCap.identity,
+                    key: 'identity',
+                },
                 { title: textsCap.activity, key: 'activity'},
                 { title: textsCap.duration, key: 'duration'},
                 { title: textsCap.numberOfBlocks, key: 'numberOfBlocks'},

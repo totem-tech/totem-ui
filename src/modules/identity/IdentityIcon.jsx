@@ -89,5 +89,6 @@ IdentityIcon.propTypes = {
     usageType: PropTypes.oneOf(
         Object.values(USAGE_TYPES)
     ),
+    // ...other props acceptable by Icon
 }
 export default IdentityIcon
