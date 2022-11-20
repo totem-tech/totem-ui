@@ -67,7 +67,13 @@ function AddressName(props) {
             {!!identity
                 ? <IdentityIcon {...{ address, usageType }} />
                 : !!partner
-                    ? <PartnerIcon {...{ type, visibility }} />
+                    ? (
+                        <PartnerIcon {...{
+                            address,
+                            type,
+                            visibility,
+                        }} />
+                    )
                     : ''
             }
             {addBtn}{!!name && ' '}

@@ -345,6 +345,7 @@ const getTableProps = (isMobile, isFulfillerList) => ({
         {
             collapsing: true,
             content: getActions,
+            draggable: false,
             textAlign: 'center',
             title: textsCap.action,
         },

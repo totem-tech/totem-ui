@@ -1,10 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon } from 'semantic-ui-react'
 import { rxUserIdentity } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import { objWithoutKeys } from '../../utils/utils'
+import { showForm } from '../../services/modal'
+import { MOBILE, rxLayout } from '../../services/window'
 import { USAGE_TYPES } from './identity'
+import IdentityDetailsForm from './IdentityDetailsForm'
 
 const textsCap = translated({
     business: 'business',
@@ -14,6 +17,7 @@ const textsCap = translated({
 }, true)[1]
 
 const IdentityIcon = props => {
+    const [hovered, setHovered] = useState(false)
     const {
         address,
         size,
@@ -21,10 +25,11 @@ const IdentityIcon = props => {
         usageType,
     } = props
     const isReward = rxUserIdentity.value === address
-    let color, name, title
+    const isMobile = rxLayout.value === MOBILE
     const ut = isReward
         ? USAGE_TYPES.REWARD
         : usageType
+    let color, name, title
     switch (ut) {
         case USAGE_TYPES.BUSINESS:
             name = 'building'
@@ -42,15 +47,36 @@ const IdentityIcon = props => {
             break
     }
 
+    const handleClick =!address
+        ? undefined
+        : e => {
+            e.preventDefault()
+            e.stopPropagation()
+            showForm(IdentityDetailsForm, {
+                values: { address },
+            })
+        }
+    const handleToggle = isMobile || !address
+        ? undefined
+        : () => setHovered(!hovered)
     return (
         <Icon {...{
             className: 'no-margin',
             color,
-            title,
+            onClick: handleClick,
+            onMouseEnter: handleToggle,
+            onMouseLeave: handleToggle,
             ...objWithoutKeys(props, ['address', 'usageType']),
-            name,
+            name: hovered
+                ? 'pencil'
+                : name,
             style: {
-                fontSize: size ? undefined : '110%',
+                cursor: address
+                    ? 'pointer'
+                    : undefined,
+                fontSize: size
+                    ? undefined
+                    : '110%',
                 ...style,
             },
             title: `${textsCap.identity} (${title})`

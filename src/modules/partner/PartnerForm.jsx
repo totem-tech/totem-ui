@@ -610,7 +610,7 @@ export default class PartnerForm extends Component {
 
 		const OptionText = React.memo(({ name, subText }) => (
 			<div>
-				<PartnerIcon {...{ visibility: visibilityTypes.PUBLIC }} />
+				<PartnerIcon visibility={visibilityTypes.PUBLIC} />
 				{' ' + name}
 				<div style={{ color: 'grey' }}>
 					<small>{subText}</small>
@@ -619,10 +619,16 @@ export default class PartnerForm extends Component {
 		))
 
 		const handleResult = success => result => {
-			const err = !success ? result : null
-			const companies = success ? result : new Map()
+			const err = !success
+				? result
+				: null
+			const companies = success
+				? result
+				: new Map()
 			addressIn.loading = false
-			addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress
+			addressIn.allowAdditions = !err
+				&& companies.size === 0
+				&& isValidAddress
 			addressIn.options = err || !companies
 				? []
 				: Array
@@ -634,9 +640,19 @@ export default class PartnerForm extends Component {
 							name,
 							regAddress = {},
 						} = company
-						const { addressLine1, county, postCode, postTown } = regAddress 
+						const {
+							addressLine1,
+							county,
+							postCode,
+							postTown,
+						} = regAddress 
 						const key = identity
-						const ar = [addressLine1, postTown, postCode, county]
+						const ar = [
+							addressLine1,
+							postTown,
+							postCode,
+							county,
+						]
 						const subText = ar
 							.map(x => `${x || ''}`.trim())
 							.filter(Boolean)

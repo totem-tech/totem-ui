@@ -516,7 +516,11 @@ UserID.showModal = (userId, partnerAddress) => {
 				{name && (
 					<small>
 						<b>{textsCap.partner}: </b>
-						<PartnerIcon {...{ type, visibility }} />
+						<PartnerIcon {...{
+							address,
+							type,
+							visibility,
+						}} />
 						{` ${name} `}
 						<Button {...{
 							circular: true,

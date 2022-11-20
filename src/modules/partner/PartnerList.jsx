@@ -89,8 +89,9 @@ const getTableProps = layout => {
 		columns: [
 			{
 				collapsing: true,
-				content: ({ type, visibility }) => (
+				content: ({ address, type, visibility }) => (
 					<PartnerIcon {...{
+						address,
 						size: 'large',
 						type,
 						visibility,

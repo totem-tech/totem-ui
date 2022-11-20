@@ -512,7 +512,7 @@ export default class DataTable extends Component {
 				filteredData,
 				sortBy,
 				!sortAsc,
-				false
+				true,
 			)
 		selectedIndexes = selectedIndexes.filter(
 			index => !!(
