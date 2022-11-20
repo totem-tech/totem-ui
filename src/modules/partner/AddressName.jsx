@@ -43,14 +43,18 @@ function AddressName(props) {
     const addBtn = !name && (
         <Button {...{
             icon: 'user plus',
-            onClick: () => showForm(PartnerForm, {
-                values: {
-                    address,
-                    name: partnerName,
-                    userId,
-                    ...partnerFormProps,
-                },
-            }),
+            onClick: e => {
+                e.preventDefault()
+                e.stopPropagation()
+                showForm(PartnerForm, {
+                    values: {
+                        address,
+                        name: partnerName,
+                        userId,
+                        ...partnerFormProps,
+                    },
+                })
+            },
             size: 'mini',
             title: textsCap.addPartner,
         }} />
@@ -59,6 +63,7 @@ function AddressName(props) {
     return (
         <Component {...{
             ...objWithoutKeys(props, ignoreAttributes),
+            key: address,
             style: {
                 whiteSpace: 'nowrap',
                 ...style,

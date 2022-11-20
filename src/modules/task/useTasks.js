@@ -4,11 +4,10 @@ import { format } from '../../utils/time'
 import { isFn, arrUnique, objCopy, isMap, isArr, isObj } from '../../utils/utils'
 // services
 import { translated } from '../../services/language'
-import { getAddressName } from '../partner/partner'
 import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
 import AddressName from '../partner/AddressName'
 import { isAddress } from 'web3-utils'
-import notification, { rxNewNotification } from '../notification/notification'
+import { rxNewNotification } from '../notification/notification'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',

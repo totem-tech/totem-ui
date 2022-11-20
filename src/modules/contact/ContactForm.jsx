@@ -24,6 +24,7 @@ import {
 } from './contact'
 import FormInput from '../../components/FormInput'
 import AddressName from '../partner/AddressName'
+import PartnerIcon from '../partner/PartnerIcon'
 
 const textsCap = translated(
 	{
@@ -192,7 +193,16 @@ export default function ContactForm(props) {
 							type,
 							visibility,
 						].join(' '),
-						text: <AddressName {...{ address }} />,
+						text: (
+							<span>
+								<PartnerIcon {...{
+									address,
+									type,
+									visibility,
+								}} />
+								{' ' + name}
+							</span>
+						),
 						value: address,
 					})),
 				selection: true,

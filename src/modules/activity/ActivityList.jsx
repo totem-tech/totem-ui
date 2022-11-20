@@ -359,8 +359,8 @@ export default class ActivityList extends Component {
         topRightMenu.forEach(x => { x.disabled = len === 0; return x })
 
         // Enable export button only when all projects are selected
-        const exportBtn = findInput(topRightMenu, 'export')
-        exportBtn.disabled = len !== projects.size
+        // const exportBtn = findInput(topRightMenu, 'export')
+        // exportBtn.disabled = len !== projects.size
 
         // If every selected project's status is 'open' or 're-opened change action to 'Close', otherwise 'Re-open'
         const closeBtn = findInput(topRightMenu, 'close')

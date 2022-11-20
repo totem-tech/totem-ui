@@ -45,11 +45,11 @@ import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { getById } from '../history/history'
 import { Balance } from '../identity/Balance'
 import { find as findIdentity, getSelected } from '../identity/identity'
-import { get as getPartner, rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
+import PartnerIcon from '../partner/PartnerIcon'
+import { get as getPartner, rxPartners } from '../partner/partner'
 import { queueables } from './task'
 import { rxUpdater } from './useTasks'
-import AddressName from '../partner/AddressName'
 
 let textsCap = {
     addedToQueue: 'request added to queue',
@@ -273,22 +273,31 @@ export default class TaskForm extends Component {
                     rxOptions: rxPartners,
                     rxOptionsModifier: partners => arrSort(
                         Array.from(partners)
-                            .map(([address, { name, type, userId, visibility }]) => ({
+                            .map(([_, { address, name, type, userId, visibility }]) => ({
                                 description: !userId
                                     ? undefined
                                     : `@${userId}`,
                                 key: address,
                                 keywords: [
-                                    address,
                                     name,
+                                    address,
                                     type,
                                     userId,
                                     visibility,
                                 ].join(' '),
-                                text: <AddressName {...{ address }} />,
+                                text: (
+                                    <span>
+                                        <PartnerIcon {...{
+                                            address,
+                                            type,
+                                            visibility,
+                                        }} />
+                                        {' ' + name}
+                                    </span>
+                                ),
                                 value: address,
                             })),
-                        'text',
+                        'keywords',
                     ), 
                     selection: true,
                     search: ['keywords'],

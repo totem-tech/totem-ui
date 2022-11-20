@@ -14,6 +14,7 @@ import {
 	useRxSubject,
 } from '../../../utils/reactHelper'
 import {
+	arrSort,
 	deferred,
 	isFn,
 	isHex,
@@ -22,15 +23,16 @@ import {
 import FAQ from '../../../components/FAQ'
 import FormBuilder, { findInput } from '../../../components/FormBuilder'
 import Message, { statuses } from '../../../components/Message'
+import BackupForm from '../../gettingStarted/BackupForm'
 import { rxHistory } from '../../history/history'
 import identities, {
 	rxIdentities,
 	rxSelected,
 } from '../../identity/identity'
+import IdentityIcon from '../../identity/IdentityIcon'
 import { rxPartners } from '../../partner/partner'
 import { generateTweet, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
-import BackupForm from '../../gettingStarted/BackupForm'
 
 let textsCap = {	    
 	continue: 'continue',    
@@ -308,13 +310,22 @@ const getFormProps = () => {
 			options: [],
 			readOnly: true,
 			rxOptions: rxIdentities,
-			rxOptionsModifier: identitiesMap => Array
-				.from(identitiesMap)
-				.map(([value, { name }]) => ({
-					key: value,
-					text: <b>{name}</b>,
-					value,
-				})),
+			rxOptionsModifier: identitiesMap => arrSort(
+				Array
+					.from(identitiesMap)
+					.map(([address, { name }]) => ({
+						key: address,
+						name,
+						text: (
+							<span>
+								<IdentityIcon {...{ usageType }} />
+								<b> {name}</b>
+							</span>
+						),
+						value: address,
+					})),
+				'name',
+			),
 			selection: true,
 			rxValue: new BehaviorSubject(),
 			type: 'dropdown',

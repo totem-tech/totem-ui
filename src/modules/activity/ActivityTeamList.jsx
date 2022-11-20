@@ -40,26 +40,23 @@ export default function ActivityTeamList(props) {
     useEffect(() => {
         let mounted = true
         const postProcess = (accepted, setState) => addresses => {
-            const addDetails = address => {
-                const isOwnIdentity = !!getIdentity(address)
-                return {
-                    accepted,
-                    address,
-                    name: <AddressName {...{ address }} />,
-                    invited: true,
-                    status: accepted
-                        ? textsCap.accepted
-                        : !isOwnIdentity
-                            ? textsCap.invited
-                            : (
-                                // Worker identity belongs to current user => button to accept or reject
-                                <ButtonAcceptOrReject
-                                    onAction={(_, accept) => handleTkInvitation(projectId, address, accept)}
-                                    style={{ marginTop: 10 }}
-                                />
-                            )
-                }
-            }
+            const addDetails = address => ({
+                accepted,
+                address,
+                name: <AddressName {...{ address }} />,
+                invited: true,
+                status: accepted
+                    ? textsCap.accepted
+                    : !getIdentity(address)
+                        ? textsCap.invited
+                        : (
+                            // Worker identity belongs to current user => button to accept or reject
+                            <ButtonAcceptOrReject
+                                onAction={(_, accept) => handleTkInvitation(projectId, address, accept)}
+                                style={{ marginTop: 10 }}
+                            />
+                        )
+            })
             mounted && setState(addresses.map(addDetails))
         }
         const subs = {

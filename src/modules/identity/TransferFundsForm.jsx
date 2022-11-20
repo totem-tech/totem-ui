@@ -32,6 +32,8 @@ import AddressName from '../partner/AddressName'
 import { copyRxSubject, subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { statuses } from '../../components/Message'
+import IdentityIcon from './IdentityIcon'
+import PartnerIcon from '../partner/PartnerIcon'
 
 const textsCap = translated({
     amount: 'amount',
@@ -241,14 +243,19 @@ export default class TransferFundsForm extends Component {
                 .map(([address, { name, usageType }]) => ({
                     key: address,
                     keywords: [
-                        address,
                         name,
+                        address,
                         usageType,
                     ].join(' '),
-                    text: <AddressName {...{ address}} />,
+                    text: (
+                        <span>
+                            <IdentityIcon {...{ address, usageType }} />
+                            {' ' + name}
+                        </span>
+                    ),
                     value: address,
                 }))
-            fromIn.options = arrSort(options, 'text')
+            fromIn.options = arrSort(options, 'keywords')
             this.setState({ inputs })
         })
         // repopulate options if partners list changes
@@ -265,7 +272,16 @@ export default class TransferFundsForm extends Component {
                             type,
                             visibility,
                         ].join(' '),
-                        text: <AddressName {...{ address }} />,
+                        text: (
+                            <span>
+                                <PartnerIcon {...{
+                                    address,
+                                    type,
+                                    visibility,
+                                }} />
+                                {' ' + name}
+                            </span>
+                        ),
                         value: address,
                     })),
                 'text'

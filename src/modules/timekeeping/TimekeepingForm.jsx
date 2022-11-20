@@ -26,9 +26,7 @@ import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { openStatuses, query as queryProject } from '../activity/activity'
 import identities, { getSelected } from '../identity/identity'
-import IdentityIcon from '../identity/IdentityIcon'
 import AddressName from '../partner/AddressName'
-import { getAddressName } from '../partner/partner'
 import {
     timerFormValues,
     getProjects,

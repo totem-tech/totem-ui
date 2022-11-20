@@ -23,13 +23,17 @@ import ContactForm, {
 	inputNames as contactcInputNames,
 } from '../contact/ContactForm'
 import { getAll as getPartners } from '../partner/partner'
+import PartnerIcon from '../partner/PartnerIcon'
 import { get as getLocation } from '../location/location'
 import LocationForm, {
 	inputNames as locFormInputNames,
 } from '../location/LocationForm'
-import { find as findIdentity, getAll as getIdentities } from './identity'
-import IdentityForm, { inputNames as idInputNames } from './IdentityForm'
-import AddressName from '../partner/AddressName'
+import {
+	find as findIdentity,
+	getAll as getIdentities,
+} from './identity'
+import { inputNames as idInputNames } from './IdentityForm'
+import IdentityIcon from './IdentityIcon'
 
 const notificationType = 'identity'
 const childType = 'share'
@@ -175,33 +179,9 @@ export default class IdentityShareForm extends Component {
 			name, // keep
 			value: address,
 			text: (
-				<span style={{ paddingLeft: 25 }}>
-					<Button {...{
-						compact: true,
-						icon: 'pencil',
-						onClick: e => {
-							e.preventDefault()
-							e.stopPropagation()
-							showForm(IdentityForm, {
-								autoSave: true,
-								// onChange: deferred(e => {
-								// 	this.handleAddressChange(e, this.values)
-								// }, 100),
-								values: {
-									[idInputNames.address]: address,
-								},
-								// repopulate includeInput options
-								onClose: () => this.handleAddressChange({}, this.values),
-							})
-						},
-						size: 'mini',
-						// style adjustment to make sure height of the dropdown doesn't change because of the button
-						style: {
-							position: 'absolute',
-							margin: '-5px -30px',
-						},
-					}} />
-					<AddressName {...{ address }} />
+				<span>
+					<IdentityIcon {...{ address, usageType }} />
+					{' ' + name}
 				</span>
 			),
 		})
@@ -241,7 +221,16 @@ export default class IdentityShareForm extends Component {
 							textsCap.partner,
 						].join(' '),
 						name, // keep
-						text: <AddressName {...{ address }} />,
+						text: (
+							<span>
+								<PartnerIcon {...{
+									address,
+									type,
+									visibility,
+								}} />
+								{' ' + name}
+							</span>
+						),
 						value: address,
 					}))
 			)

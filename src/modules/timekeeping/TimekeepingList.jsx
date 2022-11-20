@@ -22,8 +22,10 @@ import identities, {
     rxIdentities,
     rxSelected,
 } from '../identity/identity'
-import { getAddressName, rxPartners } from '../partner/partner'
-import PartnerForm from '../partner/PartnerForm'
+import AddressName from '../partner/AddressName'
+import { rxPartners } from '../partner/partner'
+import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
+import SumDuration from './SumDuration'
 import {
     getProjects,
     statuses,
@@ -32,12 +34,8 @@ import {
     blocksToDuration,
     rxDurtionPreference,
 } from './timekeeping'
-import SumDuration from './SumDuration'
-import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
-import TimekeepingInviteForm from './TimekeepingInviteForm'
 import TimekeepingDetailsForm from './TimekeepingDetails'
-import PartnerBtn from '../partner/AddressName'
-import AddressName from '../partner/AddressName'
+import TimekeepingInviteForm from './TimekeepingInviteForm'
 
 const toBeImplemented = () => alert('To be implemented')
 

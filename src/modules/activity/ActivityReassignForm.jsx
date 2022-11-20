@@ -11,7 +11,8 @@ import { find as findIdentity, getAll as getIdentities } from '../identity/ident
 import partners from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { queueables } from './activity'
-import AddressName from '../partner/AddressName'
+import IdentityIcon from '../identity/IdentityIcon'
+import PartnerIcon from '../partner/PartnerIcon'
 
 let textsCap = {
     cancel: 'cancel',
@@ -111,23 +112,29 @@ export default class ActivityReassignForm extends Component {
         const { ownerAddress } = values
         const identityOptions = getIdentities()
             // dropdown options
-            .map(({ address, name }) => ({
+            .map(({ address, name, usageType }) => ({
                 description: textEllipsis(address, 15),
                 key: 'identity-' + address,
                 keywords: [
-                    address,
                     name,
+                    address,
+                    usageType,
                     'identity',
                     textsCap.identity,
                 ].join(' '),
-                text: <AddressName {...{ address }} />,
+                text: (
+                    <span>
+                        <IdentityIcon {...{ address, usageType }} />
+                        {' ' + name}
+                    </span>
+                ),
                 value: address
             }))
 
         const partnerOptions = Array.from(partners.getAll())
             // exclude any possible duplicates (if any identity is also in partner list)
             .filter(([address]) => !findIdentity(address))
-            .map(([address, { name, userId }]) => ({
+            .map(([address, { name, type, userId, visibility }]) => ({
                 description: textEllipsis(address, 15),
                 key: 'partner-' + address,
                 keywords: [
@@ -137,27 +144,42 @@ export default class ActivityReassignForm extends Component {
                     'partner',
                     textsCap.partner,
                 ].join(' '),
-                text: <AddressName {...{ address }} />,
+                text: (
+                    <span>
+                        <PartnerIcon {...{
+                            address,
+                            type,
+                            visibility,
+                        }} />
+                        {' ' + name}
+                    </span>
+                ),
                 value: address
             }))
 
         const options = []
-        identityOptions.length > 0 && options.push({
+        identityOptions.length > 0 && options.push(
+            {
             key: 'identities',
             style: styles.itemHeader,
             text: textsCap.identityOptionsHeader,
             value: '' // keep
-        }, ...arrSort(
+            },
             // exclude current owner
-            identityOptions.filter(({ value }) => value !== ownerAddress),
-            'text'
-        ))
-        partnerOptions.length > 0 && options.push({
-            key: 'partners',
-            style: styles.itemHeader,
-            text: textsCap.partnerOptionsHeader,
-            value: '' // keep
-        }, ...arrSort(partnerOptions, 'text'))
+            ...arrSort(
+                identityOptions.filter(({ value }) => value !== ownerAddress),
+                'keywords'
+            ),
+        )
+        partnerOptions.length > 0 && options.push(
+            {
+                key: 'partners',
+                style: styles.itemHeader,
+                text: textsCap.partnerOptionsHeader,
+                value: '' // keep
+            },
+            ...arrSort(partnerOptions, 'keywords'),
+        )
         findInput(inputs, 'ownerAddress').options = identityOptions
         findInput(inputs, 'newOwnerAddress').options = options
         fillValues(inputs, { ...values, hash })
