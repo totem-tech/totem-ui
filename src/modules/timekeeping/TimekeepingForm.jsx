@@ -203,16 +203,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
     const content = (
         <DataTableVertical {...{
             columns: [
-                {
-                    content: ({ identity, usageType }) => (
-                        <span>
-                            <IdentityIcon {...{ address: identity, usageType }} />
-                            {' ' + identity}
-                        </span>
-                    ),
-                    title: textsCap.identity,
-                    key: 'identity',
-                },
+                { title: textsCap.identity, key: 'identity' },
                 { title: textsCap.activity, key: 'activity'},
                 { title: textsCap.duration, key: 'duration'},
                 { title: textsCap.numberOfBlocks, key: 'numberOfBlocks'},
@@ -221,7 +212,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
                 { title: textsCap.finishedAt, key: 'finishedAt'},
             ],
             data: [{
-                identity: getAddressName(workerAddress),
+                identity: <AddressName {...{ address: workerAddress }} />,
                 activity: projectName,
                 duration: duration,
                 numberOfBlocks: blockCount,
