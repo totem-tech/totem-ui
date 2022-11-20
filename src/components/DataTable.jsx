@@ -129,12 +129,13 @@ export default class DataTable extends Component {
 						columnSortable &&
 						this.setState({
 							sortBy: sortKey,
-							sortAsc: sortBy === sortKey ? !sortAsc : true,
+							sortAsc: sortBy === sortKey
+								? !sortAsc
+								: true,
 						}),
-					sorted:
-						sortBy !== sortKey
-							? null
-							: sortAsc
+					sorted: sortBy !== sortKey
+						? null
+						: sortAsc
 							? 'ascending'
 							: 'descending',
 					style: {
@@ -481,9 +482,15 @@ export default class DataTable extends Component {
 			style,
 			tableProps,
 		} = this.props
-		let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
+		let {
+			keywords,
+			pageNo,
+			selectedIndexes,
+			sortAsc,
+			sortBy,
+		} = this.state
 
-		keywords = `${isDefined(keywords) ? keywords : keywordsP || ''}`.trim()
+		keywords = `${keywords || keywordsP || ''}`.trim()
 		const columns = columnsOriginal.filter(x => !!x && !x.hidden)
 		// Include extra searchable keys that are not visibile on the table
 		const keys = arrUnique([
@@ -494,12 +501,25 @@ export default class DataTable extends Component {
 		])
 		let filteredData = !keywords
 			? data
-			: search(data, keywords, keys)
+			: search(
+				data,
+				keywords,
+				keys,
+			)
 		filteredData = !sortBy
 			? filteredData
-			: sort(filteredData, sortBy, !sortAsc, false)
+			: sort(
+				filteredData,
+				sortBy,
+				!sortAsc,
+				false
+			)
 		selectedIndexes = selectedIndexes.filter(
-			index => !!(isArr(data) ? data[index] : data.get(index))
+			index => !!(
+				isArr(data)
+					? data[index]
+					: data.get(index)
+			)
 		)
 		// actual total
 		const totalItems = data.size || data.length
