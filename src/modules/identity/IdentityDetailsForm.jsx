@@ -80,6 +80,7 @@ class IdentityDetailsForm extends Component {
 				{
 					content: (
 						<IdentityForm {...{
+							inputNamePrefix: 'IdentityForm',
 							El: 'div',
 							// auto save changes
 							autoSave: true,

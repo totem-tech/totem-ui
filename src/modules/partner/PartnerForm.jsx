@@ -453,13 +453,14 @@ export default class PartnerForm extends Component {
 		contact.id = contact.id || newContactId(this.state.values[inputNames.address])
 		return (
 			<ContactForm {...{
-				El: 'div',
 				autoSave: true,
+				El: 'div',
 				inputsHidden: [
 					contactInputNames.name,
 					contactInputNames.partnerIdentity,
 					// contactInputNames.removeBtn,
 				],
+				inputNamePrefix: 'ContactForm',
 				key: contact.id,
 				onChange: !!this.contactId
 					? undefined
@@ -498,14 +499,15 @@ export default class PartnerForm extends Component {
 		locationId = locationId || newLocationId(this.state.values[inputNames.address])
 		return (
 			<LocationForm {...{
-				El: 'div',
 				autoSave: true,
+				El: 'div',
 				id: locationId,
 				inputsHidden: [
 					locationInputNames.name,
 					locationInputNames.partnerName,
 					// locationInputNames.removeBtn,
 				],
+				inputNamePrefix: 'LocationForm',
 				key: locationId,
 				onChange: (_, values) => {
 					this.locationDraft = values
