@@ -313,7 +313,7 @@ const getFormProps = () => {
 			rxOptionsModifier: identitiesMap => arrSort(
 				Array
 					.from(identitiesMap)
-					.map(([address, { name }]) => ({
+					.map(([address, { name, usageType }]) => ({
 						key: address,
 						name,
 						text: (
