@@ -25,6 +25,7 @@ import {
 } from '../notification/notification'
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
+import PartnerIcon from './PartnerIcon'
 
 let textsCap = {
 	addPartner: 'add partner',
@@ -44,8 +45,19 @@ const handleIdentityReceived = (
 	{ senderId, senderIdBtn }
 ) => {
 	const { data, message } = notification
-	const { address, contactDetails, introducedBy, location, name } = data || {}
+	const {
+		address,
+		contactDetails,
+		introducedBy,
+		location,
+		name: newName,
+	} = data || {}
 	const partner = get(address)
+	const {
+		name,
+		type,
+		visibility,
+	} = partner || {}
 	const onAction = (_, accepted) => {
 		try {
 			if (!accepted) return remove(id)
@@ -140,7 +152,9 @@ const handleIdentityReceived = (
 				</div>
 				{partner && (
 					<div style={{ fontSize: '75%' }}>
-						{textsCap.partnerName}: {partner.name || name}
+						<b>{textsCap.partnerName}: </b>
+						<PartnerIcon {...{ type, visibility }} />
+						{' ' + (name || newName)}
 					</div>
 				)}
 				{introducedBy && (

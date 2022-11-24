@@ -3,7 +3,6 @@ import { generateMnemonic } from 'bip39'
 import DataStorage from '../../utils/DataStorage'
 import { keyring } from '../../utils/polkadotHelper'
 import { isBool, isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
-import storage from '../../utils/storageHelper'
 
 const identities = new DataStorage('totem_identities')
 export const DEFAULT_NAME = 'Default' // default identity name

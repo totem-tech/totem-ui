@@ -198,7 +198,7 @@ export const queueables = {
     // un-/archive a record. See @hashTypes for a list of supported types.
     //
     // Props: 
-    // @ownerAddress    string
+    // @ownerAddress    string: record owner address
     // @type            int: type code. See @hashTypes
     // @recordId        string: hash of the record to be un-/archived
     // @archive         boolean: indicates archive or unarchive action

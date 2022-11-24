@@ -93,6 +93,7 @@ export default class TransferFundsForm extends Component {
         this.rxCurrencyReceived = new BehaviorSubject(rxSelectedCurrency.value)
         this.rxCurrencySent = copyRxSubject(rxSelectedCurrency)
         this.rxCurrencyOptions = new BehaviorSubject([])
+        this.rxPartners = copyRxSubject(rxPartners)
         const inputs = [
             {
                 label: (
@@ -103,7 +104,11 @@ export default class TransferFundsForm extends Component {
                     }} />
                 ),
                 name: this.names.from,
-                onChange: this.handleCurrencyChange,
+                onChange: (...args) => {
+                    this.handleCurrencyChange(...args)
+                    // trigger partner options update
+                    this.rxPartners.next(this.rxPartners.value)
+                },
                 options: [],
                 rxOptions: rxIdentities,
                 rxOptionsModifier: getIdentityOptions,
@@ -145,8 +150,9 @@ export default class TransferFundsForm extends Component {
                 },
                 options: [],
                 placeholder: textsCap.partnerPlaceholder,
-                rxOptions: rxPartners,
-                rxOptionsModifier: getPartnerOptions,
+                rxOptions: this.rxPartners,
+                rxOptionsModifier: partners => getPartnerOptions(partners, {}, true)
+                    .filter(x => x.value !== this.rxAddress.value),
                 required: true,
                 rxValue: new BehaviorSubject(),
                 search: ['keywords'],
@@ -358,6 +364,7 @@ export default class TransferFundsForm extends Component {
 
         amountReceivedIn.rxValue.next('')
         amountReceivedIn.rxValue.next(amountReceived)
+
     }, 300)
 
     handleSubmit = (_, values) => {
@@ -503,14 +510,21 @@ const FromInputLabel = ({ rxAddress, rxCurrencyReceived, rxCurrencySent }) => {
 }
 
 // set transfer notificaton item view handler
+// ToDo: move to notificationHandlers.js
 setItemViewHandler(
     TRANSFER_TYPE,
     null,
     (id, notification = {}, { senderId, senderIdBtn }) => {
         const { data = {} } = notification
-        const { addressFrom, addressTo, amount } = data
+        const {
+            addressFrom,
+            addressTo,
+            amount,
+        } = data
         const identity = getIdentity(addressTo)
         if (!identity || !isValidNumber(amount)) return removeNotif(id)
+
+        const { address, name, usageType } = identity
 
         return {
             icon: 'money bill alternate outline',
@@ -531,7 +545,8 @@ setItemViewHandler(
                     </div>
                     <div>
                         <b>{textsCap.yourIdentity}: </b>
-                        {identity.name}
+                        <IdentityIcon {...{ address, usageType }} />
+                        {' ' + name}
                     </div>
                 </div>
             ),

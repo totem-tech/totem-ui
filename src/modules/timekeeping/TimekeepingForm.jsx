@@ -37,6 +37,7 @@ import {
 } from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
 import IdentityIcon from '../identity/IdentityIcon'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -588,29 +589,11 @@ export default class TimekeepingForm extends Component {
         if (!projectId) return
         const { inputs } = this.state
         const identityIn = findInput(inputs, 'workerAddress')
-        const allIdentities = identities.getAll()
         const workers = await query.worker.listWorkers(projectId)
-        const options = allIdentities
-            // exclude projects that hasn't been accepted yet
-            .filter(({ address }) => workers.includes(address))
-            .map(({ address, name, usageType }) => ({
-                key: address,
-                keyworkds: [
-                    address,
-                    name,
-                    usageType,
-                ].join(' '),
-                text: (
-                    <span>
-                        <IdentityIcon {...{ address, usageType }} />
-                        {' ' + name}
-                    </span>
-                ),
-                value: address,
-            }))
-        identityIn.options = options
-        const hasOption = options.find(({ value }) => value === workerAddress)
-        identityIn.rxValue.next(hasOption ? workerAddress : null)
+        identityIn.options = getIdentityOptions()
+            .filter(x => workers.includes(x.address))
+        const isWorker = !!options.find(({ value }) => value === workerAddress)
+        identityIn.rxValue.next(isWorker ? workerAddress : null)
         this.setState({ inputs })
     }
 

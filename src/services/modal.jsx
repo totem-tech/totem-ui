@@ -361,7 +361,9 @@ el && render(<ModalsConainer />, el)
 export default {
     closeModal,
     confirm,
+    confirmAsPromise,
     ModalsConainer,
     rxModals,
     showForm,
+    showInfo,
 }

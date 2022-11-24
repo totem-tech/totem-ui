@@ -1,7 +1,7 @@
 import React from 'react'
 import { UserID } from '../../components/buttons'
 import { translated } from '../../utils/languageHelper'
-import { arrSort, isMap, isObj } from '../../utils/utils'
+import { arrReverse, arrSort, isObj } from '../../utils/utils'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
 import { rxPartners } from './partner'
 import PartnerIcon from './PartnerIcon'
@@ -17,30 +17,18 @@ const textsCap = translated({
  * @summary constructs a list of Dropdown options using partners
  * 
  * @param   {Map}       partners
- * @param   {Object}    formProps props to be supplied when  editing the partner
- * @param   {Boolean}   includeOwnIdentities whether to include user identities as well.
+ * @param   {Object}    formProps   (optional) props to be supplied when  editing the partner
+ * @param   {Boolean}   includeIdentities   (optional) whether to include user identities as well.
  *                      identity options will only auto-update when partners list changes
+ *                      Default: false
+ * @param   {Boolean}   reverse (optional) if truthy, identity options will be placed at the top and partners at bottom.
+ *                      Default: false
  * 
  * @returns {Array}
  */
-export const getPartnerOptions = (partners = rxPartners.value, formProps, includeOwnIdentities = false) => {
-    const identityOptions = !includeOwnIdentities
-        ? []
-        : [
-            {
-                key: 'identities-header',
-                style: styles.itemHeader,
-                text: textsCap.identityOptionsHeader,
-                value: '' // keep
-            },
-            ...getIdentityOptions(),
-            {
-                key: 'partners-header',
-                style: styles.itemHeader,
-                text: textsCap.partnerOptionsHeader,
-                value: '' // keep
-            },
-        ]
+export const getPartnerOptions = (partners, formProps, includeIdentities = false, reverse) => {
+    partners = partners || rxPartners.value
+    const identityOptions = includeIdentities && getIdentityOptions() || []
     const identityAddrs = identityOptions.map(x => x.value)
     const partnerOptions = arrSort([...partners.values()], 'name')
         .filter(x => !identityAddrs.includes(x.address))
@@ -71,10 +59,29 @@ export const getPartnerOptions = (partners = rxPartners.value, formProps, includ
             value: address,
         }))
     
-    return [
-        ...identityOptions,
-        ...partnerOptions,
-    ]
+    const options = arrReverse([
+        [
+            includeIdentities && {
+                key: 'partners-header',
+                style: styles.itemHeader,
+                text: textsCap.partnerOptionsHeader,
+                value: '' // keep
+            },
+            ...partnerOptions,
+        ],
+        [
+            includeIdentities && {
+                key: 'identities-header',
+                style: styles.itemHeader,
+                text: textsCap.identityOptionsHeader,
+                value: '' // keep
+            },
+            ...identityOptions,
+        ]
+    ], reverse === true)
+    return options
+        .flat()
+        .filter(Boolean)
 }
 export default getPartnerOptions
 

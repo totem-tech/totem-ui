@@ -18,6 +18,7 @@ import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 import identities, {
+    get as getIdentity,
     getSelected,
     rxIdentities,
     rxSelected,
@@ -225,14 +226,30 @@ class TimeKeepingList extends Component {
                 },
                 {
                     key: 'actionArchive',
-                    onClick: selectedHashes => confirm({
-                        content: `${textsCap.selected}: ${selectedHashes.length}`,
-                        header: `${this.props.archive ? textsCap.unarchiveRecord : textsCap.archiveRecord}?`,
-                        onConfirm: () => selectedHashes.forEach(h =>
-                            this.handleArchive(h, !this.props.archive)
-                        ),
-                        size: 'mini',
-                    }),
+                    onClick: async selectedHashes => {
+                        const { data } = this.state
+                        const identities = rxIdentities.value
+                        const arr = selectedHashes
+                            .map(hash => {
+                                const { workerAddress } = data.get(hash) || {}
+                                return identities.get(workerAddress)
+                                    && [hash, workerAddress]
+                            })
+                            .filter(Boolean)
+                        if (!arr.length) return // none eligible
+
+                        confirm({
+                            content: `${textsCap.selected}: ${arr.length}`,
+                            header: `${this.props.archive ? textsCap.unarchiveRecord : textsCap.archiveRecord}?`,
+                            onConfirm: () => arr
+                                .forEach(([hash, workerAddress]) => this.handleArchive(
+                                    hash,
+                                    !this.props.archive,
+                                    workerAddress,
+                                )),
+                            size: 'mini',
+                        })
+                    },
                 }
             ],
         }
@@ -340,6 +357,7 @@ class TimeKeepingList extends Component {
             locked,
             // projectOwnerAddress,
             submit_status,
+            workerAddress,
         } = record
         const editableStatuses = [
             statuses.draft,
@@ -430,7 +448,7 @@ class TimeKeepingList extends Component {
                 disabled: inProgress,
                 icon: 'reply all',
                 loading: isBtnInprogress(textsCap.unarchive),
-                onClick: () => this.handleArchive(hash, false, textsCap.unarchive),
+                onClick: () => this.handleArchive(hash, false, workerAddress),
                 title: textsCap.unarchive
             }
         ].filter(Boolean)
@@ -462,7 +480,6 @@ class TimeKeepingList extends Component {
             getProjects(),
             getCurrentBlock()
         )
-        console.log({projects})
 
         records = records.map((record, i) => {
             if (!record) return
@@ -562,23 +579,18 @@ class TimeKeepingList extends Component {
         addToQueue(task)
     }
 
-    handleArchive = (recordId, archive = true, title) => {
-        const { manage } = this.props
-        const { data } = this.state
-        const { projectOwnerAddress, workerAddress } = data.get(recordId) || {}
-        const address = manage
-            ? projectOwnerAddress
-            : workerAddress
-        if (!address) return
-
+    handleArchive = (recordId, archive = true, workerAddress) => {
+        const title = archive
+            ? textsCap.archiveRecord
+            : textsCap.unarchiveRecord
         this.setBtnInprogress(recordId, title)
         const queueProps = bcQueueables.archiveRecord(
-            address,
+            workerAddress,
             hashTypes.timeRecordHash,
             recordId,
             archive,
             {
-                title: textsCap.archiveRecord,
+                title,
                 description: `${textsCap.hash}: ${recordId}`,
                 then: () => {
                     this.setBtnInprogress(recordId)

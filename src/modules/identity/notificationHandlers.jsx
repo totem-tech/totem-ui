@@ -34,10 +34,14 @@ const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
     const { location, reason, userId } = data || {}
     const isIntroduce = childType === 'introduce'
     // user who is to receive an identity
-    const recipientId = isIntroduce ? userId : senderId
+    const recipientId = isIntroduce
+        ? userId
+        : senderId
     const msg = {
         icon: {
-            name: isIntroduce ? 'handshake' : 'user'
+            name: isIntroduce
+                ? 'handshake'
+                : 'user'
         }
     }
     const { reason: reasonTranslated } = translated({ reason }, true)[1]
@@ -65,6 +69,7 @@ const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
                     const locationId = !location
                         ? undefined
                         : saveLocation(location)
+                    
                     showForm(IdentityShareForm, {
                         inputsDisabled: ['userIds'],
                         onSubmit: success => success
