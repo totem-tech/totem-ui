@@ -15,7 +15,9 @@ import {
 } from '../modules/chat/chat'
 import { getUser, rxIsInMaintenanceMode, rxIsLoggedIn } from '../modules/chat/ChatClient'
 import Balance from '../modules/identity/Balance'
+import IdentityIcon from '../modules/identity/IdentityIcon'
 import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
+import IdentityShareForm from '../modules/identity/IdentityShareForm'
 import {
 	rxNewNotification,
 	rxVisible as rxNotifVisible,
@@ -29,9 +31,14 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
-import { useInverted, rxInverted, rxLayout, MOBILE, setInvertedBrowser } from '../services/window'
-import IdentityShareForm from '../modules/identity/IdentityShareForm'
-import IdentityIcon from '../modules/identity/IdentityIcon'
+import {
+	MOBILE,
+	rxInverted,
+	rxLayout,
+	setInvertedBrowser,
+	useInverted,
+} from '../services/window'
+import { getIdentityOptions } from '../modules/identity/getIdentityOptions'
 
 const [texts, textsCap] = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -53,11 +60,9 @@ let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
 function PageHeader(props) {
-	const [wallets] = useRxSubject(
+	const [identityOptions] = useRxSubject(
 		rxIdentities,
-		map => Array
-			.from(map)
-			.map(([_, x]) => x)
+		getIdentityOptions,
 	)
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [[userId, isLoggedIn]] = useRxSubject(
@@ -73,7 +78,7 @@ function PageHeader(props) {
 		isLoggedIn,
 		isMobile,
 		isRegistered: !!userId,
-		wallets,
+		identityOptions,
 		onCopy: () => {
 			const { address } = getSelected()
 			if (!address) return
@@ -120,40 +125,10 @@ const PageHeaderView = React.memo(props => {
 		onFaucetRequest,
 		onSelection,
 		onShare,
-		wallets,
+		identityOptions,
 	} = props
 	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
-	const identityOptions = arrSort(wallets || [], 'name')
-		.map(({ address, name, usageType }) => ({
-			key: address,
-			text: (
-				<React.Fragment>
-					<div style={{
-						color: 'black',
-						fontWeight: 'bold',
-						marginRight: 15,
-					}}>
-						<IdentityIcon {...{
-							address,
-							usageType,
-						}} />
-						{' ' + name}
-					</div>
-
-					<Balance {...{
-						address: address,
-						EL: 'div',
-						showDetailed: null,
-						style: {
-							color: 'grey',
-							textAlign: 'right',
-						}
-					}} />
-				</React.Fragment>
-			),
-			value: address
-		}))
 	const langCode = getSelectedLang() || ''
 	const topBar = (
 		<Menu

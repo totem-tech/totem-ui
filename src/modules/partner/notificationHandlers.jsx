@@ -2,7 +2,7 @@ import React from 'react'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { generateHash, hasValue, isObj } from '../../utils/utils'
+import { hasValue, isObj } from '../../utils/utils'
 import {
 	get as getContact,
 	newId as newContactId,
@@ -26,20 +26,16 @@ import {
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
 
-const textsCap = translated({
+let textsCap = {
 	addPartner: 'add partner',
 	ignore: 'ignore',
-	indentityIntroduceMsg: 'recommended you to share your identity with the following user:',
-	identityRequestMsg: 'requested an identity',
 	identityShareMsg: 'identity received from:',
 	introducedBy: 'introduced by',
 	partnerName: 'partner name',
-	reason: 'reason',
-	share: 'share',
 	updatePartner: 'update partner',
 	unexpectedError: 'unexpected error occurred!',
-	yourIdentity: 'your identity',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 
 // identity received from other user
 const handleIdentityReceived = (

@@ -111,12 +111,21 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.fulfiller,
             },
             {
-                content: x => [
-                    <AddressName {...{ address: x.owner, key: 0 }} />,
-                    <span key='1'>
-                        {!userIsOwner && <UserID prefix=' (' suffix=')' userId={x.createdBy} />}
-                    </span>,
-                ],
+                content: x => (
+                    <span>
+                        <AddressName {...{
+                            address: x.owner,
+                            userId: x.createdBy,
+                        }} />
+                        {!userIsOwner && (
+                            <UserID {...{
+                                prefix: ' (',
+                                suffix: ')',
+                                userId: x.createdBy,
+                            }} />
+                        )}
+                    </span>
+                ),
                 key: 'owner',
                 title: textsCap.owner,
             },

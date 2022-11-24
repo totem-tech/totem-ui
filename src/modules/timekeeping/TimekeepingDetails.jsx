@@ -50,7 +50,10 @@ const TimekeepingDetails = props => {
             },
             // user is assignee
             !manage && {
-                content: x => <AddressName address={x.projectOwnerAddress} />,
+                content: x => {
+                    console.log({x})
+                    return <AddressName address={x.projectOwnerAddress} />
+                },
                 title: textsCap.projectOwner,
             },
             {

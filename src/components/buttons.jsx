@@ -19,7 +19,6 @@ import IntroduceUserForm from '../modules/chat/IntroduceUserForm'
 // services
 import { translated } from '../services/language'
 import {
-	confirm,
 	showForm,
 	closeModal,
 	showInfo,

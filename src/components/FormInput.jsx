@@ -137,10 +137,10 @@ export class FormInput extends Component {
 			})
 		}
 		if (isSubjectLike(rxOptions)) {
-			this.subscriptions.rxOptions = rxOptions.subscribe(options => {
+			this.subscriptions.rxOptions = rxOptions.subscribe(async options => {
 				options = !isFn(rxOptionsModifier)
 					? options
-					: rxOptionsModifier(options)
+					: await rxOptionsModifier(options)
 				if (!isArr(options)) return
 				this.setState({ options })
 				

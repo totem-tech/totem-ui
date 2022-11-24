@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
-import { isArr, isValidNumber } from '../../utils/utils'
+import { useRxSubject } from '../../utils/reactHelper'
+import { isArr, isMap, isValidNumber } from '../../utils/utils'
 import { Reveal } from '../../components/buttons'
 // services
 import { query } from '../../services/blockchain'
@@ -9,14 +11,17 @@ import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
 // modules
 import Currency from '../currency/Currency'
-import { useRxSubject } from '../../utils/reactHelper'
-import { MOBILE, rxLayout } from '../../services/window'
+import { rxIdentities } from './identity'
 
 const textsCap = translated({
 	loadingAccBal: 'loading account balance',
 	locked: 'locked',
 	total: 'funds',
 }, true)[1]
+
+// cache balances and locks
+export const rxBalances = new BehaviorSubject(new Map())
+export const rxLocks = new BehaviorSubject(new Map())
 
 export const Balance = props => {
 	let {
@@ -31,10 +36,25 @@ export const Balance = props => {
 		suffix,
 		unitDisplayed,
 	} = props
-	const balance = useBalance(address)
-	const locks = userLocks(address)
+	// prevents update if value for the address is unchanged
+	const valueModifier = (newValue = new Map(), oldValue) => {
+		const value = newValue.get(address)
+		const update = isValidNumber(value) || isArr(value)
+			&& value !== oldValue
+		return update
+			? value
+			: useRxSubject.IGNORE_UPDATE
+	}
+	const isOwnIdentity = !!rxIdentities.value.get(address)
+	const balance = !isOwnIdentity
+		? useBalance(address)
+		: useRxSubject(rxBalances, valueModifier)[0]
+	const locks = !isOwnIdentity
+		? userLocks(address)
+		: useRxSubject(rxLocks, valueModifier)[0]
 	const isLoading = !isValidNumber(balance)
-	const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
+	const lockedBalance = (locks || [])
+		.reduce((sum, next) => sum + next.amount, 0)
 	const freeBalance = isLoading
 		? undefined
 		: balance - lockedBalance
@@ -197,3 +217,36 @@ userLocks.propTypes = {
 		PropTypes.arrayOf(PropTypes.string),
 	]).isRequired,
 }
+
+setTimeout(() => {
+	let sub = {}
+	rxIdentities.subscribe((identities = new Map()) => {
+		const addresses = [...identities.keys()]
+		const addressesCached = [...rxBalances.value.keys()]
+		const unchanged = addresses.length === addressesCached.length
+			&& addresses.every(a => addressesCached.includes(a))
+		if (unchanged) return
+
+		unsubscribe(sub)
+		
+		const updateCache = subject => (result = []) => {
+			const balances = new Map()
+			result.forEach((value, i) =>
+				balances.set(addresses[i], value)
+			)
+			subject.next(balances)
+		}
+		sub.balances = query(
+			'api.query.balances.freeBalance',
+			[addresses, updateCache(rxBalances)],
+			true,
+			false,
+		)
+		sub.locks = query(
+			'api.query.balances.locks',
+			[addresses, updateCache(rxLocks)],
+			true,
+			false,
+		)
+	})
+}, 100)

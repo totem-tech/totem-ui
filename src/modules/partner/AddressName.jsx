@@ -27,8 +27,6 @@ function AddressName(props) {
         allowCopy,
         Component,
         ignoreAttributes,
-        partnerFormProps,
-        partnerName,
         style,
         userId,
     } = props
@@ -49,9 +47,7 @@ function AddressName(props) {
                 showForm(PartnerForm, {
                     values: {
                         address,
-                        name: partnerName,
                         userId,
-                        ...partnerFormProps,
                     },
                 })
             },
@@ -105,10 +101,6 @@ AddressName.prototype = {
         PropTypes.elementType,
     ]).isRequired,
     ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
-    // @partnerName: (optional) name to be prefilled when adding a partner
-    partnerName: PropTypes.string,
-    // @partnerFormProps: (optional) properties to be set when opening add PartnerForm
-    partnerFormProps: PropTypes.object,
     // @userId: (optional) userId to be prefilled when adding as partner
     userId: PropTypes.string,
 }
@@ -120,8 +112,6 @@ AddressName.defaultProps = {
         'allowCopy',
         'Component',
         'ignoreAttributes',
-        'partnerFormProps',
-        'partnerName',
         'userId',
     ],
 }

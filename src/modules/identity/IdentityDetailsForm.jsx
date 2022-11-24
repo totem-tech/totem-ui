@@ -68,7 +68,6 @@ class IdentityDetailsForm extends Component {
 			// closeText: { content: textsCap.close, negative: false },
 			headerIcon: (
 				<IdentityIcon {...{
-					address, 
 					size: 'large',
 					usageType,
 				}} />
@@ -260,8 +259,7 @@ class IdentityDetailsForm extends Component {
 				</p>,
 				<p key='0'>
 					<b>
-						{textsCap.removeWarningPart2}
-						{textsCap.removeWarningPart3}
+						{textsCap.removeWarningPart2 + ' ' + textsCap.removeWarningPart3}
 					</b>
 				</p>,
 			],
@@ -271,7 +269,7 @@ class IdentityDetailsForm extends Component {
 				this.setState({ success: true })
 				isFn(onSubmit) && onSubmit(true, this.identity)
 			},
-			size: 'tiny',
+			size: 'mini',
 		})
 	}
 

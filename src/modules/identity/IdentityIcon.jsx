@@ -8,23 +8,26 @@ import { showForm } from '../../services/modal'
 import { MOBILE, rxLayout } from '../../services/window'
 import { USAGE_TYPES } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
+import { useRxSubject } from '../../utils/reactHelper'
 
-const textsCap = translated({
+let textsCap = {
     business: 'business',
     identity: 'own identity',
     personal: 'personal',
     rewardsIdentity: 'this is your rewards identity',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 
 const IdentityIcon = props => {
-    const [hovered, setHovered] = useState(false)
     const {
         address,
+        formProps = {},
         size,
         style,
         usageType,
     } = props
-    const isReward = rxUserIdentity.value === address
+    const [hovered, setHovered] = useState(false)
+    const [isReward] = useRxSubject(rxUserIdentity, x => x && x === address)
     const isMobile = rxLayout.value === MOBILE
     const ut = isReward
         ? USAGE_TYPES.REWARD
@@ -53,7 +56,11 @@ const IdentityIcon = props => {
             e.preventDefault()
             e.stopPropagation()
             showForm(IdentityDetailsForm, {
-                values: { address },
+                ...formProps,
+                values: {
+                    ...formProps.values,
+                    address,
+                },
             })
         }
     const handleToggle = isMobile || !address
@@ -66,7 +73,11 @@ const IdentityIcon = props => {
             onClick: handleClick,
             onMouseEnter: handleToggle,
             onMouseLeave: handleToggle,
-            ...objWithoutKeys(props, ['address', 'usageType']),
+            ...objWithoutKeys(props, [
+                'address',
+                'formProps',
+                'usageType',
+            ]),
             name: hovered
                 ? 'pencil'
                 : name,
@@ -86,6 +97,8 @@ const IdentityIcon = props => {
 IdentityIcon.propTypes = {
     // used to determine if it is the rewards identity
     address: PropTypes.string,
+    // properties to be supplied when opening IdentityForm
+    formProps: PropTypes.object,
     usageType: PropTypes.oneOf(
         Object.values(USAGE_TYPES)
     ),

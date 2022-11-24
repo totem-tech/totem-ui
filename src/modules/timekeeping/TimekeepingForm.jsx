@@ -15,7 +15,7 @@ import {
     secondsToDuration,
     blockNumberToTS,
 } from '../../utils/time'
-import { ButtonAcceptOrReject } from '../../components/buttons'
+import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import DataTableVertical from '../../components/DataTableVertical'
 // services
@@ -36,6 +36,7 @@ import {
     statuses,
 } from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
+import IdentityIcon from '../identity/IdentityIcon'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -63,6 +64,7 @@ let textsCap = {
     yes: 'yes',
     wallet: 'wallet',
 
+    activityOwner: 'activity owner',
     addedToQueue: 'added to queue',
     areYouSure: 'are you sure?',
     blockEnd: 'end block',
@@ -326,20 +328,36 @@ export default class TimekeepingForm extends Component {
         const updateValues = blockNumber => {
             if (!this._mounted) return
             const { values: { inprogress } } = this.state
-            inprogress ? this.saveValues(blockNumber) : this.setState({ blockNumber })
+            inprogress
+                ? this.saveValues(blockNumber)
+                : this.setState({ blockNumber })
         }
         const updateProjects = deferred(projects => {
             if (!this._mounted) return
             const { inputs, values } = this.state
             const projectIn = findInput(inputs, 'projectHash')
-            const options = Array.from(projects).map(([hash, project]) => ({
-                key: hash,
-                project,
-                text: project.name || textsCap.unknown,
-                value: hash,
-            }))
+            const options = Array
+                .from(projects)
+                .map(([hash, project]) => {
+                    const { name, ownerAddress, userId } = project 
+                    return {
+                        description: (
+                            <AddressName {...{
+                                address: ownerAddress,
+                                title: textsCap.activityOwner,
+                                userId,
+                            }} />
+                        ),
+                        key: hash,
+                        project,
+                        text: name || textsCap.unknown,
+                        value: hash,
+                    }
+                })
             projectIn.options = options
-            projectIn.noResultsMessage = options.length === 0 ? textsCap.noProjectsMsg : undefined
+            projectIn.noResultsMessage = options.length === 0
+                ? textsCap.noProjectsMsg
+                : undefined
             // restore saved values
             if (!this.prefillDone) {
                 fillValues(inputs, values, true)
@@ -363,7 +381,9 @@ export default class TimekeepingForm extends Component {
     handleProjectChange = async (_, values, index) => {
         let { projectHash: projectId, workerAddress } = values
         const { inputs } = this.state
-        const isValidProject = projectId && (inputs[index].options || []).find(x => x.value === projectId)
+        const isValidProject = projectId
+            && (inputs[index].options || [])
+                .find(x => x.value === projectId)
         if (!isValidProject) {
             // project hash doesnt exists in the options
             if (projectId) inputs[index].rxValue.next(null)
@@ -564,6 +584,7 @@ export default class TimekeepingForm extends Component {
     }
 
     setIdentityOptions = async (projectId, workerAddress) => {
+        // ToDo: use get identity options and filter workers using async
         if (!projectId) return
         const { inputs } = this.state
         const identityIn = findInput(inputs, 'workerAddress')
@@ -579,7 +600,12 @@ export default class TimekeepingForm extends Component {
                     name,
                     usageType,
                 ].join(' '),
-                text: <AddressName {...{ address }} />,
+                text: (
+                    <span>
+                        <IdentityIcon {...{ address, usageType }} />
+                        {' ' + name}
+                    </span>
+                ),
                 value: address,
             }))
         identityIn.options = options
@@ -592,29 +618,37 @@ export default class TimekeepingForm extends Component {
         const { closeText: closeTextP, onClose } = this.props
         const { closeText, inputs, message, values } = this.state
         const { duration, stopped, inprogress, manualEntry } = values
-        const durationValid = values && BLOCK_DURATION_REGEX.test(duration) && duration !== DURATION_ZERO
+        const durationValid = values
+            && BLOCK_DURATION_REGEX.test(duration)
+            && duration !== DURATION_ZERO
         const done = stopped || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
-        const btnStyle = { width: 'calc( 50% - 12px )', margin: '3px 3px 15px' }
+        const btnStyle = {
+            margin: '3px 3px 15px',
+            width: 'calc( 50% - 12px )',
+        }
         const doneItems = ['workerAddress', 'reset']
-        inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
+        inputs.filter(x => doneItems.indexOf(x.name) >= 0)
+            .forEach(x => x.hidden = !done)
         inputs.find(x => x.name === 'projectHash').disabled = inprogress
         duraIn.icon = manualEntry ? 'pencil' : null
         // Show resume item when timer is stopped
-        duraIn.action = !stopped || manualEntry ? undefined : {
-            icon: 'play',
-            // prevents annoying HTML form validation warnings from showing up when clicked
-            formNoValidate: true,
-            onClick: () => confirm({
-                header: textsCap.resumeTimer,
-                content: textsCap.resumeTimeWarning,
-                onConfirm: this.handleResume.bind(this),
-                confirmButton: textsCap.yes,
-                cancelButton: textsCap.no,
-                size: 'mini'
-            }),
-            title: textsCap.resumeTimer,
-        }
+        duraIn.action = !stopped || manualEntry
+            ? undefined
+            : {
+                icon: 'play',
+                // prevents annoying HTML form validation warnings from showing up when clicked
+                formNoValidate: true,
+                onClick: () => confirm({
+                    header: textsCap.resumeTimer,
+                    content: textsCap.resumeTimeWarning,
+                    onConfirm: this.handleResume.bind(this),
+                    confirmButton: textsCap.yes,
+                    cancelButton: textsCap.no,
+                    size: 'mini',
+                }),
+                title: textsCap.resumeTimer,
+            }
 
         const closeBtn = (
             <Button
@@ -622,9 +656,18 @@ export default class TimekeepingForm extends Component {
                 size='massive'
                 style={btnStyle}
                 onClick={(e, d) => {
-                    const { values: { inprogress } } = this.state
-                    const doCancel = () => this.handleReset(false) | isFn(onClose) && onClose(e, d)
-                    !inprogress ? doCancel() : confirm({
+                    const {
+                        values: {
+                            inprogress
+                        } = {},
+                    } = this.state
+                    const doCancel = () => {
+                        this.handleReset(false)
+                        isFn(onClose) && onClose(e, d)
+                    }
+                    if (!inprogress) return doCancel()
+
+                    confirm({
                         cancelButton: textsCap.noContinueTimer,
                         confirmButton: textsCap.yes,
                         content: textsCap.cancelWarning,
@@ -632,7 +675,6 @@ export default class TimekeepingForm extends Component {
                         onConfirm: doCancel,
                         size: 'tiny'
                     })
-
                 }}
             />
         )

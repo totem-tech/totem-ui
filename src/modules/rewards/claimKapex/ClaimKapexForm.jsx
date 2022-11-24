@@ -33,6 +33,7 @@ import IdentityIcon from '../../identity/IdentityIcon'
 import { rxPartners } from '../../partner/partner'
 import { generateTweet, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
+import { getIdentityOptions } from '../../identity/getIdentityOptions'
 
 let textsCap = {	    
 	continue: 'continue',    
@@ -310,22 +311,7 @@ const getFormProps = () => {
 			options: [],
 			readOnly: true,
 			rxOptions: rxIdentities,
-			rxOptionsModifier: identitiesMap => arrSort(
-				Array
-					.from(identitiesMap)
-					.map(([address, { name, usageType }]) => ({
-						key: address,
-						name,
-						text: (
-							<span>
-								<IdentityIcon {...{ usageType }} />
-								<b> {name}</b>
-							</span>
-						),
-						value: address,
-					})),
-				'name',
-			),
+			rxOptionsModifier: getIdentityOptions,
 			selection: true,
 			rxValue: new BehaviorSubject(),
 			type: 'dropdown',

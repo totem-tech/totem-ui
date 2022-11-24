@@ -251,16 +251,11 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
                 let task = typeTasks.get(id)
                 if (!task) return
 
-                task._fulfiller = (
-                    <AddressName {...{
-                        address: task.fulfiller,
-                        userId: task.createdBy
-                    }} />
-                )
+                // add userId in case owner is not a identity/partner
                 task._owner = (
                     <AddressName {...{
                         address: task.owner,
-                        userId: task.createdBy
+                        userId: task.createdBy,
                     }} />
                 )
                 task = objCopy(detailsMap.get(id) || {}, task)

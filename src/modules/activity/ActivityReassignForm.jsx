@@ -7,12 +7,14 @@ import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { find as findIdentity, getAll as getIdentities } from '../identity/identity'
-import partners from '../partner/partner'
+import { find as findIdentity, getAll as getIdentities, rxIdentities } from '../identity/identity'
+import partners, { rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { queueables } from './activity'
 import IdentityIcon from '../identity/IdentityIcon'
 import PartnerIcon from '../partner/PartnerIcon'
+import getPartnerOptions from '../partner/getPartnerOptions'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 
 let textsCap = {
     cancel: 'cancel',
@@ -42,153 +44,85 @@ export default class ActivityReassignForm extends Component {
     constructor(props) {
         super(props)
 
+        const { hash, values } = props
+        const inputs =[
+            {
+                label: textsCap.nameLabel,
+                name: 'name',
+                readOnly: true,
+                required: true,
+                type: 'text',
+                value: ''
+            },
+            {
+                label: textsCap.activityIdLabel,
+                name: 'hash',
+                readOnly: true,
+                required: true,
+                type: 'text',
+                value: ''
+            },
+            {
+                disabled: true,
+                label: textsCap.ownerLabel,
+                name: 'ownerAddress',
+                required: true,
+                options: [],
+                rxOptions: rxIdentities,
+                rxOptionsModifier: getIdentityOptions,
+                search: ['keywords'],
+                selection: true,
+                type: 'dropdown',
+            },
+            {
+                label: textsCap.newOwnerLabel,
+                name: 'newOwnerAddress',
+                onChange: this.handleNewOwnerChange,
+                options: [],
+                placeholder: textsCap.newOwnerPlaceholder,
+                rxOptions: rxPartners,
+                rxOptionsModifier: partners => {
+                    const { hash, values = {} } = this.props
+                    const { ownerAddress } = values
+                    return getPartnerOptions(partners, {}, true)
+                        .filter(x => x.value !== ownerAddress)
+                },
+                rxValue: new BehaviorSubject(),
+                search: ['keywords'], // search both name and project hash
+                selection: true,
+                required: true,
+                type: 'dropdown',
+
+            },
+            {
+                content: 'Add partner',
+                fluid: true,
+                name: 'addPartnerButton',
+                onClick: () => showForm(PartnerForm, {
+                    onSubmit: (ok, { address }) => {
+                        if (!ok) return
+                        const { inputs } = this.state
+                        const newOwnerIn = findInput(inputs, 'newOwnerAddress')
+                        newOwnerIn.rxValue.next(address)
+                    }
+                }),
+                type: 'button'
+            }
+        ]
         this.state = {
             message: {},
             onSubmit: this.handleSubmit,
             success: false,
-            inputs: [
-                {
-                    label: textsCap.nameLabel,
-                    name: 'name',
-                    readOnly: true,
-                    required: true,
-                    type: 'text',
-                    value: ''
-                },
-                {
-                    label: textsCap.activityIdLabel,
-                    name: 'hash',
-                    readOnly: true,
-                    required: true,
-                    type: 'text',
-                    value: ''
-                },
-                {
-                    disabled: true,
-                    label: textsCap.ownerLabel,
-                    name: 'ownerAddress',
-                    required: true,
-                    search: ['keywords'],
-                    selection: true,
-                    type: 'dropdown',
-                },
-                {
-                    label: textsCap.newOwnerLabel,
-                    name: 'newOwnerAddress',
-                    onChange: this.handleNewOwnerChange,
-                    placeholder: textsCap.newOwnerPlaceholder,
-                    rxValue: new BehaviorSubject(),
-                    search: ['keywords'], // search both name and project hash
-                    selection: true,
-                    required: true,
-                    type: 'dropdown',
-
-                },
-                {
-                    content: 'Add partner',
-                    fluid: true,
-                    name: 'addPartnerButton',
-                    onClick: () => showForm(PartnerForm, {
-                        onSubmit: (ok, { address }) => {
-                            if (!ok) return
-                            const { inputs } = this.state
-                            const newOwnerIn = findInput(inputs, 'newOwnerAddress')
-                            newOwnerIn.rxValue.next(address)
-                        }
-                    }),
-                    type: 'button'
-                }
-            ]
+            inputs: fillValues(inputs, { ...values, hash }),
         }
 
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
-        this._mounted = true
-        const { inputs } = this.state
-        const { hash, values } = this.props
-        const { ownerAddress } = values
-        const identityOptions = getIdentities()
-            // dropdown options
-            .map(({ address, name, usageType }) => ({
-                description: textEllipsis(address, 15),
-                key: 'identity-' + address,
-                keywords: [
-                    name,
-                    address,
-                    usageType,
-                    'identity',
-                    textsCap.identity,
-                ].join(' '),
-                text: (
-                    <span>
-                        <IdentityIcon {...{ address, usageType }} />
-                        {' ' + name}
-                    </span>
-                ),
-                value: address
-            }))
+    componentWillMount = () => this._mounted = true
 
-        const partnerOptions = Array.from(partners.getAll())
-            // exclude any possible duplicates (if any identity is also in partner list)
-            .filter(([address]) => !findIdentity(address))
-            .map(([address, { name, type, userId, visibility }]) => ({
-                description: textEllipsis(address, 15),
-                key: 'partner-' + address,
-                keywords: [
-                    address,
-                    name,
-                    userId,
-                    'partner',
-                    textsCap.partner,
-                ].join(' '),
-                text: (
-                    <span>
-                        <PartnerIcon {...{
-                            address,
-                            type,
-                            visibility,
-                        }} />
-                        {' ' + name}
-                    </span>
-                ),
-                value: address
-            }))
-
-        const options = []
-        identityOptions.length > 0 && options.push(
-            {
-            key: 'identities',
-            style: styles.itemHeader,
-            text: textsCap.identityOptionsHeader,
-            value: '' // keep
-            },
-            // exclude current owner
-            ...arrSort(
-                identityOptions.filter(({ value }) => value !== ownerAddress),
-                'keywords'
-            ),
-        )
-        partnerOptions.length > 0 && options.push(
-            {
-                key: 'partners',
-                style: styles.itemHeader,
-                text: textsCap.partnerOptionsHeader,
-                value: '' // keep
-            },
-            ...arrSort(partnerOptions, 'keywords'),
-        )
-        findInput(inputs, 'ownerAddress').options = identityOptions
-        findInput(inputs, 'newOwnerAddress').options = options
-        fillValues(inputs, { ...values, hash })
-        this.setState({ inputs })
-    }
-
-    componentWillUnmount() {
-        this._mounted = false
-    }
+    componentWillUnmount = () => this._mounted = false
 
     handleNewOwnerChange = (_, { ownerAddress, newOwnerAddress }) => {
         const valid = !ownerAddress || ownerAddress !== newOwnerAddress
@@ -231,14 +165,20 @@ export default class ActivityReassignForm extends Component {
             success: true
         })
 
-        !!doConfirm ? proceed() : confirm({
-            cancelButton: { content: textsCap.cancel, color: 'green' },
-            confirmButton: { content: textsCap.proceed, negative: true },
-            content: textsCap.confirmMsg,
-            header: textsCap.confirmHeader,
-            onConfirm: () => proceed(),
-            size: 'tiny'
-        })
+        !!doConfirm
+            ? proceed()
+            : confirm({
+                cancelButton: { content: textsCap.cancel, color: 'green' },
+                confirmButton: { content: textsCap.proceed, negative: true },
+                content: `${textsCap.confirmMsg1} ${textsCap.confirmMsg2}`,
+                header: (
+                    <div className='header' style={{ textTransform: 'initial' }}>
+                        {textsCap.confirmHeader}
+                    </div>
+                ),
+                onConfirm: () => proceed(),
+                size: 'mini'
+            })
     }
 
     render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
@@ -253,14 +193,5 @@ ActivityReassignForm.propTypes = {
 }
 ActivityReassignForm.defaultProps = {
     header: textsCap.formHeader,
-    size: 'tiny',
-}
-
-const styles = {
-    itemHeader: {
-        background: 'grey',
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '1em'
-    }
+    size: 'mini',
 }

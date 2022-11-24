@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import DataTableVertical from '../../components/DataTableVertical'
 import { translated } from '../../utils/languageHelper'
-import { showForm, showInfo } from '../../services/modal'
-import LabelCopy from '../../components/LabelCopy'
 import { blockNumberToTS } from '../../utils/time'
 import { getCurrentBlock } from '../../services/blockchain'
-import { statuses } from '../../components/Message'
+import { showForm, showInfo } from '../../services/modal'
 import { ButtonGroup } from '../../components/buttons'
-import { useRxSubject } from '../../utils/reactHelper'
-import { MOBILE, rxLayout } from '../../services/window'
+import DataTableVertical from '../../components/DataTableVertical'
+import LabelCopy from '../../components/LabelCopy'
+import { statuses } from '../../components/Message'
 import TimekeepingList from '../timekeeping/TimekeepingList'
-import ActivityTeamList from './ActivityTeamList'
 import ActivityForm from './ActivityForm'
+import ActivityTeamList from './ActivityTeamList'
 
 let textsCap = {
     actions: 'actions',

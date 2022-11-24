@@ -338,7 +338,7 @@ class TimeKeepingList extends Component {
         const {
             approved,
             locked,
-            projectOwnerAddress,
+            // projectOwnerAddress,
             submit_status,
         } = record
         const editableStatuses = [
@@ -348,7 +348,7 @@ class TimeKeepingList extends Component {
         ]
         const isSubmitted = submit_status === statuses.submit
         const inProgress = inProgressIds.includes(hash)
-        const isOwner = projectOwnerAddress === getSelected().address
+        // const isOwner = projectOwnerAddress === getSelected().address
         const isBtnInprogress = title =>  this.inProgressBtns.get(hash) === title
         const buttons = [
             {
@@ -462,6 +462,7 @@ class TimeKeepingList extends Component {
             getProjects(),
             getCurrentBlock()
         )
+        console.log({projects})
 
         records = records.map((record, i) => {
             if (!record) return

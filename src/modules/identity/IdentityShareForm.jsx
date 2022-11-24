@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
+import { iUseReducer } from '../../utils/reactHelper'
 import {
 	isFn,
 	isObj,
@@ -31,14 +32,17 @@ import LocationForm, {
 import {
 	find as findIdentity,
 	getAll as getIdentities,
+	rxIdentities,
 } from './identity'
 import { inputNames as idInputNames } from './IdentityForm'
 import IdentityIcon from './IdentityIcon'
+import { getIdentityOptions } from './getIdentityOptions'
 
 const notificationType = 'identity'
 const childType = 'share'
 let textsCap = {
 	failedMsgHeader: 'submission failed!',
+	formHeader: 'share identity',
 	formHeader1: 'share identity/partner',
 	formHeader2: 'share identity',
 	formHeader3: 'share partner',
@@ -78,7 +82,7 @@ export const inputNames = {
 	userIds: 'userIds',
 }
 
-export default class IdentityShareForm extends Component {
+class IdentityShareForm extends Component {
 	constructor(props) {
 		super(props)
 
@@ -238,10 +242,10 @@ export default class IdentityShareForm extends Component {
 
 		let header = textsCap.formHeader1
 		if (!includePartners) {
-			identityIn.label = textsCap.identityLabel2
+			// identityIn.label = textsCap.identityLabel2
 			header = textsCap.formHeader2
 		} else if (!includeOwnIdentities) {
-			identityIn.label = textsCap.identityLabel3
+			// identityIn.label = textsCap.identityLabel3
 			header = textsCap.formHeader3
 		}
 
@@ -440,11 +444,267 @@ IdentityShareForm.defaultProps = {
 	subheader: textsCap.formSubheader,
 }
 
-const styles = {
-	itemHeader: {
-		background: 'grey',
-		color: 'white',
-		fontWeight: 'bold',
-		fontSize: '1em',
-	},
+
+export const ShareForm = props => {
+	const [state = {}] = iUseReducer(null, getInitialState(props))
+	
+	return <FormBuilder {...{ ...props, ...state }} />
+}
+
+ShareForm.propTypes = {
+	values: PropTypes.shape({
+		[inputNames.address]: PropTypes.string,
+		[inputNames.include]: PropTypes.array,
+		[inputNames.introducedBy]: PropTypes.string,
+		[inputNames.name]: PropTypes.string,
+		[inputNames.userIds]: PropTypes.oneOfType([
+			PropTypes.array,
+			PropTypes.string,
+		]),
+	}),
+}
+ShareForm.defaultProps = {
+	size: 'tiny',
+	header: textsCap.formHeader,
+	subheader: textsCap.formSubheader,
+}
+export default ShareForm
+
+const getInitialState = props => rxSetState => {
+	const { values = {} } = props
+	const userIds = values[inputNames.userIds] || []
+	const userIdOptions = arrSort(
+		userIds
+			.map(id => ({
+				key: id,
+				text: id,
+				value: id,
+			})),
+		'value',
+	)
+	const inputs = [
+		{
+			label: textsCap.identityLabel1,
+			name: inputNames.address,
+			onChange: handleAddressChange(rxSetState, () => inputs),
+			placeholder: textsCap.identityPlaceholder,
+			required: true,
+			rxOptions: rxIdentities,
+			rxOptionsModifier: getIdentityOptions,
+			rxValue: new BehaviorSubject(),
+			search: ['keywords'],
+			selection: true,
+			type: 'dropdown',
+		},
+		{
+			label: textsCap.nameLabel,
+			labelDetails: (
+				<span {...{
+					children: textsCap.nameLabelDetails,
+					style: {
+						fontWeight: 'bold',
+						fontSize: '105%',
+						color: 'deeppink',
+					},
+				}} />
+			),
+			maxLength: 64,
+			minLength: 3,
+			name: inputNames.name,
+			placeholder: textsCap.namePlaceholder,
+			required: false,
+			type: 'text',
+		},
+		{
+			hidden: true,
+			label: textsCap.includeLabel,
+			// inline: true,
+			name: inputNames.include,
+			multiple: true,
+			options: [],
+			type: 'checkbox-group',
+			toggle: true,
+			value: false,
+		},
+		{
+			includePartners: true,
+			label: textsCap.userIdsLabel,
+			name: inputNames.userIds,
+			multiple: true,
+			noResultsMessage: textsCap.userIdsLabel,
+			placeholder: textsCap.userIdsPlaceholder,
+			options: userIdOptions,
+			required: true,
+			type: 'UserIdInput',
+			// value: userIds,
+		},
+		{
+			hidden: true,
+			label: textsCap.introducedByLabel,
+			multiple: false,
+			name: inputNames.introducedBy,
+			readOnly: true,
+			type: 'UserIdInput',
+		},
+	]
+
+	const state = {
+		message: {},
+		// onChange: this.handleFormChange,
+		onSubmit: handleSubmit(
+			rxSetState,
+			() => inputs,
+			props,
+		),
+		success: false,
+		inputs: fillValues(
+			inputs,
+			values,
+			false,
+			true,
+		),
+	}
+
+	return state
+}
+const handleAddressChange = (rxSetState, getInputs) => (_, values) => {
+	const inputs = getInputs()
+	const address = values[inputNames.address]
+	const identity = findIdentity(address) || {}
+	const {
+		contactId,
+		locationId,
+		registeredNumber,
+		vatNumber,
+	} = identity
+
+	// show/hide location share option
+	const includeIn = findInput(inputs, inputNames.include)
+	const getOption = (value, label, Form, formProps, btnTitle) => ({
+		label: !Form
+			? label
+			: (
+				<div style={{ marginTop: -5 }}>
+					{label + ' '}
+					<Button {...{
+						icon: 'pencil',
+						onClick: e => {
+							e.stopPropagation()
+							e.preventDefault()
+							console.log({formProps})
+							showForm(Form, formProps)
+						},
+						size: 'mini',
+						title: btnTitle,
+					}} />
+				</div>
+			),
+		value,
+	})
+	includeIn.options = [
+		getLocation(locationId) && getOption(
+			idInputNames.locationId,
+			textsCap.includeLocation,
+			LocationForm,
+			{
+				autoSave: true,
+				id: locationId,
+				// disable remove button prevent location being deleted from here
+				inputsHidden: [locFormInputNames.removeBtn],
+				onClose: () => handleAddressChange(rxSetState, getInputs)(_, values),
+			},
+			textsCap.updateLocation
+		),
+		contactId && getOption(
+			idInputNames.contactId,
+			textsCap.includeContact,
+			ContactForm,
+			{
+				autoSave: true,
+				// disable remove button prevent location being deleted from here
+				inputsHidden: [contactcInputNames.removeBtn],
+				onClose: () => handleAddressChange(rxSetState, getInputs)(_, values),
+				values: {
+					[contactcInputNames.id]: contactId,
+				},
+			},
+			textsCap.updateContact
+		),
+		registeredNumber && getOption(
+			idInputNames.registeredNumber,
+			`${textsCap.includeRegNumber}: "${registeredNumber}"`
+		),
+		vatNumber && getOption(
+			idInputNames.vatNumber,
+			`${textsCap.includeVATNumber}: "${vatNumber}"`
+		),
+	].filter(Boolean)
+	includeIn.hidden = includeIn.options.length === 0
+
+	rxSetState.next({ inputs })
+}
+const handleSubmit = (rxSetState, getInputs, props = {}) => (_, values) => {
+	const { onSubmit } = props
+	const inputs = getInputs()
+	const addressIn = findInput(inputs, inputNames.address)
+	const address = values[inputNames.address]
+	const identity = findIdentity(address)
+	const sharePartner = !identity
+	const includeArr = values[inputNames.include] || []
+	const name = values[inputNames.name] || addressIn
+		.options
+		.find(x => x.value === address).name
+	const userIds = values[inputNames.userIds]
+	const data = {
+		address,
+		contactDetails: includeArr.includes(idInputNames.contactId)
+			? getContact(identity[idInputNames.contactId])
+			: undefined,
+		location: includeArr.includes(idInputNames.locationId)
+			? getLocation(identity[idInputNames.locationId])
+			: undefined,
+		name,
+		registeredNumber: includeArr.includes(idInputNames.registeredNumber)
+			? identity[idInputNames.registeredNumber]
+			: undefined,
+		vatNumber: includeArr.includes(idInputNames.vatNumber)
+			? identity[idInputNames.vatNumber]
+			: undefined,
+	}
+
+	rxSetState.netxt({ loading: true })
+	const callback = err => {
+		const success = !err
+		const message = {
+			content: textsCap.successMsgContent,
+			header: textsCap.successMsgHeader,
+			icon: true,
+			status: 'success',
+		}
+		rxSetState.netxt({
+			loading: false,
+			message: success
+				? message
+				: {
+						header: textsCap.failedMsgHeader,
+						content: err,
+						icon: true,
+						status: 'error',
+					},
+			success,
+		})
+		isFn(onSubmit) && onSubmit(success, values)
+	}
+	addToQueue({
+		type: QUEUE_TYPES.CHATCLIENT,
+		func: 'notify',
+		title: sharePartner ? textsCap.formHeader3 : textsCap.formHeader2,
+		description:
+			`${sharePartner ? textsCap.partner : textsCap.identity}: ${
+				data.name
+			}` +
+			'\n' +
+			`${textsCap.userIdsLabel}: ${userIds.join()}`,
+		args: [userIds, notificationType, childType, null, data, callback],
+	})
 }

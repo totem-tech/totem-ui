@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Icon } from 'semantic-ui-react'
-import { types, visibilityTypes } from './partner'
 import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
-import PartnerForm from './PartnerForm'
 import { MOBILE, rxLayout } from '../../services/window'
+import { types, visibilityTypes } from './partner'
+import PartnerForm from './PartnerForm'
+import { objWithoutKeys } from '../../utils/utils'
 
 let textsCap = {
     business: 'business',
@@ -19,6 +20,7 @@ const PartnerIcon = props => {
     const [hovered, setHovered] = useState(false)
     const {
         address,
+        formProps = {},
         size,
         style,
         type,
@@ -55,7 +57,11 @@ const PartnerIcon = props => {
             e.stopPropagation()
             showForm(PartnerForm, {
                 autoSave: true,
-                values: { address },
+                ...formProps,
+                values: {
+                    ...formProps.values,
+                    address,
+                },
             })
         }
     const handleToggle = isMobile || !address
@@ -68,7 +74,12 @@ const PartnerIcon = props => {
             onClick: handleClick,
             onMouseEnter: handleToggle,
             onMouseLeave: handleToggle,
-            ...props,
+            ...objWithoutKeys(props, [
+                'address',
+                'formProps',
+                'type',
+                'visibility',
+            ]),
             name: hovered
                 ? 'pencil'
                 : name,
@@ -86,6 +97,8 @@ const PartnerIcon = props => {
     )
 }
 PartnerIcon.propTypes = {
+    address: PropTypes.string,
+    formProps: PropTypes.object,
     type: PropTypes.oneOf(
         Object.values(types)
     ),

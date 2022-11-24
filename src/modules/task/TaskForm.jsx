@@ -50,15 +50,13 @@ import PartnerIcon from '../partner/PartnerIcon'
 import { get as getPartner, rxPartners } from '../partner/partner'
 import { queueables } from './task'
 import { rxUpdater } from './useTasks'
+import getPartnerOptions from '../partner/getPartnerOptions'
 
 let textsCap = {
     addedToQueue: 'request added to queue',
     addPartner: 'add partner',
     advancedLabel: 'advanced options',
     assignee: 'select a partner to assign task',
-    assigneeErrPartner404: 'assignee is not a partner!',
-    assigneeErrUserIdRequired: 'partner does not have an User ID associated.',
-    assigneeErrOwnIdentitySelected: 'you cannot assign a task to your currently selected identity',
     assigneePlaceholder: 'select from partner list',
     assignToPartner: 'assign to a partner',
     balance: 'balance',
@@ -75,6 +73,9 @@ let textsCap = {
     dueDateMinErrorMsg: 'due date must be at least 24 hours after deadline',
     description: 'detailed description',
     descriptionPlaceholder: 'enter more details about the task',
+    errAssigneeNotPartner: 'assignee is not a partner!',
+    errAsigneeNoUserId: 'partner does not have an User ID associated.',
+    errAssginToSelf: 'you cannot assign a task to your currently selected identity',
     featureNotImplemented: 'This feature is yet to be implemented. Please stay tuned.',
     formHeader: 'create a new task',
     formHeaderUpdate: 'update task',
@@ -140,6 +141,7 @@ export default class TaskForm extends Component {
         this.doUpdate = !!taskId
         this.rxCurrency = copyRxSubject(rxSelectedCurrency)
         this.rxCurrencies = new BehaviorSubject()
+        this.rxAssignee = new BehaviorSubject()
         // keys used to generate BONSAI token hash
         // keep it in the same order as in the `VALID_KEYS` array in the messaging service
         this.bonsaiKeys = [
@@ -271,34 +273,13 @@ export default class TaskForm extends Component {
                     placeholder: textsCap.assigneePlaceholder,
                     required: true,
                     rxOptions: rxPartners,
-                    rxOptionsModifier: partners => arrSort(
-                        Array.from(partners)
-                            .map(([_, { address, name, type, userId, visibility }]) => ({
-                                description: !userId
-                                    ? undefined
-                                    : `@${userId}`,
-                                key: address,
-                                keywords: [
-                                    name,
-                                    address,
-                                    type,
-                                    userId,
-                                    visibility,
-                                ].join(' '),
-                                text: (
-                                    <span>
-                                        <PartnerIcon {...{
-                                            address,
-                                            type,
-                                            visibility,
-                                        }} />
-                                        {' ' + name}
-                                    </span>
-                                ),
-                                value: address,
-                            })),
-                        'keywords',
-                    ), 
+                    rxOptionsModifier: partners => getPartnerOptions(
+                        partners,
+                        // whenever a partner is updated by clicking on the pencil icon,
+                        // this will trigger re-validation of assignee
+                        { onSubmit: this.triggerAssigneeUpdate },
+                    ),
+                    rxValue: this.rxAssignee,
                     selection: true,
                     search: ['keywords'],
                     type: 'dropdown',
@@ -803,28 +784,27 @@ export default class TaskForm extends Component {
         addToQueue(queueProps)
     }
 
+    // forces assignee to be re-validated
+    triggerAssigneeUpdate = deferred(() => {
+        const assignee = this.rxAssignee.value
+        this.rxAssignee.next('')
+        setTimeout(() => this.rxAssignee.next(assignee))
+    }, 300)
+
     validateAssignee = (_, { value: assignee }) => {
         if (!assignee) return
 
         const { address } = getSelected() || {}
-        if (assignee === address) return textsCap.assigneeErrOwnIdentitySelected
+        if (assignee === address) return textsCap.errAssginToSelf
 
         const partner = getPartner(assignee)
         const { userId } = partner || {}
-        const { inputs } = this.state
-        const assigneeIn = findInput(inputs, inputNames.assignee)
         const userIdMissing = !!partner && !userId
         const handleClick = e => {
             e.preventDefault() // prevents form being submitted
             showForm(PartnerForm, {
-                values: partner || { address: assignee },
-                onSubmit: (success) => {
-                    // partner wasn't updated with an user Id
-                    if (!success) return
-                    // force assignee to be re-validated
-                    assigneeIn.rxValue.next('')
-                    setTimeout(() => assigneeIn.rxValue.next(assignee), 100)
-                }
+                values: { address: assignee },
+                onSubmit: this.triggerAssigneeUpdate
             })
         }
         
@@ -833,8 +813,8 @@ export default class TaskForm extends Component {
             : (
                 <div>
                     {userIdMissing
-                        ? textsCap.assigneeErrUserIdRequired
-                        : textsCap.assigneeErrPartner404}
+                        ? textsCap.errAsigneeNoUserId
+                        : textsCap.errAssigneeNotPartner}
                     <div>
                         <Button {...{
                             content: userIdMissing

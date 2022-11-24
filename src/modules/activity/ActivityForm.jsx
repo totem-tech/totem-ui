@@ -1,10 +1,10 @@
-import React, { Component } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
 import { arrSort, generateHash, isFn, objClean } from '../../utils/utils'
-import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { getAll as getIdentities, getSelected, rxIdentities } from '../identity/identity'
+import { getSelected, rxIdentities } from '../identity/identity'
 import Balance from '../identity/Balance'
 import { getProjects, queueables } from './activity'
 import ActivityTeamList from './ActivityTeamList'
@@ -12,6 +12,7 @@ import { Button } from 'semantic-ui-react'
 import { closeModal, confirm } from '../../services/modal'
 import IdentityIcon from '../identity/IdentityIcon'
 import { iUseReducer } from '../../utils/reactHelper'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 
 let textsCap = {
 	create: 'create',
@@ -67,34 +68,7 @@ export default function ActivityForm(props) {
 				placeholder: textsCap.ownerPlaceholder,
 				required: true,
 				rxOptions: rxIdentities,
-				rxOptionsModifier: identities => {
-					const options = Array
-						.from(identities)
-						.map(([address, { name, usageType }]) => ({
-							description: (
-								<span className='description'>
-									<Balance {...{
-										address,
-										showDetailed: null, // hide details (total locked funds etc)
-									}} />
-								</span>
-							),
-							key: address,
-							keywords: [
-								address,
-								name,
-								usageType,
-							].join(' '),
-							text: (
-								<span>
-									<IdentityIcon {...{ address, usageType }} />
-									{' ' + name}
-								</span>
-							),
-							value: address,
-						}))
-					return arrSort(options, 'text')
-				},
+				rxOptionsModifier: getIdentityOptions,
 				search: ['keywords'],
 				selection: true,
 				type: 'dropdown',

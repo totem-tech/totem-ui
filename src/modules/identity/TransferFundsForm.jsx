@@ -26,7 +26,7 @@ import {
 import { remove as removeNotif, setItemViewHandler } from '../notification/notification'
 import { get as getPartner, getAddressName, rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
-import Balance from './Balance'
+import Balance, { rxBalances, rxLocks } from './Balance'
 import { get as getIdentity, rxIdentities, rxSelected } from './identity'
 import AddressName from '../partner/AddressName'
 import { copyRxSubject, subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
@@ -34,6 +34,8 @@ import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { statuses } from '../../components/Message'
 import IdentityIcon from './IdentityIcon'
 import PartnerIcon from '../partner/PartnerIcon'
+import { getIdentityOptions } from './getIdentityOptions'
+import getPartnerOptions from '../partner/getPartnerOptions'
 
 const textsCap = translated({
     amount: 'amount',
@@ -76,6 +78,7 @@ export default class TransferFundsForm extends Component {
     constructor(props) {
         super(props)
 
+        const { values = {} } = props
         this.names = {
             amountReceived: 'amountReceived',
             amountSent: 'amountSent',
@@ -85,11 +88,127 @@ export default class TransferFundsForm extends Component {
             to: 'to',
             txFee: 'txFeeHTML'
         }
-        this.rxAddress = new BehaviorSubject()
+        this.rxAddress = copyRxSubject(rxSelected)
         this.rxCurrencies = new BehaviorSubject()
         this.rxCurrencyReceived = new BehaviorSubject(rxSelectedCurrency.value)
         this.rxCurrencySent = copyRxSubject(rxSelectedCurrency)
         this.rxCurrencyOptions = new BehaviorSubject([])
+        const inputs = [
+            {
+                label: (
+                    <FromInputLabel {...{
+                        rxAddress: this.rxAddress,
+                        rxCurrencyReceived: this.rxCurrencyReceived,
+                        rxCurrencySent: this.rxCurrencySent,
+                    }} />
+                ),
+                name: this.names.from,
+                onChange: this.handleCurrencyChange,
+                options: [],
+                rxOptions: rxIdentities,
+                rxOptionsModifier: getIdentityOptions,
+                required: true,
+                rxValue: this.rxAddress,
+                search: ['keywords'],
+                selection: true,
+                type: 'dropdown',
+            },
+            {
+                additionLabel: `${textsCap.addPartner}: `,
+                allowAdditions: false,
+                clearable: true,
+                label: textsCap.toLabel,
+                name: this.names.to,
+                noResultsMessage: textsCap.partnerEmptyMsg1,
+                onAddItem: (_, { value: address }) => {
+                    // in case, if partner is not added or user cancels modal makes sure to remove the item
+                    const { inputs } = this.state
+                    const toIn = findInput(inputs, this.names.to)
+                    toIn.options = toIn.options.filter(({ value }) => value !== address)
+                    toIn.rxValue.next(null)
+                    this.setState({ inputs })
+
+                    // Open add partner modal
+                    showForm(PartnerForm, {
+                        onSubmit: (ok, { address }) => ok && toIn.rxValue.next(address),
+                        values: { address }
+                    })
+                },
+                onSearchChange: (_, { searchQuery: q }) => {
+                    q = q.trim()
+                    const { inputs } = this.state
+                    const valid = !!ss58Decode(q)
+                    const toIn = findInput(inputs, this.names.to)
+                    toIn.allowAdditions = valid && !toIn.options.find(x => x.value === q)
+                    toIn.noResultsMessage = !valid && q.length > 0 ? textsCap.partnerEmptyMsg2 : textsCap.partnerEmptyMsg1
+                    this.setState({ inputs })
+                },
+                options: [],
+                placeholder: textsCap.partnerPlaceholder,
+                rxOptions: rxPartners,
+                rxOptionsModifier: getPartnerOptions,
+                required: true,
+                rxValue: new BehaviorSubject(),
+                search: ['keywords'],
+                selection: true,
+                selectOnBlur: false,
+                selectOnNavigation: false,
+                type: 'dropdown',
+            },
+            {
+                ...asInlineLabel({
+                    // readOnly: true,
+                    rxValue: this.rxCurrencySent,
+                }),
+                label: textsCap.amountSentLabel,
+                min: 0,
+                name: this.names.amountSent,
+                readOnly: true,
+                rxValue: new BehaviorSubject(''),
+                type: 'number',
+            },
+            {
+                hidden: true,
+                name: this.names.currencySent,
+                onChange: this.handleCurrencyChange,
+                rxValue: this.rxCurrencySent,
+            },
+            {
+                content: this.getTxFeeEl(),
+                name: this.names.txFee,
+                type: 'html',
+            },
+            {
+                ...asInlineLabel({
+                    onCurrencies: currencies => {
+                        this.rxCurrencies.next(currencies)
+                        const { loading } = this.state
+                        loading.currencies = false
+                        this.setState({ loading })
+                    },
+                    rxValue: this.rxCurrencyReceived,
+                    upward: true,
+                }),
+                icon: 'money',
+                iconPosition: 'left',
+                label: textsCap.amountReceivedLabel,
+                maxLength: 12,
+                min: 0,
+                name: this.names.amountReceived,
+                onChange: this.handleAmountReceivedChange,
+                onInvalid: this.handleAmountReceivedInvalid,
+                placeholder: textsCap.amountReceivedPlaceholder,
+                required: true,
+                rxValue: new BehaviorSubject(''),
+                type: 'number',
+            },
+            {
+                hidden: true,
+                name: this.names.currencyReceived,
+                onChange: this.handleCurrencyChange,
+                rxValue: this.rxCurrencyReceived,
+            },
+        ]
         this.state = {
             loading: {
                 // wait until currencies list is loaded
@@ -100,200 +219,16 @@ export default class TransferFundsForm extends Component {
             onSubmit: this.handleSubmit,
             submitDisabled: {},
             success: false,
-            values: {
-                // currency: rxSelectedCurrency.value,
-            },
-            inputs: [
-                {
-                    label: (
-                        <FromInputLabel {...{
-                            rxAddress: this.rxAddress,
-                            rxCurrencyReceived: this.rxCurrencyReceived,
-                            rxCurrencySent: this.rxCurrencySent,
-                        }} />
-                    ),
-                    name: this.names.from,
-                    onChange: this.handleCurrencyChange,
-                    options: [],
-                    required: true,
-                    rxValue: this.rxAddress,
-                    search: ['keywords'],
-                    selection: true,
-                    type: 'dropdown',
-                },
-                {
-                    additionLabel: `${textsCap.addPartner}: `,
-                    allowAdditions: false,
-                    clearable: true,
-                    label: textsCap.toLabel,
-                    name: this.names.to,
-                    noResultsMessage: textsCap.partnerEmptyMsg1,
-                    onAddItem: (_, { value: address }) => {
-                        // in case, if partner is not added or user cancels modal makes sure to remove the item
-                        const { inputs } = this.state
-                        const toIn = findInput(inputs, this.names.to)
-                        toIn.options = toIn.options.filter(({ value }) => value !== address)
-                        toIn.rxValue.next(null)
-                        this.setState({ inputs })
-
-                        // Open add partner modal
-                        showForm(PartnerForm, {
-                            onSubmit: (ok, { address }) => ok && toIn.rxValue.next(address),
-                            values: { address }
-                        })
-                    },
-                    onSearchChange: (_, { searchQuery: q }) => {
-                        q = q.trim()
-                        const { inputs } = this.state
-                        const valid = !!ss58Decode(q)
-                        const toIn = findInput(inputs, this.names.to)
-                        toIn.allowAdditions = valid && !toIn.options.find(x => x.value === q)
-                        toIn.noResultsMessage = !valid && q.length > 0 ? textsCap.partnerEmptyMsg2 : textsCap.partnerEmptyMsg1
-                        this.setState({ inputs })
-                    },
-                    options: [],
-                    placeholder: textsCap.partnerPlaceholder,
-                    required: true,
-                    rxValue: new BehaviorSubject(),
-                    search: ['keywords'],
-                    selection: true,
-                    selectOnBlur: false,
-                    selectOnNavigation: false,
-                    type: 'dropdown',
-                },
-                {
-                    ...asInlineLabel({
-                        // readOnly: true,
-                        rxValue: this.rxCurrencySent,
-                    }),
-                    label: textsCap.amountSentLabel,
-                    min: 0,
-                    name: this.names.amountSent,
-                    readOnly: true,
-                    rxValue: new BehaviorSubject(''),
-                    type: 'number',
-                },
-                {
-                    hidden: true,
-                    name: this.names.currencySent,
-                    onChange: this.handleCurrencyChange,
-                    rxValue: this.rxCurrencySent,
-                },
-                {
-                    content: undefined,
-                    name: this.names.txFee,
-                    type: 'html',
-                },
-                {
-                    ...asInlineLabel({
-                        onCurrencies: currencies => {
-                            this.rxCurrencies.next(currencies)
-                            const { loading } = this.state
-                            loading.currencies = false
-                            this.setState({ loading })
-                        },
-                        rxValue: this.rxCurrencyReceived,
-                        upward: true,
-                    }),
-                    icon: 'money',
-                    iconPosition: 'left',
-                    label: textsCap.amountReceivedLabel,
-                    maxLength: 12,
-                    min: 0,
-                    name: this.names.amountReceived,
-                    onChange: this.handleAmountReceivedChange,
-                    onInvalid: this.handleAmountReceivedInvalid,
-                    placeholder: textsCap.amountReceivedPlaceholder,
-                    required: true,
-                    rxValue: new BehaviorSubject(''),
-                    type: 'number',
-                },
-                {
-                    hidden: true,
-                    name: this.names.currencyReceived,
-                    onChange: this.handleCurrencyChange,
-                    rxValue: this.rxCurrencyReceived,
-                },
-            ],
+            values,
+            inputs: fillValues(inputs, values),
         }
         this.originalSetState = this.setState
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount() {
-        this._mounted = true
-        this.subscriptions = {}
-        const { inputs } = this.state
-        const { values = {} } = this.props
-        const fromIn = findInput(inputs, this.names.from)
-        const toIn = findInput(inputs, this.names.to)
-        const currencyReceivedIn = findInput(inputs, this.names.currencyReceived)
-        const currencySentIn = findInput(inputs, this.names.currencySent)
-        fillValues(inputs, values)
-        findInput(inputs, this.names.txFee).content = this.getTxFeeEl()
-        this.setState({ inputs })
+    componentWillMount = () => this._mounted = true
 
-        this.subscriptions.selectedCurency = rxSelectedCurrency.subscribe(v => currencySentIn.rxValue.next(v))
-        // change value when selected address changes
-        this.subscriptions.selected = rxSelected.subscribe(v => fromIn.rxValue.next(v))
-        // re-/populate options if identity list changes
-        this.subscriptions.identities = rxIdentities.subscribe(map => {
-            const options = Array
-                .from(map)
-                .map(([address, { name, usageType }]) => ({
-                    key: address,
-                    keywords: [
-                        name,
-                        address,
-                        usageType,
-                    ].join(' '),
-                    text: (
-                        <span>
-                            <IdentityIcon {...{ address, usageType }} />
-                            {' ' + name}
-                        </span>
-                    ),
-                    value: address,
-                }))
-            fromIn.options = arrSort(options, 'keywords')
-            this.setState({ inputs })
-        })
-        // repopulate options if partners list changes
-        this.subscriptions.partners = rxPartners.subscribe(map => {
-            toIn.options = arrSort(
-                Array
-                    .from(map)
-                    .map(([address, { name, type, visibility }]) => ({
-                        description: textEllipsis(address, 20),
-                        key: address,
-                        keywords: [
-                            address,
-                            name,
-                            type,
-                            visibility,
-                        ].join(' '),
-                        text: (
-                            <span>
-                                <PartnerIcon {...{
-                                    address,
-                                    type,
-                                    visibility,
-                                }} />
-                                {' ' + name}
-                            </span>
-                        ),
-                        value: address,
-                    })),
-                'text'
-            )
-            this.setState({ inputs })
-        })
-    }
-
-    componentWillUnmount() {
-        this._mounted = false
-        unsubscribe(this.subscriptions)
-    }
+    componentWillUnmount = () => this._mounted = false
 
     clearForm = () => {
         const { inputs } = this.state
@@ -325,6 +260,7 @@ export default class TransferFundsForm extends Component {
     handleAmountReceivedChange = deferred(async (_, values) => {
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
+        const currencySent = values[this.names.currencySent]
         const from = values[this.names.from]
         const to = values[this.names.to]
         const valid = isValidNumber(amountReceived)
@@ -350,14 +286,13 @@ export default class TransferFundsForm extends Component {
         const resAmountSent = await convertTo(
             this.amountRounded,
             currencyDefault,
-            rxSelectedCurrency.value,
+            currencySent,
         )
         const { api } = await getConnection()
-        const [balance, locks] = await query(api.queryMulti, [[
-            [api.query.balances.freeBalance, from],
-            [api.query.balances.locks, from]
-        ]])
-        const freeBalance = balance - locks.reduce((sum, x) => sum + x.amount, 0)
+        const balance = rxBalances.value.get(from) || 0
+        const locks = rxLocks.value.get(from) || []
+        const totalLocked = locks.reduce((sum, x) => sum + x.amount, 0)
+        const freeBalance = balance - totalLocked
         try {
             const tx = await api.tx.transfer.networkCurrency(
                 to || from,
@@ -395,7 +330,7 @@ export default class TransferFundsForm extends Component {
             status: 'error',
         }
 
-        amountSentIn.rxValue.next(resAmountSent[1])
+        amountSentIn.rxValue.next(Number(resAmountSent[1]))
         this.setState({ inputs, submitDisabled })
     }, 300)
 
@@ -421,7 +356,6 @@ export default class TransferFundsForm extends Component {
 
         if (!isValidNumber(amountReceived)) return
 
-        // this.handleAmountReceivedChange(_, values)
         amountReceivedIn.rxValue.next('')
         amountReceivedIn.rxValue.next(amountReceived)
     }, 300)

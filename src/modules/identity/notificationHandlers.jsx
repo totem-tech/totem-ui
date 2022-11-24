@@ -44,7 +44,10 @@ const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
     msg.content = (
         <div>
             <div>
-                <b>{senderIdBtn} {!isIntroduce ? textsCap.identityRequestMsg : textsCap.indentityIntroduceMsg}</b>
+                <b>{senderIdBtn} {!isIntroduce
+                    ? textsCap.identityRequestMsg
+                    : textsCap.indentityIntroduceMsg
+                }</b>
                 {isIntroduce && <UserID userId={recipientId} prefix=' ' />}
                 {!isIntroduce && (
                     <div>
@@ -59,12 +62,18 @@ const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
                 onAction={(_, accepted) => {
                     if (!accepted) return remove(id)
                     
-                    const locationId = !location ? undefined : saveLocation(location)
+                    const locationId = !location
+                        ? undefined
+                        : saveLocation(location)
                     showForm(IdentityShareForm, {
                         inputsDisabled: ['userIds'],
-                        onSubmit: success => success ? remove(id) : removeLocation(locationId),
+                        onSubmit: success => success
+                            ? remove(id)
+                            : removeLocation(locationId),
                         values: {
-                            introducedBy: isIntroduce ? senderId : null,
+                            introducedBy: isIntroduce
+                                ? senderId
+                                : null,
                             locationId,
                             userIds: [recipientId],
                         },
