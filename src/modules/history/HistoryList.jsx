@@ -202,7 +202,7 @@ export default function HistoryList(props) {
             topRightMenu: [{
                 content: textsCap.delete,
                 icon: 'trash',
-                onClick: ids => ids.forEach(removeHistoryItem)
+                onClick: ids => removeHistoryItem(ids),
             }]
         }
         return state

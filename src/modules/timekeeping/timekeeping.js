@@ -73,7 +73,7 @@ export const blocksToDuration = (numBlocks, preference, blockDurationSeconds = B
 // Params:
 // @recordids   array: array of project IDs
 export const forceUpdate = async (recordIds, ownerAddress) => {
-    const updateProjects = await fetchProjects(recordIds, ownerAddress)
+    const updateProjects = await fetchProjects(recordIds, ownerAddress, true)
     const projects = await getProjects()
     Array.from(updateProjects)
         .forEach(([recordId, project]) =>

@@ -467,7 +467,7 @@ export class FormInput extends Component {
 					? searchRanked(attrs.search)
 					: attrs.search
 				attrs.style = { ...attrs.style }
-				attrs.options = options || attrs.options
+				attrs.options = options || attrs.options || []
 				attrs.value = (rxValue ? rxValue.value : attrs.value)
 					|| (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />

@@ -15,7 +15,7 @@ import {
 	objSetPropUndefined,
 } from '../../utils/utils'
 import identities from '../identity/identity'
-import partners from '../partner/partner'
+import partners, { rxPartners } from '../partner/partner'
 import PartnerIcon from '../partner/PartnerIcon'
 import {
 	get,
@@ -24,6 +24,7 @@ import {
 	set as save,
 	validationConf,
 } from './contact'
+import getPartnerOptions from '../partner/getPartnerOptions'
 
 const textsCap = translated(
 	{
@@ -182,28 +183,8 @@ export default function ContactForm(props) {
 				hidden: !partnerIdentity,
 				label: textsCap.partnerIdentityLabel,
 				name: inputNames.partnerIdentity,
-				options: Array
-					.from(partners.getAll())
-					.map(([address, { name, type, visibility }]) => ({
-						key: address,
-						keywords: [
-							address,
-							name,
-							type,
-							visibility,
-						].join(' '),
-						text: (
-							<span>
-								<PartnerIcon {...{
-									address,
-									type,
-									visibility,
-								}} />
-								{' ' + name}
-							</span>
-						),
-						value: address,
-					})),
+				rxOptions: rxPartners,
+				rxOptionsModifier: getPartnerOptions,
 				selection: true,
 				type: 'dropdown',
 			},

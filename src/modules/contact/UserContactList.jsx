@@ -26,3 +26,4 @@ UserContactList.asModal = (...args) => {
 		...args,
 	})
 }
+export default UserContactList

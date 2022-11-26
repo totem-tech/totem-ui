@@ -46,6 +46,11 @@ export const inputNames = {
 	name: 'name',
 	ownerAddress: 'ownerAddress',
 }
+export const bonsaiKeys = [
+	inputNames.name,
+	inputNames.ownerAddress,
+	inputNames.description,
+]
 // Create or update project form
 export default function ActivityForm(props) {
 	const [state] = iUseReducer(null, rxState => {
@@ -118,11 +123,6 @@ const handleSubmit = (props, rxState) => (e, values) => {
 	const { onSubmit, hash: existingHash } = props
 	const create = !existingHash
 	const hash = existingHash || generateHash(values)
-	const bonsaiKeys = [
-		inputNames.name,
-		inputNames.ownerAddress,
-		inputNames.description,
-	]
 	const token = generateHash(
 		objClean(values, bonsaiKeys)
 	)
@@ -191,24 +191,29 @@ const handleSubmit = (props, rxState) => (e, values) => {
 	}
 
 	// save auth token to blockchain and then store data to off-chain DB
-	const updateTask = queueables.saveBONSAIToken(ownerAddress, hash, token, {
-		title: textsCap.saveBONSAIToken,
-		description: token,
-		then: handleTxError,
-		next: {
-			type: QUEUE_TYPES.CHATCLIENT,
-			func: 'project',
-			title: textsCap.saveDetailsTitle,
-			description,
-			// address: ownerAddress,
-			args: [
-				hash,
-				values,
-				create,
-				handleOffChainResult,
-			],
+	const updateTask = queueables.saveBONSAIToken(
+		ownerAddress,
+		hash,
+		token,
+		{
+			title: textsCap.saveBONSAIToken,
+			description: token,
+			then: handleTxError,
+			next: {
+				type: QUEUE_TYPES.CHATCLIENT,
+				func: 'project',
+				title: textsCap.saveDetailsTitle,
+				description,
+				// address: ownerAddress,
+				args: [
+					hash,
+					values,
+					create,
+					handleOffChainResult,
+				],
+			},
 		},
-	})
+	)
 
 	// Send transaction to blockchain first, then add to external storage
 	const createTask = queueables.add(ownerAddress, hash, {

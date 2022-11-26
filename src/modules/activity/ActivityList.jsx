@@ -346,7 +346,7 @@ export default class ActivityList extends Component {
     }
 
     handleReassignOwner = selectedIds => {
-        if (selectedIds.length !== 1) return;
+        if (selectedIds.length !== 1) return
         const { data: projects } = this.state
         const recordId = selectedIds[0]
         const project = projects.get(recordId)

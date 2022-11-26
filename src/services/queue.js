@@ -578,20 +578,33 @@ export const resumeQueue = () => queue.map(([id, task]) => {
  */
 const setMessage = (task, msg = {}, duration, id, silent = false) => {
     if (silent) return
-    const statusText = task.status !== SUSPENDED ? statusTitles[task.status] : textsCap.addedToQueue
+    const statusText = task.status !== SUSPENDED
+        ? statusTitles[task.status]
+        : textsCap.addedToQueue
     const header = `${msg.header || task.title}: 
         ${task.type.startsWith('tx_') ? textsCap.transaction : ''} ${statusText}`
-    const content = !msg.content ? task.description : (
-        !isArr(msg.content) ? msg.content : (
-            <div>
-                {msg.content.filter(Boolean).map((txt, i) => (
-                    <div key={i} style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                        {txt}
-                    </div>
-                ))}
-            </div>
-        )
+    const EL = ({ children }) => (
+        <div style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+            {children}
+        </div>
     )
+    const content = !msg.content
+        ? task.description
+        : !isArr(msg.content)
+            ? <EL>{msg.content}</EL>
+            : (
+                <div>
+                    {msg
+                        .content
+                        .filter(Boolean)
+                        .map((txt, i) => (
+                            <EL {...{
+                                children: txt,
+                                key: i,
+                            }} />
+                        ))}
+                </div>
+            )
 
     setToast({
         ...msg,
@@ -623,9 +636,11 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     const isSuccess = status === SUCCESS
     const isSuspended = status === SUSPENDED
     task.status = status
-    task.errorMessage = !errMsg || isStr(errMsg) ? errMsg : (
-        isError(errMsg) ? `${errMsg}` : JSON.stringify(errMsg, null, 4)
-    )
+    task.errorMessage = !errMsg || isStr(errMsg)
+        ? errMsg
+        : isError(errMsg)
+            ? `${errMsg}`
+            : JSON.stringify(errMsg, null, 4)
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
     // no need to display toast if status is suspended

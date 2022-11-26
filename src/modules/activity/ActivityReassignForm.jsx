@@ -1,22 +1,24 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
-import { arrSort, isFn, textEllipsis } from '../../utils/utils'
+import { BehaviorSubject, generate } from 'rxjs'
+import { generateHash, isFn, objClean } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 // services
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { find as findIdentity, getAll as getIdentities, rxIdentities } from '../identity/identity'
-import partners, { rxPartners } from '../partner/partner'
-import PartnerForm from '../partner/PartnerForm'
-import { queueables } from './activity'
-import IdentityIcon from '../identity/IdentityIcon'
-import PartnerIcon from '../partner/PartnerIcon'
-import getPartnerOptions from '../partner/getPartnerOptions'
+// modules
 import { getIdentityOptions } from '../identity/getIdentityOptions'
+import { find as findIdentity, rxIdentities } from '../identity/identity'
+import { rxPartners } from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import getPartnerOptions from '../partner/getPartnerOptions'
+import { getProjects, queueables } from './activity'
+import { iUseReducer } from '../../utils/reactHelper'
+import { bonsaiKeys } from './ActivityForm'
 
 let textsCap = {
+    addPartner: 'add partner',
     cancel: 'cancel',
     confirmHeader: 'are you sure you want to reassign this activity?',
     confirmMsg1: 'you are about to assign the ownership of this activity to an Identity that does not belong to you.',
@@ -33,17 +35,14 @@ let textsCap = {
     partner: 'partner',
     partnerOptionsHeader: 'select a partner',
     proceed: 'proceed',
-    queueDescription: 'activity Name: ',
-    queuedMsgHeader: 're-assign request added to queue',
-    queuedMsgContent: 'your request to reassign the activity has been added to queue',
+    queueDescription: 'activity Name',
     queueTitle: 're-assign activity owner',
+	saveBONSAIToken: 'save BONSAI auth token',
 }
 textsCap = translated(textsCap, true)[1]
 
-export default class ActivityReassignForm extends Component {
-    constructor(props) {
-        super(props)
-
+export default function ActivityReassignForm(props) {
+    const [state] = iUseReducer(null, rxSetState => {
         const { hash, values } = props
         const inputs =[
             {
@@ -77,12 +76,11 @@ export default class ActivityReassignForm extends Component {
             {
                 label: textsCap.newOwnerLabel,
                 name: 'newOwnerAddress',
-                onChange: this.handleNewOwnerChange,
                 options: [],
                 placeholder: textsCap.newOwnerPlaceholder,
                 rxOptions: rxPartners,
                 rxOptionsModifier: partners => {
-                    const { hash, values = {} } = this.props
+                    const { values = {} } = props
                     const { ownerAddress } = values
                     return getPartnerOptions(partners, {}, true)
                         .filter(x => x.value !== ownerAddress)
@@ -92,16 +90,22 @@ export default class ActivityReassignForm extends Component {
                 selection: true,
                 required: true,
                 type: 'dropdown',
-
+                validate: (_, { ownerAddress, newOwnerAddress }) => {
+                    const invalid = ownerAddress
+                        && ownerAddress !== newOwnerAddress
+                    return invalid && {
+                        content: newOwnerReassignSelfMsg,
+                        status: 'error'
+                    }
+                },
             },
             {
-                content: 'Add partner',
+                content: textsCap.addPartner,
                 fluid: true,
                 name: 'addPartnerButton',
                 onClick: () => showForm(PartnerForm, {
                     onSubmit: (ok, { address }) => {
                         if (!ok) return
-                        const { inputs } = this.state
                         const newOwnerIn = findInput(inputs, 'newOwnerAddress')
                         newOwnerIn.rxValue.next(address)
                     }
@@ -109,81 +113,19 @@ export default class ActivityReassignForm extends Component {
                 type: 'button'
             }
         ]
-        this.state = {
+        const state = {
             message: {},
-            onSubmit: this.handleSubmit,
+            onSubmit: handleSubmit(props, rxSetState),
             success: false,
             inputs: fillValues(inputs, { ...values, hash }),
         }
 
-        this.originalSetState = this.setState
-        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
-    }
+        return state
+    })
+        
 
-    componentWillMount = () => this._mounted = true
-
-    componentWillUnmount = () => this._mounted = false
-
-    handleNewOwnerChange = (_, { ownerAddress, newOwnerAddress }) => {
-        const valid = !ownerAddress || ownerAddress !== newOwnerAddress
-        const { inputs } = this.state
-        const input = findInput(inputs, 'newOwnerAddress')
-        input.invalid = !valid
-        input.message = valid ? null : {
-            content: newOwnerReassignSelfMsg,
-            status: 'error'
-        }
-        this.setState({ inputs })
-    }
-
-    handleSubmit = (_, values) => {
-        const { values: project, onSubmit } = this.props
-        const { hash, name, ownerAddress, newOwnerAddress } = values
-        // confirm if re-assigning to someone else
-        const doConfirm = !!findIdentity(newOwnerAddress)
-        const task = queueables.reassign(ownerAddress, newOwnerAddress, hash, {
-            title: textsCap.queueTitle,
-            description: textsCap.queueDescription + name,
-            next: {
-                type: QUEUE_TYPES.CHATCLIENT,
-                func: 'project',
-                args: [
-                    hash,
-                    { ...project, ownerAddress: newOwnerAddress },
-                    false,
-                    err => isFn(onSubmit) && onSubmit(values, !err)
-                ]
-            }
-        })
-        const proceed = () => addToQueue(task) | this.setState({
-            message: {
-                header: textsCap.queuedMsgHeader,
-                content: textsCap.queuedMsgContent,
-                status: 'success',
-                icon: true
-            },
-            success: true
-        })
-
-        !!doConfirm
-            ? proceed()
-            : confirm({
-                cancelButton: { content: textsCap.cancel, color: 'green' },
-                confirmButton: { content: textsCap.proceed, negative: true },
-                content: `${textsCap.confirmMsg1} ${textsCap.confirmMsg2}`,
-                header: (
-                    <div className='header' style={{ textTransform: 'initial' }}>
-                        {textsCap.confirmHeader}
-                    </div>
-                ),
-                onConfirm: () => proceed(),
-                size: 'mini'
-            })
-    }
-
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+    return <FormBuilder {...{ ...props, ...state }} />
 }
-
 ActivityReassignForm.propTypes = {
     hash: PropTypes.string.isRequired,
     values: PropTypes.shape({
@@ -194,4 +136,89 @@ ActivityReassignForm.propTypes = {
 ActivityReassignForm.defaultProps = {
     header: textsCap.formHeader,
     size: 'mini',
+}
+
+const handleSubmit = (props, rxSetState) => (_, values) => {
+    const { values: project, onSubmit } = props
+    const {
+        hash,
+        name,
+        ownerAddress,
+        newOwnerAddress,
+    } = values
+    // confirm if re-assigning to someone else
+    const doConfirm = !!findIdentity(newOwnerAddress)
+    const handleResult = (isLast = false) => (success, err) => {
+        if (!isLast && success) return
+        rxSetState.next({
+            loading: !isLast,
+            message: {
+                content: success
+                    ? textsCap.successContent
+                    : err,
+                status: 'success',
+                icon: true
+            },
+            success,
+        })
+
+        isLast && success && getProjects(true)
+    }
+    const projectUpdated = {
+        ...project,
+        ownerAddress: newOwnerAddress,
+    }
+    const description = `${textsCap.queueDescription}: ${name}`
+    const updateOffChainStorage = {
+        args: [
+            hash,
+            projectUpdated,
+            false,
+            err => isFn(onSubmit) && onSubmit(values, !err)
+        ],
+        description,
+        func: 'project',
+        then: handleResult(true),
+        type: QUEUE_TYPES.CHATCLIENT,
+    }
+    const reassignOwner = queueables.reassign(
+        ownerAddress,
+        newOwnerAddress,
+        hash,
+        {
+            description,
+            next: updateOffChainStorage,
+            then: handleResult(),
+            title: textsCap.queueTitle,
+        },
+    )
+    const token = generateHash(
+        objClean(projectUpdated, bonsaiKeys)
+    )
+    const upateBonsaiToken = queueables.saveBONSAIToken(
+        ownerAddress,
+        hash,
+        token,
+        {
+            description: textsCap.saveBONSAIToken,
+            next: reassignOwner,
+            then: handleResult(),
+            title: textsCap.queueTitle,
+        },
+    )
+    rxSetState.next({ loading: true })
+    if (!doConfirm) return addToQueue(upateBonsaiToken)
+    
+    confirm({
+        cancelButton: { content: textsCap.cancel, color: 'green' },
+        confirmButton: { content: textsCap.proceed, negative: true },
+        content: `${textsCap.confirmMsg1} ${textsCap.confirmMsg2}`,
+        header: (
+            <div className='header' style={{ textTransform: 'initial' }}>
+                {textsCap.confirmHeader}
+            </div>
+        ),
+        onConfirm: () => addToQueue(upateBonsaiToken),
+        size: 'mini'
+    })
 }

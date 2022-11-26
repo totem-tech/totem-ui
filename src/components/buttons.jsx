@@ -15,7 +15,7 @@ import { getRawUserID } from './UserIdInput'
 // forms
 import IdentityRequestForm from '../modules/identity/IdentityRequestForm'
 import IdentityShareForm from '../modules/identity/IdentityShareForm'
-import IntroduceUserForm from '../modules/chat/IntroduceUserForm'
+import IntroduceUserForm from '../modules/identity/IntroduceUserForm'
 // services
 import { translated } from '../services/language'
 import {

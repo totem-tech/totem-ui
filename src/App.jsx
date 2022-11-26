@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react'
 import { Segment, Sidebar } from 'semantic-ui-react'
 import storage from './utils/storageHelper'
+import { className } from './utils/utils'
+import { messages, setMessages } from './utils/validator'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import { Invertible } from './components/Invertible'
@@ -11,7 +13,7 @@ import blockchain from './services/blockchain'
 import chatClient from './modules/chat/ChatClient'
 import currency from './modules/currency/currency'
 import identity from './modules/identity/identity'
-import language from './services/language'
+import language, { translated } from './services/language'
 import filePaths from './services/languageFiles'
 import modal from './services/modal'
 import activity from './modules/activity/activity'
@@ -29,11 +31,13 @@ import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-
 //'./assets/totem-button-grey.png'
 // import PlaceholderImage from './assets/totem-placeholder.png'
 import ChatBar from './modules/chat/ChatBar'
-import { className } from './utils/utils'
 import { generatePassword } from './modules/gettingStarted'
 
 let queueResumed = false
 const logoSrc = TotemButtonLogo
+
+// translate default error messages
+setMessages(translated(messages, true)[1])
 
 export default function App() {
 	useEffect(() => {

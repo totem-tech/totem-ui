@@ -1,163 +1,111 @@
-import React, { Component } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
-import { isFn, isStr } from '../../utils/utils'
-import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import { iUseReducer } from '../../utils/reactHelper'
+import { isFn, } from '../../utils/utils'
+import { statuses } from '../../components/Message'
+import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 
 const notificationType = 'identity'
 const childType = 'request'
-const [words, wordsCap] = translated({
+const reasons = [
+    'custom',
+    'to add your Identity to my Partner list',
+    'timekeeping on an Activity',
+]
+let textsCap = {
     close: 'close',
     reason: 'reason',
     submit: 'submit',
     user: 'user',
-}, true)
-const [texts, textsCap] = translated({
-    customReasonLabel: 'Custom Reason',
-    customReasonPlaceholder: 'Enter a reason for your request',
-    formHeader: 'Request Partner Identity',
-    formSubheader: 'Request one or more user(s) to share a Totem Identity with you.',
-    invalidUserId: 'Invalid User ID',
-    reason1: 'To add your Identity to my Partner list',
-    reason2: 'Timekeeping on an Activity',
-    reason3: 'custom',
-    reasonPlaceholder: 'Select a reason for this request',
-    successMsg: `Identity request has been sent to selected user(s). You will receive notification once they agree to share their Identity with you.`,
-    successMsgHeader: 'Request sent!',
-    errorMessageHeader: 'Request failed!',
-    userIds: 'User ID(s)',
-    userIdsNoResultsMessage: 'Type an User ID and press enter to add',
-    userIdsPlaceholder: 'Enter User ID(s)',
-}, true)
-const _reasonCustom = 'custom'
-const reasonList = [
-    { 
-        text: textsCap.reason1,
-        value: 'To add your Identity to my Partner list',
-    },
-    { 
-        text: textsCap.reason2,
-        value: 'Timekeeping on an Activity',
-    },
-    {
-        text: textsCap.reason3,
-        value: _reasonCustom,
-    },
-]
+    customReasonLabel: 'custom Reason',
+    customReasonPlaceholder: 'enter a reason for your request',
+    formHeader: 'request Partner Identity',
+    formSubheader: 'request one or more user(s) to share a Totem Identity with you.',
+    invalidUserId: 'invalid User ID',
+    reason1: reasons[1],
+    reason2: reasons[2],
+    reason3: reasons[0],
+    reasonPlaceholder: 'select a reason for this request',
+    successMsg1: 'identity request has been sent to selected users.',
+    successMsg2: 'you will receive notification once they agree to share their Identity with you.',
+    successMsgHeader: 'request sent!',
+    errorMessageHeader: 'request failed!',
+    userIds: 'user IDs',
+    userIdsNoResultsMessage: 'type an User ID and press enter to add',
+    userIdsPlaceholder: 'enter User IDs',
+}
+textsCap = translated(textsCap, true)[1]
 const inputNames = {
     customReason: 'customReason',
     reason: 'reason',
     userIds: 'userIds',
 }
 
-export default class IdentityRequestForm extends Component {
-    constructor(props) {
-        super(props)
-
+export default function IdentityRequestForm(props) {
+    const [state] = iUseReducer(null, rxSetState => {
         const { values = {} } = props
-        values.userIds = (values.userIds || [])
-        if (isStr(values.userIds)) values.userIds = values.userIds.split(',')
-
-        this.state = {
+        const inputs = [
+            {
+                excludeOwnId: true,
+                includePartners: true,
+                includeFromChat: true,
+                label: textsCap.user,
+                name: inputNames.userIds,
+                multiple: true,
+                noResultsMessage: textsCap.userIdsNoResultsMessage,
+                required: true,
+                placeholder: textsCap.userIdsPlaceholder,
+                type: 'UserIdInput',
+            },
+            {
+                label: textsCap.reason,
+                maxLength: 64,
+                name: inputNames.reason,
+                options: [
+                    {
+                        text: textsCap.reason1,
+                        value: reasons[1],
+                    },
+                    { 
+                        text: textsCap.reason2,
+                        value: reasons[2],
+                    },
+                    {
+                        text: textsCap.reason3,
+                        value: reasons[0],
+                    },
+                ],
+                placeholder: textsCap.reasonPlaceholder,
+                required: true,
+                search: true,
+                selection: true,
+                type: 'DropDown',
+            },
+            {
+                hidden: values => values[inputNames.reason] !== reasons[0],
+                label: textsCap.customReasonLabel,
+                name: inputNames.customReason,
+                minLength: 10,
+                maxLength: 64,
+                placeholder: textsCap.customReasonPlaceholder,
+                required: true,
+                type: 'text',
+                value: '',
+            },
+        ]
+        const state = {
             loading: false,
             message: {},
-            onSubmit: this.handleSubmit,
+            onSubmit: handleSubmit(props, rxSetState),
             success: false,
-            inputs: [
-                {
-                    includePartners: true,
-                    includeFromChat: true,
-                    label: wordsCap.user,
-                    name: inputNames.userIds,
-                    multiple: true,
-                    noResultsMessage: texts.userIdsNoResultsMessage,
-                    required: true,
-                    placeholder: texts.userIdsPlaceholder,
-                    type: 'UserIdInput',
-                },
-                {
-                    label: wordsCap.reason,
-                    maxLength: 64,
-                    name: inputNames.reason,
-                    onChange: (e, values, i) => {
-                        const { inputs } = this.state
-                        const reason = values[inputNames.reason]
-                        const showCustom = _reasonCustom === reason
-                        findInput(inputs, inputNames.customReason).hidden = !showCustom
-                        this.setState({ inputs })
-                    },
-                    options: reasonList.map(x => x),
-                    placeholder: texts.reasonPlaceholder,
-                    required: true,
-                    search: true,
-                    selection: true,
-                    type: 'DropDown',
-                },
-                {
-                    hidden: true,
-                    label: texts.customReasonLabel,
-                    name: inputNames.customReason,
-                    minLength: 10,
-                    maxLength: 64,
-                    placeholder: texts.customReasonPlaceholder,
-                    required: true,
-                    type: 'text',
-                    value: '',
-                }
-            ]
+            inputs: fillValues(inputs, values)
         }
+        return state
+    })
 
-        fillValues(this.state.inputs, values)
-    }
-
-    handleSubmit = (e, values) => {
-        const { onSubmit } = this.props
-        const { userIds, reason, customReason } = values
-        const data = {
-            reason: reason === _reasonCustom
-                ? customReason
-                : reason,
-        }
-        this.setState({ loading: true })
-        const callback = err => {
-            const success = !err
-            const message = {
-                content: texts.successMsg,
-                header: texts.successMsgHeader,
-                icon: true,
-                status: 'success',
-            }
-            this.setState({
-                loading: false,
-                message: success ? message : {
-                    header: texts.errorMessageHeader,
-                    content: err,
-                    icon: true,
-                    status: 'error',
-                },
-                success
-            })
-            isFn(onSubmit) && onSubmit(success, values)
-        }
-        addToQueue({
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'notify',
-            title: texts.formHeader,
-            description: `${texts.userIds} : ${userIds}`,
-            args: [
-                userIds,
-                notificationType,
-                childType,
-                null,
-                data,
-                callback,
-            ]
-        })
-    }
-
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+    return <FormBuilder {...{ ...props, ...state }} />
 }
 IdentityRequestForm.propTypes = {
     values: PropTypes.shape({
@@ -170,9 +118,53 @@ IdentityRequestForm.propTypes = {
     })
 }
 IdentityRequestForm.defaultProps = {
-    closeText: wordsCap.close,
-    header: texts.formHeader,
+    closeText: textsCap.close,
+    header: textsCap.formHeader,
     size: 'tiny',
-    subheader: texts.formSubheader,
-    submitText: wordsCap.submit,
+    subheader: textsCap.formSubheader,
+    submitText: textsCap.submit,
+}
+
+const handleSubmit = (props, rxSetState) => (_, values) => {
+    const { onSubmit } = props
+    let { userIds, reason, customReason } = values
+    reason = reason === reasons[0]
+        ? customReason
+        : reason
+    rxSetState.next({ loading: true })
+    const callback = err => {
+        const success = !err
+        rxSetState.next({
+            loading: false,
+            message: success
+                ? {
+                    content: `${textsCap.successMsg1} ${textsCap.successMsg2}`,
+                    header: textsCap.successMsgHeader,
+                    icon: true,
+                    status: statuses.SUCCESS,
+                }
+                : {
+                    header: textsCap.errorMessageHeader,
+                    content: err,
+                    icon: true,
+                    status: statuses.ERROR,
+                },
+            success,
+        })
+        isFn(onSubmit) && onSubmit(success, values)
+    }
+    addToQueue({
+        type: QUEUE_TYPES.CHATCLIENT,
+        func: 'notify',
+        title: textsCap.formHeader,
+        description: `${textsCap.userIds}: ${userIds}`,
+        args: [
+            userIds,
+            notificationType,
+            childType,
+            null,
+            { reason },
+            callback,
+        ]
+    })
 }

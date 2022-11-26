@@ -99,11 +99,13 @@ export const createInbox = (receiverIds = [], name, setOpen = false) => {
 }
 
 // unique user ids from all messages in chat history
-export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxesSettings())
-    .filter(key => key !== TROLLBOX)
-    .map(key => key.split(','))
-    .flat()
-    .concat(includeTrollbox ? getInboxUserIds(TROLLBOX) : []))
+export const getChatUserIds = (includeTrollbox = true) => arrUnique(
+    Object.keys(inboxesSettings())
+        .filter(key => key !== TROLLBOX)
+        .map(key => key.split(','))
+        .flat()
+        .concat(includeTrollbox ? getInboxUserIds(TROLLBOX) : [])
+)
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
