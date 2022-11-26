@@ -143,17 +143,15 @@ const handleSubmit = (props, rxState) => (e, values) => {
 		status: 'loading',
 		icon: true,
 	}
-	const handleTxError = (ok, err) =>
-		!ok &&
-		rxState.next({
-			message: {
-				content: `${err}`,
-				header: textsCap.submitErrorHeader,
-				icon: true,
-				status: 'error',
-			},
-			submitDisabled: false,
-		})
+	const handleTxError = (ok, err) => !ok && rxState.next({
+		message: {
+			content: `${err}`,
+			header: textsCap.submitErrorHeader,
+			icon: true,
+			status: 'error',
+		},
+		submitDisabled: false,
+	})
 
 	rxState.next({ message, submitDisabled: true })
 

@@ -1,6 +1,7 @@
-import React, { Component } from 'react'
+import React from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject, generate } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
+import { iUseReducer } from '../../utils/reactHelper'
 import { generateHash, isFn, objClean } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 // services
@@ -14,7 +15,6 @@ import { rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import getPartnerOptions from '../partner/getPartnerOptions'
 import { getProjects, queueables } from './activity'
-import { iUseReducer } from '../../utils/reactHelper'
 import { bonsaiKeys } from './ActivityForm'
 
 let textsCap = {
@@ -169,6 +169,16 @@ const handleSubmit = (props, rxSetState) => (_, values) => {
         ownerAddress: newOwnerAddress,
     }
     const description = `${textsCap.queueDescription}: ${name}`
+    const reassignOwner = queueables.reassign(
+        ownerAddress,
+        newOwnerAddress,
+        hash,
+        {
+            description,
+            then: handleResult(),
+            title: textsCap.queueTitle,
+        },
+    )
     const updateOffChainStorage = {
         args: [
             hash,
@@ -178,20 +188,11 @@ const handleSubmit = (props, rxSetState) => (_, values) => {
         ],
         description,
         func: 'project',
+        next: reassignOwner,
         then: handleResult(true),
         type: QUEUE_TYPES.CHATCLIENT,
+        title: textsCap.queueTitle,
     }
-    const reassignOwner = queueables.reassign(
-        ownerAddress,
-        newOwnerAddress,
-        hash,
-        {
-            description,
-            next: updateOffChainStorage,
-            then: handleResult(),
-            title: textsCap.queueTitle,
-        },
-    )
     const token = generateHash(
         objClean(projectUpdated, bonsaiKeys)
     )
@@ -201,7 +202,7 @@ const handleSubmit = (props, rxSetState) => (_, values) => {
         token,
         {
             description: textsCap.saveBONSAIToken,
-            next: reassignOwner,
+            next: updateOffChainStorage,
             then: handleResult(),
             title: textsCap.queueTitle,
         },
