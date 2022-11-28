@@ -11,7 +11,6 @@ import {
 } from '../contact/contact'
 import { inputNames as contactInputNames } from '../contact/ContactForm'
 import {
-	get as getLocation,
 	search as searchLocation,
 	newId as newLocationId,
 	remove as removeLocation,
@@ -23,9 +22,9 @@ import {
 	rxVisible,
 	setItemViewHandler,
 } from '../notification/notification'
+import AddressName from './AddressName'
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
-import PartnerIcon from './PartnerIcon'
 
 let textsCap = {
 	addPartner: 'add partner',
@@ -53,11 +52,6 @@ const handleIdentityReceived = (
 		name: newName,
 	} = data || {}
 	const partner = get(address)
-	const {
-		name,
-		type,
-		visibility,
-	} = partner || {}
 	const onAction = (_, accepted) => {
 		try {
 			if (!accepted) return remove(id)
@@ -142,7 +136,7 @@ const handleIdentityReceived = (
 	}
 
 	return {
-		icon: { name: 'user plus' },
+		icon: { name: 'user circle outline' },
 		content: (
 			<div>
 				<div>
@@ -153,8 +147,7 @@ const handleIdentityReceived = (
 				{partner && (
 					<div style={{ fontSize: '75%' }}>
 						<b>{textsCap.partnerName}: </b>
-						<PartnerIcon {...{ type, visibility }} />
-						{' ' + (name || newName)}
+						<AddressName {...{ address }} />
 					</div>
 				)}
 				{introducedBy && (
@@ -169,8 +162,7 @@ const handleIdentityReceived = (
 						: textsCap.addPartner,
 					onAction,
 					rejectText: textsCap.ignore,
-				}}
-				/>
+				}} />
 				<div>{message}</div>
 			</div>
 		),

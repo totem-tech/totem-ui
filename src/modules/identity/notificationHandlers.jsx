@@ -28,7 +28,11 @@ const textsCap = translated({
 const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
     if (!notification) return
     const { data, childType } = notification
-    const { location, reason, userId } = data || {}
+    const {
+        location,
+        reason,
+        userId,
+    } = data || {}
     const isIntroduce = childType === 'introduce'
     // user who is to receive an identity
     const recipientId = isIntroduce
@@ -38,8 +42,13 @@ const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
         icon: {
             name: isIntroduce
                 ? 'handshake'
-                : 'user'
-        }
+                : 'user circle',
+            style: {
+                fontSize: isIntroduce
+                    ? 32
+                    : undefined,
+            }
+        },
     }
     const { reason: reasonTranslated } = translated({ reason }, true)[1]
     msg.content = (

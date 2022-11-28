@@ -109,7 +109,7 @@ export default function NotificationView() {
 			compact: true,
 			content: textsCap.btnRead,
 			disabled: allRead,
-			icon: 'envelope open',
+			icon: 'envelope open outline',
 			key: 'all',
 			labelPosition: 'right',
 			onClick: () => confirm({
