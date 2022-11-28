@@ -10,12 +10,9 @@ const textsCap = translated({
     ignore: 'ignore',
     share: 'share',
     reason: 'reason',
-    // addPartner: 'add partner',
     indentityIntroduceMsg: 'recommended you to share your identity with the following user:',
     identityRequestMsg: 'requested an identity',
-    // identityShareMsg: 'identity received from:',
     introducedBy: 'introduced by',
-    // yourIdentity: 'your identity',
 }, true)[1]
 
 /**
@@ -48,10 +45,13 @@ const handleIdentityRequest = (id, notification, { senderId, senderIdBtn }) => {
     msg.content = (
         <div>
             <div>
-                <b>{senderIdBtn} {!isIntroduce
-                    ? textsCap.identityRequestMsg
-                    : textsCap.indentityIntroduceMsg
-                }</b>
+                <b>
+                    {senderIdBtn}{' '}
+                    {(!isIntroduce
+                        ? textsCap.identityRequestMsg || ''
+                        : textsCap.indentityIntroduceMsg || ''
+                    ).toLowerCase()}
+                </b>
                 {isIntroduce && <UserID userId={recipientId} prefix=' ' />}
                 {!isIntroduce && (
                     <div>

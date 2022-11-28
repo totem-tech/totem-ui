@@ -2,6 +2,7 @@ import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
+import uuid from 'uuid'
 import {
 	isDefined,
 	isArr,
@@ -31,8 +32,13 @@ class FormBuilder extends Component {
 	constructor(props) {
 		super(props)
 
-		const { inputs, open } = props
+		const {
+			id = uuid.v1(), // Form ID
+			inputs,
+			open,
+		} = props
 		this.state = {
+			id,
 			open,
 			values: this.getValues(inputs),
 		}
@@ -48,8 +54,9 @@ class FormBuilder extends Component {
 		parentIndex = isDefined(parentIndex)
 			? parentIndex
 			: null
+		const { id: formId } = this.state
 		const {
-			inputNamePrefix = '',
+			inputNamePrefix = formId,
 			inputsDisabled = [],
 			inputsHidden = [],
 			inputsReadOnly = [],
@@ -294,7 +301,12 @@ class FormBuilder extends Component {
 			closeOnDimmerClick = true
 			closeOnEscape = true
 		}
-		let { message: sMsg, open: sOpen, values } = this.state
+		let {
+			id,
+			message: sMsg,
+			open: sOpen,
+			values,
+		} = this.state
 		// whether the 'open' status is controlled or uncontrolled
 		let modalOpen = isFn(onClose) ? open : sOpen
 		inputs = inputs.map(this.addInterceptor(values))
@@ -439,7 +451,7 @@ class FormBuilder extends Component {
 				closeOnDimmerClick: !!closeOnDimmerClick,
 				defaultOpen: defaultOpen,
 				dimmer: true,
-				id: `form-${modalId}`,
+				id,
 				onClose: this.handleClose,
 				onOpen: onOpen,
 				onSubmit: handleSubmit,

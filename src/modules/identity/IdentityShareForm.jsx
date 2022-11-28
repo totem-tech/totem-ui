@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import { iUseReducer } from '../../utils/reactHelper'
-import { isFn, arrSort, isStr } from '../../utils/utils'
+import { deferred, isFn } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
@@ -15,6 +15,11 @@ import LocationForm, { inputNames as locInputNames } from '../location/LocationF
 import { getIdentityOptions } from './getIdentityOptions'
 import { get as getIdentity, rxIdentities } from './identity'
 import { inputNames as idInputNames } from './IdentityForm'
+import {
+	handleSubmitCb,
+	reasons,
+	inputNames as reqInputNames
+} from './IdentityRequestForm'
 
 const notificationType = 'identity'
 const childType = 'share'
@@ -37,6 +42,7 @@ let textsCap = {
 	namePlaceholder: 'enter a name to be shared',
 	// partner: 'partner',
 	partners: 'partners',
+	requestLabel: 'request identity from selected users',
 	successMsgContent: 'identity has been sent to selected users',
 	successMsgHeader: 'identity sent!',
 	updateContact: 'update contact details',
@@ -52,6 +58,7 @@ export const inputNames = {
 	include: 'include',
 	introducedBy: 'introducedBy',
 	name: 'name',
+	request: 'request',
 	userIds: 'userIds',
 }
 
@@ -81,6 +88,7 @@ export default IdentityShareForm
 
 const getInitialState = props => rxSetState => {
 	const { values = {} } = props
+	const rxAddress = new BehaviorSubject()
 	const inputs = [
 		{
 			label: textsCap.identityLabel,
@@ -89,8 +97,19 @@ const getInitialState = props => rxSetState => {
 			placeholder: textsCap.identityPlaceholder,
 			required: true,
 			rxOptions: rxIdentities,
-			rxOptionsModifier: getIdentityOptions,
-			rxValue: new BehaviorSubject(),
+			rxOptionsModifier: identities => getIdentityOptions(
+				identities,
+				{
+					// trigger identity change in case identity details is changed.
+					// this is requied to makes sure all extra information fields are populated propertly and instantly
+					onClose: () => {
+						const address = rxAddress.value
+						rxAddress.next('')
+						setTimeout(() => rxAddress.next(address), 350)
+					},
+				}
+			),
+			rxValue: rxAddress,
 			search: ['keywords'],
 			selection: true,
 			type: 'dropdown',
@@ -137,6 +156,15 @@ const getInitialState = props => rxSetState => {
 			required: true,
 			type: 'UserIdInput',
 			// value: userIds,
+		},
+		{
+			name: inputNames.request,
+			options: [{
+				label: textsCap.requestLabel,
+				value: true,
+			}],
+			toggle: true,
+			type: 'checkbox-group'
 		},
 		{
 			hidden: true,
@@ -246,6 +274,7 @@ const handleSubmit = (rxSetState, props = {}) => (_, values) => {
 	const identity = getIdentity(address)
 	const includeArr = values[inputNames.include] || []
 	const name = values[inputNames.name] || (identity.name)
+	const requestPartner = values[inputNames.request] === true
 	const userIds = values[inputNames.userIds]
 	const data = { address, name }
 	includeArr.forEach(name => {
@@ -294,8 +323,7 @@ const handleSubmit = (rxSetState, props = {}) => (_, values) => {
 		`${shareType}: ${data.name}`,
 		`${textsCap.userIdsLabel}: ${userIds.join()}`,
 	].join('\n')
-
-	addToQueue({
+	const sendIdentity = (send = true) => send && addToQueue({
 		args: [
 			userIds,
 			notificationType,
@@ -309,4 +337,13 @@ const handleSubmit = (rxSetState, props = {}) => (_, values) => {
 		then: handleResult,
 		title: textsCap.formHeader,
 	})
+
+	if (!requestPartner) return sendIdentity()
+	
+	// send partner request first, then share own identity
+	handleSubmitCb({ onSubmit: sendIdentity }, rxSetState)(_, {
+		[reqInputNames.userIds]: userIds,
+		[reqInputNames.reason]: reasons[1],
+	})
+	
 }

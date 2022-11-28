@@ -2,8 +2,8 @@ import React from 'react'
 import { isFn } from '../../utils/utils'
 // components
 import { UserID } from '../../components/buttons'
-import TimeSince from '../../components/TimeSince'
 import { Message } from '../../components/Message'
+import TimeSince from '../../components/TimeSince'
 // services
 import { itemViewHandlers, remove, toggleRead } from './notification'
 
@@ -12,7 +12,12 @@ export default function NotificationItem({ id, notification }) {
     const key = `${type}:${childType || ''}`
     const handler = itemViewHandlers[key]
     const senderId = from || notification.senderId // (previously used)
-    const senderIdBtn = <UserID userId={senderId} />
+    const senderIdBtn = (
+        <UserID {...{
+            style: { color: 'deeppink' },
+            userId: senderId,
+        }} />
+    )
     const isCustom = isFn(handler)
     let msg = {
         ...(isCustom

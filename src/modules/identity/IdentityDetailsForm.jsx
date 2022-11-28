@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 //utils
 import storage from '../../utils/storageHelper'
-import { copyToClipboard, isFn } from '../../utils/utils'
+import { copyToClipboard, isFn, objClean } from '../../utils/utils'
 // components
 import FormBuilder, {
 	fillValues,
@@ -79,10 +79,14 @@ class IdentityDetailsForm extends Component {
 				{
 					content: (
 						<IdentityForm {...{
-							inputNamePrefix: 'IdentityForm',
-							El: 'div',
+							...objClean(props, [
+								'onChange',
+								'onClose',
+								'onSubmit',
+							]),
 							// auto save changes
 							autoSave: true,
+							El: 'div',
 							submitText: null,
 							values: this.identity,
 						}} />

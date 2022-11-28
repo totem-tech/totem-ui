@@ -280,6 +280,7 @@ export default class PartnerForm extends Component {
 							value: visibilityTypes.PRIVATE,
 						},
 						{
+							disabled: true,
 							label: textsCap.public,
 							value: visibilityTypes.PUBLIC,
 						},
@@ -291,7 +292,8 @@ export default class PartnerForm extends Component {
 					),
 					type: 'checkbox-group',
 				},
-				{
+			{
+					hidden: values => values[inputNames.visibility] === visibilityTypes.PUBLIC,
 					label: textsCap.userIdLabel,
 					name: inputNames.userId,
 					multiple: false,
@@ -460,7 +462,6 @@ export default class PartnerForm extends Component {
 					contactInputNames.partnerIdentity,
 					// contactInputNames.removeBtn,
 				],
-				inputNamePrefix: 'ContactForm',
 				key: contact.id,
 				onChange: !!this.contactId
 					? undefined
@@ -507,7 +508,6 @@ export default class PartnerForm extends Component {
 					locationInputNames.partnerName,
 					// locationInputNames.removeBtn,
 				],
-				inputNamePrefix: 'LocationForm',
 				key: locationId,
 				onChange: (_, values) => {
 					this.locationDraft = values

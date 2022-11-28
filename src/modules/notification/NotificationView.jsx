@@ -127,16 +127,14 @@ export default function NotificationView() {
 		},
 	]
 
-	return (
+	return visible && items.length > 0 && (
 		<div className='notification-list'>
-			{visible && (
-				<ButtonGroup {...{
-					buttons,
-					className: 'actions',
-					fluid: true,
-				}} />
-			)}
-			{visible && items}
+			<ButtonGroup {...{
+				buttons,
+				className: 'actions',
+				fluid: true,
+			}} />
+			{items}
 		</div>
 	)
 }

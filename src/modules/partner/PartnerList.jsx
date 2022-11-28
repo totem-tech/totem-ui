@@ -131,12 +131,12 @@ const getTableProps = layout => {
 				draggable: false,
 				title: textsCap.edit,
 			},
-			!isMobile && {
-				content: getVisibilityContent,
-				collapsing: true,
-				textAlign: 'center',
-				title: textsCap.public,
-			},
+			// !isMobile && {
+			// 	content: getVisibilityContent,
+			// 	collapsing: true,
+			// 	textAlign: 'center',
+			// 	title: textsCap.public,
+			// },
 		].filter(Boolean),
 		defaultSort: 'name',
 		emptyMessage: null,
@@ -204,29 +204,29 @@ function getActions(partner = {}) {
 		.map(props => <Button key={props.title} {...props} />)
 }
 
-function getVisibilityContent(partner = {}) {
-	const { address, name, visibility } = partner
-	const isPublic = visibility === visibilityTypes.PUBLIC
-	return (
-		<div
-			title={
-				isPublic
-					? textsCap.columnPublicTitle1
-					: textsCap.columnPublicTitle2
-			}
-		>
-			<Checkbox
-				checked={isPublic}
-				toggle
-				onChange={(_, { checked }) =>
-					checked &&
-					showForm(CompanyForm, {
-						values: { name, identity: address },
-						onSubmit: (e, v, success) =>
-							success && setPublic(address),
-					})
-				}
-			/>
-		</div>
-	)
-}
+// function getVisibilityContent(partner = {}) {
+// 	const { address, name, visibility } = partner
+// 	const isPublic = visibility === visibilityTypes.PUBLIC
+// 	return (
+// 		<div
+// 			title={
+// 				isPublic
+// 					? textsCap.columnPublicTitle1
+// 					: textsCap.columnPublicTitle2
+// 			}
+// 		>
+// 			<Checkbox
+// 				checked={isPublic}
+// 				toggle
+// 				onChange={(_, { checked }) =>
+// 					checked &&
+// 					showForm(CompanyForm, {
+// 						values: { name, identity: address },
+// 						onSubmit: (e, v, success) =>
+// 							success && setPublic(address),
+// 					})
+// 				}
+// 			/>
+// 		</div>
+// 	)
+// }

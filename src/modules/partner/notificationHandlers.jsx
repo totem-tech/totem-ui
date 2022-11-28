@@ -30,7 +30,7 @@ import PartnerIcon from './PartnerIcon'
 let textsCap = {
 	addPartner: 'add partner',
 	ignore: 'ignore',
-	identityShareMsg: 'identity received from:',
+	identityShareMsg: 'shared an identity',
 	introducedBy: 'introduced by',
 	partnerName: 'partner name',
 	updatePartner: 'update partner',
@@ -147,7 +147,7 @@ const handleIdentityReceived = (
 			<div>
 				<div>
 					<b>
-						{textsCap.identityShareMsg} {senderIdBtn}
+						{senderIdBtn} {textsCap.identityShareMsg.toLowerCase()}
 					</b>
 				</div>
 				{partner && (

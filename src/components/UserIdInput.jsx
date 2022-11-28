@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { arrUnique, isFn, objWithoutKeys, arrSort, isStr, deferred, isSubjectLike } from '../utils/utils'
+import { arrUnique, isFn, objWithoutKeys, arrSort, isStr, deferred, isSubjectLike, isArr } from '../utils/utils'
 import FormInput from './FormInput'
 import { getChatUserIds } from '../modules/chat/chat'
 import client, { getUser } from '../modules/chat/ChatClient'
@@ -65,7 +65,7 @@ class UserIdInput extends Component {
             includeFromChat,
             multiple,
             newUser,
-            options = [],
+            options,
             placeholder,
             reject = [],
             rxValue,
@@ -83,10 +83,10 @@ class UserIdInput extends Component {
                 : value || []
             if (!multiple) value = value[0]
             options = arrUnique([
-                ...isStr(value)
-                    ? [value]
-                    : value,
-                options.map(x => x.value),
+                ...isArr(value)
+                    ? value
+                    : [value].filter(Boolean),
+                (options || []).map(x => x.value),
             ])
                 .filter(isStr)
                 .sort()

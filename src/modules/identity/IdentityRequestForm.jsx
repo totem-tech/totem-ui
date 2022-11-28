@@ -9,7 +9,7 @@ import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 
 const notificationType = 'identity'
 const childType = 'request'
-const reasons = [
+export const reasons = [
     'custom',
     'to add your Identity to my Partner list',
     'timekeeping on an Activity',
@@ -37,7 +37,7 @@ let textsCap = {
     userIdsPlaceholder: 'enter User IDs',
 }
 textsCap = translated(textsCap, true)[1]
-const inputNames = {
+export const inputNames = {
     customReason: 'customReason',
     reason: 'reason',
     userIds: 'userIds',
@@ -98,7 +98,7 @@ export default function IdentityRequestForm(props) {
         const state = {
             loading: false,
             message: {},
-            onSubmit: handleSubmit(props, rxSetState),
+            onSubmit: handleSubmitCb(props, rxSetState),
             success: false,
             inputs: fillValues(inputs, values)
         }
@@ -125,15 +125,14 @@ IdentityRequestForm.defaultProps = {
     submitText: textsCap.submit,
 }
 
-const handleSubmit = (props, rxSetState) => (_, values) => {
+export const handleSubmitCb = (props, rxSetState) => (_, values) => {
     const { onSubmit } = props
     let { userIds, reason, customReason } = values
     reason = reason === reasons[0]
         ? customReason
         : reason
     rxSetState.next({ loading: true })
-    const callback = err => {
-        const success = !err
+    const handleResult = (success, err) => {
         rxSetState.next({
             loading: false,
             message: success
@@ -154,17 +153,17 @@ const handleSubmit = (props, rxSetState) => (_, values) => {
         isFn(onSubmit) && onSubmit(success, values)
     }
     addToQueue({
-        type: QUEUE_TYPES.CHATCLIENT,
-        func: 'notify',
-        title: textsCap.formHeader,
-        description: `${textsCap.userIds}: ${userIds}`,
         args: [
             userIds,
             notificationType,
             childType,
             null,
             { reason },
-            callback,
-        ]
+        ],
+        description: `${textsCap.userIds}: ${userIds}`,
+        func: 'notify',
+        then: handleResult,
+        title: textsCap.formHeader,
+        type: QUEUE_TYPES.CHATCLIENT,
     })
 }
