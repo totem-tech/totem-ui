@@ -1,1 +1,0 @@
-// display name if partner or own identity, otherwise display add partner button

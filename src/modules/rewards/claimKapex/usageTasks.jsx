@@ -294,7 +294,7 @@ export const getUsageTasks = rewardIdentity => {
 					content: textsCap.goToTasks,
 					module: 'tasks',
 					moduleProps: {
-						activeType: listTypes.owner,
+						tab: listTypes.owner,
 					},
 				},
 				textsCap.clickCreate,

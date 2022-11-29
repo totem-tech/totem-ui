@@ -3,35 +3,48 @@ import { isArr } from '../../utils/utils'
 import { ButtonGroup } from '../../components/buttons'
 import { translated } from '../../services/language'
 import { confirm } from '../../services/modal'
-import { addToQueue, QUEUE_TYPES, statuses as queueStatuses } from '../../services/queue'
+import {
+	addToQueue,
+	QUEUE_TYPES,
+	statuses as queueStatuses,
+} from '../../services/queue'
 import { get as getIdentity } from '../identity/identity'
 import { get as getPartner } from '../partner/partner'
-import { getMatchingIds, remove, setItemViewHandler } from '../notification/notification'
-import { query, queueables, statuses } from './task'
+import {
+	getMatchingIds,
+	remove,
+	setItemViewHandler,
+} from '../notification/notification'
+import {
+	query,
+	queueables,
+	statuses,
+} from './task'
+import { Button } from 'semantic-ui-react'
+import TaskDetails from './TaskDetails'
 
-const [texts, textsCap] = translated(
-	{
-		accept: 'accept',
-		assigntTaskMsg: 'assigned a task to you.',
-		dispute: 'dispute',
-		invoiceAccept: 'accept task invoice',
-		invoiceAcceptConfirm: 'accept invoice and pay the assignee?',
-		invoiceDispute: 'reject task invoice',
-		invoiceDisputeConfirm: 'reject invoice and dispute task?',
-		pay: 'pay',
-		reject: 'reject',
-		task: 'task',
-		taskAccept: 'accept task',
-		taskAccepted: 'accepted the following task:',
-		taskDisputed: 'disputed a task',
-		taskInvoiced: 'created an invoice',
-		taskPaid: 'made a payment to you',
-		taskReject: 'reject task',
-		taskRejected: 'rejected the following task:',
-		yourIdentity: 'your identity',
-	},
-	true
-)
+let textsCap = {
+	accept: 'accept',
+	assigntTaskMsg: 'assigned a task to you.',
+	dispute: 'dispute',
+	invoiceAccept: 'accept task invoice',
+	invoiceAcceptConfirm: 'accept invoice and pay the assignee?',
+	invoiceDispute: 'reject task invoice',
+	invoiceDisputeConfirm: 'reject invoice and dispute task?',
+	pay: 'pay',
+	reject: 'reject',
+	task: 'task',
+	taskAccept: 'accept task',
+	taskAccepted: 'accepted the following task:',
+	taskDisputed: 'disputed a task',
+	taskInvoiced: 'created an invoice',
+	taskPaid: 'made a payment to you',
+	taskReject: 'reject task',
+	taskRejected: 'rejected the following task:',
+	viewTask: 'view task',
+	yourIdentity: 'your identity',
+}
+textsCap = translated(textsCap, true)[1]
 const icon = 'tasks'
 // Notification type
 const TASK_TYPE = 'task'
@@ -82,16 +95,27 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
 
 	confirm({
 		size: 'mini',
-		content: accepted ? textsCap.taskAccept : textsCap.taskReject,
-		onConfirm: () =>
-			handleUpdateStatus(
-				fulfillerAddress,
+		content: accepted
+			? textsCap.taskAccept
+			: textsCap.taskReject,
+		onConfirm: () => handleUpdateStatus(
+			fulfillerAddress,
+			taskId,
+			accepted
+				? statuses.accepted
+				: statuses.rejected,
+			accepted
+				? textsCap.taskAccept
+				: textsCap.taskReject,
+			(success) => success && removeTaskNotifs(
 				taskId,
-				accepted ? statuses.accepted : statuses.rejected,
-				accepted ? textsCap.taskAccept : textsCap.taskReject,
-				(success) => success && removeTaskNotifs(taskId, CHILD_TYPES.assignment),
-				notificationId || getTaskNotifIds(taskId, CHILD_TYPES.assignment)
+				CHILD_TYPES.assignment,
 			),
+			notificationId || getTaskNotifIds(
+				taskId,
+				CHILD_TYPES.assignment,
+			)
+		),
 	})
 }
 
@@ -134,12 +158,18 @@ export const handleInvoicedResponse = async (taskId, ownerAddress, accepted, not
  * @param   {String|Array}  notificationId  attach notification ids so that they are disabled when action is in-progress
  */
 export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, then, notificationId) => {
-	taskIds = isArr(taskIds) ? taskIds : [taskIds]
+	taskIds = isArr(taskIds)
+		? taskIds
+		: [taskIds]
 	taskIds.forEach(async (taskId) => {
 		const task = await query.orders(taskId)
 		if (!task) return
-		const { owner: ownerAddress, fulfiller: fulfillerAddress } = task
-		const { title: taskTitle } = (await query.getDetailsByTaskIds([taskId])).get(taskId) || {}
+		const {
+			owner: ownerAddress,
+			fulfiller: fulfillerAddress,
+		} = task
+		const detailsMap = await query.getDetailsByTaskIds([taskId])
+		const { title: taskTitle } = detailsMap.get(taskId) || {}
 
 		// notification for appropriate statuses
 		let userId
@@ -166,7 +196,13 @@ export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, the
 					taskTitle,
 					ownerAddress,
 				}
-				notifyProps.args = [[userId], TASK_TYPE, CHILD_TYPES.assignmentResponse, null, data]
+				notifyProps.args = [
+					[userId],
+					TASK_TYPE,
+					CHILD_TYPES.assignmentResponse,
+					null,
+					data,
+				]
 				break
 			case statuses.invoiced: // fulfiller marked task as done
 				// recipient is the user themself
@@ -176,7 +212,13 @@ export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, the
 				if (!userId) break
 
 				data = { ownerAddress, taskId, taskTitle }
-				notifyProps.args = [[userId], TASK_TYPE, CHILD_TYPES.invoiced, null, data]
+				notifyProps.args = [
+					[userId],
+					TASK_TYPE,
+					CHILD_TYPES.invoiced,
+					null,
+					data,
+				]
 				break
 			case statuses.disputed: // owner rejected invoice
 			case statuses.completed: // owner approved invoice and payment is processed
@@ -191,19 +233,31 @@ export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, the
 					taskId,
 					taskTitle,
 				}
-				notifyProps.args = [[userId], TASK_TYPE, CHILD_TYPES.invoicedResponse, null, data]
+				notifyProps.args = [
+					[userId],
+					TASK_TYPE,
+					CHILD_TYPES.invoicedResponse,
+					null,
+					data,
+				]
 				break
 		}
 
-		addToQueue(
-			queueables.changeStatus(address, taskId, statusCode, {
+		const queueItem = queueables.changeStatus(
+			address,
+			taskId,
+			statusCode,
+			{
 				description: taskTitle || taskId,
-				next: userId ? notifyProps : null,
+				next: userId
+					? notifyProps
+					: null,
 				notificationId,
 				then,
 				title: queueTitle,
-			})
+			},
 		)
+		addToQueue(queueItem)
 	})
 }
 
@@ -228,12 +282,26 @@ setTimeout(() =>
 					{ color: 'blue', content: textsCap.accept },
 					{ color: 'red', content: textsCap.reject },
 				]
-				const onAction = (_, accepted) => handleAssignmentResponse(taskId, fulfillerAddress, accepted, id)
+				const onAction = (_, accepted) => handleAssignmentResponse(
+					taskId,
+					fulfillerAddress,
+					accepted,
+					id,
+				)
 				const content = (
 					<div>
-						{senderIdBtn} {texts.assigntTaskMsg}
+						{senderIdBtn}
+						{` ${textsCap.assigntTaskMsg || ''}`.toLowerCase()}
 						<div>
 							{textsCap.yourIdentity}: {name}
+						</div>
+						<div>
+							<Button {...{
+								content: textsCap.viewTask,
+								icon: 'eye',
+								onClick: () => TaskDetails.asModal({ taskId }),
+								size: 'tiny',
+							}} />
 						</div>
 						<ButtonGroup
 							{...{

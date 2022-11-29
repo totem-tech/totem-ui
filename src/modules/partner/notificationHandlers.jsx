@@ -49,10 +49,9 @@ const handleIdentityReceived = (
 		contactDetails,
 		introducedBy,
 		location,
-		name: newName,
 	} = data || {}
 	const partner = get(address)
-	const onAction = (_, accepted) => {
+	const onAction = async (_, accepted) => {
 		try {
 			if (!accepted) return remove(id)
 
@@ -85,7 +84,7 @@ const handleIdentityReceived = (
 					: removeContact(contactId)
 			}
 			if (hasLocation) {
-				saveLocation(
+				const savedId = saveLocation(
 					{
 						...existingLocation,
 						...location,
@@ -93,6 +92,7 @@ const handleIdentityReceived = (
 					},
 					locationId,
 				)
+				console.log(locationId === savedId)
 			}
 			if (hasContact) {
 				saveContact(

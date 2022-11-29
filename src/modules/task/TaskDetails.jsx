@@ -3,22 +3,29 @@
  */
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
-import { getUser } from '../../utils/chatClient'
-import { useRxSubject } from '../../utils/reactHelper'
-import { blockNumberToTS, format } from '../../utils/time'
-import { getCurrentBlock } from '../../services/blockchain'
-import { translated } from '../../services/language'
-import { showForm, showInfo } from '../../services/modal'
+// components
 import { UserID } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
-import { statuses } from '../../components/Message'
+import Message, { statuses } from '../../components/Message'
+// services
+import { getCurrentBlock } from '../../services/blockchain'
+import { translated } from '../../services/language'
+import { showForm, showInfo } from '../../services/modal'
+// utils
+import { getUser } from '../../utils/chatClient'
+import { useRxSubject } from '../../utils/reactHelper'
+import { blockToDate, format } from '../../utils/time'
+import { isObj } from '../../utils/utils'
+// modules
 import Currency from '../currency/Currency'
 import AddressName from '../partner/AddressName'
-import { approvalStatusNames } from './task'
+import { approvalStatusNames, rxInProgressIds } from './task'
 import TaskForm from './TaskForm'
-import { BehaviorSubject } from 'rxjs'
+import { getAssigneeView, getStatusView } from './TaskList'
+import useTask from './useTask'
 
 let textsCap = {
     amount: 'bounty amount',
@@ -26,6 +33,7 @@ let textsCap = {
     approver: 'approver',
     created: 'created',
     deadline: 'deadline to accept task',
+    description: 'description',
     dueDate: 'due date',
     fulfiller: 'assignee',
     header: 'task details',
@@ -40,16 +48,10 @@ let textsCap = {
 textsCap = translated(textsCap, true)[1]
 
 export default function TaskDetails(props = {}) {
-    const {
-        allowEdit,
-        getStatusView,
-        rxInProgressIds,
-        rxTasks,
-        taskId = '',
-    } = props
+    const { taskId } = props
     const [blockNum, setBlockNum] = useState()
     const [inProgressIds = new Set()] = useRxSubject(rxInProgressIds)
-    const [task] = useRxSubject(rxTasks, tasks => ({ ...tasks.get(taskId) }))
+    const { error, task } = useTask(taskId)
     const [tableProps, setTableProps] = useState({ 
         emptyMessage: {
             content: textsCap.loading,
@@ -63,27 +65,34 @@ export default function TaskDetails(props = {}) {
     }, [])
 
     useEffect(() => {
-        if (!Object.keys(task).length) return () => { }
+        if (!task || !Object.keys(task).length) return () => { }
 
-        // let { task = {} } = props
-        const _task = {...task, taskId}
-        const { deadline, dueDate } = _task
-        _task.amount = parseInt(_task.amountXTX)
-        _task.deadline = blockNumberToTS(deadline, blockNum, true)
-        _task.dueDate = blockNumberToTS(dueDate, blockNum, true)
-        _task.tsCreated = format(_task.tsCreated)
-        _task.tsUpdated = format(_task.tsUpdated)
+        const _task = { ...task, taskId }
         const ownerIsApprover = _task.owner === _task.approver
         const userIsOwner = (getUser() || {}).id === _task.createdBy
+        const style = {
+            maxLength: 150,
+            minWidth: 110,
+        }
+        // const DIV = (props = {}) => (
+        //     <div {...{
+        //         ...props,
+        //         style: {
+        //             ...style,
+        //             ...props.style,
+        //         },
+        //     }} />
+        // )
         const columns = [
             {
                 content: ({ taskId }) => (
                     <LabelCopy {...{
-                        maxLength: 18,
+                        maxLength: 25,
                         value: taskId,
                     }} />
                 ),
                 key: 'id',
+                style,
                 title: textsCap.id,
             },
             {
@@ -91,8 +100,17 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.title,
             },
             {
-                content: x => <Currency {...{ value: x.amount }} />,
-                key: 'amount',
+                content: x => (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>
+                        {x.description}
+                    </div>
+                ),
+                key: 'description',
+                title: textsCap.description,
+            },
+            {
+                content: x => <Currency {...{ value: parseInt(x.amountXTX) }} />,
+                key: 'amountXTX',
                 title: textsCap.amount,
             },
             {
@@ -106,7 +124,7 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.approvalStatus,
             },
             {
-                content: x => <AddressName {...{ address: x.fulfiller }} />,
+                content: getAssigneeView,
                 key: 'fulfiller',
                 title: textsCap.fulfiller,
             },
@@ -136,35 +154,56 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.approver,
             },
             {
+                content: x => blockToDate(
+                    x.dueDate,
+                    x.blockNum,
+                    true,
+                ),
                 key: 'dueDate',
                 title: textsCap.dueDate,
             },
             {
+                content: x => blockToDate(
+                    x.deadline,
+                    x.blockNum,
+                    true,
+                ),
                 key: 'deadline',
                 title: textsCap.deadline,
             },
             {
+                content: ({ tsCreated }) => format(tsCreated),
                 key: 'tsCreated',
                 title: textsCap.created,
             },
             {
+                content: ({ tsUpdated }) => format(tsUpdated),
                 key: 'tsUpdated',
                 title: textsCap.updated,
             },
         ]
         const tableProps = {
             columns,
-            data: new Map([[taskId, _task]]),
+            data: new Map([[taskId, {..._task, blockNum}]]),
             emptyMessage: undefined,
             inProgressIds,
         }
         setTableProps(tableProps)   
     }, [setTableProps, getStatusView, blockNum, inProgressIds, task])
 
+    if (!isObj(task) || !!error) return (
+        <Message {...{
+            content: error || textsCap.loading,
+            icon: true,
+            status: !!error 
+                ? statuses.ERROR
+                : statuses.LOADING
+        }} />
+    )
     return (
         <div>
             <DataTableVertical {...tableProps} />
-            {allowEdit && !!taskId && (
+            {!!taskId && task.allowEdit && (
                 <div style={{ 
                     marginBottom: 14,
                     marginTop: -14,
@@ -186,25 +225,21 @@ export default function TaskDetails(props = {}) {
     )
 }
 TaskDetails.propTypes = {
-    rxInProgressIds: PropTypes.instanceOf(BehaviorSubject),
-    // Task ID
     taskId: PropTypes.string,
-    // task
-    task: PropTypes.object,
 }
 /**
  * @name    TaskDetails.asModal
  * 
- * @param   {Object}            props
- * @param   {Object}            props.task 
+ * @param   {Object}            props       props for TaskDetails
  * @param   {String}            props.taskId
- * @param   {BehaviorSubject}   props.rxInProgressIds
+ * @param   {Object}            modalProps (optional)
  * 
  * @returns {Promise}
  */
-TaskDetails.asModal = props => showInfo({
+TaskDetails.asModal = (props, modalProps) => showInfo({
     collapsing: true,
-    content: <TaskDetails {...props} />,
     header: textsCap.header,
-    size: 'mini',
+    size: 'tiny',
+    ...modalProps,
+    content: <TaskDetails {...props} />,
 }, props.taskId)

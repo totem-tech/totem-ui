@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Menu, Tab } from 'semantic-ui-react'
+import { BehaviorSubject } from 'rxjs'
 import Message from '../../components/Message'
 import Text from '../../components/Text'
-import TaskList, { listTypes } from './TaskList'
-import { rxSelected } from '../identity/identity'
 import { translated } from '../../services/language'
-import useTasks from './useTasks'
-import { rwSettings } from './task'
-import { useInverted } from '../../services/window'
 import { useRxSubject } from '../../services/react'
-import { BehaviorSubject } from 'rxjs'
+import { useInverted } from '../../services/window'
+import { rxSelected } from '../identity/identity'
+import { rwSettings } from './task'
+import TaskList, { listTypes } from './TaskList'
+import useTasks from './useTasks'
 
 const textsCap = translated({
     approver: 'to approve',
@@ -24,7 +24,7 @@ const textsCap = translated({
     unknown: 'unknown',
 }, true)[1]
 
-export default function TaskView({ address, activeType: _activeType }) {
+export default function TaskView({ address, tab: _activeType }) {
     const inverted = useInverted()
     address = address || useRxSubject(rxSelected)[0]
     const [rxTasks] = useState(() => new BehaviorSubject(new Map()))
@@ -65,21 +65,23 @@ export default function TaskView({ address, activeType: _activeType }) {
             title: textsCap.approverDesc,
             type: 'approver',
         },
-        // {
-        //     name: textsCap.marketplace,
-        //     title: textsCap.marketplaceDesc,
-        //     type: 'marketplace',
-        // },
+        {
+            name: textsCap.marketplace,
+            title: textsCap.marketplaceDesc,
+            type: 'marketplace',
+        },
     ].map(({ name, title, type }) => ({
         active: true,
         inverted,
-        menuItem: <Menu.Item  {...{
-            content: <Text>{name}</Text>,
-            key: type,
-            // remember open tab index
-            onClick: () => rwSettings({ activeType: type }) | setActiveType(type),
-            title,
-        }} />,
+        menuItem: (
+            <Menu.Item  {...{
+                content: <Text>{name}</Text>,
+                key: type,
+                // remember open tab index
+                onClick: () => rwSettings({ activeType: type }) | setActiveType(type),
+                title,
+            }} />
+        ),
         type,
     }))
 
@@ -93,14 +95,18 @@ export default function TaskView({ address, activeType: _activeType }) {
             <div>
                 <Tab {...{
                     activeIndex,
-                    menu: { inverted, secondary: true, pointing: true },
+                    menu: {
+                        inverted,
+                        secondary: true,
+                        pointing: true,
+                    },
                     panes,
                     key: activeIndex + activeType, // forces active pane to re-render on each change
                 }} />
                 <TaskList {...{
                     address,
                     asTabPane: true,
-                    data,
+                    // data,
                     key: activeType,
                     rxTasks,
                     style: { marginTop: 15 },
@@ -111,5 +117,5 @@ export default function TaskView({ address, activeType: _activeType }) {
 }
 TaskView.propTypes = {
     address: PropTypes.string,
-    activeType: PropTypes.string,
+    tab: PropTypes.string,
 }

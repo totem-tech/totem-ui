@@ -104,6 +104,7 @@ const NON_ATTRIBUTES = Object.freeze([
 	// dynamic options for input types with options
 	'rxOptions',
 	'rxOptionsModifier',
+	'unique', // for array validation
 ])
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
@@ -126,32 +127,34 @@ export class FormInput extends Component {
 	componentWillMount() {
 		this._mounted = true
 		this.subscriptions = {}
-		const { rxOptions, rxOptionsModifier, rxValue, rxValueModifier } = this.props
-		if (isSubjectLike(rxValue)) {
-			this.subscriptions.rxValue = rxValue.subscribe(value => {
-				value = isFn(rxValueModifier)
-					? rxValueModifier(value)
-					: value
-				if (this.value === value) return
-				this.handleChange({}, { ...this.props, value })
-			})
-		}
-		if (isSubjectLike(rxOptions)) {
-			this.subscriptions.rxOptions = rxOptions.subscribe(async options => {
-				options = !isFn(rxOptionsModifier)
-					? options
-					: await rxOptionsModifier(options)
-				if (!isArr(options)) return
-				this.setState({ options })
-				
-				if (!isSubjectLike(rxValue) || !hasValue(this.value)) return
-				
-				const isOption = !!options.find(o => o.value === this.value)				
-				// value no longer exists in the options list
-				// force clear selection
-				!isOption && rxValue.next(undefined)
-			})
-		}
+		const {
+			multiple = false,
+			rxOptions,
+			rxOptionsModifier,
+			rxValue,
+			rxValueModifier,
+		} = this.props
+		this.subscriptions.rxValue = isSubjectLike(rxValue) && rxValue.subscribe(value => {
+			value = isFn(rxValueModifier)
+				? rxValueModifier(value)
+				: value
+			if (this.value === value) return
+			this.handleChange({}, { ...this.props, value })
+		})
+		this.subscriptions.rxOptions = isSubjectLike(rxOptions) && rxOptions.subscribe(async options => {
+			options = !isFn(rxOptionsModifier)
+				? options
+				: await rxOptionsModifier(options)
+			if (!isArr(options)) return
+			this.setState({ options })
+			
+			if (!isSubjectLike(rxValue) || !hasValue(this.value) || multiple) return
+			
+			const isOption = !!options.find(o => o.value === this.value)				
+			// value no longer exists in the options list
+			// force clear selection
+			!isOption && rxValue.next(undefined)
+		})
 	}
 
 	componentWillUnmount = () => {
@@ -165,6 +168,7 @@ export class FormInput extends Component {
 			criteriaHeader,
 			customMessages,
 			falseValue: falseValue = false,
+			multiple,
 			integer,
 			onChange,
 			required,
@@ -179,7 +183,9 @@ export class FormInput extends Component {
 		// Forces the synthetic event and it's value to persist
 		// Required for use with deferred function
 		event && isFn(event.persist) && event.persist()
-		const typeLower = (type || '').toLowerCase()
+		const typeLower = multiple
+			? 'array'
+			: (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
 		const hasVal = hasValue(isCheck ? data.checked : data.value)
 		const customMsgs = { ...errMsgs, ...customMessages }
@@ -188,6 +194,9 @@ export class FormInput extends Component {
 
 		if (hasVal && !err) {
 			switch (typeLower) {
+				case 'array': 
+					validatorConfig = { type: TYPES.array }
+					break
 				case 'checkbox':
 				case 'radio':
 					// Sematic UI's Checkbox component only supports string and number as value
@@ -228,7 +237,9 @@ export class FormInput extends Component {
 				case 'text':
 				case 'textarea':
 				default:
-					value = `${!isDefined(value) ? '' : value}`
+					value = isArr(value)
+						? value
+						: `${!isDefined(value) ? '' : value}`
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					break
 			}
@@ -326,17 +337,21 @@ export class FormInput extends Component {
 		if (!!err || !isFn(validate)) return triggerChange()
 
 		const handleValidate = msg => {
-			err = !!msg
 			const isEl = React.isValidElement(msg)
 			message = isBool(msg) || !msg
 				? !!message
 					? message 
 					: null // no need to display a message
 				: {
-					content: isEl ? msg : `${msg}`,
+					content: isEl
+						? msg
+						: `${msg}`,
 					status: statuses.ERROR,
 					...(!isEl && isObj(msg) ? msg : {}),
 				}
+			err = isObj(message) && !isEl
+				? message.status === statuses.ERROR
+				: !!message
 			triggerChange()
 		}
 

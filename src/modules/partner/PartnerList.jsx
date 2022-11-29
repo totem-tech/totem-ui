@@ -52,10 +52,11 @@ export default function PartnerList(props = {}) {
 				tags = [],
 				type,
 				userId,
+				visibility,
 			} = partner
+			const isPublic = visibilityTypes.PUBLIC === visibility
 			partner._address = textEllipsis(address, 15, 3)
-			partner._associatedIdentity =
-				associatedIdentity && getAddressName(associatedIdentity)
+			partner._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
 			partner._name = (
 				<div style={{ margin: !userId ? 0 : '-10px 0' }}>
 					<div {...{
@@ -76,6 +77,9 @@ export default function PartnerList(props = {}) {
 			partner._tags = <Tags tags={tags} />
 			// makes tags searchable
 			partner._tagsStr = tags.join(' ')
+			partner._type = isPublic
+				? visibilityTypes.PUBLIC
+				: type
 			return partner
 		})
 	)
@@ -115,6 +119,7 @@ const getTableProps = layout => {
 				title: textsCap.partnerName,
 			},
 			!isMobile && {
+				draggableValueKey: 'associatedIdentity',
 				key: '_associatedIdentity',
 				title: textsCap.usedBy,
 				style: { maxWidth: 200 },
@@ -145,15 +150,19 @@ const getTableProps = layout => {
 			'associatedIdentity',
 			'name',
 			'visibility',
-			'_tagsStr',
 			'userId',
+			'_tagsStr',
+			'_type',
 		],
 		searchable: true,
 		topLeftMenu: [
 			{
 				El: ButtonGroup,
 				buttons: [
-					{ content: textsCap.add, icon: 'plus' },
+					{
+						content: textsCap.add,
+						icon: 'plus',
+					},
 					{ content: textsCap.request },
 				],
 				onAction: (_, addPartner) => showForm(

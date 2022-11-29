@@ -4,7 +4,7 @@ import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
-import { blockNumberToTS } from '../../utils/time'
+import { blockToDate } from '../../utils/time'
 import { isArr, deferred, isFn, isBool } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import {
@@ -505,8 +505,8 @@ class TimeKeepingList extends Component {
                     workerAddress: worker || '',// && ss58Encode(worker) || '',
                     projectOwnerAddress: ownerAddress,
                     projectName: name,
-                    _end_block: blockNumberToTS(end_block, currentBlock),
-                    _start_block: blockNumberToTS(start_block, currentBlock),
+                    _end_block: blockToDate(end_block, currentBlock),
+                    _start_block: blockToDate(start_block, currentBlock),
                 }
             ]
         })

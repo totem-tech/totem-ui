@@ -14,7 +14,7 @@ import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import UserContactList from '../contact/UserContactList'
 import { showLocations } from '../location/LocationsList'
-import { rxIdentities } from './identity'
+import { rxIdentities, USAGE_TYPES } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
 import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
@@ -60,11 +60,15 @@ export default function IdentityList(props) {
 					address,
 					fileBackupTS,
 					tags = [],
+					usageType,
 				} = identity
-				identity._isReward = address === rewardsIdentity
+				const isReward = address === rewardsIdentity
 				identity._fileBackupTS = format(fileBackupTS) || textsCap.never
 				identity._tagsStr = tags.join(' ') // for tags search
 				identity._tags = <Tags key={address} tags={tags} />
+				identity._searchType = isReward
+					? USAGE_TYPES.REWARD
+					: usageType
 				return identity
 			})
 	})
@@ -114,14 +118,15 @@ const getTableProps = isMobile => {
 			address,
 			EL: 'div',
 			lockSeparator: <br />,
-			showDetailed: true,
-			style: isMobile ? undefined : {
-				alignItems: 'center',
-				display: 'flex',
-				justifyContent: 'center',
-				minHeight: 40,
-				textAlign: 'center',
-			}
+			style: isMobile
+				? undefined
+				: {
+					alignItems: 'center',
+					display: 'flex',
+					justifyContent: 'center',
+					// minHeight: 40,
+					textAlign: 'center',
+				}
 		}} />
 	)
 	return {

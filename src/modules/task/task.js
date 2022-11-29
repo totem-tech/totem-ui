@@ -1,10 +1,19 @@
+import { BehaviorSubject } from 'rxjs'
+import client from '../../utils/chatClient'
 import storage from '../../utils/storageHelper'
-import { generateHash, isDefined } from "../../utils/utils"
+import { format } from '../../utils/time'
+import {
+    generateHash,
+    isDefined,
+    isStr,
+} from '../../utils/utils'
 import { query as queryHelper, randomHex } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import client from '../chat/ChatClient'
+import { rxSelected } from '../identity/identity'
+import { processOrder } from './useTasks'
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
+export const rxInProgressIds = new BehaviorSubject(new Set())
 const MODULE_KEY = 'task'
 // read and write to cached storage
 const TX_STORAGE = 'tx_storage'
@@ -117,6 +126,31 @@ export const query = {
         [taskId, callback].filter(isDefined),
         multi,
     ),
+    searchMarketplace: async (filter = {}) => {
+        const dbResult = await client.taskMarketSearch.promise(filter)
+        const ids = [...dbResult.keys()]
+        const orders = await query.orders(ids, null, true)
+        const address = rxSelected.value
+        const tasks = orders
+            .map((order, i) => {
+                if (!order) return
+                const taskId = ids[i]
+                const taskDetails = dbResult.get(taskId)
+                const task = {
+                    taskId,
+                    ...processOrder(order, taskId, address),
+                    ...taskDetails,
+                    _tsCreated: format(taskDetails.tsCreated, true),
+                }
+                if (isStr(task.tags)) task.tags = task
+                    .tags
+                    .split(',')
+                    .filter(Boolean)
+                return [taskId, task]
+            })
+            .filter(Boolean)
+        return new Map(tasks)
+    }
 }
 
 // list of PolkadotJS APIs used in the `queueables`
@@ -254,29 +288,30 @@ export const queueables = {
             UnitOfMeasure: 1,
         }
         const txId = randomHex(owner)
-        const args = !taskId ? [
-            approver,
-            fulfiller,
-            isSell,
-            amountXTX,
-            isMarket,
-            orderType,
-            deadline,
-            dueDate,
-            orderItem,
-            token,
-            txId,
-        ] : [
-            approver,
-            fulfiller,
-            amountXTX,
-            deadline,
-            dueDate,
-            orderItem,
-            taskId,
-            token,
-            txId,
-        ]
+        const args = !taskId
+            ? [
+                approver,
+                fulfiller,
+                isSell,
+                amountXTX,
+                isMarket,
+                orderType,
+                deadline,
+                dueDate,
+                orderItem,
+                token,
+                txId,
+            ] : [
+                approver,
+                fulfiller,
+                amountXTX,
+                deadline,
+                dueDate,
+                orderItem,
+                taskId,
+                token,
+                txId,
+            ]
 
         return {
             ...queueProps,

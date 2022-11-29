@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
-import { blockNumberToTS } from '../../utils/time'
+import { blockToDate } from '../../utils/time'
 import { getCurrentBlock } from '../../services/blockchain'
 import { showForm, showInfo } from '../../services/modal'
 import { ButtonGroup } from '../../components/buttons'
@@ -101,7 +101,7 @@ const ActivityDetails = props => {
                 { key: '_statusText', title: textsCap.detailsStatusLabel },
                 {
                     content: ({ firstSeen }) => firstSeen
-                        ? blockNumberToTS(firstSeen, currentBlock)
+                        ? blockToDate(firstSeen, currentBlock)
                         : textsCap.never,
                     key: 'firstSeen',
                     title: textsCap.detailsFirstSeenLabel,

@@ -16,7 +16,7 @@ import { rxIdentities } from './identity'
 const textsCap = translated({
 	loadingAccBal: 'loading account balance',
 	locked: 'locked',
-	total: 'funds',
+	total: 'total',
 }, true)[1]
 
 // cache balances and locks
@@ -63,32 +63,38 @@ export const Balance = props => {
 		userSelect: 'none',
 		...style
 	}
-	
-	const getContent = showDetails => () => (
+	emptyMessage = emptyMessage !== null && (
+		<span title={!isLoading ? '' : textsCap.loadingAccBal}>
+			<Icon {...{
+				className: 'no-margin',
+				name: 'spinner',
+				loading: true,
+				style: { padding: 0 },
+			}} />
+			{emptyMessage}
+		</span>
+	)
+	const getContent = () => (
 		<Currency {...{
 			...props,
-			emptyMessage: emptyMessage !== null && (
-				<span title={!isLoading ? '' : textsCap.loadingAccBal}>
-					<Icon {...{
-						className: 'no-margin',
-						name: 'spinner',
-						loading: true,
-						style: { padding: 0 },
-					}} />
-					{emptyMessage}
+			emptyMessage,
+			prefix,
+			style,
+			suffix,
+			value: freeBalance,
+		}} />
+	)
+	const getDetails = () => (
+		<Currency {...{
+			...props,
+			emptyMessage,
+			prefix: (
+				<span>
+					{detailsPrefix}<b>{textsCap.total}: </b>
 				</span>
 			),
-			prefix: showDetails
-				? (
-					<span>
-						{detailsPrefix}<b>{textsCap.total}: </b>
-					</span>
-				)
-				: prefix,
 			style,
-			suffix: !showDetails
-				? suffix
-				: (
+			suffix: (
 					<Currency {...{
 						prefix: (
 							<span>
@@ -101,17 +107,19 @@ export const Balance = props => {
 						unitDisplayed,
 					}} />
 				),
-			value: showDetails
-				? balance
-				: freeBalance,
+			value: balance,
 		}} />
 	)
 	return showDetailed === null
-		? getContent(false)()
+		? getContent()
 		: (
 			<Reveal {...{
-				content: getContent(!showDetailed),
-				contentHidden: getContent(showDetailed),
+				content: showDetailed
+					? getDetails
+					: getContent,
+				contentHidden: showDetailed
+					? getContent
+					: getDetails,
 				ready: !isLoading,
 				toggleOnClick: true,
 				toggleOnHover: true,
@@ -134,7 +142,7 @@ Balance.defaultProps = {
 	lockSeparator: ' | ',
 	showDetailed: false,
 }
-export default Balance
+export default React.memo(Balance)
 
 /**
  * @name    useBalance

@@ -453,11 +453,11 @@ export const setActive = (name, active = true, contentProps, hidden, toggle = tr
  * @param   {Boolean}   active  whether to show/hide modules.
  *                              Default: `true`
  */
-export const setActiveExclusive = (names = [], active = true) => {
+export const setActiveExclusive = (names = [], active = true, contentProps = {}) => {
     const items = []
     sidebarItems.forEach(({ name }) => {
         const _active = names.includes(name) && !!active
-        const item = setActive(name, _active)
+        const item = setActive(name, _active, contentProps)
         if (names.includes(name)) items.push(item)
     })
     return items
@@ -539,18 +539,20 @@ setTimeout(() => {
     const names = modules.split(',')
         .map(x => x.trim().toLowerCase())
     const items = exclusive
-        ? setActiveExclusive(names)
-        : names
-            .map(name => setActive(name))
+        ? setActiveExclusive(names, true, params)
+        : names.map(name =>
+            setActive(name, true, params)
+        )
     if (!items.filter(Boolean).length) return
-
-    // hide all other modules
 
     // only reset URL if exclusive
     if (!exclusive) return
 
     params = objToUrlParams(
-        objWithoutKeys(params, ['module', 'exclusive'])
+        objWithoutKeys(
+            params,
+            ['module', 'exclusive'],
+        )
     )
     const url = [
         location.protocol,

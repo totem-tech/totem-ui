@@ -13,7 +13,7 @@ import {
     BLOCK_DURATION_REGEX,
     durationToSeconds,
     secondsToDuration,
-    blockNumberToTS,
+    blockToDate,
 } from '../../utils/time'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
@@ -218,8 +218,8 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
                 duration: duration,
                 numberOfBlocks: blockCount,
                 numberOfBreaks: breakCount,
-                startedAt: blockNumberToTS(currentBlock, blockStart),
-                finishedAt: blockNumberToTS(currentBlock, blockEnd),
+                startedAt: blockToDate(currentBlock, blockStart),
+                finishedAt: blockToDate(currentBlock, blockEnd),
             }],
         }} />
     )
@@ -585,15 +585,23 @@ export default class TimekeepingForm extends Component {
     }
 
     setIdentityOptions = async (projectId, workerAddress) => {
-        // ToDo: use get identity options and filter workers using async
         if (!projectId) return
         const { inputs } = this.state
-        const identityIn = findInput(inputs, 'workerAddress')
         const workers = await query.worker.listWorkers(projectId)
+        const identityIn = findInput(inputs, 'workerAddress')
         identityIn.options = getIdentityOptions()
-            .filter(x => workers.includes(x.address))
-        const isWorker = !!options.find(({ value }) => value === workerAddress)
-        identityIn.rxValue.next(isWorker ? workerAddress : null)
+            .filter(x => workers.includes(x.value))
+        const isWorker = !!identityIn
+            .options
+            .find(({ value }) =>
+                value === workerAddress
+            )
+        identityIn.rxValue.next(
+            isWorker
+                ? workerAddress
+                : null
+        )
+        console.log(identityIn.options, workers)
         this.setState({ inputs })
     }
 

@@ -51,7 +51,13 @@ export default class DataTable extends Component {
 	constructor(props) {
 		super(props)
 
-		let { columns, defaultSort, defaultSortAsc, pageNo, sortBy } = props
+		let {
+			columns,
+			defaultSort,
+			defaultSortAsc,
+			pageNo,
+			sortBy,
+		} = props
 		if (!defaultSort && sortBy !== false) {
 			const { key, sortKey } = columns.find(x =>
 				!!x.key && x.sortable !== false
@@ -108,7 +114,12 @@ export default class DataTable extends Component {
 	}
 
 	getHeaders(totalRows, columns, selectedIndexes) {
-		let { columnsHidden, headers: showHeaders, selectable, tableProps: tp } = this.props
+		let {
+			columnsHidden,
+			headers: showHeaders,
+			selectable,
+			tableProps: tp,
+		} = this.props
 		if (!showHeaders) return
 
 		const { sortAsc, sortBy } = this.state
@@ -632,7 +643,10 @@ DataTable.propTypes = {
 	// array of column `name`s to hide
 	columnsHidden: PropTypes.array,
 	// Object key to set initial sort by
-	defaultSort: PropTypes.string,
+	defaultSort: PropTypes.oneOfType([
+		PropTypes.bool,
+		PropTypes.string,
+	]),
 	defaultSortAsc: PropTypes.bool.isRequired,
 	emptyMessage: PropTypes.oneOfType([
 		PropTypes.object,

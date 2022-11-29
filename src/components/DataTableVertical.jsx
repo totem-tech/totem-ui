@@ -1,15 +1,26 @@
 import React from 'react'
-import { className, isFn, isMap, isObj } from '../utils/utils'
+import {
+    className,
+    isFn,
+    isMap,
+    isObj,
+    objWithoutKeys
+} from '../utils/utils'
 import DataTable from './DataTable'
 
 const DataTableVertical = (props) => {
     let {
         columns = [],
+        columnsHidden = [],
         data: items = [],
         tableProps = {},
     } = props
     if (isObj(items)) items = [items]
-    columns = columns.filter(x => !!x && !x.hidden)
+    columns = columns.filter(x =>
+        !!x
+        && !x.hidden
+        && !columnsHidden.includes(x.key)
+    )
 
     const vData = columns.map(column => {
         const { content, key, title } = column
@@ -37,13 +48,17 @@ const DataTableVertical = (props) => {
     const vColumns = new Array(maxLen)
         .fill(0)
         .map((_, i) => ({
+            ...i === 0 && objWithoutKeys(columns[0], 'key', 'content'),
             active: i === 0,
             key: `${i}`,
-            style: i > 0 
-                ? undefined
-                : { fontWeight: 'bold' }
+            style: {
+                fontWeight:  i > 0 
+                    ? undefined
+                    : 'bold',
+                ...columns[0].style,
+            },
         }))
-    
+        
     return (
         <DataTable {...{
             perPage: columns.length,

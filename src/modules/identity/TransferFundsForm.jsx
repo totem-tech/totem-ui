@@ -144,8 +144,12 @@ export default class TransferFundsForm extends Component {
                     const { inputs } = this.state
                     const valid = !!ss58Decode(q)
                     const toIn = findInput(inputs, this.names.to)
-                    toIn.allowAdditions = valid && !toIn.options.find(x => x.value === q)
-                    toIn.noResultsMessage = !valid && q.length > 0 ? textsCap.partnerEmptyMsg2 : textsCap.partnerEmptyMsg1
+                    toIn.allowAdditions = valid
+                        && !rxIdentities.value.get(q)
+                        && !rxPartners.value.get(q)
+                    toIn.noResultsMessage = !valid && q.length > 0
+                        ? textsCap.partnerEmptyMsg2
+                        : textsCap.partnerEmptyMsg1
                     this.setState({ inputs })
                 },
                 options: [],
@@ -482,7 +486,11 @@ const FromInputLabel = ({ rxAddress, rxCurrencyReceived, rxCurrencySent }) => {
             <Balance {...{
                 address,
                 El: 'a',
-                detailsPrefix: <span><Icon className='no-margin' name='eye slash' /> </span>,
+                detailsPrefix: (
+                    <span>
+                        <Icon className='no-margin' name='eye slash' />{' '}
+                    </span>
+                ),
                 emptyMessage: textsCap.loadingBalance + '...',
                 key,
                 prefix: (
@@ -491,17 +499,18 @@ const FromInputLabel = ({ rxAddress, rxCurrencyReceived, rxCurrencySent }) => {
                         {' ' + textsCap.availableBalance + ': '}
                     </span>
                 ),
-                showDetailed: true,
-                suffix: !dualBalance ? undefined : (
-                    <Balance {...{
-                        address,
-                        key,
-                        prefix: ' | ',
-                        showDetailed: null,
-                        // suffix: icon,
-                        unitDisplayed: currencyReceived,
-                    }} />
-                ),
+                suffix: !dualBalance
+                    ? undefined
+                    : (
+                        <Balance {...{
+                            address,
+                            key,
+                            prefix: ' | ',
+                            showDetailed: null,
+                            // suffix: icon,
+                            unitDisplayed: currencyReceived,
+                        }} />
+                    ),
                 unitDisplayed: currencySent,
             }} />
             {')'}

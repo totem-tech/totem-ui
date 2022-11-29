@@ -6,7 +6,7 @@ import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
-import { blockNumberToTS } from '../../utils/time'
+import { blockToDate } from '../../utils/time'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
 import AddressName from '../partner/AddressName'
@@ -111,8 +111,8 @@ const postingModifier = (posting = {}) => {
         amount,
         partnerAddress,
     } = posting
-    posting.tsSubmitted = blockNumberToTS(blockNrSubmitted, rxBlockNumber.value)
-    posting.tsEffective = blockNumberToTS(blockNrEffective, rxBlockNumber.value)
+    posting.tsSubmitted = blockToDate(blockNrSubmitted, rxBlockNumber.value)
+    posting.tsEffective = blockToDate(blockNrEffective, rxBlockNumber.value)
     posting.credit = isCredit && amount || 0
     posting.debit = !isCredit && amount || 0
     posting.key = id

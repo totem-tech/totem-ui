@@ -30,6 +30,8 @@ function AddressName(props) {
         style,
         userId,
     } = props
+    if (!address) return ''
+    
     const [identity] = useRxSubject(rxIdentities, map => map.get(address))
     const [partner] = useRxSubject(rxPartners, map => map.get(address))
     const {

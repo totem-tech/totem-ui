@@ -71,6 +71,11 @@ const PartnerIcon = props => {
         <Icon {...{
             className: 'no-margin',
             color,
+            draggable: true,
+            onDragStart: e => {
+				e.stopPropagation()
+				e.dataTransfer.setData('Text', _type)
+			},
             onClick: handleClick,
             onMouseEnter: handleToggle,
             onMouseLeave: handleToggle,

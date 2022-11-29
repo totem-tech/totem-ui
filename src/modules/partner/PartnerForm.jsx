@@ -29,7 +29,7 @@ import ContactForm, {
 	inputNames as contactInputNames,
 } from '../contact/ContactForm'
 import BackupForm from '../gettingStarted/BackupForm'
-import identityService from '../identity/identity'
+import identityService, { rxIdentities } from '../identity/identity'
 import locations, {
 	newId as newLocationId,
 	requiredKeys as locationRequiredKeys,
@@ -49,6 +49,7 @@ import {
 	visibilityTypes,
 } from './partner'
 import PartnerIcon from './PartnerIcon'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 
 let textsCap = {
 	addressAdditionLabel: 'use',
@@ -246,6 +247,8 @@ export default class PartnerForm extends Component {
 					name: inputNames.associatedIdentity,
 					options: [],
 					placeholder: textsCap.associatedIdentityPlaceholder,
+					rxOptions: rxIdentities,
+					rxOptionsModifier: getIdentityOptions,
 					selection: true,
 					search: true,
 					type: 'dropdown',
@@ -367,15 +370,15 @@ export default class PartnerForm extends Component {
 		this._mounted = true
 		const { inputs, values } = this.state
 		// const addressIn = findInput(inputs, 'address')
-		const assocIn = findInput(inputs, inputNames.associatedIdentity)
-		assocIn.options = arrSort(
-			identityService.getAll().map(({ name, address }) => ({
-				key: address,
-				text: name,
-				value: address,
-			})),
-			'text'
-		)
+		// const assocIn = findInput(inputs, inputNames.associatedIdentity)
+		// assocIn.options = arrSort(
+		// 	identityService.getAll().map(({ name, address }) => ({
+		// 		key: address,
+		// 		text: name,
+		// 		value: address,
+		// 	})),
+		// 	'text'
+		// )
 
 		values.address && setTimeout(async () => {
 			await this.checkVisibility(values.address)

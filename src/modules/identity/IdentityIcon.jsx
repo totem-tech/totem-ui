@@ -70,6 +70,11 @@ const IdentityIcon = props => {
         <Icon {...{
             className: 'no-margin',
             color,
+            draggable: true,
+            onDragStart: e => {
+				e.stopPropagation()
+				e.dataTransfer.setData('Text', ut)
+			},
             onClick: handleClick,
             onMouseEnter: handleToggle,
             onMouseLeave: handleToggle,
