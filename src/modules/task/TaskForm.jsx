@@ -148,7 +148,6 @@ export default class TaskForm extends Component {
         this.rxAssignee = new BehaviorSubject()
         this.rxTags = new BehaviorSubject([])
         this.rxTagOptions = new BehaviorSubject([])
-        this.rxTags.subscribe(tags => console.log({tags}))
         // keys used to generate BONSAI token hash
         // keep it in the same order as in the `VALID_KEYS` array in the messaging service
         this.bonsaiKeys = [
@@ -670,7 +669,7 @@ export default class TaskForm extends Component {
             values[dueDateN] + 'T00:00', // use local time instead of UTC
             currentBlock,
         )
-        values[inputNames.tags] = values[inputNames.tags].join()
+        // values[inputNames.tags] = values[inputNames.tags].join()
 
         let {
             onSubmit,
@@ -689,7 +688,9 @@ export default class TaskForm extends Component {
         const isSell = values[inputNames.isSell]
         const title = values[inputNames.title]
         const dbValues = objClean(values, this.bonsaiKeys)
-        const tokenData = hashTypes.taskHash + ownerAddress + JSON.stringify(dbValues)
+        const tokenData = hashTypes.taskHash
+            + ownerAddress
+            + JSON.stringify(dbValues)
         const token = generateHash(tokenData)
         const nameCreateTask = 'createTask'
         const nameSaveTask = 'saveTask'
