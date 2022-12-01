@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import { iUseReducer } from '../../utils/reactHelper'
-import { deferred, isFn } from '../../utils/utils'
+import { deferred, isBool, isFn, isStr } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { showForm } from '../../services/modal'
@@ -88,6 +88,10 @@ export default IdentityShareForm
 
 const getInitialState = props => rxSetState => {
 	const { values = {} } = props
+	const { request = false } = values
+	values.request = isBool(request)
+		? request
+		: isStr(request) && request.toLowerCase() === 'true'
 	const rxAddress = new BehaviorSubject()
 	const inputs = [
 		{

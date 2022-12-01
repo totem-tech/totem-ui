@@ -249,8 +249,8 @@ export default class PartnerForm extends Component {
 					placeholder: textsCap.associatedIdentityPlaceholder,
 					rxOptions: rxIdentities,
 					rxOptionsModifier: getIdentityOptions,
+                    search: ['keywords'],
 					selection: true,
-					search: true,
 					type: 'dropdown',
 				},
 				{

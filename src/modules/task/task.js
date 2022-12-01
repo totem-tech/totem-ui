@@ -138,8 +138,8 @@ export const query = {
                 const taskDetails = dbResult.get(taskId)
                 const task = {
                     taskId,
-                    ...processOrder(order, taskId, address),
                     ...taskDetails,
+                    ...processOrder(order, taskId, address),
                     _tsCreated: format(taskDetails.tsCreated, true),
                 }
                 if (isStr(task.tags)) task.tags = task
@@ -150,7 +150,8 @@ export const query = {
             })
             .filter(Boolean)
         return new Map(tasks)
-    }
+    },
+    searchMarketplace: (filter = {}) => client.taskMarketSearch.promise(filter),
 }
 
 // list of PolkadotJS APIs used in the `queueables`

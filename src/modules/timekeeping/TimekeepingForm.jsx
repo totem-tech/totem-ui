@@ -601,7 +601,6 @@ export default class TimekeepingForm extends Component {
                 ? workerAddress
                 : null
         )
-        console.log(identityIn.options, workers)
         this.setState({ inputs })
     }
 

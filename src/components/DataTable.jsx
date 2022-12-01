@@ -161,12 +161,16 @@ export default class DataTable extends Component {
 		if (!selectable) return headers
 		// include checkbox to select items
 		const n = selectedIndexes.length
-		const iconName = `${n > 0 ? 'check ' : ''}square${
-			n === 0 || n != totalRows ? ' outline' : ''
-		}`
+		const iconName = n <= 0
+			? 'square outline'
+			: n < totalRows
+				? 'minus square outline'
+				: 'check square'
 		const deselect = n === totalRows
 			|| (n > 0 && n < totalRows)
-		const numRows = deselect ? n : totalRows
+		const numRows = deselect
+			? n
+			: totalRows
 		const t = deselect
 			? textsCap.deselectAll
 			: textsCap.selectAll
@@ -537,9 +541,15 @@ export default class DataTable extends Component {
 		// filtered total
 		const totalRows = filteredData.length || filteredData.size || 0
 		const totalPages = Math.ceil(totalRows / perPage)
-		pageNo = pageNo > totalPages ? 1 : pageNo
+		pageNo = pageNo > totalPages
+			? 1
+			: pageNo
 		this.state.pageNo = pageNo
-		const headers = this.getHeaders(totalRows, columns, selectedIndexes)
+		const headers = this.getHeaders(
+			totalRows,
+			columns,
+			selectedIndexes,
+		)
 		const rows = this.getRows(
 			filteredData,
 			columns,
@@ -704,7 +714,7 @@ DataTable.defaultProps = {
 	selectable: false,
 	showSelectedCount: true,
 	tableProps: {
-		celled: true,
+		celled: false,
 		selectable: true,
 		sortable: true,
 		unstackable: true,

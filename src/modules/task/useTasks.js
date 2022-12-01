@@ -12,8 +12,8 @@ import {
 } from '../../utils/utils'
 // services
 import { translated } from '../../services/language'
+import { get as getIdentity, rxSelected } from '../identity/identity'
 import { rxNewNotification } from '../notification/notification'
-import AddressName from '../partner/AddressName'
 import {
     approvalStatuses,
     approvalStatusNames,
@@ -22,7 +22,6 @@ import {
     statuses,
     statusNames,
 } from './task'
-import { get as getIdentity, rxSelected } from '../identity/identity'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',

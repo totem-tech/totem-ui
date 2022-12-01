@@ -426,7 +426,7 @@ export default class TaskForm extends Component {
                                 lengthMax: textsCap.errTagsMaxLen,
                             },
                             label: textsCap.tags,
-                            maxLength: 3,
+                            maxLength: 6,
                             multiple: true,
                             name: inputNames.tags,
                             noResultsMessage: textsCap.tagsNoResultMsg,
@@ -466,7 +466,7 @@ export default class TaskForm extends Component {
                             validate: (_, { value = '' }) => {
                                 const invalid = value
                                     .join('')
-                                    .length > 32
+                                    .length > 64
                                 return invalid && `${textsCap.errTagsMaxChars}: 32`
                             }
                         },
@@ -696,7 +696,7 @@ export default class TaskForm extends Component {
         const nameSaveTask = 'saveTask'
         const queueId = uuid.v1()
         const orderType = values[inputNames.orderType]
-        const thenCb = isLastInQueue => (success, err) => {
+        const handleResult = isLastInQueue => (success, err) => {
             if (!isLastInQueue && success) return
             this.setState({
                 closeText: success
@@ -721,7 +721,7 @@ export default class TaskForm extends Component {
                 success,
             })
 
-            // force `useTask` hook to update the off-chain task data for this task only
+            // force `useTask` hook to update the off-chain data for this task only
             taskId = taskId || (getById(queueId) || { data: [] }).data[0]
             isHash(taskId) && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
@@ -735,7 +735,7 @@ export default class TaskForm extends Component {
             title: !this.doUpdate
                 ? textsCap.formHeader
                 : textsCap.formHeaderUpdate,
-            then: thenCb(false),
+            then: handleResult(false),
         }
         const queueProps = fn.apply(null, !this.doUpdate
             ? [
@@ -768,7 +768,7 @@ export default class TaskForm extends Component {
             func: 'task',
             name: nameSaveTask,
             recordId: taskId,
-            then: thenCb(true),
+            then: handleResult(true),
             title: textsCap.saveOffChainData,
             type: QUEUE_TYPES.CHATCLIENT,
             args: [

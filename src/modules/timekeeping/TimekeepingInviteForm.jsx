@@ -81,17 +81,6 @@ export default class TimeKeepingInviteForm extends Component {
                     options: [],
                     placeholder: textsCap.partnerLabel,
                     rxOptions: rxPartners,
-                    // rxOptionsModifier: partners => {
-                    //     const identityOptions = getIdentityOptions()
-                    //     const identityAddrs = identityOptions.map(x => x.value)
-                    //     const partnerOptions = getPartnerOptions(partners)
-                    //         .filter(x => !identityAddrs.includes(x.value))
-                    //     const options = [
-                    //         ...identityOptions,
-                    //         ...partnerOptions,
-                    //     ]
-                    //     return arrSort(options, 'keywords')
-                    // },
                     rxOptionsModifier: partners => getPartnerOptions(partners, {}, true),
                     required: true,
                     search: ['text', 'value', 'description'],

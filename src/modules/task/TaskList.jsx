@@ -1,15 +1,19 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
+import { getUser, rxIsLoggedIn } from '../../utils/chatClient'
+import PromisE from '../../utils/PromisE'
+import { subjectAsPromise } from '../../utils/reactHelper'
+import { format } from '../../utils/time'
 import { deferred, isObj } from '../../utils/utils'
 // components
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
+import FormInput from '../../components/FormInput'
+import Message from '../../components/Message'
 import Tags from '../../components/Tags'
 import Text from '../../components/Text'
-// forms
-import TaskForm from './TaskForm'
 // services
 import { translated } from '../../services/language'
 import { showForm, confirm } from '../../services/modal'
@@ -19,27 +23,29 @@ import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import Currency from '../currency/Currency'
 import { get as getIdentity, getSelected } from '../identity/identity'
-import { query, queueableApis, rxInProgressIds, statuses } from './task'
+import AddressName from '../partner/AddressName'
+import useSearch from './marketplace/useSearch'
+import ApplicationForm from './marketplace/ApplicationForm'
 import {
     handleAssignmentResponse,
     handleInvoicedResponse,
     handleUpdateStatus,
 } from './notificationHandlers'
+import {
+    queueableApis,
+    rxInProgressIds,
+    statuses,
+} from './task'
 import TaskDetails from './TaskDetails'
-import FormInput from '../../components/FormInput'
-import PromisE from '../../utils/PromisE'
-import { subjectAsPromise } from '../../utils/reactHelper'
-import { rxIsLoggedIn } from '../../utils/chatClient'
-import AddressName from '../partner/AddressName'
-import { format } from '../../utils/time'
+import TaskForm, { inputNames } from './TaskForm'
 
 let textsCap = {
     acceptInvoice: 'accept invoice',
     acceptInvoiceDesc: 'accept the invoice and pay the assignee?',
     acceptInvoiceTitle: 'task - accept invoice',
-    action: 'action',
     addPartner: 'add partner',
     applications: 'applications',
+    applied: 'applied',
     apply: 'apply',
     approve: 'approve',
     approved: 'approved',
@@ -65,6 +71,7 @@ let textsCap = {
     taskOwner: 'task owner',
     title: 'title',
     yes: 'yes',
+    view: 'view',
 }
 textsCap = translated(textsCap, true)[1]
 
@@ -78,16 +85,7 @@ export const listTypes = Object.freeze({
 const tempCache = new Map()
 // const toBeImplemented = () => alert('to be implemented')
 export default function TaskList(props) {
-    const {
-        rxTasks: _rxTasks,
-        type,
-    } = props
-    const [rxTasks] = _rxTasks
-        ? [_rxTasks]
-        : useState(() => new BehaviorSubject())
-    const [data] = useRxSubject(rxTasks)
-    const [inProgressIds] = useRxSubject(rxInProgressIds)
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const { rxTasks, type } = props
     const listType = listTypes[type] || listTypes.owner
     const isOwnedList = listType === listTypes.owner
     // const isApproverList = listType === listTypes.approver
@@ -95,24 +93,55 @@ export default function TaskList(props) {
     const isMarketplace = listType === listTypes.marketplace
     const keywordsKey = 'keywords' + listType
     const showCreate = isOwnedList || isMarketplace
-    const tableProps = getTableProps(
+    const [filter, setFilter] = useState({})
+    const [message, data] = isMarketplace
+        ? useSearch(filter)
+        : [null, useRxSubject(rxTasks)[0]]
+    const [inProgressIds] = useRxSubject(rxInProgressIds)
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const [tableProps, setTableProps] = useState(getTableProps(
         isMobile,
         isFulfillerList,
         isMarketplace,
-    )
-    const [{ keywords = '' }, setSearch] = useState({})
+    ))
+    const { keywords = '' } = filter || {}
     const emptyMessage = isMarketplace
         ? textsCap.emptyMsgMarketPlace
         : undefined
     
+    useEffect(() => {
+        setTableProps(
+            getTableProps(
+                isMobile,
+                isFulfillerList,
+                isMarketplace,
+            )
+        )
+    }, [isMobile, isFulfillerList, isMarketplace])
+    
+    if (message) return <Message {...message} />
+
+    const forceReload = () => {
+        const { keywords } = filter
+        setFilter({
+            ...filter,
+            keywords: useSearch.REFRESH_PLACEHOLDER,
+        })
+        setTimeout(() => setFilter({
+            ...filter,
+            keywords,
+        }))
+    }
     return (
         <DataTable {...{
             ...props,
             ...tableProps,
             data,
             emptyMessage,
+            forceReload,
             isOwnedList,
             inProgressIds,
+            key: data,
             keywords: isMarketplace
                 ? undefined
                 // preserve search keywords
@@ -123,10 +152,13 @@ export default function TaskList(props) {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
-                        values: !isMarketplace
-                            ? undefined
-                            : { isMarket: false },
+                        onSubmit: (ok, values) => ok
+                            && !!values[inputNames.isMarket]
+                            && forceReload(),
                         size: 'tiny',
+                        values: {
+                            [inputNames.isMarket]: isMarketplace,
+                        },
                     }),
                 }
             ].filter(Boolean),
@@ -149,26 +181,37 @@ export default function TaskList(props) {
                         //     icon: 'filter',
                         //     onClick: alert
                         // },
+                        action: !keywords
+                            ? undefined
+                            : {
+                                basic: true,
+                                icon: {
+                                    className: 'no-margin',
+                                    name: 'close',
+                                },
+                                onClick: () => setFilter({
+                                    ...filter,
+                                    keywords: '',
+                                }),
+                            },
                         icon: 'search',
                         iconPosition: 'left',
                         name: 'search',
-                        onChange: async (_, { value: keywords = '' }) => {
-                            setSearch({ keywords })
-                            await subjectAsPromise(rxIsLoggedIn, true)
-                            searchMarketPlace({ keywords }, rxTasks)
-                        },
+                        onChange: async (_, { value = '' }) => setFilter({
+                            ...filter,
+                            keywords: value,
+                        }),
                         onDragOver: e => e.preventDefault(),
                         onDrop: async e => {
                             const keywords = e.dataTransfer.getData('Text')
                             if (!keywords.trim()) return
-                            setSearch({keywords})
-                            await subjectAsPromise(rxIsLoggedIn, true)
-                            searchMarketPlace({ keywords }, rxTasks)
+                            setFilter({ keywords })
                         },
                         placeholder: 'search',
+                        // this ensures the search occur on load
                         rxValue: new BehaviorSubject(keywords),
                         type: 'search',
-                        value: keywords,
+                        value: keywords, 
                     }} />
                 ),
         }} />
@@ -182,28 +225,11 @@ TaskList.defaultProps = {
     listType: listTypes.owner,
 }
 
-const getActions = (task, taskId, _, { isOwnedList, rxTasks }) => [
-    {
-        icon: 'eye',
-        onClick: () => TaskDetails.asModal(
-            {
-                allowEdit: isOwnedList,
-                getAssigneeView,
-                getStatusView,
-                rxInProgressIds,
-                rxTasks,
-                // task,
-                taskId,
-            },
-            // {
-            //     size: task.isMarket 
-            //         ? 'tiny'
-            //         : 'mini',
-            // }
-        ),
-        title: textsCap.techDetails,
-    }
-]
+const getActions = (_, taskId) => [{
+    icon: 'eye',
+    onClick: () => TaskDetails.asModal({ taskId }),
+    title: textsCap.techDetails,
+}]
     .filter(Boolean)
     .map((props, i) => (
         <Button {...{
@@ -211,25 +237,49 @@ const getActions = (task, taskId, _, { isOwnedList, rxTasks }) => [
             key: `${i}-${props.title}`,
         }} />
     ))
-export const getAssigneeView = ({ applications = [], fulfiller, isMarket, isOwner, owner }) =>
-    !isMarket || owner !== fulfiller
+export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
+    const {
+        applications = [],
+        fulfiller,
+        isMarket,
+        isOwner,
+        title,
+        owner,
+    } = task
+    let applied
+    if (!isOwner) {
+        const { id: userId } = getUser() || {}
+        applied = !!applications.find(x => x.userId === userId)
+    }
+    return !isMarket || owner !== fulfiller
         ? <AddressName {...{ address: fulfiller }} />
         : (
             <Button {...{
-                content: isOwner 
-                    ? `${applications.length} ${textsCap.applications}`
-                    : textsCap.apply,
+                content: isOwner
+                    ? `${textsCap.applications}: ${applications.length}`
+                    : applied
+                        ? textsCap.applied
+                        : textsCap.apply,
+                disabled: !!applied,
+                fluid: true,
                 icon: isOwner
                     ? 'eye'
                     : 'play',
-                fluid: true,
+                key: taskId,
                 positive: !isOwner,
-                onClick: () => { },
+                onClick: () => isOwner
+                    ? null // show list of applications
+                    : showForm(ApplicationForm, {
+                        onSubmit: success => success && forceReload(),
+                        title,
+                        values: { taskId },
+                    }),
                 style: { whiteSpace: 'nowrap' }
             }} />
         )
+}
 // status cell view (with status related action buttons where appropriate)
-export const getStatusView = (task, taskId, _, { inProgressIds }) => {
+export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds }) => {
     const {
         fulfiller,
         isMarket,
@@ -238,7 +288,6 @@ export const getStatusView = (task, taskId, _, { inProgressIds }) => {
         _orderStatus,
      } = task
     if (isMarket) return `${_orderStatus}`
-
     const isOpen = isMarket && owner === fulfiller
     const { address } = !isOpen && getIdentity(fulfiller) || getSelected()
     const isOwner = address === owner
@@ -387,9 +436,12 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
             content: ({ tags = [] }) => <Tags tags={tags} />,
             key: 'tags',
             title: textsCap.tags,
-            style: { textAlign: 'center' },
+            style: {
+                maxWidth: 150,
+                textAlign: 'center',
+            },
         },
-        {
+        !isMarketplace && {
             content: getStatusView,
             collapsing: true,
             draggable: !isMarketplace,
@@ -423,15 +475,12 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
             content: getActions,
             draggable: false,
             textAlign: 'center',
-            title: textsCap.action,
+            title: textsCap.view,
         },
     ].filter(Boolean),
-    defaultSort: isMarketplace
-        ? false // no sorting
-        : '_tsCreated',
-    defaultSortAsc: isMarketplace
-        ? true
-        : false,
+    // no default sorting on marketplace
+    defaultSort: !isMarketplace && 'tsCreated',
+    defaultSortAsc: !!isMarketplace,
     // disable all actions if there is an unfinished queue item for this task ID
     rowProps: (_task, taskId, _tasks, { inProgressIds }) =>
         inProgressIds.has(taskId)
@@ -444,13 +493,6 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
         keywords,
     ),
 })
-
-const searchMarketPlaceDP = PromisE.deferred()
-const searchMarketPlace = deferred((filter = {}, rxTasks) => {
-    const promise = query.searchMarketplace(filter)
-    searchMarketPlaceDP(promise)
-        .then(result => rxTasks.next(result) || console.log({result}))
-}, 300)
 
 setTimeout(() => {
     // subscribe to queue item changes and store taskIds

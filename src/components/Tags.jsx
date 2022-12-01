@@ -1,9 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Label } from 'semantic-ui-react'
+import { toArray } from '../utils/utils'
 
-const Tags = ({ tags = [], ...props }) =>
-    tags.map(tag => (
+const Tags = ({ tags = [], ...props }) => toArray(tags)
+    .map(tag => (
         <Label {...{
             ...props,
             content: tag,
@@ -20,7 +21,10 @@ const Tags = ({ tags = [], ...props }) =>
         }} />
     ))
 Tags.propTypes = {
-    tags: PropTypes.arrayOf(PropTypes.string),
+    tags: PropTypes.oneOfType([
+        PropTypes.arrayOf(PropTypes.string),
+        PropTypes.string,
+    ]),
     // ...Label.propTypes,
 }
 export default React.memo(Tags)

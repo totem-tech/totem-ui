@@ -313,6 +313,7 @@ const getFormProps = () => {
 			rxOptions: rxIdentities,
 			rxOptionsModifier: getIdentityOptions,
 			selection: true,
+			search: ['keywords'],
 			rxValue: new BehaviorSubject(),
 			type: 'dropdown',
 		},

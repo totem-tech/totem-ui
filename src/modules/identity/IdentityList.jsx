@@ -20,6 +20,7 @@ import IdentityForm from './IdentityForm'
 import IdentityShareForm from './IdentityShareForm'
 import Balance from './Balance'
 import IdentityIcon from './IdentityIcon'
+import { textEllipsis } from '../../utils/utils'
 
 let textsCap = {
 	actions: 'actions',
@@ -136,6 +137,8 @@ const getTableProps = isMobile => {
 				content: ({ address, usageType }) => (
 					<IdentityIcon {...{
 						address,
+						key: address,
+						draggable: true,
 						size: 'large',
 						usageType,
 					}} />
@@ -154,7 +157,7 @@ const getTableProps = isMobile => {
 					? undefined
 					: identity => (
 						<div>
-							<div>{identity.name}</div>
+							<div>{textEllipsis(identity.name, 28, 3, false)}</div>
 							{getBalance(identity)}
 						</div>
 					),
@@ -198,12 +201,16 @@ const getTableProps = isMobile => {
 		].filter(Boolean),
 		defaultSort: 'name',
 		emptyMessage: { content: textsCap.emptyMessage },
-		searchExtraKeys: ['address', 'name', '_tagsStr', 'usageType'],
-		tableProps: {
-			// basic:  'very',
-			celled: false,
-			compact: true,
-		},
+		searchExtraKeys: [
+			'address',
+			'name',
+			'_tagsStr',
+			'usageType',
+		],
+		// tableProps: {
+		// 	celled: false,
+		// 	compact: true,
+		// },
 		topLeftMenu: [
 			{
 				El: ButtonGroup,
