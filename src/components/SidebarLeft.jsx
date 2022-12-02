@@ -106,10 +106,10 @@ const _MainContentItem = props => {
 
 	return !show ? '' : (
 		<div
+			id={name}
 			key={name}
 			style={styles.spaceBelow}
 			ref={elementRef}
-			name={name}
 		>
 			<ContentSegment {...{
 				...item,

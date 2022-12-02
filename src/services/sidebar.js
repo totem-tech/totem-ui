@@ -491,6 +491,7 @@ export const scrollTo = name => {
         document.getElementById('main-content')
             .scrollTo(elRef.current.offsetLeft, elRef.current.offsetTop - 15)
     }, 100)
+
     return item
 }
 

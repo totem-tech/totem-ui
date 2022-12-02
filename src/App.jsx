@@ -105,7 +105,7 @@ export default function App() {
 				<NotificationView />
 			</ErrorBoundary>
 
-			<Sidebar.Pushable className='unregistered'>
+			<Sidebar.Pushable>
 				<ErrorBoundary>
 					<SidebarLeft />
 				</ErrorBoundary>
