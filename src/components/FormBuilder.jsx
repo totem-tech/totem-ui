@@ -1,25 +1,32 @@
 import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
+import {
+	Button,
+	Form,
+	Header,
+	Icon,
+	Modal,
+} from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
+import Message, { statuses } from '../components/Message'
+import { translated } from '../services/language'
+import { closeModal } from '../services/modal'
+import { MOBILE, rxLayout } from '../services/window'
 import {
-	isDefined,
+	hasValue,
 	isArr,
 	isBool,
+	isDefined,
 	isFn,
 	isObj,
 	isStr,
-	hasValue,
 	isSubjectLike,
+	toArray,
 } from '../utils/utils'
-import Message, { statuses } from '../components/Message'
 import FormInput from './FormInput'
-import IModal from './Modal'
-import { translated } from '../services/language'
 import { Invertible } from './Invertible'
-import { closeModal } from '../services/modal'
-import { MOBILE, rxLayout } from '../services/window'
+import IModal from './Modal'
 
 const textsCap = translated({
 	cancel: 'cancel',
@@ -55,7 +62,7 @@ class FormBuilder extends Component {
 			? parentIndex
 			: null
 		const { id: formId } = this.state
-		const {
+		let {
 			inputNamePrefix = formId,
 			inputsDisabled = [],
 			inputsHidden = [],
@@ -101,12 +108,12 @@ class FormBuilder extends Component {
 			content: isFn(content)
 				? content(values, name)
 				: content,
-			disabled: inputsDisabled.includes(name) || (
+			disabled: toArray(inputsDisabled).includes(name) || (
 				isFn(disabled)
 					? disabled(values, name)
 					: disabled
 			),
-			hidden: inputsHidden.includes(name) || (
+			hidden: toArray(inputsHidden).includes(name) || (
 				!isFn(hidden)
 					? hidden
 					: !!hidden(values, name)
@@ -121,7 +128,7 @@ class FormBuilder extends Component {
 				: undefined,
 			key: key || name,
 			name: `${inputNamePrefix}${name}`,
-			readOnly: inputsReadOnly.includes(name) || readOnly,
+			readOnly: toArray(inputsReadOnly).includes(name) || readOnly,
 			onChange: isGroup
 				? undefined
 				: (e, data) => this.handleChange(
@@ -212,7 +219,11 @@ class FormBuilder extends Component {
 			)
 			// trigger form's onchange callback
 			if (isFn(formOnChange)) {
-				const formInvalid = checkFormInvalid(inputs, values, inputsHidden)
+				const formInvalid = checkFormInvalid(
+					inputs,
+					values,
+					toArray(inputsHidden),
+				)
 				await formOnChange(event, values, formInvalid)
 			}
 		} catch (err) {
@@ -499,6 +510,10 @@ class FormBuilder extends Component {
 		)
 	}
 }
+const arrayOrString = PropTypes.oneOfType([
+	PropTypes.arrayOf(PropTypes.string),
+	PropTypes.string,
+])
 FormBuilder.propTypes = {
 	closeOnEscape: PropTypes.bool,
 	closeOnDimmerClick: PropTypes.bool,
@@ -517,11 +532,11 @@ FormBuilder.propTypes = {
 	// props to be passed on to the Form or `El` component
 	formProps: PropTypes.object,
 	// disable inputs on load
-	inputsDisabled: PropTypes.arrayOf(PropTypes.string),
+	inputsDisabled: arrayOrString,
 	// inputs to hide
-	inputsHidden: PropTypes.arrayOf(PropTypes.string),
+	inputsHidden: arrayOrString,
 	// read only inputs
-	inputsReadOnly: PropTypes.arrayOf(PropTypes.string),
+	inputsReadOnly: arrayOrString,
 	header: PropTypes.string,
 	headerIcon: PropTypes.oneOfType([
 		PropTypes.element,
@@ -571,12 +586,6 @@ FormBuilder.propTypes = {
 FormBuilder.defaultProps = {
 	closeOnEscape: false,
 	closeOnDimmerClick: false,
-	message: {
-		// Status controls visibility and style of the message
-		// Supported values: error, warning, success
-		status: '',
-		// see https://react.semantic-ui.com/collections/message/ for more options
-	},
 	submitText: textsCap.submit,
 	size: 'tiny',
 }
@@ -744,7 +753,13 @@ export const checkInputInvalid = (formValues = {}, input, inputsHidden = []) => 
  * @returns	{Boolean}
  */
 export const checkFormInvalid = (inputs = [], values = {}, inputsHidden = []) => {
-	const input = inputs.find(input => checkInputInvalid(values, input, inputsHidden))
+	const input = inputs.find(input =>
+		checkInputInvalid(
+			values,
+			input,
+			inputsHidden,
+		)
+	)
 	return !!input
 }
 

@@ -348,8 +348,14 @@ setTimeout(() => {
         const values = !referralCode
             ? getUrlParam()
             : { referralCode }
+        const props = {
+            inputsDisabled: values.inputsDisabled,
+            inputsHidden: values.inputsHidden,
+            inputsReadOnly: values.inputsReadOnly,
+            values,
+        }
 
-        showForm(Form.default, { values })
+        showForm(Form.default, props)
         history.pushState({}, null, `${location.protocol}//${location.host}`)
     } catch (e) {
         fileName && console.log(e)

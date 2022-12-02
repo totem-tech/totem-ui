@@ -64,21 +64,22 @@ const PartnerIcon = props => {
                 },
             })
         }
-    const handleToggle = isMobile || !address
-        ? undefined
-        : () => setHovered(!hovered)
     return !name ? '' : (
         <Icon {...{
             className: 'no-margin',
             color,
-            draggable: true,
             onDragStart: e => {
-				e.stopPropagation()
+                setHovered(false)
+                e.stopPropagation()
 				e.dataTransfer.setData('Text', _type)
 			},
             onClick: handleClick,
-            onMouseEnter: handleToggle,
-            onMouseLeave: handleToggle,
+            onMouseEnter: isMobile || !address
+                ? undefined
+                : () => setHovered(true),
+            onMouseLeave: isMobile || !address
+                ? undefined
+                : () => setHovered(false),
             ...objWithoutKeys(props, [
                 'address',
                 'formProps',

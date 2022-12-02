@@ -63,21 +63,22 @@ const IdentityIcon = props => {
                 },
             })
         }
-    const handleToggle = isMobile || !address
-        ? undefined
-        : () => setHovered(!hovered)
     return (
         <Icon {...{
             className: 'no-margin',
             color,
-            draggable: true,
             onDragStart: e => {
-				e.stopPropagation()
+                setHovered(false)
+                e.stopPropagation()
 				e.dataTransfer.setData('Text', ut)
 			},
             onClick: handleClick,
-            onMouseEnter: handleToggle,
-            onMouseLeave: handleToggle,
+            onMouseEnter: isMobile || !address
+                ? undefined
+                : () => setHovered(true),
+            onMouseLeave: isMobile || !address
+                ? undefined
+                : () => setHovered(false),
             ...objWithoutKeys(props, [
                 'address',
                 'formProps',

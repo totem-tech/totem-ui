@@ -8,6 +8,7 @@ import Tags from '../../components/Tags'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
+import { MOBILE, rxLayout } from '../../services/window'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
 import {
 	getAddressName,
@@ -18,7 +19,6 @@ import {
 } from './partner'
 import CompanyForm from './CompanyForm'
 import PartnerForm, { inputNames } from './PartnerForm'
-import { MOBILE, rxLayout } from '../../services/window'
 import PartnerIcon from './PartnerIcon'
 
 let textsCap = {
@@ -96,6 +96,8 @@ const getTableProps = layout => {
 				content: ({ address, type, visibility }) => (
 					<PartnerIcon {...{
 						address,
+						draggable: true,
+						key: address,
 						size: 'large',
 						type,
 						visibility,
