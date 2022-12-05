@@ -52,6 +52,7 @@ import { get as getPartner, rxPartners } from '../partner/partner'
 import { queueables } from './task'
 import { rxUpdater } from './useTasks'
 import getPartnerOptions from '../partner/getPartnerOptions'
+import { statuses } from '../../components/Message'
 
 let textsCap = {
     addedToQueue: 'request added to queue',
@@ -123,7 +124,6 @@ export const inputNames = Object.freeze({
     amountXTX: 'amountXTX',
     assignee: 'fulfiller',
     bounty: 'bounty',
-    bountyGroup: 'bountyGroup',
     currency: 'currency',
     currencyWrapper: 'currencyWrapper',
     dates: 'dates',
@@ -134,6 +134,8 @@ export const inputNames = Object.freeze({
     isMarket: 'isMarket',
     isSell: 'isSell',
     parentId: 'parentId',
+    prefunded: 'prefunded',
+    proposalRequired: 'proposalRequired',
     tags: 'tags',
     title: 'title',
 })
@@ -181,76 +183,6 @@ export default class TaskForm extends Component {
             onSubmit: this.handleSubmit,
             inputs: [
                 {
-                    rxValue: new BehaviorSubject(),
-                    label: textsCap.title,
-                    maxLength: 80,
-                    minLength: 3,
-                    name: inputNames.title,
-                    placeholder: textsCap.titlePlaceholder,
-                    required: true,
-                    type: 'text',
-                },
-                {
-                    name: inputNames.bountyGroup,
-                    type: 'group',
-                    unstackable: true,
-                    inputs: [
-                        {
-                            ...asInlineLabel({
-                                disabled: this.doUpdate,
-                                onCurrencies: currencies => {
-                                    this.rxCurrencies.next(currencies)
-                                    const { loading } = this.state
-                                    loading.currencies = false
-                                    this.setState({ loading })
-                                },
-                                rxValue: this.rxCurrency,
-                            }),
-                            label: textsCap.bountyLabel,
-                            maxLength: 18,
-                            min: 0, // allows bounty-free tasks
-                            name: inputNames.bounty,
-                            onChange: !taskId
-                                ? this.handleBountyChange
-                                : undefined,
-                            placeholder: textsCap.bountyPlaceholder,
-                            rxValue: new BehaviorSubject(),
-                            required: true,
-                            type: 'number',
-                            useInput: true,
-                            // width: 10,
-                        },
-                        {
-                            hidden: true,
-                            name: inputNames.currency,
-                            onChange: async (...args) => { 
-                                const [_, values] = args
-                                const { inputs } = this.state
-                                const currency = values[inputNames.currency]
-                                const bounty = values[inputNames.bounty]
-                                const bountyIn = findInput(inputs, inputNames.bounty)
-                                const currencies = await subjectAsPromise(this.rxCurrencies, x => isArr(x) && x)[0]
-                                const { decimals = 0 } = currencies.find(x => x.currency === currency) || {}
-                                bountyIn.decimals = parseInt(decimals || '') || 0
-                                bountyIn.message = null
-                                this.setState({ inputs })
-                                
-                                // trigger re-validation
-                                bountyIn.rxValue.next('')
-                                bountyIn.rxValue.next(bounty)
-                            },
-                            rxValue: this.rxCurrency,
-                        },
-                        {// hidden type to store bounty in XTX (regardless of display currency selected)
-                            hidden: true,
-                            name: inputNames.amountXTX,
-                            required: true,
-                            rxValue: new BehaviorSubject(0),
-                        },
-                    ]
-                },
-                {
-                    // hidden: true,//delete
                     rxValue: new BehaviorSubject(false),
                     inline: true,
                     label: textsCap.marketplace,
@@ -327,6 +259,96 @@ export default class TaskForm extends Component {
                     },
                 },
                 {
+                    rxValue: new BehaviorSubject(),
+                    label: textsCap.title,
+                    maxLength: 80,
+                    minLength: 3,
+                    name: inputNames.title,
+                    placeholder: textsCap.titlePlaceholder,
+                    required: true,
+                    type: 'text',
+                },
+                {
+                    ...asInlineLabel({
+                        disabled: this.doUpdate,
+                        onCurrencies: currencies => {
+                            this.rxCurrencies.next(currencies)
+                            const { loading } = this.state
+                            loading.currencies = false
+                            this.setState({ loading })
+                        },
+                        rxValue: this.rxCurrency,
+                    }),
+                    label: textsCap.bountyLabel,
+                    maxLength: 18,
+                    min: 0, // allows bounty-free tasks
+                    name: inputNames.bounty,
+                    onChange: !taskId
+                        ? this.handleBountyChange
+                        : undefined,
+                    placeholder: textsCap.bountyPlaceholder,
+                    rxValue: new BehaviorSubject(),
+                    required: true,
+                    type: 'number',
+                    useInput: true,
+                    // width: 10,
+                },
+                {
+                    hidden: true,
+                    name: inputNames.currency,
+                    onChange: async (...args) => { 
+                        const [_, values] = args
+                        const { inputs } = this.state
+                        const currency = values[inputNames.currency]
+                        const bounty = values[inputNames.bounty]
+                        const bountyIn = findInput(inputs, inputNames.bounty)
+                        const currencies = await subjectAsPromise(this.rxCurrencies, x => isArr(x) && x)[0]
+                        const { decimals = 0 } = currencies.find(x => x.currency === currency) || {}
+                        bountyIn.decimals = parseInt(decimals || '') || 0
+                        bountyIn.message = null
+                        this.setState({ inputs })
+                        
+                        // trigger re-validation
+                        bountyIn.rxValue.next('')
+                        bountyIn.rxValue.next(bounty)
+                    },
+                    rxValue: this.rxCurrency,
+                },
+                {// hidden type to store bounty in XTX (regardless of display currency selected)
+                    hidden: true,
+                    name: inputNames.amountXTX,
+                    required: true,
+                    rxValue: new BehaviorSubject(0),
+                },
+                {
+                    hidden: values => !values[inputNames.isMarket],
+                    multiple: false,
+                    name: inputNames.prefunded,
+                    options: [{
+                        label: textsCap.prefundedLabel || 'I will pre-fund this order.',
+                        value: true,
+                    }],
+                    toggle: true,
+                    type: 'checkbox-group',
+                    // display a info message if selected
+                    validate: (_, { value }) => value === true && {
+                        content: textsCap.prefundedInfo || 'The bounty amount will be locked into Totem Runtime Escrow account and will only be released to the assignee only after the order has been fulfilled and accepted by you.',
+                        icon: 'info circle',
+                        status: statuses.WARNING,
+                    },
+                },
+                {
+                    hidden: values => !values[inputNames.isMarket],
+                    name: inputNames.proposalRequired,
+                    options: [{
+                        label: textsCap.proposalLabel || 'Require applicants to submit a proposal',
+                        value: true,
+                    }],
+                    toggle: true,
+                    type: 'checkbox-group',
+                    value: true,
+                },
+                {
                     // hidden: true,//delete
                     name: inputNames.dates,
                     title: 'YYYY-MM-DD',
@@ -397,7 +419,7 @@ export default class TaskForm extends Component {
                             value: 0, // 0 => buy order
                         },
                         {
-                            hidden: true, // only show if this is a purchase order
+                            hidden: values => !values[inputNames.isMarket], 
                             inline: true,
                             label: textsCap.orderTypeLabel,
                             name: inputNames.orderType,
@@ -678,14 +700,15 @@ export default class TaskForm extends Component {
         } = this.props
         const ownerAddress = valueP.owner || getSelected().address
         const amountXTX = values[inputNames.amountXTX]
-        const isMarket = values[inputNames.isMarket]
-        const assignee = isMarket
-            ? ownerAddress
-            : values[inputNames.assignee]
         const deadline = values[deadlineN]
         const dueDate = values[dueDateN]
         const description = values[inputNames.title]
+        const isMarket = values[inputNames.isMarket]
+        const fulfiller = isMarket
+            ? ownerAddress
+            : values[inputNames.assignee]
         const isSell = values[inputNames.isSell]
+        const prefunded = values[inputNames.prefunded] === true
         const title = values[inputNames.title]
         const dbValues = objClean(values, this.bonsaiKeys)
         const tokenData = hashTypes.taskHash
@@ -726,9 +749,11 @@ export default class TaskForm extends Component {
             isHash(taskId) && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
         }
-        const fn = !this.doUpdate
-            ? queueables.save
-            : bcQueueables.bonsaiSaveToken
+        const fn = isMarket && !prefunded
+            ? queueables.createOrder
+            : !this.doUpdate
+                ? queueables.saveSpfso
+                : bcQueueables.bonsaiSaveToken
         const extraProps = {
             description,
             name: nameCreateTask,
@@ -741,7 +766,7 @@ export default class TaskForm extends Component {
             ? [
                 ownerAddress,
                 ownerAddress,
-                assignee,
+                fulfiller,
                 isSell,
                 amountXTX,
                 isMarket,
@@ -801,8 +826,8 @@ export default class TaskForm extends Component {
         }
 
         // notify assignee on creation only
-        if (!this.props.taskId && !findIdentity(assignee)) {
-            const { userId } = getPartner(assignee) || {}
+        if (!this.props.taskId && !findIdentity(fulfiller)) {
+            const { userId } = getPartner(fulfiller) || {}
             queueProps.next.next = !userId ? undefined : {
                 args: [
                     [userId],
@@ -813,7 +838,7 @@ export default class TaskForm extends Component {
                         __taskName: nameSaveTask,
                         // grab the taskId from the save previous item in the queue chain
                         __resultSelector: `(r, rt, saveTask) => ({
-                            fulfillerAddress: "${assignee}",
+                            fulfillerAddress: "${fulfiller}",
                             taskId: saveTask.argsProcessed[0],
                         })`,
                     },

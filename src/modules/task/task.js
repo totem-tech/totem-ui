@@ -4,6 +4,7 @@ import storage from '../../utils/storageHelper'
 import { format } from '../../utils/time'
 import {
     generateHash,
+    isArr,
     isDefined,
     isStr,
 } from '../../utils/utils'
@@ -158,9 +159,9 @@ export const query = {
 export const queueableApis = {
     changeApproval: 'api.tx.orders.changeApproval',
     changeSpfso: 'api.tx.orders.changeSpfso',
-    createPo: 'api.tx.orders.createPo',
-    createSpfso: 'api.tx.orders.createSpfso',
-    handleSpfso: 'api.tx.orders.handleSpfso',
+    createPo: 'api.tx.orders.createOrder',
+    createSpfso: 'api.tx.orders.createSpfso', // create SPFSO(Create Simple Prefunded Service Order)
+    handleSpfso: 'api.tx.orders.handleSpfso', // update SPFSO
 }
 export const queueables = {
     approve: (address, taskId, approve = true, queueProps) => {
@@ -207,30 +208,37 @@ export const queueables = {
         }
         return props
     },
-    createPo: (
+    createOrder: (
         owner,
         approver,
         fulfiller,
         isSell, // 0 = buy, 1 = open
-        amountXTX,
+        amountXTX, // total amount
         isClosed, // false = open, true = closed
-        orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
+        orderType = 0,
         deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
         dueDate, // must be equal or higher than deadline
-        taskId, // (optional) determines whether to create or update a record
-        token, // BONSAI token hash
+        orderId, // (optional) determines whether to create or update a record
+        bonsaiToken, // BONSAI token hash
         queueProps,
-    ) => {
-        const func = queueableApis.createPo
-        const orderItem = {
+        orderItems = [{
             Product: PRODUCT_HASH_LABOUR,
             UnitPrice: amountXTX,
             Quantity: 1,
             UnitOfMeasure: 1,
-        }
-        const orderItems = new Array(10).fill(0).map(() => orderItem)
+        }],
+        parentId = orderId,
+    ) => {
+        if (!isArr(orderItems) || !orderItems.length) throw new Error('Missing order items')
+        const func = queueableApis.createPo
         const txId = randomHex(owner)
-        const args = !taskId ? [
+        const txKeysL = [
+            orderId,
+            parentId,
+            bonsaiToken,
+            txId,
+        ]
+        const args = [
             approver,
             fulfiller,
             isSell,
@@ -240,18 +248,7 @@ export const queueables = {
             deadline,
             dueDate,
             orderItems,
-            token,
-            txId,
-        ] : [
-            approver,
-            fulfiller,
-            amountXTX,
-            deadline,
-            dueDate,
-            orderItems,
-            taskId,
-            token,
-            txId,
+            txKeysL
         ]
 
         return {
@@ -260,26 +257,52 @@ export const queueables = {
             amountXTX,
             args,
             func,
-            recordId: taskId,
+            recordId: orderId,
             txId,
             type: TX_STORAGE,
         }
     },
-    save: (
+    /**
+     * @name    saveSpfso
+     * @summary create/update SPFSO (Simple Pre-Funded Order)
+     * 
+     * @param   {String} owner      identity of the owner/creator
+     * @param   {String} approver   idenitty of the assignee
+     * @param   {String} fulfiller  identity of the assignee
+     * @param   {Number} isSell     indicates buy/sell order. 0 => buy, 1 => sell
+     * @param   {String} amountXTX  amount in the native currency
+     * @param   {Boolean} isMarket  (optional) indicates if the order is to be placed on the marketplace.
+     *                              Should have no assignee (=> use owner) when creating.
+     *                              Default: `false`
+     * @param   {Number} orderType  (optional) indicates order type:
+     *                              0 => service order (default)
+     *                              1 => inventory order
+     *                              2 => asset order extensible
+     * @param   {Number} deadline   block number of the deadline to accept the order.
+     *                              must be equal or higher than `currentBlockNumber + 11520` blocks. 
+     * @param   {Number} dueDate    block number of when the order is expected to be fulfilled.
+     *                              must be equal or higher than deadline
+     * @param   {String} orderId    (optional) leave empty when creating an order
+     * @param   {String} bonsaiToken
+     * @param   {String} queueProps (optional) extra properties to be supplied to the queue items (see queue service)
+     * 
+     * @returns {Object} 
+     */
+    saveSpfso: (
         owner,
         approver,
         fulfiller,
         isSell,
         amountXTX,
-        isMarket, //false
-        orderType = 0, // 0: service order, 1: inventory order, 2: asset order extensible
-        deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
-        dueDate, // must be equal or higher than deadline
-        taskId, // (optional) determines whether to create or update a record
-        token, // BONSAI token hash
+        isMarket = false,
+        orderType = 0,
+        deadline,
+        dueDate,
+        orderId,
+        bonsaiToken,
         queueProps,
     ) => {
-        const func = !!taskId
+        const func = !!orderId
             ? queueableApis.changeSpfso
             : queueableApis.createSpfso
         const orderItem = {
@@ -289,7 +312,7 @@ export const queueables = {
             UnitOfMeasure: 1,
         }
         const txId = randomHex(owner)
-        const args = !taskId
+        const args = !orderId
             ? [
                 approver,
                 fulfiller,
@@ -300,7 +323,7 @@ export const queueables = {
                 deadline,
                 dueDate,
                 orderItem,
-                token,
+                bonsaiToken,
                 txId,
             ] : [
                 approver,
@@ -309,8 +332,8 @@ export const queueables = {
                 deadline,
                 dueDate,
                 orderItem,
-                taskId,
-                token,
+                orderId,
+                bonsaiToken,
                 txId,
             ]
 
@@ -320,7 +343,7 @@ export const queueables = {
             amountXTX,
             args,
             func,
-            recordId: taskId,
+            recordId: orderId,
             txId,
             type: TX_STORAGE,
         }

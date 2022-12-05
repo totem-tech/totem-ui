@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { Button } from 'semantic-ui-react'
 import { isObj } from '../../utils/utils'
 import { UserID } from '../../components/buttons'
+import { Linkify } from '../../components/StringReplace'
 import Message from '../../components/Message'
 import TimeSince from '../../components/TimeSince'
-import { getUser } from './ChatClient'
 import { translated } from '../../services/language'
+import { getUser } from './ChatClient'
 
 const [texts, textsCap] = translated({
     changedGroupName: 'changed group name to',
@@ -65,21 +65,24 @@ const InboxMessage = props => {
     if (isObj(action)) {
         const { data, type } = action
         switch (type) {
-            case 'message-group-name':
-                return (
-                    <div {...{ className: 'action-message', id }}>
-                        <i>
-                            {isSender ? textsCap.you + ' ' : <UserID {...{ suffix: ' ', userId: senderId }} />}
-                            {texts.changedGroupName} <b>{data[0]}</b>
-                        </i>
-                    </div>
-                )
+            case 'message-group-name': return (
+                <div {...{ className: 'action-message', id }}>
+                    <i>
+                        {isSender
+                            ? textsCap.you + ' '
+                            : <UserID {...{ suffix: ' ', userId: senderId }} />}
+                        {texts.changedGroupName} <b>{data[0]}</b>
+                    </i>
+                </div>
+            )
         }
     }
 
-    let bgColor = isSender ? 'green' : (
-        isPrivate ? 'blue' : userColor[senderId]
-    )
+    let bgColor = isSender
+        ? 'green'
+        : isPrivate
+            ? 'blue'
+            : userColor[senderId]
     if (!bgColor) {
         bgColor = colors[randomize(colors.length)]
         userColor[senderId] = bgColor
@@ -105,7 +108,7 @@ const InboxMessage = props => {
                                 userId: senderId,
                             }} />
                         )}
-                        {message}
+                        <Linkify>{message}</Linkify>
                         {errorMessage && showDetails && <div className='error'><i>{errorMessage}</i></div>}
                         {showDetails && (
                             <TimeSince {...{

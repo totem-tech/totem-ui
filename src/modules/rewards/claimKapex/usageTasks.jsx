@@ -16,7 +16,7 @@ import {
 	objToUrlParams,
 	objWithoutKeys,
 } from '../../../utils/utils'
-import Embolden from '../../../components/Embolden'
+import { Embolden } from '../../../components/StringReplace'
 import { setActiveExclusive, setContentProps } from '../../../services/sidebar'
 import { MOBILE, rxLayout } from '../../../services/window'
 import { getAll as getHistory, limit } from '../../history/history'
