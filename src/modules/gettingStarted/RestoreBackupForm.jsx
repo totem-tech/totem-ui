@@ -21,7 +21,7 @@ import BackupForm from './BackupForm'
 import { isHex } from 'web3-utils'
 import { decryptBackup } from '.'
 import { statuses } from '../../components/Message'
-import ButtonDelayed from '../../components/ButtonDelayed'
+import ButtonDelayed from '../../components/buttons/ButtonDelayed'
 import { setToast } from '../../services/toast'
 import { subjectAsPromise } from '../../utils/reactHelper'
 

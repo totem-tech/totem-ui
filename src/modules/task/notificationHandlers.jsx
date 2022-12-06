@@ -1,9 +1,9 @@
 import React from 'react'
 import { Button } from 'semantic-ui-react'
 import { isArr } from '../../utils/utils'
-import { ButtonAcceptOrReject, ButtonGroup } from '../../components/buttons'
+import { ButtonAcceptOrReject } from '../../components/buttons'
 import { translated } from '../../services/language'
-import { confirm, confirmAsPromise } from '../../services/modal'
+import { confirmAsPromise } from '../../services/modal'
 import {
 	addToQueue,
 	checkComplete,

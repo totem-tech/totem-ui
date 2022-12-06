@@ -31,7 +31,7 @@ import Text from '../../components/Text'
 import { getActiveStep, MODULE_KEY, saveActiveStep, setActiveStep, stepIndexes } from './GettingStarted'
 import { decryptBackup, encryptBackup, generatePassword } from '.'
 import { statuses } from '../../components/Message'
-import ButtonDelayed from '../../components/ButtonDelayed'
+import ButtonDelayed from '../../components/buttons/ButtonDelayed'
 import { setToast } from '../../services/toast'
 
 let textsCap = {
