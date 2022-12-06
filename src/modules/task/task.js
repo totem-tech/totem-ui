@@ -19,16 +19,16 @@ const MODULE_KEY = 'task'
 // read and write to cached storage
 const TX_STORAGE = 'tx_storage'
 let textsCap = {
-    inaccessible: 'inaccessible',
     accepted: 'accepted',
     approved: 'approved',
     blocked: 'blocked',
     completed: 'completed',
+    created: 'created',
     disputed: 'disputed',
+    inaccessible: 'inaccessible',
     invoiced: 'invoiced',
     pendingApproval: 'pending approval',
     rejected: 'rejected',
-    submitted: 'submitted',
 }
 textsCap = translated(textsCap, true)[1]
 export const approvalStatuses = {
@@ -43,7 +43,7 @@ export const approvalStatusNames = {
 }
 export const statuses = {
     inaccessible: -1,
-    submitted: 0,
+    created: 0,
     accepted: 1,
     rejected: 2,
     disputed: 3,
@@ -54,7 +54,7 @@ export const statuses = {
 export const statusNames = {
     // used for tasks that are no longer available in the Blockchain storage
     '-1': textsCap.inaccessible,
-    0: textsCap.submitted,
+    0: textsCap.created,
     1: textsCap.accepted,
     2: textsCap.rejected,
     3: textsCap.disputed,
@@ -162,6 +162,8 @@ export const queueableApis = {
     createPo: 'api.tx.orders.createOrder',
     createSpfso: 'api.tx.orders.createSpfso', // create SPFSO(Create Simple Prefunded Service Order)
     handleSpfso: 'api.tx.orders.handleSpfso', // update SPFSO
+    marketApply: 'client.taskMarketApply',
+    updateDetails: 'client.task',
 }
 export const queueables = {
     approve: (address, taskId, approve = true, queueProps) => {
@@ -171,7 +173,9 @@ export const queueables = {
             address,
             args: [
                 taskId,
-                approve ? approvalStatuses.approved : approvalStatuses.rejected,
+                approve
+                    ? approvalStatuses.approved
+                    : approvalStatuses.rejected,
                 txId,
             ],
             func: queueableApis.changeApproval,

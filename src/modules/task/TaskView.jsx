@@ -27,17 +27,24 @@ const textsCap = translated({
 export default function TaskView({ address, tab: _activeType }) {
     const inverted = useInverted()
     address = address || useRxSubject(rxSelected)[0]
+    const excludeTypes = [
+        // listTypes.marketplace,
+        listTypes.approver,
+    ]
     const [rxTasks] = useState(() => new BehaviorSubject(new Map()))
     const [allTasks = new Map(), message] = useTasks(
         Object
             .values(listTypes)
-            .filter(x => x !== listTypes.marketplace),
+            .filter(x => ![
+                ...excludeTypes,
+                listTypes.marketplace
+            ].includes(x)),
         address,
     )
     const [activeType, setActiveType] = useState(
         _activeType
         || rwSettings().activeType
-        || 'owner'
+        || listTypes.owner
     )
     const data = activeType !== listTypes.marketplace
         && allTasks
@@ -53,37 +60,39 @@ export default function TaskView({ address, tab: _activeType }) {
         {
             name: textsCap.ownerTasks,
             title: textsCap.ownerTasksDesc,
-            type: 'owner',
+            type: listTypes.owner,
         },
         {
             name: textsCap.beneficiary,
             title: textsCap.beneficiaryDesc,
-            type: 'beneficiary',
+            type: listTypes.beneficiary,
         },
         {
             name: textsCap.approver,
             title: textsCap.approverDesc,
-            type: 'approver',
+            type: listTypes.approver,
         },
         {
             name: textsCap.marketplace,
             title: textsCap.marketplaceDesc,
-            type: 'marketplace',
+            type: listTypes.marketplace,
         },
-    ].map(({ name, title, type }) => ({
-        active: true,
-        inverted,
-        menuItem: (
-            <Menu.Item  {...{
-                content: <Text>{name}</Text>,
-                key: type,
-                // remember open tab index
-                onClick: () => rwSettings({ activeType: type }) | setActiveType(type),
-                title,
-            }} />
-        ),
-        type,
-    }))
+    ]
+        .filter(x => !excludeTypes.includes(x.type))
+        .map(({ name, title, type }) => ({
+            active: true,
+            inverted,
+            menuItem: (
+                <Menu.Item  {...{
+                    content: <Text>{name}</Text>,
+                    key: type,
+                    // remember open tab index
+                    onClick: () => rwSettings({ activeType: type }) | setActiveType(type),
+                    title,
+                }} />
+            ),
+            type,
+        }))
 
     const activeIndex = panes.findIndex(x =>
         x.type === activeType

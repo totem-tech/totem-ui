@@ -15,7 +15,6 @@ import {
 } from '../../services/modal'
 import {
     checkComplete,
-    getById as getQueueItemById,
     remove as removeQueueItem,
     statuses,
 } from '../../services/queue'
@@ -138,10 +137,9 @@ export default function HistoryList(props) {
                         {
                             icon: 'trash',
                             // negative: true,
-                            onClick: () => {
+                            onClick: async () => {
                                 const { groupId } = item
-                                const rootTask = getQueueItemById(groupId)
-                                const isComplete = checkComplete(rootTask)
+                                const isComplete = await checkComplete(groupId)
                                 confirm({
                                     content: !isComplete
                                         ? textsCap.removeWarning

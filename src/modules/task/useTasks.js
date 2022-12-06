@@ -22,6 +22,7 @@ import {
     statuses,
     statusNames,
 } from './task'
+import PromisE from '../../utils/PromisE'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -135,9 +136,19 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 setError(err)
             }
         }
+        let loaded = false
         const handleTaskIds = async (taskIds2d) => {
             if (!mounted) return
+
+            // delay update to make sure off-chain detials are stored and can be retrieved
+            if (loaded) {
+                subs.tasks && subs.tasks()
+                await PromisE.delay(300)
+            }
+            loaded = true
+
             try {
+                // unsubscribe from existing subscriptions
                 subs.tasks && subs.tasks()
                 // create single list of unique Task IDs
                 const uniqueTaskIds = arrUnique(taskIds2d.flat())
@@ -302,7 +313,7 @@ export const processOrder = (order, id) => {
             console.log('amountXTX parse error', err)
         }
         const isOwner = address === owner
-        const isSubmitted = orderStatus === statuses.submitted
+        const isSubmitted = orderStatus === statuses.created
         const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
         const isOwnerTheApprover = owner === approver
         let allowEdit = isOwner

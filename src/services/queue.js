@@ -3,21 +3,31 @@
  */
 import React from 'react'
 import uuid from 'uuid'
-import { BehaviorSubject, Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import DataStorage from '../utils/DataStorage'
 import { getTxFee, signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError, deferred } from '../utils/utils'
+import PromisE from '../utils/PromisE'
+import { BLOCK_DURATION_SECONDS } from '../utils/time'
+import {
+    deferred,
+    isArr,
+    isError,
+    isFn,
+    isObj,
+    isStr,
+    isValidNumber,
+    objClean,
+} from '../utils/utils'
 // services
 // keep the `client` variable as it will be used the `handleChatClient` function
 import _client, { rxIsConnected, rxIsInMaintenanceMode } from '../modules/chat/ChatClient'
-import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
+import { getConnection, query, getCurrentBlock } from './blockchain'
 import { translated } from './language'
 import { setToast } from './toast'
 import { rxOnline } from './window'
-import PromisE from '../utils/PromisE'
-import { BLOCK_DURATION_SECONDS } from '../utils/time'
+import { subjectAsPromise } from '../utils/reactHelper'
 
 const textsCap = translated({
     amount: 'amount',
@@ -283,16 +293,34 @@ export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
  * @name    checkComplete
  * @summary check if queue chain has finished execution
  * 
- * @param   {Object} queuedTask 
+ * @param   {String|Object} id   queue ID
+ * @param   {Boolean}       wait whether to wait until queue item has completed execution (success/error)
  * 
- * @returns {Boolean}
+ * @returns {Boolean|Promise}
  */
-export const checkComplete = queuedTask => {
-    if (!queuedTask) return true
-    const { next, status } = queuedTask
-    const isComplete = [statuses.ERROR, statuses.SUCCESS].includes(status)
-    const hasChild = isObj(next) && !!next.func && Object.values(QUEUE_TYPES).includes(next.type)
-    return !hasChild ? isComplete : checkComplete(next)
+export const checkComplete = async (id, wait = false) => {
+    const queueItem = isStr(id)
+        ? queue.get(id)
+        : id
+    if (wait) return await subjectAsPromise(
+        rxOnSave,
+        (value = { rootTask: {} }) => value.rootTask.id === id
+            && checkComplete(id)
+            && value
+    )[0]
+    if (!queueItem) return true
+
+    const { next, status } = queueItem
+    const isComplete = [statuses.ERROR, statuses.SUCCESS]
+        .includes(status)
+    const hasChild = isObj(next)
+        && !!next.func
+        && Object
+            .values(QUEUE_TYPES)
+            .includes(next.type)
+    return !hasChild
+        ? isComplete
+        : checkComplete(next)
 }
 
 /**
@@ -738,6 +766,8 @@ rxOnline.subscribe(resumeSuspended)
 
 export default {
     addToQueue,
+    checkComplete,
+    getById,
     queue,
     QUEUE_TYPES,
     resumeQueue,

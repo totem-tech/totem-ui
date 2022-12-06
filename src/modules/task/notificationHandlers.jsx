@@ -1,10 +1,12 @@
 import React from 'react'
+import { Button } from 'semantic-ui-react'
 import { isArr } from '../../utils/utils'
-import { ButtonGroup } from '../../components/buttons'
+import { ButtonAcceptOrReject, ButtonGroup } from '../../components/buttons'
 import { translated } from '../../services/language'
-import { confirm } from '../../services/modal'
+import { confirm, confirmAsPromise } from '../../services/modal'
 import {
 	addToQueue,
+	checkComplete,
 	QUEUE_TYPES,
 	statuses as queueStatuses,
 } from '../../services/queue'
@@ -20,19 +22,16 @@ import {
 	queueables,
 	statuses,
 } from './task'
-import { Button } from 'semantic-ui-react'
 import TaskDetails from './TaskDetails'
 
 let textsCap = {
-	accept: 'accept',
 	assigntTaskMsg: 'assigned a task to you.',
 	dispute: 'dispute',
-	invoiceAccept: 'accept task invoice',
+	invoiceAccept: 'accept task invoice and pay assignee',
 	invoiceAcceptConfirm: 'accept invoice and pay the assignee?',
 	invoiceDispute: 'reject task invoice',
 	invoiceDisputeConfirm: 'reject invoice and dispute task?',
 	pay: 'pay',
-	reject: 'reject',
 	task: 'task',
 	taskAccept: 'accept task',
 	taskAccepted: 'accepted the following task:',
@@ -90,33 +89,33 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
 	const { orderStatus } = task || {}
 	const isFulfiller = task && task.fulfiller === fulfillerAddress
 	// invalid taskId or task cannot be accepted
-	if (!task || !isFulfiller || orderStatus !== statuses.submitted)
-		return removeTaskNotifs(taskId, CHILD_TYPES.assignment)
+	const invalid = !task || !isFulfiller || orderStatus !== statuses.created
+	if (invalid) return removeTaskNotifs(taskId, CHILD_TYPES.assignment)
 
-	confirm({
+	const confirmed = await confirmAsPromise({
 		size: 'mini',
 		content: accepted
 			? textsCap.taskAccept
 			: textsCap.taskReject,
-		onConfirm: () => handleUpdateStatus(
-			fulfillerAddress,
-			taskId,
-			accepted
-				? statuses.accepted
-				: statuses.rejected,
-			accepted
-				? textsCap.taskAccept
-				: textsCap.taskReject,
-			(success) => success && removeTaskNotifs(
-				taskId,
-				CHILD_TYPES.assignment,
-			),
-			notificationId || getTaskNotifIds(
-				taskId,
-				CHILD_TYPES.assignment,
-			)
-		),
 	})
+	confirmed && await handleUpdateStatus(
+		fulfillerAddress,
+		taskId,
+		accepted
+			? statuses.accepted
+			: statuses.rejected,
+		accepted
+			? textsCap.taskAccept
+			: textsCap.taskReject,
+		(success) => success && removeTaskNotifs(
+			taskId,
+			CHILD_TYPES.assignment,
+		),
+		notificationId || getTaskNotifIds(
+			taskId,
+			CHILD_TYPES.assignment,
+		)
+	)
 }
 
 /**
@@ -129,20 +128,25 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
  * @param   {String}    notificationId (optional)
  */
 export const handleInvoicedResponse = async (taskId, ownerAddress, accepted, notificationId) => {
-	confirm({
-		content: accepted ? textsCap.invoiceAcceptConfirm : textsCap.invoiceDisputeConfirm,
-		onConfirm: () =>
-			handleUpdateStatus(
-				ownerAddress,
-				taskId,
-				accepted ? statuses.completed : statuses.disputed,
-				accepted ? textsCap.invoiceAccept : textsCap.invoiceDispute,
-				// remove matching notifications
-				() => removeTaskNotifs(taskId, CHILD_TYPES.invoiced),
-				notificationId || getTaskNotifIds(taskId, CHILD_TYPES.invoiced)
-			),
+	const confirmed = await confirmAsPromise({
+		content: accepted
+			? textsCap.invoiceAcceptConfirm
+			: textsCap.invoiceDisputeConfirm,
 		size: 'mini',
 	})
+	confirmed && await handleUpdateStatus(
+		ownerAddress,
+		taskId,
+		accepted
+			? statuses.completed
+			: statuses.disputed,
+		accepted
+			? textsCap.invoiceAccept
+			: textsCap.invoiceDispute,
+		// remove matching notifications
+		() => removeTaskNotifs(taskId, CHILD_TYPES.invoiced),
+		notificationId || getTaskNotifIds(taskId, CHILD_TYPES.invoiced)
+	)
 }
 
 /**
@@ -157,11 +161,11 @@ export const handleInvoicedResponse = async (taskId, ownerAddress, accepted, not
  *                                          See queue service for list of arguments supplied.
  * @param   {String|Array}  notificationId  attach notification ids so that they are disabled when action is in-progress
  */
-export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, then, notificationId) => {
+export const handleUpdateStatus = async (address, taskIds, statusCode, queueTitle, then, notificationId) => {
 	taskIds = isArr(taskIds)
 		? taskIds
 		: [taskIds]
-	taskIds.forEach(async (taskId) => {
+	const promises = taskIds.map(async (taskId) => {
 		const task = await query.orders(taskId)
 		if (!task) return
 		const {
@@ -257,8 +261,11 @@ export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, the
 				title: queueTitle,
 			},
 		)
-		addToQueue(queueItem)
+		const queueId = addToQueue(queueItem)
+		await checkComplete(queueId, true)
+		.then(console.warn)
 	})
+	await Promise.all(promises)
 }
 
 // set task related notification item view handlers
@@ -277,44 +284,32 @@ setTimeout(() =>
 					remove(id)
 					return {}
 				}
-
-				const buttons = [
-					{ color: 'blue', content: textsCap.accept },
-					{ color: 'red', content: textsCap.reject },
-				]
-				const onAction = (_, accepted) => handleAssignmentResponse(
+				const onAction = async (_, accepted) => await handleAssignmentResponse(
 					taskId,
 					fulfillerAddress,
 					accepted,
 					id,
 				)
+				const isLoading = queueStatuses.LOADING === status
 				const content = (
 					<div>
 						{senderIdBtn}
-						{` ${textsCap.assigntTaskMsg || ''}`.toLowerCase()}
-						<div>
-							{textsCap.yourIdentity}: {name}
-						</div>
-						<div>
+						{` ${textsCap.assigntTaskMsg || ''}`.toLowerCase()} 
 							<Button {...{
-								content: textsCap.viewTask,
 								icon: 'eye',
 								onClick: () => TaskDetails.asModal({ taskId }),
 								size: 'tiny',
+								title: textsCap.viewTask,
 							}} />
+						<div>
+							{textsCap.yourIdentity}: {name}
 						</div>
-						<ButtonGroup
-							{...{
-								buttons,
-								disabled: status === queueStatuses.LOADING,
-								fluid: true,
-								loading: status === queueStatuses.LOADING,
-								onAction,
-								or: true,
-								// what to pass when respective button is clicked
-								values: [true, false, null],
-							}}
-						/>
+						<ButtonAcceptOrReject {...{
+							acceptColor: 'blue',
+							disabled: isLoading,
+							fluid: true,
+							onAction,
+						}} />
 					</div>
 				)
 				return { icon, content }
@@ -347,17 +342,13 @@ setTimeout(() =>
 			childType: CHILD_TYPES.invoiced,
 			type: TASK_TYPE,
 			handler: (id, notification = {}, { senderIdBtn }) => {
-				const { data = {} } = notification
+				const { data = {}, status } = notification
 				const { ownerAddress, taskId, taskTitle } = data
 				const ownerIdentity = getIdentity(ownerAddress)
 				// invalid task or does task not belong to user
 				if (!taskId || !ownerIdentity) return remove(id)
 
-				const buttons = [
-					{ color: 'blue', content: textsCap.pay },
-					{ color: 'red', content: textsCap.dispute },
-				]
-				const onAction = (_, accepted) => handleInvoicedResponse(taskId, ownerAddress, accepted, id)
+				const onAction = async (_, accepted) => await handleInvoicedResponse(taskId, ownerAddress, accepted, id)
 				const content = (
 					<div>
 						{senderIdBtn} {textsCap.taskInvoiced}
@@ -369,17 +360,13 @@ setTimeout(() =>
 							<b>{textsCap.yourIdentity}: </b>
 							{ownerIdentity.name}
 						</div>
-						<ButtonGroup
-							{...{
-								buttons,
-								disabled: status === queueStatuses.LOADING,
-								fluid: true,
-								loading: status === queueStatuses.LOADING,
-								onAction,
-								or: true,
-								values: [true, false, null],
-							}}
-						/>
+						<ButtonAcceptOrReject {...{
+							acceptText: textsCap.pay,
+							disabled: status === queueStatuses.LOADING,
+							fluid: true,
+							onAction,
+							rejectText: textsCap.dispute,
+						}} />
 					</div>
 				)
 				return { icon, content }

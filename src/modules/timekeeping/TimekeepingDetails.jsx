@@ -1,14 +1,14 @@
 import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
+import { ButtonGroup } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
+import { showInfo } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
 import { isFn, objWithoutKeys } from '../../utils/utils'
-import { BehaviorSubject } from 'rxjs'
-import { showInfo } from '../../services/modal'
 import AddressName from '../partner/AddressName'
-import { ButtonGroup } from '../../components/buttons'
 
 let textsCap = {
     blockCount: 'number of blocks',
@@ -50,10 +50,7 @@ const TimekeepingDetails = props => {
             },
             // user is assignee
             !manage && {
-                content: x => {
-                    console.log({x})
-                    return <AddressName address={x.projectOwnerAddress} />
-                },
+                content: x => <AddressName address={x.projectOwnerAddress} />,
                 title: textsCap.projectOwner,
             },
             {

@@ -49,7 +49,7 @@ import { Balance, rxBalances, rxLocks } from '../identity/Balance'
 import { find as findIdentity, getSelected } from '../identity/identity'
 import PartnerForm from '../partner/PartnerForm'
 import { get as getPartner, rxPartners } from '../partner/partner'
-import { queueables } from './task'
+import { queueableApis, queueables } from './task'
 import { rxUpdater } from './useTasks'
 import getPartnerOptions from '../partner/getPartnerOptions'
 import { statuses } from '../../components/Message'
@@ -790,7 +790,7 @@ export default class TaskForm extends Component {
         queueProps.next = {
             description: title,
             id: queueId,
-            func: 'task',
+            func: queueableApis.updateDetails,
             name: nameSaveTask,
             recordId: taskId,
             then: handleResult(true),

@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Button, Icon } from 'semantic-ui-react'
-import { getUser, rxIsLoggedIn } from '../../utils/chatClient'
-import PromisE from '../../utils/PromisE'
-import { subjectAsPromise } from '../../utils/reactHelper'
+import { Icon } from 'semantic-ui-react'
+import { getUser } from '../../utils/chatClient'
 import { format } from '../../utils/time'
-import { deferred, isObj } from '../../utils/utils'
+import { isObj } from '../../utils/utils'
 // components
-import { ButtonAcceptOrReject } from '../../components/buttons'
+import { Button, ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
@@ -16,7 +14,7 @@ import Tags from '../../components/Tags'
 import Text from '../../components/Text'
 // services
 import { translated } from '../../services/language'
-import { showForm, confirm } from '../../services/modal'
+import { showForm, confirmAsPromise } from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
 import { useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
@@ -162,7 +160,7 @@ export default function TaskList(props) {
                     }),
                 }
             ].filter(Boolean),
-            rxTasks, // keep
+            rxTasks, // keep??
 
             // marketplace
             searchHideOnEmpty: !isMarketplace,
@@ -194,6 +192,7 @@ export default function TaskList(props) {
                                     keywords: '',
                                 }),
                             },
+                        fluid: isMobile,
                         icon: 'search',
                         iconPosition: 'left',
                         name: 'search',
@@ -246,15 +245,17 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
         title,
         owner,
     } = task
-    let applied
-    if (!isOwner) {
-        const { id: userId } = getUser() || {}
-        applied = !!applications.find(x => x.userId === userId)
-    }
+    let applied = !isOwner
+        && applications.map(x => x.userId)
+            .includes((getUser() || {}).id)
+
     return !isMarket || owner !== fulfiller
         ? <AddressName {...{ address: fulfiller }} />
         : (
             <Button {...{
+                color: !isOwner
+                    ? 'blue'
+                    : undefined,
                 content: isOwner
                     ? `${textsCap.applications}: ${applications.length}`
                     : applied
@@ -266,7 +267,6 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
                     ? 'eye'
                     : 'play',
                 key: taskId,
-                positive: !isOwner,
                 onClick: () => isOwner
                     ? null // show list of applications
                     : showForm(ApplicationForm, {
@@ -296,15 +296,15 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
 
     switch (orderStatus) {
         // fulfiller hasn't accepted/rejected yet
-        case statuses.submitted:
+        case statuses.created:
             // fulfiller responds to assignement (also handles relevant notifications)
             if (isFulfiller) return (
                 <ButtonAcceptOrReject
                     disabled={inProgress}
-                    loading={inProgress}
-                    onAction={(e, accepted) => {
+                    // loading={inProgress}
+                    onAction={async (e, accepted) => {
                         e.preventDefault()
-                        handleAssignmentResponse(
+                        await handleAssignmentResponse(
                             taskId,
                             address,
                             accepted,
@@ -321,22 +321,20 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
                     content={textsCap.createInvoice}
                     disabled={inProgress}
                     loading={inProgress}
-                    onClick={e => {
+                    onClick={async (e) => {
                         e.preventDefault()
-                        confirm({
+                        const confirmed = await confirmAsPromise({
                             confirmButton: textsCap.createInvoice,
                             content: textsCap.createInvoiceDesc,
                             header: textsCap.createInvoice,
-                            onConfirm: () => {
-                                handleUpdateStatus(
-                                    address,
-                                    taskId,
-                                    statuses.invoiced,
-                                    textsCap.createInvoiceTitle,
-                                )
-                            },
                             size: 'mini',
                         })
+                        confirmed && await handleUpdateStatus(
+                            address,
+                            taskId,
+                            statuses.invoiced,
+                            textsCap.createInvoiceTitle,
+                        )
                     }}
                     positive
                     title={textsCap.createInvoiceDesc}
@@ -350,10 +348,14 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
                 <ButtonAcceptOrReject
                     acceptText={textsCap.pay}
                     disabled={inProgress}
-                    loading={inProgress}
-                    onAction={(e, accepted) => {
+                    // loading={inProgress}
+                    onAction={async (e, accepted) => {
                         e.preventDefault()
-                        handleInvoicedResponse(taskId, address, accepted)
+                        await handleInvoicedResponse(
+                            taskId,
+                            address,
+                            accepted,
+                        )
                     }}
                     rejectText={textsCap.dispute}
                     title={textsCap.acceptInvoiceDesc}

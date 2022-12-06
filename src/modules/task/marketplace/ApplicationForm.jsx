@@ -5,10 +5,11 @@ import { statuses } from '../../../components/Message'
 import { addToQueue, QUEUE_TYPES } from '../../../services/queue'
 import { translated } from '../../../utils/languageHelper'
 import { iUseReducer } from '../../../utils/reactHelper'
-import { isFn, objClean } from '../../../utils/utils'
+import { generateHash, isFn } from '../../../utils/utils'
 import { TYPES, validate } from '../../../utils/validator'
 import { getIdentityOptions } from '../../identity/getIdentityOptions'
 import { rxIdentities } from '../../identity/identity'
+import { queueableApis } from '../task'
 
 let textsCap = {
     header: 'task application',
@@ -154,15 +155,18 @@ const handleSubmit = (rxSetState, props) => (_, values) => {
         isFn(onSubmit) && onSubmit(success, values)
     }
 
+    const func = queueableApis.marketApply
+    const queueId = generateHash(taskId + func)
     addToQueue({
         args: [{
             ...values,
             [inputNames.links]: linksArr,
         }],
-        func: 'client.taskMarketApply',
+        description: title,
+        func,
+        recordId: taskId,
         then: handleResult,
         title: textsCap.header,
-        description: title,
         type: QUEUE_TYPES.CHATCLIENT,
-    }, taskId)
+    }, queueId)
 }

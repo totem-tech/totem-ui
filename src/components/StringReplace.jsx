@@ -1,16 +1,27 @@
-import React, { isValidElement } from 'react'
+import React, {
+    isValidElement,
+    useEffect,
+    useState,
+} from 'react'
 import PropTypes from 'prop-types'
-import { EMAIL_REGEX, isFn, isStr, URL_REGEX } from '../utils/utils'
+import {
+    EMAIL_REGEX,
+    isBool,
+    isFn,
+    isStr,
+    textEllipsis,
+    URL_REGEX,
+} from '../utils/utils'
 
 /**
  * @name	StringReplace
- * @summary	embolden quoted texts
+ * @summary	
  * 
  * @param	{String|*}	children    if not string, it will be stringified.
  * @param   {Sting|*}   Component   (optonal) Default: `span`
  * @param   {String|*}  content     alternative to `children`
- * @param   {Function}  modifier    (optional) callback to modify the matched values to be displayed
- * @param	{RegExp}	regex		(optional) Regular expression to match texts to be embolden.
+ * @param   {Function}  replacer    (optional) callback to replace the matched values
+ * @param	{RegExp}	regex		(optional) Regular expression to match texts to be replaced.
  * 									Default: regex that matches quoted texts
  * 
  * @example 
@@ -28,54 +39,59 @@ const StringReplace = props => {
         Component = 'span',
         componentProps,
         content = children,
-        modifier,
         regex,
-        unmatchedModifier,
+        replacer,
+        unmatchedReplacer,
     } = props
     if (!(regex instanceof RegExp) || isValidElement(content)) return content
+    const [elements, setElements] = useState([])
     
     content = isStr(content)
         ? content
         : JSON.stringify(content, null, 4)
 
-	const matches = content.match(regex)
-	let arr = [content]
-	if (matches) {
-        const replacements = matches.map(str =>
-            <Component {...(
-                isFn(componentProps)
-                    ? componentProps(str)
-                    : componentProps
-            )}>
-                {isFn(modifier)
-                    ? modifier(str)
-                    : str}
-            </Component>
-        )
-		matches.forEach((match, i) => {
-            arr = arr.map(s =>
-                isValidElement(s) // already replaced
-                    ? s 
-                    : `${s}`
-                        .split(match)
-                        .map((x, j) =>
-                            j === 0
-                                ? [x]
-                                : [replacements[i], x])
+    useEffect(() => { 
+        const matches = content.match(regex)
+        let elements = [content]
+        if (matches) {
+            const replacements = matches.map(str =>
+                <Component {...(
+                    isFn(componentProps)
+                        ? componentProps(str)
+                        : componentProps
+                )}>
+                    {isFn(replacer)
+                        ? replacer(str)
+                        : str}
+                </Component>
             )
-                // double flattening required due to 3-dimentional Array
-                .flat().flat()
-		})
-    }
-    arr = arr.map((children, i) =>
-        <React.Fragment {...{
-            children: isFn(unmatchedModifier) && !isValidElement(children)
-                ? unmatchedModifier(children)
-                : children,
-            key: i
-        }} />
-    )
-	return arr
+            matches.forEach((match, i) => {
+                elements = elements.map(s =>
+                    isValidElement(s) // already replaced
+                        ? s 
+                        : `${s}`
+                            .split(match)
+                            .map((x, j) =>
+                                j === 0
+                                    ? [x]
+                                    : [replacements[i], x])
+                )
+                    // double flattening required due to 3-dimentional Array
+                    .flat().flat()
+            })
+        }
+        elements = elements.map((children, i) =>
+            <React.Fragment {...{
+                children: isFn(unmatchedReplacer) && !isValidElement(children)
+                    ? unmatchedReplacer(children)
+                    : children,
+                key: i
+            }} />
+        )
+        setElements(elements)
+    }, [content])
+
+	return elements
 }
 export default StringReplace
 
@@ -94,19 +110,19 @@ export default StringReplace
 export const Embolden = props => (
     <StringReplace {...{
         ...props,
-        modifier: quoted => {
+        replacer: quoted => {
             quoted = !props.keepQuotes
                 ? quoted.replace(/\"/g, '')
                 : quoted
-            return isFn(modifier)
-                ? modifier(quoted)
+            return isFn(replacer)
+                ? replacer(quoted)
                 : quoted
         },
     }} />
 )
 Embolden.propTypes = {
     keepQuotes: PropTypes.bool,
-    modifier: PropTypes.func,
+    replacer: PropTypes.func,
     //... all other properties accepted by <StringReplace />
 }
 Embolden.defaultProps = {
@@ -123,26 +139,48 @@ Embolden.defaultProps = {
  * 
  * @returns {Element}
  */
-export const Linkify = props => (
-    <StringReplace {...{
-        ...props,
-        componentProps: url => {
-            const cProps = {
-                href: url,
-                target: '_blank',
-                ...isFn(props.componentProps)
-                    ? props.componentProps(url)
-                    : props.componentProps,
-            }
-            if (url.match(EMAIL_REGEX)) cProps.href = `mailto:${url}`
-            return cProps
-        },
-    }} />
-)
+export const Linkify = props => {
+    const {
+        componentProps,
+        replacer,
+        shorten,
+    } = props
+    return (
+        <StringReplace {...{
+            ...props,
+            componentProps: url => {
+                const urlProps = {
+                    href: url,
+                    target: '_blank',
+                    ...isFn(componentProps)
+                        ? componentProps(url)
+                        : componentProps,
+                }
+                if (url.match(EMAIL_REGEX)) urlProps.href = `mailto:${url}`
+                return urlProps
+            },
+            replacer: !shorten
+                ? replacer
+                : url => textEllipsis(
+                    url,
+                    !isBool(shorten)
+                        && shorten
+                        || Linkify.defaultProps.shorten,
+                    5,
+                    true,
+                )
+        }} />
+    )
+}
 Linkify.propTypes = {
+    shorten: PropTypes.oneOfType([
+        PropTypes.bool,
+        PropTypes.number,
+    ]),
     //... all properties accepted by <StringReplace />
 }
 Linkify.defaultProps = {
     Component: 'a',
     regex: URL_REGEX,
+    shorten: 45,
 }

@@ -4,7 +4,7 @@ import React, {
 	useState,
 } from 'react'
 import PropTypes from 'prop-types'
-import { Button } from 'semantic-ui-react'
+import { Button as _Button } from 'semantic-ui-react'
 import {
 	deferred,
 	isFn,
@@ -49,15 +49,21 @@ let textsCap = {
 }
 textsCap = translated(textsCap, true)[1]
 
+export const Button = props => (
+	<ButtonGroup {...{
+		buttons: [props]
+	}} />
+)
+
 export const ButtonAcceptOrReject = React.memo(function ButtonAcceptOrReject(props) {
 	const {
 		acceptColor,
-		acceptProps,
+		acceptProps = {},
 		acceptText,
 		ignoreAttributes,
 		loading,
 		rejectColor,
-		rejectProps,
+		rejectProps = {},
 		rejectText,
 	} = props
 
@@ -67,15 +73,15 @@ export const ButtonAcceptOrReject = React.memo(function ButtonAcceptOrReject(pro
 			buttons: [
 				{
 					...acceptProps,
-					content: acceptText,
-					color: acceptColor,
-					loading: loading,
+					content: acceptText || acceptProps.content,
+					color: acceptColor || acceptProps.color,
+					loading: loading || acceptProps.loading,
 				},
 				{
 					...rejectProps,
-					content: rejectText,
-					color: rejectColor,
-					loading: loading,
+					content: rejectText || rejectProps.content,
+					color: rejectColor || rejectProps.color,
+					loading: loading || rejectProps.loading,
 				},
 			],
 			ignoreAttributes: [
@@ -96,7 +102,7 @@ ButtonAcceptOrReject.propTypes = {
 	rejectText: PropTypes.string,
 }
 ButtonAcceptOrReject.defaultProps = {
-	acceptColor: 'green',
+	acceptColor: 'blue',
 	acceptText: textsCap.accept,
 	ignoreAttributes: [
 		'acceptColor',
@@ -132,28 +138,40 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 		orText,
 		values = [],
 	} = props
+	const [[_loading, index], setLoading] = useState([])
 	const buttonsEl = buttons.map((button, i) => {
 		button = (isValidElement(button)
 			? button.props
 			: button)
 		return [
 			or && i > 0 && (
-				<Button.Or {...{
+				<_Button.Or {...{
 					key: 'or',
 					onClick: e => e.stopPropagation(),
 					text: orText,
 				}} />
 			),
-			<Button {...{
+			<_Button {...{
 				key: 'btn',
 				...button,
-				disabled: button.disabled || disabled,
-				loading: button.loading || loading,
-				onClick: event => {
+				disabled: button.disabled
+					|| disabled
+					|| _loading,
+				loading: button.loading
+					|| loading
+					|| (_loading && index === i),
+				onClick: async (event) => {
 					event.stopPropagation()
 					event.preventDefault()
-					isFn(button.onClick) && button.onClick(event, values[i])
-					isFn(onAction) && onAction(event, values[i])
+					setLoading([true, i])
+					try {
+						isFn(button.onClick) && await button.onClick(event, values[i])
+						isFn(onAction) && await onAction(event, values[i])
+					} catch (err) {
+						console.log(err)
+					} finally {
+						setLoading([false])
+					}
 				},
 			}} />,
 		].filter(Boolean)
@@ -171,7 +189,10 @@ export const ButtonGroup = React.memo(function ButtonGroup(props){
 })
 ButtonGroup.propTypes = {
 	buttons: PropTypes.arrayOf(PropTypes.object).isRequired,
-	El: PropTypes.oneOfType([PropTypes.string, PropTypes.func]).isRequired,
+	El: PropTypes.oneOfType([
+		PropTypes.string,
+		PropTypes.func,
+	]).isRequired,
 	ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
 	loading: PropTypes.bool,
 	// @onAction triggered whenever any of the @buttons are clicked.
@@ -186,7 +207,7 @@ ButtonGroup.propTypes = {
 }
 ButtonGroup.defaultProps = {
 	buttons: [],
-	El: Button.Group,
+	El: _Button.Group,
 	ignoreAttributes: [
 		'buttons',
 		'El',
@@ -502,7 +523,7 @@ UserID.showModal = (userId, partnerAddress) => {
 			<span style={{ textTransform: 'lowercase' }}>
 				@{userId + ' '}
 			</span>
-			<Button {...{
+			<_Button {...{
 				circular: true,
 				icon: 'chat',
 				onClick: () =>
@@ -521,7 +542,7 @@ UserID.showModal = (userId, partnerAddress) => {
 							visibility,
 						}} />
 						{` ${name} `}
-						<Button {...{
+						<_Button {...{
 							circular: true,
 							icon: 'pencil',
 							size: 'mini',

@@ -61,12 +61,14 @@ export default function TaskDetails(props = {}) {
     })
 
     useEffect(() => {
-        getCurrentBlock().then(setBlockNum)
+        let mounted = true
+        getCurrentBlock().then(n => mounted && setBlockNum(n))
+        return () => mounted = false
     }, [])
 
     useEffect(() => {
         if (!task || !Object.keys(task).length) return () => { }
-
+        
         const _task = { ...task, taskId }
         const ownerIsApprover = _task.owner === _task.approver
         const userIsOwner = (getUser() || {}).id === _task.createdBy
@@ -74,15 +76,6 @@ export default function TaskDetails(props = {}) {
             maxLength: 150,
             minWidth: 110,
         }
-        // const DIV = (props = {}) => (
-        //     <div {...{
-        //         ...props,
-        //         style: {
-        //             ...style,
-        //             ...props.style,
-        //         },
-        //     }} />
-        // )
         const columns = [
             {
                 content: ({ taskId }) => (
@@ -188,7 +181,7 @@ export default function TaskDetails(props = {}) {
             emptyMessage: undefined,
             inProgressIds,
         }
-        setTableProps(tableProps)   
+        setTableProps(tableProps)
     }, [setTableProps, getStatusView, blockNum, inProgressIds, task])
 
     if (!isObj(task) || !!error) return (
