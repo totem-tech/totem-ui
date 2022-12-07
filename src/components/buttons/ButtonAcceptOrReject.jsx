@@ -40,7 +40,7 @@ const ButtonAcceptOrReject = (props) => {
 			],
 			ignoreAttributes: [
 				...ignoreAttributes,
-				...ButtonGroup.defaultProps.ignoreAttributes,
+				...ButtonAcceptOrReject.defaultProps.ignoreAttributes,
 			],
 			or: true,
 			values: [true, false],
