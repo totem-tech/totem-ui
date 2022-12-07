@@ -534,8 +534,9 @@ body.inverted .ui.accordion.styled > .title:hover > .icon {
 .ui.inverted.buttons > .button.inverted:active,
 .ui.inverted.buttons > .button.inverted:focus,
 .ui.inverted.buttons > .button.inverted:hover {
-    border-bottom: 1px solid white !important;
-    border-top: 1px solid white !important;
+    /* border-bottom: 1px solid white !important;
+    border-top: 1px solid white !important; */
+	background: #393939 !important
 }
 /* Chat */
 body.inverted .chat-container {

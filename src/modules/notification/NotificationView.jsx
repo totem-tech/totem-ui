@@ -85,7 +85,7 @@ export default function NotificationView() {
 	})
 	const buttons = [
 		{
-			basic: true,
+			// basic: true,
 			compact: true,
 			content: textsCap.btnDelete,
 			icon: 'trash',
@@ -105,7 +105,7 @@ export default function NotificationView() {
 			}),
 		},
 		{
-			basic: true,
+			// basic: true,
 			compact: true,
 			content: textsCap.btnRead,
 			disabled: allRead,

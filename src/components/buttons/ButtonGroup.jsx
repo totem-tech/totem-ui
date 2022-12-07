@@ -76,7 +76,10 @@ const ButtonGroup = (props) => {
 				children: buttonsEl,
 				inverted,
 			},
-			ignoreAttributes
+			[
+				...ignoreAttributes,
+				...ButtonGroup.defaultProps.ignoreAttributes,
+			],
 		)} />
 	)
 }
