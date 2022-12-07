@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import PromisE from '../../utils/PromisE'
 import { unsubscribe } from '../../utils/reactHelper'
 import { isObj } from '../../utils/utils'
 import { query } from './task'
@@ -13,9 +12,8 @@ export default function useTask(taskId) {
         const handleResult = async task => {
             if (!isObj(task)) return
             try {
-                // await PromisE.delay(500000)
                 task = processOrder(task, taskId)
-                setData({ task })
+                mounted && setData({ task })
 
                 // // delay in case task is being updated
                 // await PromisE.delay(500)
@@ -26,9 +24,9 @@ export default function useTask(taskId) {
                     task,
                     detailsMap.get(taskId),
                 )
-                setData({ task })
+                mounted && setData({ task })
             } catch (error) {
-                setData({ error, task })
+                mounted && setData({ error, task })
             }
         }
         const sub = taskId && query.orders(

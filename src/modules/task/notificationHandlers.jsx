@@ -23,6 +23,7 @@ import {
 	statuses,
 } from './task'
 import TaskDetails from './TaskDetails'
+import IdentityIcon from '../identity/IdentityIcon'
 
 let textsCap = {
 	assigntTaskMsg: 'assigned a task to you.',
@@ -278,7 +279,7 @@ setTimeout(() =>
 			handler: (id, notification = {}, { senderIdBtn }) => {
 				const { data, status } = notification
 				const { fulfillerAddress, taskId } = data || {}
-				const { name } = getIdentity(fulfillerAddress) || {}
+				const { address, name, usageType } = getIdentity(fulfillerAddress) || {}
 				if (!name) {
 					// fulfillerAddress doesn't belong to the user!
 					remove(id)
@@ -294,14 +295,17 @@ setTimeout(() =>
 				const content = (
 					<div>
 						{senderIdBtn}
-						{` ${textsCap.assigntTaskMsg || ''}`.toLowerCase()} 
-							<Button {...{
-								icon: 'eye',
-								onClick: () => TaskDetails.asModal({ taskId }),
-								size: 'tiny',
-								title: textsCap.viewTask,
-							}} />
+						{` ${textsCap.assigntTaskMsg || ''}`.toLowerCase()}
+						{' '}
+						<Button {...{
+							icon: 'eye',
+							onClick: () => TaskDetails.asModal({ taskId }),
+							size: 'tiny',
+							style: { padding: 3 },
+							title: textsCap.viewTask,
+						}} />
 						<div>
+							<IdentityIcon {...{ address, usageType }} /> 
 							{textsCap.yourIdentity}: {name}
 						</div>
 						<ButtonAcceptOrReject {...{
@@ -378,20 +382,32 @@ setTimeout(() =>
 			handler: (id, notification = {}, { senderIdBtn }) => {
 				const { data = {} } = notification
 				const { disputed, fulfillerAddress, taskId, taskTitle } = data
-				const identity = getIdentity(fulfillerAddress)
+				const { address, name, usageType } = getIdentity(fulfillerAddress)
 				// invalid task or task is not assigned to user's identity
-				if (!identity || !taskId) return remove(id)
+				if (!name || !taskId) return remove(id)
 
 				const content = (
 					<div>
-						{senderIdBtn} {disputed ? textsCap.taskDisputed : textsCap.taskPaid}
-						<div>
-							<b>{textsCap.yourIdentity}: </b>
-							{identity.name}
-						</div>
+						{senderIdBtn} {(
+							disputed
+								? textsCap.taskDisputed
+								: textsCap.taskPaid
+						).toLowerCase()}
 						<div>
 							<b>{textsCap.task}: </b>
 							{taskTitle || taskId}
+							{' '}
+							<Button {...{
+								icon: 'eye',
+								onClick: () => TaskDetails.asModal({ taskId }),
+								size: 'tiny',
+								style: { padding: 3 },
+								title: textsCap.viewTask,
+							}} />
+						</div>
+						<div>
+							<b>{textsCap.yourIdentity}: </b>
+							<IdentityIcon {...{address, usageType }} /> {name}
 						</div>
 					</div>
 				)

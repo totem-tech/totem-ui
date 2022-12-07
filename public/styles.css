@@ -594,9 +594,11 @@ body.inverted .ui.dropdown .menu > .item > .description {
     color: #ccc !important;
 }
 body.inverted .ui.dropdown .menu > .item.selected,
-body.inverted .ui.dropdown .menu > .item:hover {
+body.inverted .ui.dropdown .menu > .item:hover,
+body.inverted .ui.menu .ui.dropdown .menu > .item.selected,
+body.inverted .ui.menu .ui.dropdown .menu > .item:hover {
     color: white !important;
-    background: grey;
+    background: grey !important;
 }
 /* input acton/label */
 body.inverted .ui.input.label > .label,

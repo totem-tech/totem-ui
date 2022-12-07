@@ -561,7 +561,7 @@ setItemViewHandler(
             icon: 'money bill alternate outline',
             content: (
                 <div>
-                    {senderIdBtn} {textsCap.transferedFunds}
+                    {senderIdBtn} {textsCap.transferedFunds.toLowerCase()}
                     <Currency {...{
                         EL: 'div',
                         prefix: <b>{textsCap.amount}: </b>,
