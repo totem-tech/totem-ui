@@ -304,9 +304,8 @@ export const checkComplete = async (id, wait = false) => {
         : id
     if (wait) return await subjectAsPromise(
         rxOnSave,
-        (value = { rootTask: {} }) => value.rootTask.id === id
+        (value = {}) => (value.rootTask || {}).id === id
             && checkComplete(id)
-            && value
     )[0]
     if (!queueItem) return true
 

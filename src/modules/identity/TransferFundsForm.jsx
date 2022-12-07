@@ -1,41 +1,64 @@
-import React, { Component, useState } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject, defer } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
 // utils
 import { ss58Decode } from '../../utils/convert'
 import { getTxFee } from '../../utils/polkadotHelper'
-import { arrSort, textEllipsis, deferred, isValidNumber, isArr } from '../../utils/utils'
+import {
+    deferred,
+    isArr,
+    isValidNumber,
+} from '../../utils/utils'
+import {
+    copyRxSubject,
+    subjectAsPromise,
+    useRxSubject,
+} from '../../utils/reactHelper'
 // components
-import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import FormBuilder, {
+    findInput,
+    fillValues,
+} from '../../components/FormBuilder'
+import { statuses } from '../../components/Message'
 import Text from '../../components/Text'
 // services
-import { getConnection, query, queueables, randomHex } from '../../services/blockchain'
+import {
+    getConnection,
+    queueables,
+    randomHex,
+} from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { unsubscribe } from '../../services/react'
 // modules
 import Currency from '../currency/Currency'
 import {
     convertTo,
     currencyDefault,
-    getCurrencies,
     rxSelected as rxSelectedCurrency,
 } from '../currency/currency'
-import { remove as removeNotif, setItemViewHandler } from '../notification/notification'
-import { get as getPartner, getAddressName, rxPartners } from '../partner/partner'
-import PartnerForm from '../partner/PartnerForm'
-import Balance, { rxBalances, rxLocks } from './Balance'
-import { get as getIdentity, rxIdentities, rxSelected } from './identity'
-import AddressName from '../partner/AddressName'
-import { copyRxSubject, subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
-import { statuses } from '../../components/Message'
-import IdentityIcon from './IdentityIcon'
-import PartnerIcon from '../partner/PartnerIcon'
-import { getIdentityOptions } from './getIdentityOptions'
+import {
+    remove as removeNotif,
+    setItemViewHandler,
+} from '../notification/notification'
+import AddressName from '../partner/AddressName'
 import getPartnerOptions from '../partner/getPartnerOptions'
+import {
+    get as getPartner,
+    getAddressName,
+    rxPartners,
+} from '../partner/partner'
+import PartnerForm from '../partner/PartnerForm'
+import Balance, { rxBalances } from './Balance'
+import { getIdentityOptions } from './getIdentityOptions'
+import {
+    get as getIdentity,
+    rxIdentities,
+    rxSelected,
+} from './identity'
+import IdentityIcon from './IdentityIcon'
 
 const textsCap = translated({
     amount: 'amount',
@@ -299,10 +322,9 @@ export default class TransferFundsForm extends Component {
             currencySent,
         )
         const { api } = await getConnection()
-        const balance = rxBalances.value.get(from) || 0
-        const locks = rxLocks.value.get(from) || []
-        const totalLocked = locks.reduce((sum, x) => sum + x.amount, 0)
-        const freeBalance = balance - totalLocked
+        // wait until balance for this identity is fetched
+        const balances = await subjectAsPromise(rxBalances, balances => isValidNumber(balances.get(from)))[0]
+        const freeBalance = balances.get(from)
         try {
             const tx = await api.tx.transfer.networkCurrency(
                 to || from,
@@ -359,7 +381,7 @@ export default class TransferFundsForm extends Component {
         const amountReceived = values[this.names.amountReceived]
         const currencyReceived = values[this.names.currencyReceived]
         const amountReceivedIn = findInput(inputs, this.names.amountReceived)
-        const currencies = await subjectAsPromise(this.rxCurrencies, x => isArr(x) && x)[0]
+        const currencies = await subjectAsPromise(this.rxCurrencies, isArr)[0]
         const currencyObj = currencies.find(x => x.currency === currencyReceived) || {}
         amountReceivedIn.decimals = parseInt(currencyObj.decimals || '') || 0
         this.setState({ inputs })

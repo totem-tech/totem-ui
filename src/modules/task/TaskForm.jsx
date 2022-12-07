@@ -302,7 +302,7 @@ export default class TaskForm extends Component {
                         const currency = values[inputNames.currency]
                         const bounty = values[inputNames.bounty]
                         const bountyIn = findInput(inputs, inputNames.bounty)
-                        const currencies = await subjectAsPromise(this.rxCurrencies, x => isArr(x) && x)[0]
+                        const currencies = await subjectAsPromise(this.rxCurrencies, isArr)[0]
                         const { decimals = 0 } = currencies.find(x => x.currency === currency) || {}
                         bountyIn.decimals = parseInt(decimals || '') || 0
                         bountyIn.message = null
@@ -586,18 +586,12 @@ export default class TaskForm extends Component {
         const promise = new Promise(async (resolve, reject) => {
             try {
                 // wait until balance is retrieved
-                await subjectAsPromise(
+                const balances = await subjectAsPromise(
                     rxBalances,
-                    balances => balances.get(address)
+                    balances => isValidNumber(balances.get(address)),
                 )
                 // user account balance
-                let balance = rxBalances.value.get(address)
-                const locks = rxLocks.value.get(address)
-                const amtLocked = locks.reduce((totalLocked, lock) =>
-                    totalLocked + lock.amount,
-                    0,
-                )
-                const freeBalance = balance - amtLocked
+                const freeBalance = balances.get(address)
                 // no need to convert currency if amount is zero or XTX is the selected currency
                 const requireConversion = bounty && currency !== currencyDefault
                 // amount in TOTEM

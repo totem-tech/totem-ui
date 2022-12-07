@@ -23,6 +23,9 @@ const textsCap = translated({
 export const rxBalances = new BehaviorSubject(new Map())
 export const rxLocks = new BehaviorSubject(new Map())
 
+window.rxBalances = rxBalances
+window.rxLocks = rxLocks
+
 export const Balance = props => {
 	let {
 		address,
@@ -53,11 +56,8 @@ export const Balance = props => {
 		? userLocks(address)
 		: useRxSubject(rxLocks, valueModifier)[0]
 	const isLoading = !isValidNumber(balance)
-	const lockedBalance = (locks || [])
+	const totalLocked = (locks || [])
 		.reduce((sum, next) => sum + next.amount, 0)
-	const freeBalance = isLoading
-		? undefined
-		: balance - lockedBalance
 	style = {
 		cursor: 'pointer',
 		userSelect: 'none',
@@ -81,7 +81,7 @@ export const Balance = props => {
 			prefix,
 			style,
 			suffix,
-			value: freeBalance,
+			value: balance,
 		}} />
 	)
 	const getDetails = () => (
@@ -103,11 +103,11 @@ export const Balance = props => {
 							</span>
 						),
 						suffix: detailsSuffix,
-						value: lockedBalance,
+						value: totalLocked,
 						unitDisplayed,
 					}} />
 				),
-			value: balance,
+			value: balance + totalLocked,
 		}} />
 	)
 	return showDetailed === null
