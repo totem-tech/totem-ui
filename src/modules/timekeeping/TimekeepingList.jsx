@@ -2,10 +2,10 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
-import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
 import { blockToDate } from '../../utils/time'
 import { isArr, deferred, isFn, isBool } from '../../utils/utils'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import {
     hashTypes,

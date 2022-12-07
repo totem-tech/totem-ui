@@ -31,7 +31,7 @@ const PartnerIcon = props => {
         ? visibilityTypes.PUBLIC
         : type
     const isMobile = rxLayout.value === MOBILE
-    let color, name, title
+    let color = 'grey', name, title
 
     switch (_type) {
         case types.BUSINESS:

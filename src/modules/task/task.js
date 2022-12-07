@@ -41,6 +41,11 @@ export const approvalStatusNames = {
     1: textsCap.approved,
     2: textsCap.rejected,
 }
+export const orderTypes = {
+    service: 0,
+    inventory: 1,
+    asset: 2,
+}
 export const statuses = {
     inaccessible: -1,
     created: 0,
@@ -218,8 +223,8 @@ export const queueables = {
         fulfiller,
         isSell, // 0 = buy, 1 = open
         amountXTX, // total amount
-        isClosed, // false = open, true = closed
-        orderType = 0,
+        isMarket,
+        orderType = orderTypes.service,
         deadline, // must be equal or higher than `currentBlockNumber + 11520` blocks. 
         dueDate, // must be equal or higher than deadline
         orderId, // (optional) determines whether to create or update a record
@@ -247,7 +252,7 @@ export const queueables = {
             fulfiller,
             isSell,
             amountXTX,
-            isClosed,
+            isMarket,
             orderType,
             deadline,
             dueDate,
@@ -270,25 +275,25 @@ export const queueables = {
      * @name    saveSpfso
      * @summary create/update SPFSO (Simple Pre-Funded Order)
      * 
-     * @param   {String} owner      identity of the owner/creator
-     * @param   {String} approver   idenitty of the assignee
-     * @param   {String} fulfiller  identity of the assignee
-     * @param   {Number} isSell     indicates buy/sell order. 0 => buy, 1 => sell
-     * @param   {String} amountXTX  amount in the native currency
+     * @param   {String}  owner     identity of the owner/creator
+     * @param   {String}  approver  idenitty of the assignee
+     * @param   {String}  fulfiller identity of the assignee
+     * @param   {Number}  isSell    indicates buy/sell order. 0 => buy, 1 => sell
+     * @param   {String}  amountXTX amount in the native currency
      * @param   {Boolean} isMarket  (optional) indicates if the order is to be placed on the marketplace.
      *                              Should have no assignee (=> use owner) when creating.
      *                              Default: `false`
-     * @param   {Number} orderType  (optional) indicates order type:
+     * @param   {Number}  orderType (optional) indicates order type:
      *                              0 => service order (default)
      *                              1 => inventory order
      *                              2 => asset order extensible
-     * @param   {Number} deadline   block number of the deadline to accept the order.
+     * @param   {Number}  deadline  block number of the deadline to accept the order.
      *                              must be equal or higher than `currentBlockNumber + 11520` blocks. 
-     * @param   {Number} dueDate    block number of when the order is expected to be fulfilled.
+     * @param   {Number}  dueDate   block number of when the order is expected to be fulfilled.
      *                              must be equal or higher than deadline
-     * @param   {String} orderId    (optional) leave empty when creating an order
-     * @param   {String} bonsaiToken
-     * @param   {String} queueProps (optional) extra properties to be supplied to the queue items (see queue service)
+     * @param   {String}  orderId   (optional) leave empty when creating an order
+     * @param   {String}  bonsaiToken
+     * @param   {String}  queueProps (optional) extra properties to be supplied to the queue items (see queue service)
      * 
      * @returns {Object} 
      */
@@ -296,10 +301,10 @@ export const queueables = {
         owner,
         approver,
         fulfiller,
-        isSell,
+        isSell = 0,
         amountXTX,
         isMarket = false,
-        orderType = 0,
+        orderType = orderTypes.service,
         deadline,
         dueDate,
         orderId,

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Checkbox, Button, Icon } from 'semantic-ui-react'
+import { Button } from '../../components/buttons'
 import { textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { ButtonGroup, UserID } from '../../components/buttons'

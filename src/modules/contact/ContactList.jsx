@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Button } from 'semantic-ui-react'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'

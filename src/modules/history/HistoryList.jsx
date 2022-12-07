@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react'
-import { Button, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
+import { useRxSubject } from '../../utils/reactHelper'
 import { format } from '../../utils/time'
 import {
     clearClutter,
     isFn,
     textEllipsis,
 } from '../../utils/utils'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
 import {
@@ -18,7 +20,8 @@ import {
     remove as removeQueueItem,
     statuses,
 } from '../../services/queue'
-import { getAddressName } from '../partner/partner'
+import { MOBILE, rxLayout } from '../../services/window'
+import AddressName from '../partner/AddressName'
 import {
     clearAll,
     getAll,
@@ -26,9 +29,6 @@ import {
     rxHistory,
 } from './history'
 import HistoryItemDetailsForm from './HistoryItemDetailsForm'
-import { MOBILE, rxLayout } from '../../services/window'
-import { useRxSubject } from '../../utils/reactHelper'
-import AddressName from '../partner/AddressName'
 
 const textsCap = translated({
     action: 'action',

@@ -1,7 +1,6 @@
 import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import {
-	Button,
 	Form,
 	Header,
 	Icon,
@@ -9,6 +8,7 @@ import {
 } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
+import { Button } from './buttons'
 import Message, { statuses } from '../components/Message'
 import { translated } from '../services/language'
 import { closeModal } from '../services/modal'

@@ -21,7 +21,7 @@ const CurrencyDropdown = React.memo((props) => {
                         {currency}
                     </span>
                     {' - '}
-                    <span style={{ color: 'grey' }}>
+                    <span style={{ color: '#ccc' }}>
                         {name}
                     </span>
                 </span>

@@ -32,7 +32,7 @@ const IdentityIcon = props => {
     const ut = isReward
         ? USAGE_TYPES.REWARD
         : usageType
-    let color, name, title
+    let color = 'grey', name, title
     switch (ut) {
         case USAGE_TYPES.BUSINESS:
             name = 'building'

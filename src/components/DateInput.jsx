@@ -2,9 +2,17 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown as DD, Icon } from 'semantic-ui-react'
-import { className, isDate, isFn, isStr, isValidDate, objWithoutKeys, strFill } from '../utils/utils'
+import {
+    className,
+    isDate,
+    isFn,
+    isStr,
+    isValidDate,
+    objWithoutKeys,
+    strFill,
+} from '../utils/utils'
 import { useRxSubject } from '../services/react'
-import { MOBILE, rxLayout } from '../services/window'
+import { MOBILE, rxLayout, useInverted } from '../services/window'
 import { translated } from '../services/language'
 
 const textsCap = translated({
@@ -78,6 +86,7 @@ function DateInput(props) {
     const isMobile = !fluidOnMobile
         ? false
         : useRxSubject(rxLayout, l => l === MOBILE)[0]
+    const inverted = useInverted()
     const [[yearOptions, monthOptions, dayOptions]] = useState(() => [years, months, days]
         .map((arr, i) => [
             {
@@ -142,9 +151,10 @@ function DateInput(props) {
         <div {...{
             ...objWithoutKeys(props, ignoreAttributes),
             className: className({
-                'ui button': true,
-                negative: props.invalid || invalid,
                 fluid: fluid || isMobile,
+                inverted,
+                negative: props.invalid || invalid,
+                'ui button': true,
             }),
             style: {
                 cursor: 'unset',

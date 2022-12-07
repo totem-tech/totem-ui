@@ -1,7 +1,6 @@
 import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import {
-	Button,
 	Dropdown,
 	Grid,
 	Icon,
@@ -20,8 +19,8 @@ import {
 	isStr,
 	arrUnique,
 	isObj,
-	isDefined,
 } from '../utils/utils'
+import { Button } from './buttons'
 import { Invertible } from './Invertible'
 import Message, { statuses } from './Message'
 import Paginator from './Paginator'

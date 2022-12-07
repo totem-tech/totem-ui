@@ -1,13 +1,11 @@
 import React, { Component } from 'react'
-import { Button } from 'semantic-ui-react'
 import {
-    copyToClipboard,
     isFn,
     textEllipsis,
 } from '../../utils/utils'
-import { ButtonGroup } from '../../components/buttons'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
-import FormBuilder, { findInput } from '../../components/FormBuilder'
+import { findInput } from '../../components/FormBuilder'
 import { statuses } from '../../components/Message'
 import Text from '../../components/Text'
 import { translated } from '../../services/language'
@@ -16,7 +14,7 @@ import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { rxLayout, MOBILE } from '../../services/window'
 import { getSelected } from '../identity/identity'
-import TimekeepingList from '../timekeeping/TimekeepingList'
+import { blocksToDuration } from '../timekeeping/timekeeping'
 import {
     getProjects,
     openStatuses,
@@ -25,13 +23,11 @@ import {
     queueables,
     forceUpdate,
 } from './activity'
+import ActivityDetails from './ActivityDetails'
 import ActivityForm from './ActivityForm'
 import ActivityReassignForm from './ActivityReassignForm'
 import ActivityTeamList from './ActivityTeamList'
-import ActivityDetails from './ActivityDetails'
-import { blocksToDuration } from '../timekeeping/timekeeping'
 
-const toBeImplemented = () => alert('To be implemented')
 let textsCap = {
     actions: 'actions',
     activity: 'activity',
@@ -213,7 +209,7 @@ export default class ActivityList extends Component {
                 //     content: textsCap.export,
                 //     icon: 'file excel',
                 //     name: 'export',
-                //     onClick: toBeImplemented
+                //     onClick: () => alert('To be implemented')
                 // },
             ]
         }

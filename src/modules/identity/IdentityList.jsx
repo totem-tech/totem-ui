@@ -1,9 +1,9 @@
 import React from 'react'
-import { Button, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
 import storage from '../../utils/storageHelper'
 import { format } from '../../utils/time'
 // components
-import { ButtonGroup } from '../../components/buttons'
+import { Button, ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import Tags from '../../components/Tags'
 // services

@@ -3,10 +3,8 @@
  */
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { BehaviorSubject } from 'rxjs'
-import { Button } from 'semantic-ui-react'
 // components
-import { UserID } from '../../components/buttons'
+import { Button, UserID } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
 import Message, { statuses } from '../../components/Message'

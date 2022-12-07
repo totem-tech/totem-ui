@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import uuid from 'uuid'
-import { getConnection, query } from '../../services/blockchain'
-import { Button } from 'semantic-ui-react'
+import { Button } from '../../components/buttons'
+import { query } from '../../services/blockchain'
 import { copyToClipboard } from '../../utils/utils'
 
 let eventsCached = []

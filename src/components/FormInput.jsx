@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject, Subject } from 'rxjs'
 import {
 	Accordion as S_Accordion,
-	Button as S_Button,
 	Checkbox as S_Checkbox,
 	Dropdown as S_Dropdown,
 	Form,
@@ -28,6 +27,7 @@ import {
 	isDefined,
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
+import { Button } from './buttons'
 import Message, { statuses } from './Message'
 import { Invertible } from './Invertible'
 // Custom Inputs
@@ -44,7 +44,6 @@ import Text from './Text'
 const Accordion = React.memo(S_Accordion)
 const Accordion_Content = React.memo(S_Accordion.Content)
 const Accordion_Title = React.memo(S_Accordion.Title)
-const Button = React.memo(S_Button)
 const Checkbox = React.memo(S_Checkbox)
 const Dropdown = React.memo(S_Dropdown)
 const Form_Field = React.memo(Form.Field)

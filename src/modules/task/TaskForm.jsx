@@ -321,7 +321,7 @@ export default class TaskForm extends Component {
                     rxValue: new BehaviorSubject(0),
                 },
                 {
-                    hidden: values => !values[inputNames.isMarket],
+                    hidden: true, //values => !values[inputNames.isMarket],
                     multiple: false,
                     name: inputNames.prefunded,
                     options: [{
@@ -589,7 +589,7 @@ export default class TaskForm extends Component {
                 const balances = await subjectAsPromise(
                     rxBalances,
                     balances => isValidNumber(balances.get(address)),
-                )
+                )[0]
                 // user account balance
                 const freeBalance = balances.get(address)
                 // no need to convert currency if amount is zero or XTX is the selected currency
@@ -673,6 +673,11 @@ export default class TaskForm extends Component {
     }, 300)
 
     handleSubmit = async (_, values) => {
+        let {
+            onSubmit,
+            taskId,
+            values: valueP = {},
+        } = this.props
         // convert deadline & dueDate string date to block number
         const currentBlock = await getCurrentBlock()
         const deadlineN = inputNames.deadline
@@ -685,13 +690,6 @@ export default class TaskForm extends Component {
             values[dueDateN] + 'T00:00', // use local time instead of UTC
             currentBlock,
         )
-        // values[inputNames.tags] = values[inputNames.tags].join()
-
-        let {
-            onSubmit,
-            taskId,
-            values: valueP = {},
-        } = this.props
         const ownerAddress = valueP.owner || getSelected().address
         const amountXTX = values[inputNames.amountXTX]
         const deadline = values[deadlineN]

@@ -415,18 +415,6 @@ body.mobile .fields.form-group > .field:not(:last-child) {
 .accordion .message > .content > .content {
 	padding: initial !important;
 }
-/* Accordion when in dark mode */
-body.inverted .ui.accordion.styled {
-	border: 1px solid grey !important;
-	border-radius: 3px;
-}
-body.inverted .ui.accordion.styled > .title:not(:first-child) {
-	border-top: 1px solid grey;
-}
-body.inverted .ui.accordion.styled > .title.active > .icon,
-body.inverted .ui.accordion.styled > .title:hover > .icon {
-	color: white !important;
-}
 /* checkbox/radios: bold text when checked */
 input:checked ~ label {
 	font-weight: bold;
@@ -521,6 +509,34 @@ body.inverted .accordion {
 body.inverted #main-content .icon.inverted {
 	background: inherit;
 }
+/* Accordion when in dark mode */
+body.inverted .ui.accordion.styled {
+	border: 1px solid grey !important;
+	border-radius: 3px;
+}
+body.inverted .ui.accordion.styled > .title:not(:first-child) {
+	border-top: 1px solid grey;
+}
+body.inverted .ui.accordion.styled > .title.active > .icon,
+body.inverted .ui.accordion.styled > .title:hover > .icon {
+	color: white !important;
+}
+/* button/group */
+.ui.button.inverted {
+    background: grey !important;
+    box-shadow: none !important;
+	color: white !important;
+}
+.ui.inverted.buttons > .button.inverted {
+	border: 1px solid grey;
+    box-shadow: none !important;
+}
+.ui.inverted.buttons > .button.inverted:active,
+.ui.inverted.buttons > .button.inverted:focus,
+.ui.inverted.buttons > .button.inverted:hover {
+    border-bottom: 1px solid white !important;
+    border-top: 1px solid white !important;
+}
 /* Chat */
 body.inverted .chat-container {
 	background: #2a2a2a;
@@ -540,13 +556,61 @@ body.inverted .ui.basic.inverted.segment.data-table {
 	background: #464646;
 	/* border: 1px solid #505050; */
 }
-/* Vertical DataTable */
+/* DataTableVertical */
 body.inverted .ui.table.vertical tbody tr td:first-child {
     background: #696969 !important;
     color: white !important;
 }
 body.inverted .ui.table.vertical tbody tr:not(:last-child) td:first-child {
     border-bottom: 1px solid #80808045 !important;    
+}
+/* 
+ * Form and Inputs
+ */
+body.inverted input,
+body.inverted textarea,
+body.inverted .dropdown.button,
+body.inverted .dropdown.selection {
+    background: #333 !important;
+    border: 1px solid #333 !important;
+    /* color: #ccc !important; */
+	color: white  !important;
+}
+body.inverted .ui.input *.disabled,
+body.inverted .ui.input *[readonly]{
+    background: grey !important;
+	border: 1px solid grey !important;
+}
+/* dropdown menu */
+body.inverted .ui.dropdown .menu,
+body.inverted .ui.dropdown .menu > .item,
+body.inverted .ui.menu .ui.dropdown .menu > .item {
+    background: #333 !important;
+    border: none !important;
+    color: white !important;
+}
+body.inverted .ui.dropdown .menu > .item > .description {
+    color: #ccc !important;
+}
+body.inverted .ui.dropdown .menu > .item.selected,
+body.inverted .ui.dropdown .menu > .item:hover {
+    color: white !important;
+    background: grey;
+}
+/* input acton/label */
+body.inverted .ui.input.label > .label,
+body.inverted .ui.input.action > .button {
+	background: #ccc !important;
+    border: 1px solid #ccc !important;
+    color: grey;
+}
+body.inverted .ui.input > .icon {
+    color: #ccc;
+}
+/* Label */
+.ui.label.inverted {
+    background: grey !important;
+    color: white !important;
 }
 /* Modals */
 body.inverted .ui.modal,
@@ -598,7 +662,6 @@ body.inverted .ui.steps .step:not(.active):after {
 	color: white !important;
 	transition: none;
 }
-
 body.inverted .ui.steps .step,
 body.inverted .ui.steps .step.active,
 body.inverted .ui.steps .step.active:after {

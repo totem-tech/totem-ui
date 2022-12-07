@@ -1,14 +1,11 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button, Icon } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
-import { useRxSubject } from '../../utils/reactHelper'
-// import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
-import { MOBILE, rxLayout } from '../../services/window'
-// import TimeSince from '../../components/TimeSince'
-import { blocksToDuration, statuses } from './timekeeping'
-// import Invertible from '../../components/Invertible'
 import { translated } from '../../utils/languageHelper'
+import { useRxSubject } from '../../utils/reactHelper'
+import { Button } from '../../components/buttons'
+import { MOBILE, rxLayout } from '../../services/window'
+import { blocksToDuration, statuses } from './timekeeping'
 
 let textsCap = {
     approved: 'approved time',
@@ -82,63 +79,6 @@ const SumDuration = props => {
             {getBtn(submitted, textsCap.submitted)}
         </div>
     )
-
-    // // sum up the total duration of selected records 
-    // const sumBlocks = ids
-    //     .map(id => (data.get(id) || {}).total_blocks)
-    //     .filter(Boolean)
-    //     .reduce((sum, next) => sum + next, 0)
-    // const numSeconds = sumBlocks * BLOCK_DURATION_SECONDS
-    // const dateFrom = new Date()
-    // dateFrom.setSeconds(dateFrom.getSeconds() - numSeconds)
-    // const dateTo = new Date()
-    // return !!sumBlocks && (
-    //     <div style={{
-    //         display: isMobile 
-    //             ? 'block'
-    //             : 'inline-flex',
-    //         textAlign: 'center',
-    //         whiteSpace: 'nowrap',
-    //         minHeight: 38,
-    //         minWidth: 180,
-    //     }}>
-    //         <div style={{
-    //             display: 'inline-block',
-    //             fontSize: '150%',
-    //         }}>
-    //             <Icon.Group>
-    //                 <Icon name='clock outline' size='large' />
-    //                 <Icon corner inverted name='check circle' />
-    //             </Icon.Group>
-    //         </div>
-    //         <TimeSince {...{
-    //             asDuration: true,
-    //             date: dateFrom,
-    //             dateTo,
-    //             durationConfig: {
-    //                 statisticProps: {
-    //                     style: { 
-    //                         marginBottom: 0,
-    //                         marginTop: -5,
-    //                     },
-    //                     labelProps: {
-    //                         style: { fontSize: 8 },
-    //                     },
-    //                     valueProps: {
-    //                         style: {
-    //                             // fontSize: 14, // does't work due to Semantic's "!important" usage
-    //                             zoom: 0.3
-    //                         }
-    //                     }
-    //                 },
-    //                 withHours: true,
-    //             },
-    //             key: numSeconds,
-    //             El: 'span',
-    //             updateFrequency: null,
-    //         }} />
-    //     </div>
-    // )
 }
 SumDuration.propTypes = {
     data: PropTypes.oneOfType([

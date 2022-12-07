@@ -1,9 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Button } from 'semantic-ui-react'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
-import { objWithoutKeys } from '../../utils/utils'
+import { isAddress, objWithoutKeys } from '../../utils/utils'
+import { Button } from '../../components/buttons'
 import LabelCopy from '../../components/LabelCopy'
 import { showForm } from '../../services/modal'
 import { rxIdentities } from '../identity/identity'
@@ -30,7 +30,7 @@ function AddressName(props) {
         style,
         userId,
     } = props
-    if (!address) return ''
+    if (!isAddress(address)) return ''
     
     const [identity] = useRxSubject(rxIdentities, map => map.get(address))
     const [partner] = useRxSubject(rxPartners, map => map.get(address))
