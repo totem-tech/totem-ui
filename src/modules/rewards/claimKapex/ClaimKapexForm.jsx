@@ -1,8 +1,15 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, {
+	useCallback,
+	useEffect,
+	useState,
+} from 'react'
 import { Button } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
-import chatClient, { rxIsLoggedIn, rxUserIdentity } from '../../../utils/chatClient'
+import chatClient, {
+	rxIsLoggedIn,
+	rxUserIdentity,
+} from '../../../utils/chatClient'
 import { bytesToHex } from '../../../utils/convert'
 import { rxForeUpdateCache } from '../../../utils/DataStorage'
 import { translated } from '../../../utils/languageHelper'
@@ -14,7 +21,6 @@ import {
 	useRxSubject,
 } from '../../../utils/reactHelper'
 import {
-	arrSort,
 	deferred,
 	isFn,
 	isHex,
@@ -25,15 +31,14 @@ import FormBuilder, { findInput } from '../../../components/FormBuilder'
 import Message, { statuses } from '../../../components/Message'
 import BackupForm from '../../gettingStarted/BackupForm'
 import { rxHistory } from '../../history/history'
+import { getIdentityOptions } from '../../identity/getIdentityOptions'
 import identities, {
 	rxIdentities,
 	rxSelected,
 } from '../../identity/identity'
-import IdentityIcon from '../../identity/IdentityIcon'
 import { rxPartners } from '../../partner/partner'
 import { generateTweet, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
-import { getIdentityOptions } from '../../identity/getIdentityOptions'
 
 let textsCap = {	    
 	continue: 'continue',    
@@ -102,13 +107,13 @@ function ClaimKAPEXForm(props) {
 	const setStatus = useCallback((status) => {
 		const now = new Date()
 		const { eligible, endDate = now, error, submitted } = status
-		const content = !!error
-            ? error
-            : !eligible
-                ? `${textsCap.errIneligible1} ${textsCap.errIneligible2}`
-                : submitted
-                    ? textsCap.errSubmitted
-                    : endDate && new Date(endDate) < now
+		const content = submitted
+			? textsCap.errSubmitted
+			: !!error
+				? error
+				: !eligible
+					? `${textsCap.errIneligible1} ${textsCap.errIneligible2}`
+					: endDate && new Date(endDate) < now
                         ? textsCap.errEnded
                         : null
 		

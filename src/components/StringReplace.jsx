@@ -114,7 +114,7 @@ export const Embolden = props => (
             quoted = !props.keepQuotes
                 ? quoted.replace(/\"/g, '')
                 : quoted
-            return isFn(replacer)
+            return isFn(props.replacer)
                 ? replacer(quoted)
                 : quoted
         },
@@ -122,7 +122,6 @@ export const Embolden = props => (
 )
 Embolden.propTypes = {
     keepQuotes: PropTypes.bool,
-    replacer: PropTypes.func,
     //... all other properties accepted by <StringReplace />
 }
 Embolden.defaultProps = {
