@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { format } from '../../utils/time'
 import {
     arrUnique,
     isAddress,
@@ -8,11 +7,10 @@ import {
     isFn,
     isMap,
     isStr,
-    objCopy,
 } from '../../utils/utils'
 // services
 import { translated } from '../../services/language'
-import { get as getIdentity, rxSelected } from '../identity/identity'
+import { get as getIdentity } from '../identity/identity'
 import { rxNewNotification } from '../notification/notification'
 import {
     approvalStatuses,
@@ -23,6 +21,7 @@ import {
     statusNames,
 } from './task'
 import PromisE from '../../utils/PromisE'
+import { rxBlockNumber } from '../../services/blockchain'
 
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
@@ -127,7 +126,12 @@ export default function useTasks(types = [], address, timeout = 5000) {
                     )
                     newTasks.set(type, typeTasks)
                 })
-                newTasks = addDetailsToTasks(address, newTasks, detailsMap, uniqueTaskIds)
+                newTasks = addDetailsToTasks(
+                    address,
+                    newTasks,
+                    detailsMap,
+                    uniqueTaskIds,
+                )
                 done = true
                 setMessage(null)
                 setTasks(newTasks)
@@ -255,10 +259,15 @@ const addDetailsToTasks = (address, tasks, detailsMap, uniqueTaskIds, save = tru
 export const addDetailsToTask = (task, details) => {
     task = { ...task || {}, ...details || {} }
     const {
+        deadline = 0,
+        isClosed = false,
         isMarket,
+        proposalRequired = isMarket,
         tags = '',
     } = task
 
+    task.isClosed = isClosed || deadline < rxBlockNumber.value
+    task.proposalRequired = proposalRequired
     task.tags = (
         isStr(tags)
             ? tags.split(',')
@@ -289,13 +298,12 @@ export const processOrder = (order, id) => {
             amountXTX: amountHex,
             approvalStatus,
             approver,
+            deadline,
             fulfiller,
             // order can be null if storage has changed, in that case, use inaccessible status
             orderStatus = statuses.inaccessible,
             owner,
         } = order || {}
-        const address = (getIdentity(owner) || {}).address
-            || rxSelected.value
         try {
             amountXTX = !order
                 ? 0
@@ -312,13 +320,14 @@ export const processOrder = (order, id) => {
             // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
             console.log('amountXTX parse error', err)
         }
-        const isOwner = address === owner
-        const isSubmitted = orderStatus === statuses.created
-        const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
-        const isOwnerTheApprover = owner === approver
-        let allowEdit = isOwner
-            && isSubmitted
-            && (isPendingApproval || isOwnerTheApprover)
+        const isOwner = !!getIdentity(owner)
+        const isEditableStatus = [
+            statuses.created,
+            statuses.rejected,
+        ].includes(orderStatus)
+        const allowEdit = isOwner
+            && isEditableStatus
+            && deadline > rxBlockNumber.value
         order = {
             ...order,
             amountXTX,

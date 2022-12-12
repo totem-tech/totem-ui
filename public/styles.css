@@ -600,6 +600,10 @@ body.inverted .ui.menu .ui.dropdown .menu > .item:hover {
     color: white !important;
     background: grey !important;
 }
+/* Dropdown empty message */
+body.inverted .dropdown > .menu > .message {
+    color: white !important;
+}
 /* input acton/label */
 body.inverted .ui.input.label > .label,
 body.inverted .ui.input.action > .button {

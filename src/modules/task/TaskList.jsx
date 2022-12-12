@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
 import { getUser } from '../../utils/chatClient'
 import { format } from '../../utils/time'
-import { isObj } from '../../utils/utils'
+import { isFn, isObj } from '../../utils/utils'
 // components
 import { Button, ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
@@ -14,13 +14,13 @@ import Tags from '../../components/Tags'
 import Text from '../../components/Text'
 // services
 import { translated } from '../../services/language'
-import { showForm, confirmAsPromise } from '../../services/modal'
+import { showForm, confirmAsPromise, showInfo } from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
 import { useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import Currency from '../currency/Currency'
-import { get as getIdentity, getSelected } from '../identity/identity'
+import { get, get as getIdentity, getSelected } from '../identity/identity'
 import AddressName from '../partner/AddressName'
 import useSearch from './marketplace/useSearch'
 import ApplicationForm from './marketplace/ApplicationForm'
@@ -36,6 +36,7 @@ import {
 } from './task'
 import TaskDetails from './TaskDetails'
 import TaskForm, { inputNames } from './TaskForm'
+import ApplicationList from './marketplace/ApplicationList'
 
 let textsCap = {
     acceptInvoice: 'accept invoice',
@@ -50,6 +51,7 @@ let textsCap = {
     approvedChangeNotAllowed: 'approved task cannot be changed',
     assignee: 'assignee',
     bounty: 'bounty',
+    closed: 'closed',
     create: 'create',
     createdAt: 'created at',
     createInvoice: 'mark as done',
@@ -236,41 +238,63 @@ const getActions = (_, taskId) => [{
             key: `${i}-${props.title}`,
         }} />
     ))
+// Assignee/Fullfiler
 export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
     const {
         applications = [],
         fulfiller,
+        isClosed,
         isMarket,
         isOwner,
-        title,
         owner,
+        proposalRequired,
+        title,
     } = task
+    const isAssigned = owner !== fulfiller && get(fulfiller)
     let applied = !isOwner
         && applications.map(x => x.userId)
-            .includes((getUser() || {}).id)
-
-    return !isMarket || owner !== fulfiller
+        .includes((getUser() || {}).id)
+    
+    return !isMarket || isAssigned
         ? <AddressName {...{ address: fulfiller }} />
         : (
             <Button {...{
-                color: !isOwner
+                color: !isOwner && !isClosed
                     ? 'blue'
                     : undefined,
                 content: isOwner
                     ? `${textsCap.applications}: ${applications.length}`
                     : applied
                         ? textsCap.applied
-                        : textsCap.apply,
-                disabled: !!applied,
+                        : isClosed
+                            ? textsCap.closed
+                            : textsCap.apply,
+                disabled: !!applied || (!isOwner && isClosed),
                 fluid: true,
                 icon: isOwner
                     ? 'eye'
-                    : 'play',
+                    : applied
+                        ? 'check'
+                        : isClosed
+                            ? 'dont'//'warning circle'
+                            : 'play',
                 key: taskId,
                 onClick: () => isOwner
-                    ? null // show list of applications
+                    // show list of applications
+                    ? showInfo({
+                        collapsing: true,
+                        content: <ApplicationList taskId={taskId} />,
+                        header: textsCap.applications,
+                        size: 'tiny',
+                        subheader: `${textsCap.title}: ${title}`,
+                    })
+                    // open application form
                     : showForm(ApplicationForm, {
-                        onSubmit: success => success && forceReload(),
+                        onSubmit: success => {
+                            console.log({_, forceReload})
+                            success && isFn(forceReload) && forceReload()
+                        },
+                        proposalRequired,
                         title,
                         values: { taskId },
                     }),
@@ -301,7 +325,7 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
             if (isFulfiller) return (
                 <ButtonAcceptOrReject
                     disabled={inProgress}
-                    // loading={inProgress}
+                    loading={inProgress}
                     onAction={async (e, accepted) => {
                         e.preventDefault()
                         await handleAssignmentResponse(
@@ -348,7 +372,7 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
                 <ButtonAcceptOrReject
                     acceptText={textsCap.pay}
                     disabled={inProgress}
-                    // loading={inProgress}
+                    loading={inProgress}
                     onAction={async (e, accepted) => {
                         e.preventDefault()
                         await handleInvoicedResponse(
@@ -424,7 +448,6 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
             ),
             draggableValueKey: 'owner',
             key: 'owner',
-            textAlign: 'center',
             title: textsCap.taskOwner,
         },
         !(isMobile && isFulfillerList) && {
@@ -434,14 +457,11 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
             key: 'fulfiller',
             title: textsCap.assignee,
         },
-        !isMobile && {
+        !isMobile && !isMarketplace && {
             content: ({ tags = [] }) => <Tags tags={tags} />,
             key: 'tags',
             title: textsCap.tags,
-            style: {
-                maxWidth: 150,
-                textAlign: 'center',
-            },
+            style: { maxWidth: 150 },
         },
         !isMarketplace && {
             content: getStatusView,

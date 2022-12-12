@@ -9,14 +9,14 @@ import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
 import Message, { statuses } from '../../components/Message'
 // services
-import { getCurrentBlock } from '../../services/blockchain'
+import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { showForm, showInfo } from '../../services/modal'
+import { closeModal, showForm, showInfo } from '../../services/modal'
 // utils
 import { getUser } from '../../utils/chatClient'
-import { useRxSubject } from '../../utils/reactHelper'
+import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
 import { blockToDate, format } from '../../utils/time'
-import { isObj } from '../../utils/utils'
+import { generateHash, isObj } from '../../utils/utils'
 // modules
 import Currency from '../currency/Currency'
 import AddressName from '../partner/AddressName'
@@ -47,22 +47,18 @@ textsCap = translated(textsCap, true)[1]
 
 export default function TaskDetails(props = {}) {
     const { taskId } = props
-    const [blockNum, setBlockNum] = useState()
+    const [blockNum] = useRxSubject(rxBlockNumber)
     const [inProgressIds = new Set()] = useRxSubject(rxInProgressIds)
-    const { error, task } = useTask(taskId)
-    const [tableProps, setTableProps] = useState({ 
+    const [reload, setReload] = useState(0)
+    const [tableProps, setTableProps] = iUseReducer(null, { 
         emptyMessage: {
             content: textsCap.loading,
             icon: true,
             status: statuses.LOADING,
         },
+        forceReload: () => setReload(generateHash()),
     })
-
-    useEffect(() => {
-        let mounted = true
-        getCurrentBlock().then(n => mounted && setBlockNum(n))
-        return () => mounted = false
-    }, [])
+    const { error, task } = useTask(taskId, reload)
 
     useEffect(() => {
         if (!task || !Object.keys(task).length) return () => { }
@@ -184,7 +180,7 @@ export default function TaskDetails(props = {}) {
 
     if (!isObj(task) || !!error) return (
         <Message {...{
-            content: error || textsCap.loading,
+            content: `${error || ''}` || textsCap.loading,
             icon: true,
             status: !!error 
                 ? statuses.ERROR
@@ -205,10 +201,13 @@ export default function TaskDetails(props = {}) {
                         fluid: true,
                         content: textsCap.updateTask,
                         icon: 'pencil',
-                        onClick: () => showForm(TaskForm, {
-                            taskId,
-                            values: task,
-                        }, taskId),
+                        onClick: () => {
+                            closeModal(props.modalId)
+                            showForm(TaskForm, {
+                                taskId,
+                                values: task,
+                            }, taskId)
+                        },
                     }} />
                 </div>
             )}
@@ -227,10 +226,13 @@ TaskDetails.propTypes = {
  * 
  * @returns {Promise}
  */
-TaskDetails.asModal = (props, modalProps) => showInfo({
-    collapsing: true,
-    header: textsCap.header,
-    size: 'tiny',
-    ...modalProps,
-    content: <TaskDetails {...props} />,
-}, props.taskId)
+TaskDetails.asModal = (props = {}, modalProps, modalId) => {
+    modalId =props.taskId || generateHash() // modalId || 'task-details-' + (props.taskId || generateHash())
+    return showInfo({
+        collapsing: true,
+        header: textsCap.header,
+        size: 'tiny',
+        ...modalProps,
+        content: <TaskDetails {...{ ...props, modalId }} />,
+    }, modalId)
+}

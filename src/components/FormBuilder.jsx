@@ -611,7 +611,11 @@ export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 			input.rxValue = new BehaviorSubject()
 		}
 
-		let { rxValue, type } = input
+		let {
+			rxValue,
+			trueValue = true,
+			type,
+		} = input
 		const newValue = values[name]
 		type = (isStr(type) ? type : 'text').toLowerCase()
 
@@ -624,7 +628,7 @@ export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 		switch (type) {
 			case 'checkbox':
 			case 'radio':
-				input.defaultChecked = newValue
+				input.checked = newValue === trueValue
 				break
 			case 'group':
 				fillValues(input.inputs, values, forceFill)

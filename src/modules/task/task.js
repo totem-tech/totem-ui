@@ -310,12 +310,13 @@ export const queueables = {
         orderId,
         bonsaiToken,
         queueProps,
+        productId = PRODUCT_HASH_LABOUR,
     ) => {
         const func = !!orderId
             ? queueableApis.changeSpfso
             : queueableApis.createSpfso
         const orderItem = {
-            Product: PRODUCT_HASH_LABOUR,
+            Product: productId,
             UnitPrice: amountXTX,
             Quantity: 1,
             UnitOfMeasure: 1,

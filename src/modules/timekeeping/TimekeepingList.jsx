@@ -10,7 +10,7 @@ import DataTable from '../../components/DataTable'
 import {
     hashTypes,
     queueables as bcQueueables,
-    getCurrentBlock,
+    rxBlockNumber,
 } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
@@ -37,6 +37,7 @@ import {
 } from './timekeeping'
 import TimekeepingDetailsForm from './TimekeepingDetails'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -478,7 +479,7 @@ class TimeKeepingList extends Component {
         let [records, projects, currentBlock] = await PromisE.all(
             query.record.get(recordIds, null, true),
             getProjects(),
-            getCurrentBlock()
+            subjectAsPromise(rxBlockNumber)[0]
         )
 
         records = records.map((record, i) => {

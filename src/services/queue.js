@@ -23,7 +23,11 @@ import {
 import _client, { rxIsConnected, rxIsInMaintenanceMode } from '../modules/chat/ChatClient'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
-import { getConnection, query, getCurrentBlock } from './blockchain'
+import {
+    getConnection,
+    query,
+    rxBlockNumber,
+} from './blockchain'
 import { translated } from './language'
 import { setToast } from './toast'
 import { rxOnline } from './window'
@@ -351,7 +355,7 @@ export const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3)
     } else if (isStarted) {
         // tx is already being executed
         // retreive current block number to check if transaction has failed
-        blockNum = await getCurrentBlock()
+        blockNum = await subjectAsPromise(rxBlockNumber)[0]
         diff = blockNum - isStarted
         if (diff > waitBlocks || !allowWait || !isValidNumber(waitBlocks)) {
             // sufficient amount has passed but the transaction was still not in the isSuccess list
@@ -376,6 +380,22 @@ export const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3)
  * @returns {Object} queued task
  */
 export const getById = id => queue.get(id)
+
+/**
+ * @name    getByRecordId
+ * @summary get queue item by Record ID (task ID, timekeeping record ID....)
+ * 
+ * @param   {*} recordId 
+ * 
+ * @returns {Array} [id, queueItem]
+ */
+export const getByRecordId = recordId => {
+    const checkRID = item => item.recordId === recordId
+        || (isObj(item.next) && checkRID(item.next))
+    return queue
+        .toArray()
+        .find(([_, item]) => checkRID(item))
+}
 
 /**
  * @name handleChatClient

@@ -142,6 +142,7 @@ export default [
     "./src/modules/task/TaskView.jsx",
     "./src/modules/task/marketplace/ApplicationForm.jsx",
     "./src/modules/task/marketplace/ApplicationList.jsx",
+    "./src/modules/task/marketplace/ApplicationView.jsx",
     "./src/modules/task/marketplace/useSearch.js",
     "./src/modules/task/notificationHandlers.jsx",
     "./src/modules/task/task.js",

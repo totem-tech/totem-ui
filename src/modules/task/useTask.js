@@ -4,32 +4,33 @@ import { isObj } from '../../utils/utils'
 import { query } from './task'
 import { addDetailsToTask, processOrder } from './useTasks'
 
-export default function useTask(taskId) {
+export default function useTask(taskId, updateTrigger) {
     const [{ error, task }, setData] = useState({})
 
     useEffect(() => {
+        if (!taskId) return () => { }
         let mounted = true
-        const handleResult = async task => {
-            if (!isObj(task)) return
+        const handleResult = async order => {
+            if (!isObj(order)) return
             try {
-                task = processOrder(task, taskId)
-                mounted && setData({ task })
+                order = processOrder(order, taskId)
+                mounted && setData({ task: order })
 
                 // // delay in case task is being updated
                 // await PromisE.delay(500)
 
                 // fetch off-chain details
                 const detailsMap = await query.getDetailsByTaskIds([taskId])
-                task = addDetailsToTask(
-                    task,
+                order = addDetailsToTask(
+                    order,
                     detailsMap.get(taskId),
                 )
-                mounted && setData({ task })
+                mounted && setData({ task: order })
             } catch (error) {
-                mounted && setData({ error, task })
+                mounted && setData({ error: `${error}`, task: order })
             }
         }
-        const sub = taskId && query.orders(
+        const sub = query.orders(
             taskId,
             handleResult,
             false,
@@ -39,7 +40,7 @@ export default function useTask(taskId) {
             mounted = false
             unsubscribe(sub)
         }
-    }, [taskId])
+    }, [taskId, updateTrigger])
 
     return { error, task }
 }

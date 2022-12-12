@@ -1,15 +1,36 @@
-import React, { createRef, isValidElement, useEffect, useState } from 'react'
+import React, {
+    createRef,
+    isValidElement,
+    useEffect,
+    useState,
+} from 'react'
 import { render } from 'react-dom'
 import uuid from 'uuid'
-import { Button, Confirm, Icon } from 'semantic-ui-react'
+import {
+    Button,
+    Confirm,
+    Icon,
+} from 'semantic-ui-react'
 import DataStorage from '../utils/DataStorage'
-import { isBool, isFn, className, isStr, isObj, isDefined, objWithoutKeys } from '../utils/utils'
-import { translated } from './language'
-import { toggleFullscreen, useInverted, getUrlParam } from './window'
 import PromisE from '../utils/PromisE'
+import {
+    className,
+    isBool,
+    isFn,
+    isObj,
+    isStr,
+    objWithoutKeys,
+} from '../utils/utils'
+import { translated } from './language'
+import {
+    getUrlParam,
+    toggleFullscreen,
+    useInverted,
+} from './window'
 
 const modals = new DataStorage()
 export const rxModals = modals.rxData
+const onCloseHandlers = new Map()
 const textsCap = translated({
     areYouSure: 'are you sure?',
     cancel: 'cancel',
@@ -47,9 +68,10 @@ export const ModalsConainer = React.memo(() => {
  * @param   {Element}   element  Modal Element
  * @param   {*}         focusRef element reference to auto focus on
  */
-const add = (id, element, focusRef) => {
+const add = (id, element, focusRef, onClose) => {
     id = id || uuid.v1()
     modals.set(id, element)
+    isFn(onClose) && onCloseHandlers.set(id, onClose)
     // If already in fullscreen, exit. Otherwise, modal will not be visible.
     toggleFullscreen()
 
@@ -60,7 +82,13 @@ const add = (id, element, focusRef) => {
     return id
 }
 
-export const closeModal = (id, delay = 0) => setTimeout(() => modals.delete(id), delay)
+export const closeModal = (id, delayMs = 0) => {
+    if (delayMs > 0) return setTimeout(() => closeModal(id), delayMs)
+
+    const onClose = onCloseHandlers.get(id)
+    modals.delete(id)
+    isFn(onClose) && onClose(id)
+}
 
 /**
  * @name        confirm
@@ -122,10 +150,7 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
                     <Icon {...{
                         className: 'grey large link icon no-margin',
                         name: 'times circle outline',
-                        onClick: (...args) => {
-                            closeModal(modalId)
-                            isFn(onCancel) && onCancel(...args)
-                        },
+                        onClick: () => closeModal(modalId),
                         ref: focusRef,
                     }} />
                 </div>
@@ -165,8 +190,7 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
         )
     }
 
-    return add(
-        modalId,
+    const modalEl = (
         <IConfirm {...{
             ...objWithoutKeys(confirmProps, [
                 'collapsing',
@@ -192,16 +216,18 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
             ),
             header,
             open: !isBool(open) || open,
-            onCancel: (...args) => {
+            onCancel: () => closeModal(modalId),
+            onConfirm: () => {
+                isFn(onConfirm) && onConfirm()
                 closeModal(modalId)
-                isFn(onCancel) && onCancel(...args)
             },
-            onConfirm: (...args) => {
-                closeModal(modalId)
-                isFn(onConfirm) && onConfirm(...args)
-            },
-        }} />,
+        }} />
+    )
+    return add(
+        modalId,
+        modalEl,
         focusRef,
+        onCancel,
     )
 }
 
@@ -222,13 +248,13 @@ export const confirmAsPromise = (confirmProps, modalId, ...args) => new PromisE(
             ? confirmProps
             : { content: confirmProps }
         const { onCancel, onConfirm } = confirmProps
-        const resolver = (defaultValue = false, func) => async (...args) => {
+        const resolver = (defaultValue = false, func) => async () => {
             let value = isFn(func)
-                ? await func(...args)
-                : undefined
+            ? await func()
+            : undefined
             value = isBool(value)
-                ? value
-                : defaultValue
+            ? value
+            : defaultValue
             resolve(value)
         }
         confirmProps.onCancel = resolver(false, onCancel)
@@ -281,9 +307,10 @@ export const get = modalId => modals.get(modalId)
  * 
  * @returns {String}    @modalId      can be used with `closeModal` function to externally close the modal
  */
-export const showForm = (FormComponent, props, modalId, focusRef) => {
+export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     // Invalid component supplied
     if (!isFn(FormComponent)) return
+    const { onClose } = props
     // grab the default modalId if already defined in the defualtProps
     modalId = modalId || (FormComponent.defaultProps || {}).modalId || uuid.v1()
     const form = (
@@ -292,11 +319,7 @@ export const showForm = (FormComponent, props, modalId, focusRef) => {
             modal: true,
             modalId,
             open: true,
-            onClose: (e, d) => {
-                const { onClose } = props || {}
-                closeModal(modalId)
-                isFn(onClose) && onClose(e, d)
-            },
+            onClose: () => closeModal(modalId),
         }} />
     )
     if (!focusRef) setTimeout(() => {
@@ -305,7 +328,12 @@ export const showForm = (FormComponent, props, modalId, focusRef) => {
         const firstInputEl = document.querySelector(selector)
         firstInputEl && firstInputEl.focus()
     }, 50)
-    return add(modalId, form, focusRef)
+    return add(
+        modalId,
+        form,
+        focusRef,
+        onClose,
+    )
 }
 
 /**

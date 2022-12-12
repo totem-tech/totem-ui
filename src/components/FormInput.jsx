@@ -166,13 +166,13 @@ export class FormInput extends Component {
 			criteria = [],
 			criteriaHeader,
 			customMessages,
-			falseValue: falseValue = false,
+			falseValue = false,
 			multiple,
 			integer,
 			onChange,
 			required,
 			rxValue,
-			trueValue: trueValue = true,
+			trueValue = true,
 			type,
 			validate,
 		} = this.props
@@ -396,8 +396,10 @@ export class FormInput extends Component {
 			required,
 			rxValue,
 			styleContainer,
+			trueValue = true,
 			type,
 			useInput: useInputOrginal,
+			value = (rxValue || {}).value,
 			width,
 		} = this.props
 		let useInput = useInputOrginal
@@ -442,13 +444,14 @@ export class FormInput extends Component {
 				break
 			case 'checkbox':
 			case 'radio':
-				attrs.toggle = typeLC !== 'radio' && attrs.toggle
-				attrs.type = 'checkbox'
+				attrs.checked = value === trueValue
 				attrs.label = (
 					<label>
 						<Text children={label} />
 					</label>
 				)
+				attrs.toggle = typeLC !== 'radio' && attrs.toggle
+				attrs.type = 'checkbox'
 				delete attrs.value
 				hideLabel = true
 				inputEl = <Checkbox {...attrs} />

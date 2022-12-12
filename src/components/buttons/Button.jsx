@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Button as _Button } from 'semantic-ui-react'
 import { useInverted } from '../../services/window'
+import { iUseReducer } from '../../utils/reactHelper'
 import { isBool, isFn } from '../../utils/utils'
 
 /**
@@ -12,7 +13,7 @@ import { isBool, isFn } from '../../utils/utils'
  * @returns {Element}
  */
 const Button = React.memo(props => {
-	const [_loading, setLoading] = useState(false)
+	const [state, setState] = iUseReducer(null, { loading: false })
 	let {
 		color,
 		disabled,
@@ -34,12 +35,12 @@ const Button = React.memo(props => {
 		<_Button {...{
             ...props,
 			inverted,
-			disabled: disabled || _loading,
-			loading: loading || _loading,
+			disabled: disabled || state.loading,
+			loading: loading || state.loading,
 			onClick: async (...args) => {
-				setLoading(true)
+				setState({ loading: true})
 				isFn(onClick) && await onClick(...args)
-				setLoading(false)
+				setState({ loading: false })
 			},
 		}} />
 	)

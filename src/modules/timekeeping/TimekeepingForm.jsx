@@ -15,17 +15,17 @@ import {
     secondsToDuration,
     blockToDate,
 } from '../../utils/time'
-import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
+import { ButtonAcceptOrReject } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import DataTableVertical from '../../components/DataTableVertical'
 // services
-import { getCurrentBlock } from '../../services/blockchain'
+import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { confirm, confirmAsPromise } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { openStatuses, query as queryProject } from '../activity/activity'
-import identities, { getSelected } from '../identity/identity'
+import { getSelected } from '../identity/identity'
 import AddressName from '../partner/AddressName'
 import {
     timerFormValues,
@@ -36,8 +36,8 @@ import {
     statuses,
 } from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
-import IdentityIcon from '../identity/IdentityIcon'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -200,7 +200,7 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         status: 'loading',
         icon: true
     }
-    const currentBlock = await getCurrentBlock()
+    const currentBlock = await subjectAsPromise(rxBlockNumber)[0]
     const content = (
         <DataTableVertical {...{
             columns: [
@@ -368,7 +368,8 @@ export default class TimekeepingForm extends Component {
             this.setState({ inputs })
         }, 100)
         // this.subscriptions.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
-        this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
+        // this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
+        this.subscriptions.blockNumber = rxBlockNumber.subscribe(updateValues)
         this.subscriptions.projects = await getProjects(true, updateProjects)
 
     }

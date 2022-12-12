@@ -7,13 +7,11 @@ import { BehaviorSubject } from 'rxjs'
 import PromisE from '../../utils/PromisE'
 import { copyRxSubject, subjectAsPromise } from '../../utils/reactHelper'
 import {
-    BLOCK_DURATION_SECONDS,
     blockToDate,
     format,
     dateToBlock,
 } from '../../utils/time'
 import {
-    arrSort,
     arrUnique,
     deferred,
     generateHash,
@@ -28,14 +26,13 @@ import {
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 // services
 import {
-    getCurrentBlock,
     hashTypes,
-    query,
     queueables as bcQueueables,
+    rxBlockNumber,
 } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { showForm } from '../../services/modal'
+import { confirmAsPromise, showForm } from '../../services/modal'
 // modules
 import {
     convertTo,
@@ -45,13 +42,17 @@ import {
 import Currency from '../currency/Currency'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { getById } from '../history/history'
-import { Balance, rxBalances, rxLocks } from '../identity/Balance'
+import { Balance, rxBalances } from '../identity/Balance'
 import { find as findIdentity, getSelected } from '../identity/identity'
+import getPartnerOptions from '../partner/getPartnerOptions'
 import PartnerForm from '../partner/PartnerForm'
 import { get as getPartner, rxPartners } from '../partner/partner'
-import { queueableApis, queueables } from './task'
+import {
+    PRODUCT_HASH_LABOUR,
+    queueableApis,
+    queueables,
+} from './task'
 import { rxUpdater } from './useTasks'
-import getPartnerOptions from '../partner/getPartnerOptions'
 import { statuses } from '../../components/Message'
 
 let textsCap = {
@@ -79,6 +80,7 @@ let textsCap = {
     errAssigneeNotPartner: 'assignee is not a partner!',
     errAsigneeNoUserId: 'partner does not have an User ID associated.',
     errAssginToSelf: 'you cannot assign a task to your currently selected identity',
+    errDeadline: 'updates are not allowed after the deadline has passed',
     errTagsMaxLen: 'maximum number of tags',
     errTagsMaxChars: 'maximum number of characters',
     featureNotImplemented: 'This feature is yet to be implemented. Please stay tuned.',
@@ -88,6 +90,7 @@ let textsCap = {
     insufficientBalance: 'insufficient balance',
     invalidDate: 'invalid date',
     inventory: 'inventory',
+    isClosedLabel: 'accepting applications',
     marketplace: 'marketplace',
     marketplaceDisclaimer: `
         Your task will be published to the marketplace.
@@ -98,9 +101,10 @@ let textsCap = {
     myself: 'myself',
     nofityAssignee: 'notify assignee',
     orderTypeLabel: 'order type',
+    proposalLabel: 'require applicants to submit a proposal',
     publishToMarketPlace: 'publish to marketplace',
     taskIdParseError: 'failed to parse Task ID from transaction event data',
-    services: 'services',
+    service: 'service',
     saveOffChainData: 'save off-chain data',
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
@@ -132,9 +136,10 @@ export const inputNames = Object.freeze({
     description: 'description',
     orderType: 'orderType',
     isMarket: 'isMarket',
+    isClosed: 'isClosed',
     isSell: 'isSell',
     parentId: 'parentId',
-    prefunded: 'prefunded',
+    productId: 'productId',
     proposalRequired: 'proposalRequired',
     tags: 'tags',
     title: 'title',
@@ -158,9 +163,13 @@ export default class TaskForm extends Component {
             inputNames.deadline,
             inputNames.description,
             inputNames.dueDate,
+            inputNames.isClosed,
             inputNames.isMarket,
             inputNames.isSell,
+            inputNames.orderType,
             inputNames.parentId,
+            inputNames.productId,
+            inputNames.proposalRequired,
             inputNames.tags,
             inputNames.title,
         ]
@@ -175,6 +184,7 @@ export default class TaskForm extends Component {
                 onMount: true,
             },
             submitDisabled: {
+                isClosed: (values || {}).isClosed,
                 unchanged: !!taskId,
             },
             onChange: !taskId
@@ -195,13 +205,15 @@ export default class TaskForm extends Component {
                     radio: true,
                     required: true,
                     type: 'checkbox-group',
-                    validate: (_, { value: isMarket}) => isMarket && {
-                        content: 'Not implemented yet', 
-                        status: 'error',
-                        content: textsCap.marketplaceDisclaimer,
-                        status: 'warning',
-                        style: { textAlign: 'justify' },
-                    }
+                },
+                {
+                    falseValue: true, // value when unchecked
+                    hidden: values => !taskId || !values[inputNames.isMarket],
+                    label: textsCap.isClosedLabel,
+                    name: inputNames.isClosed,
+                    toggle: true,
+                    trueValue: false, // value when checked
+                    type: 'checkbox',
                 },
                 {
                     rxValue: new BehaviorSubject(),
@@ -321,34 +333,6 @@ export default class TaskForm extends Component {
                     rxValue: new BehaviorSubject(0),
                 },
                 {
-                    hidden: true, //values => !values[inputNames.isMarket],
-                    multiple: false,
-                    name: inputNames.prefunded,
-                    options: [{
-                        label: textsCap.prefundedLabel || 'I will pre-fund this order.',
-                        value: true,
-                    }],
-                    toggle: true,
-                    type: 'checkbox-group',
-                    // display a info message if selected
-                    validate: (_, { value }) => value === true && {
-                        content: textsCap.prefundedInfo || 'The bounty amount will be locked into Totem Runtime Escrow account and will only be released to the assignee only after the order has been fulfilled and accepted by you.',
-                        icon: 'info circle',
-                        status: statuses.WARNING,
-                    },
-                },
-                {
-                    hidden: values => !values[inputNames.isMarket],
-                    name: inputNames.proposalRequired,
-                    options: [{
-                        label: textsCap.proposalLabel || 'Require applicants to submit a proposal',
-                        value: true,
-                    }],
-                    toggle: true,
-                    type: 'checkbox-group',
-                    value: true,
-                },
-                {
                     // hidden: true,//delete
                     name: inputNames.dates,
                     title: 'YYYY-MM-DD',
@@ -367,7 +351,7 @@ export default class TaskForm extends Component {
                                     // reset 1 day after deadline if not already set or creating new task
                                     const date = strToDate(deadline)
                                     date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
-                                    dueDate = format(date).substr(0, 10)
+                                    dueDate = format(date).substring(0, 10)
                                 }
                                 // reset and force re-evaluate due date
                                 !!taskId && dueDateIn.rxValue.next('')
@@ -419,14 +403,32 @@ export default class TaskForm extends Component {
                             value: 0, // 0 => buy order
                         },
                         {
+                            name: inputNames.productId,
+                            type: 'hidden',
+                            value: PRODUCT_HASH_LABOUR,
+                        },
+                        {
+                            hidden: values => !values[inputNames.isMarket],
+                                label: textsCap.proposalLabel,
+                            name: inputNames.proposalRequired,
+                            // options: [{
+                            //     label: textsCap.proposalLabel,
+                            //     value: true,
+                            // }],
+                            toggle: true,
+                            type: 'checkbox',
+                            value: true,
+                        },
+                        {
+                            disabled: true,
                             hidden: values => !values[inputNames.isMarket], 
                             inline: true,
                             label: textsCap.orderTypeLabel,
                             name: inputNames.orderType,
                             options: [
-                                { label: textsCap.services, value: 0 },
+                                { label: textsCap.service, value: 0 },
                                 { label: textsCap.inventory, value: 1 },
-                                { label: textsCap.goods, value: 2 }, // assets
+                                { label: textsCap.goods, value: 2 },
                             ],
                             radio: true,
                             type: 'checkbox-group',
@@ -503,7 +505,7 @@ export default class TaskForm extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        const { taskId, values } = this.props
+        const { inputsDisabled = [], taskId, values } = this.props
         const { inputs, loading } = this.state
         const bountyIn = findInput(inputs, inputNames.bounty)
         if (!isObj(values) || !Object.keys(values).length) {
@@ -513,7 +515,7 @@ export default class TaskForm extends Component {
 
         values[inputNames.currency] = values[inputNames.currency]
             || rxSelectedCurrency.value
-        const currentBlock = await getCurrentBlock()
+        const currentBlock = await subjectAsPromise(rxBlockNumber)[0]
         const amountXTX = values[inputNames.amountXTX]
         const currency = values[inputNames.currency]
         const deadline = values[inputNames.deadline]
@@ -530,14 +532,14 @@ export default class TaskForm extends Component {
         loading.onMount = false
         const state = { inputs, loading }
         if (taskId) {
-            const editableFields = [
-                inputNames.description,
-                inputNames.title,
-                inputNames.tags,
-            ]
-            state.inputsDisabled = Object
-                .values(inputNames)
-                .filter(name => !editableFields.includes(name))
+            state.inputsDisabled = arrUnique([
+                ...inputsDisabled,
+                inputNames.isMarket,
+                inputNames.assignee,
+                inputNames.bounty,
+                inputNames.deadline,
+                inputNames.dueDate,
+            ])
             if (currency === currencyDefault) {
                 values.bounty = amountXTX
             } else {
@@ -679,9 +681,10 @@ export default class TaskForm extends Component {
             values: valueP = {},
         } = this.props
         // convert deadline & dueDate string date to block number
-        const currentBlock = await getCurrentBlock()
+        const currentBlock = await subjectAsPromise(rxBlockNumber)[0]
         const deadlineN = inputNames.deadline
         const dueDateN = inputNames.dueDate
+        values = objClean(values, Object.keys(values).sort())
         values[deadlineN] = dateToBlock(
             values[deadlineN] + 'T00:00', // use local time instead of UTC
             currentBlock,
@@ -700,7 +703,6 @@ export default class TaskForm extends Component {
             ? ownerAddress
             : values[inputNames.assignee]
         const isSell = values[inputNames.isSell]
-        const prefunded = values[inputNames.prefunded] === true
         const title = values[inputNames.title]
         const dbValues = objClean(values, this.bonsaiKeys)
         const tokenData = hashTypes.taskHash
@@ -741,11 +743,9 @@ export default class TaskForm extends Component {
             isHash(taskId) && rxUpdater.next([taskId])
             isFn(onSubmit) && onSubmit(success, values, taskId)
         }
-        const fn = isMarket && !prefunded
-            ? queueables.createOrder
-            : !this.doUpdate
-                ? queueables.saveSpfso
-                : bcQueueables.bonsaiSaveToken
+        const fn = !this.doUpdate
+            ? queueables.saveSpfso
+            : bcQueueables.bonsaiSaveToken
         const extraProps = {
             description,
             name: nameCreateTask,
@@ -818,7 +818,7 @@ export default class TaskForm extends Component {
         }
 
         // notify assignee on creation only
-        if (!this.props.taskId && !findIdentity(fulfiller)) {
+        if (!taskId && !findIdentity(fulfiller)) {
             const { userId } = getPartner(fulfiller) || {}
             queueProps.next.next = !userId ? undefined : {
                 args: [
@@ -841,8 +841,13 @@ export default class TaskForm extends Component {
                 type: QUEUE_TYPES.CHATCLIENT,
             }
         }
+        const confirmed = !!taskId || !isMarket || await confirmAsPromise({
+            content: textsCap.marketplaceDisclaimer,
+            header: textsCap.publishToMarketPlace,
+            size: 'mini',
+        })
+        if (!confirmed) return
 
-        // add requests to the queue
         this.setState({
             closeText: textsCap.close,
             loading: true,
@@ -853,6 +858,7 @@ export default class TaskForm extends Component {
             },
             submitInProgress: true,
         })
+        // add requests to the queue
         addToQueue(queueProps)
     }
 
@@ -865,7 +871,23 @@ export default class TaskForm extends Component {
     }, 300)
 
 
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
+    render = () => {
+        const props = { ...this.props, ...this.state }
+        const { taskId, values: { allowEdit, deadline } = {} } = this.props
+        const deadlinePassed = !!taskId
+            && deadline
+            && rxBlockNumber.value >= deadline
+        if (allowEdit === false || deadlinePassed) {
+            props.submitDisabled = true
+            props.message = {
+                content: textsCap.errDeadline,
+                icon: true,
+                status: statuses.ERROR,
+            }
+            props.inputsDisabled = Object.values(inputNames)
+        }
+        return <FormBuilder {...props} />
+    }
 }
 TaskForm.propTypes = {
     taskId: PropTypes.string,

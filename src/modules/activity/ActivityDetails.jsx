@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
+import { subjectAsPromise } from '../../utils/reactHelper'
 import { blockToDate } from '../../utils/time'
-import { getCurrentBlock } from '../../services/blockchain'
+import { rxBlockNumber } from '../../services/blockchain'
 import { showForm, showInfo } from '../../services/modal'
 import { ButtonGroup } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
@@ -84,7 +85,8 @@ const ActivityDetails = props => {
     
     useEffect(() => {
         let mounted = true
-        getCurrentBlock().then(currentBlock => {
+        const [promise] = subjectAsPromise(rxBlockNumber)
+        promise.then(currentBlock => {
             if (!mounted) return
 
             const columns = [

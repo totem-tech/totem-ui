@@ -49,17 +49,21 @@ export default function ApplicationForm(props) {
     return <FormBuilder {...{...props, ...state }} />
 }
 ApplicationForm.propTypes = {
+    proposalRequired: PropTypes.bool,
+    title: PropTypes.string, 
     values: PropTypes.shape({
         taskId: PropTypes.string.isRequired,
     }),
-    title: PropTypes.string, 
 }
 ApplicationForm.defaultProps = {
     header: textsCap.header,
 }
 
 const getInitialState = props => rxSetState => {
-    const { values = {} } = props
+    const {
+        proposalRequired = true,
+        values = {},
+    } = props
     const inputs = [
         {
             label: textsCap.workerLabel,
@@ -74,6 +78,7 @@ const getInitialState = props => rxSetState => {
             type: 'dropdown',
         },
         {
+            hidden: !proposalRequired,
             label: textsCap.proposalLabel,
             maxLength: 500,
             minLength: 50,
@@ -84,6 +89,7 @@ const getInitialState = props => rxSetState => {
             type: 'textarea',
         },
         {
+            hidden: !proposalRequired,
             label: textsCap.linksLabel,
             maxLength: 500,
             name: inputNames.links,
