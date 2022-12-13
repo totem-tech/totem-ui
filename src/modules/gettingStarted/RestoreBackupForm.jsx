@@ -6,7 +6,7 @@ import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder
 import { closeModal, confirm, showForm } from '../../services/modal'
 import { MOBILE, rxLayout } from '../../services/window'
 import { getUser, setUser } from '../../utils/chatClient'
-import { rxForeUpdateCache } from '../../utils/DataStorage'
+import { rxForceUpdateCache } from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
 import storage, { backup, essentialKeys } from '../../utils/storageHelper'
 import {
@@ -641,7 +641,7 @@ export default class RestoreBackupForm extends Component {
 			})
 			// --keep this before setUser()--
 			// force update in-memory cache data by DataStorage
-			rxForeUpdateCache.next(true)
+			rxForceUpdateCache.next(true)
 			if (user) setUser(user)
 			// wait for onSubmit to finish executing
 			isFn(onSubmit) && await onSubmit(true, values)

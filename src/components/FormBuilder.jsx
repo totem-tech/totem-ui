@@ -323,7 +323,10 @@ class FormBuilder extends Component {
 		inputs = inputs.map(this.addInterceptor(values))
 		if (success && closeOnSubmit) {
 			modalOpen = false
-			if (modalId) return closeModal(modalId)
+			if (modalId) {
+				closeModal(modalId)
+				return ''
+			}
 			isFn(onClose) && onClose({}, {})
 		}
 		msg = sMsg || msg

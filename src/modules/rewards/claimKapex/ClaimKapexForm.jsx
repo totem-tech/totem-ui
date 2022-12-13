@@ -11,7 +11,7 @@ import chatClient, {
 	rxUserIdentity,
 } from '../../../utils/chatClient'
 import { bytesToHex } from '../../../utils/convert'
-import { rxForeUpdateCache } from '../../../utils/DataStorage'
+import { rxForceUpdateCache } from '../../../utils/DataStorage'
 import { translated } from '../../../utils/languageHelper'
 import { keyring } from '../../../utils/polkadotHelper'
 import PromisE from '../../../utils/PromisE'
@@ -247,7 +247,7 @@ function ClaimKAPEXForm(props) {
 						</div>
 					)
 
-					rxForeUpdateCache.next(true)
+					rxForceUpdateCache.next(true)
 				} catch (err) {
 					message.status = statuses.ERROR
 					message.content = `${err}`
