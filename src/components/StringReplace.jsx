@@ -141,6 +141,7 @@ Embolden.defaultProps = {
 export const Linkify = props => {
     const {
         componentProps,
+        removeHttps,
         replacer,
         shorten,
     } = props
@@ -160,26 +161,34 @@ export const Linkify = props => {
             },
             replacer: !shorten
                 ? replacer
-                : url => textEllipsis(
-                    url,
-                    !isBool(shorten)
-                        && shorten
-                        || Linkify.defaultProps.shorten,
-                    5,
-                    true,
-                )
+                : url => {
+                    let shortUrl = !removeHttps
+                        ? url
+                        : url.replace(/^(http|https)\:\/\//, '')
+                    if (shorten) shortUrl = textEllipsis(
+                        shortUrl,
+                        shorten,
+                        5,
+                        false,
+                    )
+                    const finalUrl = isFn(replacer)
+                        ? replacer(shortUrl, url)
+                        : shortUrl
+                    return finalUrl
+                }
         }} />
     )
 }
 Linkify.propTypes = {
-    shorten: PropTypes.oneOfType([
-        PropTypes.bool,
-        PropTypes.number,
-    ]),
+    removeHttps: PropTypes.bool,
+    shorten: PropTypes.number,
+    // @replacer function: args => (shortUrl, url)
+    replacer: PropTypes.func,
     //... all properties accepted by <StringReplace />
 }
 Linkify.defaultProps = {
     Component: 'a',
     regex: URL_REGEX,
+    removeHttps: true,
     shorten: 45,
 }

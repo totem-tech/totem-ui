@@ -300,7 +300,6 @@ export default class IdentityForm extends Component {
 			header: this.header,
 			headerIcon: (
 				<IdentityIcon {...{
-					address,
 					size: 'large',
 					usageType,
 				}} />

@@ -1,12 +1,14 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Label } from 'semantic-ui-react'
-import { className, toArray } from '../utils/utils'
+import { className, isFn, toArray } from '../utils/utils'
 import { useInverted } from '../services/window'
 
 const Tags = (props) => {
     const {
         className: cls,
+        onDragStart,
+        style,
         tags = [],
     } = props
     const inverted = useInverted()
@@ -21,13 +23,17 @@ const Tags = (props) => {
                 content: tag,
                 draggable: true,
                 key: tag,
-                onDragStart: e => e.stopPropagation() | e.dataTransfer.setData('Text', e.target.textContent),
+                onDragStart: e => {
+                    e.stopPropagation()
+                    e.dataTransfer.setData('Text', e.target.textContent)
+                    isFn(onDragStart) && onDragStart(e)
+                },
                 style: {
                     cursor: 'grab',
                     display: 'inline',
                     float: 'left',
                     margin: 1,
-                    ...props.style,
+                    ...style,
                 },
             }} />
         ))

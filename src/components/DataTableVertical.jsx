@@ -19,7 +19,7 @@ const DataTableVertical = (props) => {
     columns = columns.filter(x =>
         !!x
         && !x.hidden
-        && !columnsHidden.includes(x.key)
+        && !columnsHidden.includes(x.name || x.key)
     )
 
     const vData = columns.map(column => {
@@ -50,6 +50,7 @@ const DataTableVertical = (props) => {
         .map((_, i) => ({
             ...i === 0 && objWithoutKeys(columns[0], 'key', 'content'),
             active: i === 0,
+            draggable: false,
             key: `${i}`,
             style: {
                 fontWeight:  i > 0 

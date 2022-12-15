@@ -63,6 +63,7 @@ let textsCap = {
     emptyMsgMarketPlace: 'search for marketplace tasks by title or description',
     loading: 'loading',
     marketplace: 'marketplace',
+    marketSearch: 'search marketplace',
     no: 'no',
     pay: 'pay',
     rejectTask: 'reject task',
@@ -160,7 +161,7 @@ export default function TaskList(props) {
                             [inputNames.isMarket]: isMarketplace,
                         },
                     }),
-                }
+                },
             ].filter(Boolean),
             rxTasks, // keep??
 
@@ -208,7 +209,7 @@ export default function TaskList(props) {
                             if (!keywords.trim()) return
                             setFilter({ keywords })
                         },
-                        placeholder: 'search',
+                        placeholder: textsCap.marketSearch,
                         // this ensures the search occur on load
                         rxValue: new BehaviorSubject(keywords),
                         type: 'search',
@@ -259,9 +260,11 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
         ? <AddressName {...{ address: fulfiller }} />
         : (
             <Button {...{
-                color: !isOwner && !isClosed
-                    ? 'blue'
-                    : undefined,
+                color: applied
+                    ? 'green'
+                    : !isOwner && !isClosed
+                        ? 'blue'
+                        : undefined,
                 content: isOwner
                     ? `${textsCap.applications}: ${applications.length}`
                     : applied
@@ -269,7 +272,9 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
                         : isClosed
                             ? textsCap.closed
                             : textsCap.apply,
-                disabled: !!applied || (!isOwner && isClosed),
+                disabled: !!applied
+                    || (!isOwner && isClosed)
+                    || (isOwner && !applications.length),
                 fluid: true,
                 icon: isOwner
                     ? 'eye'
@@ -279,25 +284,28 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
                             ? 'dont'//'warning circle'
                             : 'play',
                 key: taskId,
-                onClick: () => isOwner
-                    // show list of applications
-                    ? showInfo({
-                        collapsing: true,
-                        content: <ApplicationList taskId={taskId} />,
-                        header: textsCap.applications,
-                        size: 'tiny',
-                        subheader: `${textsCap.title}: ${title}`,
-                    })
+                onClick: () => {
                     // open application form
-                    : showForm(ApplicationForm, {
+                    if (!isOwner) return showForm(ApplicationForm, {
                         onSubmit: success => {
-                            console.log({_, forceReload})
+                            console.log({ _, forceReload })
                             success && isFn(forceReload) && forceReload()
                         },
                         proposalRequired,
                         title,
                         values: { taskId },
-                    }),
+                    })
+
+                    const modalId = `${taskId}-applications`
+                    // show list of applications
+                    showInfo({
+                        collapsing: true,
+                        content: <ApplicationList {...{ modalId, taskId }} />,
+                        header: textsCap.applications,
+                        // size: 'tiny',
+                        subheader: `${textsCap.title}: ${title}`,
+                    }, modalId)
+                },
                 style: { whiteSpace: 'nowrap' }
             }} />
         )
@@ -446,7 +454,17 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
                     userId: createdBy,
                 }} />
             ),
-            draggableValueKey: 'owner',
+            onDragStart: (e, dragValue) => {
+                // if marketplace use "@userId" to search by createdBy property.
+                // Otherwise, use owner identity for local search
+                e.dataTransfer.setData(
+                    'Text',
+                    `${!isMarketplace ? '' : '@'}${dragValue}`
+                )
+            },
+            draggableValueKey: isMarketplace
+                ? 'createdBy'
+                : 'owner',
             key: 'owner',
             title: textsCap.taskOwner,
         },
@@ -457,8 +475,19 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
             key: 'fulfiller',
             title: textsCap.assignee,
         },
-        !isMobile && !isMarketplace && {
-            content: ({ tags = [] }) => <Tags tags={tags} />,
+        !isMobile && {
+            content: ({ tags = [] }) => (
+                <Tags {...{
+                    onDragStart: e => {
+                        // add prefix: "tag:" to search by tag
+                        e.dataTransfer.setData(
+                            'Text',
+                            `tag:${e.target.textContent}`,
+                        )
+                    },
+                    tags,
+                }} />
+            ),
             key: 'tags',
             title: textsCap.tags,
             style: { maxWidth: 150 },
@@ -501,8 +530,8 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
         },
     ].filter(Boolean),
     // no default sorting on marketplace
-    defaultSort: !isMarketplace && 'tsCreated',
-    defaultSortAsc: !!isMarketplace,
+    defaultSort: 'tsCreated',
+    defaultSortAsc: false,
     // disable all actions if there is an unfinished queue item for this task ID
     rowProps: (_task, taskId, _tasks, { inProgressIds }) =>
         inProgressIds.has(taskId)
@@ -514,6 +543,12 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
         'keywords-' + listType,
         keywords,
     ),
+    sortBy: isMarketplace
+        ? false
+        : undefined,
+    sortAsc: isMarketplace
+        ? true
+        : undefined,
 })
 
 setTimeout(() => {

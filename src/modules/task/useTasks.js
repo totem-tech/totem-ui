@@ -13,6 +13,7 @@ import { translated } from '../../services/language'
 import { get as getIdentity } from '../identity/identity'
 import { rxNewNotification } from '../notification/notification'
 import {
+    applicationStatus,
     approvalStatuses,
     approvalStatusNames,
     query,
@@ -22,7 +23,6 @@ import {
 } from './task'
 import PromisE from '../../utils/PromisE'
 import { rxBlockNumber } from '../../services/blockchain'
-
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
     loadingMsg: 'loading tasks',
@@ -259,6 +259,7 @@ const addDetailsToTasks = (address, tasks, detailsMap, uniqueTaskIds, save = tru
 export const addDetailsToTask = (task, details) => {
     task = { ...task || {}, ...details || {} }
     const {
+        applications = [],
         deadline = 0,
         isClosed = false,
         isMarket,
@@ -273,10 +274,15 @@ export const addDetailsToTask = (task, details) => {
             ? tags.split(',')
             : tags || []
     ).filter(Boolean)
-
     task.marketplace = isMarket
         ? 'marketplace'
         : ''
+
+    // add application status text
+    applications.forEach(application => {
+        application._status = applicationStatus[application.status]
+            || applicationStatus[0]
+    })
 
     return task
 }

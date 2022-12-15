@@ -572,8 +572,13 @@ export default class PartnerForm extends Component {
 		visibilityIn.disabled = isPublic || !!com
 		// stuff to do only when creating an entry
 		if (!this.doUpdate) {
-			const { name: cName = '', registrationNumber: cReg } = com || {}
-			nameIn.type = !!com ? 'hidden' : 'text'
+			const {
+				name: cName = '',
+				registrationNumber: cReg,
+			} = com || {}
+			nameIn.type = !!com
+				? 'hidden'
+				: 'text'
 			// hide visitibity if company selected as it is already "public"
 			// only hide registration number if selected company contains a number
 			regNumIn.value = cReg || ''

@@ -16,6 +16,7 @@ import {
     deferred,
     generateHash,
     isArr,
+    isBool,
     isFn,
     isHash,
     isObj,
@@ -411,13 +412,8 @@ export default class TaskForm extends Component {
                             hidden: values => !values[inputNames.isMarket],
                                 label: textsCap.proposalLabel,
                             name: inputNames.proposalRequired,
-                            // options: [{
-                            //     label: textsCap.proposalLabel,
-                            //     value: true,
-                            // }],
                             toggle: true,
                             type: 'checkbox',
-                            value: true,
                         },
                         {
                             disabled: true,

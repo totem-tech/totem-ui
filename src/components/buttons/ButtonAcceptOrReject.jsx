@@ -51,6 +51,7 @@ ButtonAcceptOrReject.propTypes = {
 	acceptColor: PropTypes.string, // colors supported by SemanticUI buttons
 	acceptText: PropTypes.string,
 	ignoreAttributes: PropTypes.arrayOf(PropTypes.string).isRequired,
+	// args: (event, true/false)
 	onAction: PropTypes.func.isRequired,
 	rejectColor: PropTypes.string, // colors supported by SemanticUI buttons
 	rejectText: PropTypes.string,

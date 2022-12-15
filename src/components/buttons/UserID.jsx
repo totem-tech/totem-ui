@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Button as _Button } from 'semantic-ui-react'
-import { objWithoutKeys } from '../../utils/utils'
+import { isFn, objWithoutKeys } from '../../utils/utils'
 import { getRawUserID } from '../UserIdInput'
 // services
 import { translated } from '../../services/language'
@@ -39,6 +39,7 @@ const UserID = React.memo(function UserId(props) {
 		El,
 		ignoreAttributes,
 		onClick,
+		onChatOpen,
 		prefix,
 		style,
 		suffix,
@@ -62,8 +63,14 @@ const UserID = React.memo(function UserId(props) {
 			draggable: true,
 			onClick: !allowClick
 				? undefined
-				: e => e.stopPropagation()
-					| UserID.showModal(userId, address),
+				: e => {
+					e.stopPropagation()
+					UserID.showModal(
+						userId,
+						address,
+						onChatOpen,
+					)
+				},
 			onDragStart: e => {
 				e.stopPropagation()
 				e.dataTransfer.setData('Text', rawId)
@@ -89,8 +96,10 @@ UserID.propTypes = {
 		PropTypes.object, //for React.memo elements
 	]).isRequired,
 	ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
-	// @onClick use `null` to prevent showing modal
+	// @onClick function: use `null` to prevent showing modal
 	onClick: PropTypes.func,
+	// @onChatOpen function: callback invoked whenever chat is opened with the user from the user details modal
+	onChatOpen: PropTypes.func,
 	prefix: PropTypes.oneOfType([
 		PropTypes.element,
 		PropTypes.number,
@@ -109,12 +118,13 @@ UserID.defaultProps = {
 	ignoreAttributes: [
 		'El',
 		'ignoreAttributes',
+		'onChatOpen',
 		'prefix',
 		'suffix',
 		'userId',
 	],
 }
-UserID.showModal = (userId, partnerAddress) => {
+UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 	const partner = partnerAddress
 		? getPartner(partnerAddress)
 		: getByUserId(userId)
@@ -190,9 +200,11 @@ UserID.showModal = (userId, partnerAddress) => {
 			<_Button {...{
 				circular: true,
 				icon: 'chat',
-				onClick: () =>
-					closeModal(modalId) |
-					createInbox([userId], null, true),
+				onClick: () => {
+					closeModal(modalId)
+					createInbox([userId], null, true)
+					isFn(onChatOpen) && onChatOpen(userId)
+				},
 				size: 'mini',
 				title: textsCap.clickToChat,
 			}} />
@@ -211,16 +223,19 @@ UserID.showModal = (userId, partnerAddress) => {
 			</div>
 		</div>
 	)
-	const modalId = showInfo(
-		{
-			content,
-			header,
-			size: 'mini',
-		},
-		undefined,
-		{
-			style: { padding: 1 },
-		},
+	const contentProps = {
+		style: { padding: 1 },
+	}
+	const modalId = userId
+	const modalProps = {
+		content,
+		header,
+		size: 'mini',
+	}
+	showInfo(
+		modalProps,
+		modalId,
+		contentProps,
 	)
 }
 export default UserID

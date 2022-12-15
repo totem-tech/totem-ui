@@ -20,6 +20,7 @@ const MODULE_KEY = 'task'
 const TX_STORAGE = 'tx_storage'
 let textsCap = {
     accepted: 'accepted',
+    applied: 'applied',
     approved: 'approved',
     blocked: 'blocked',
     completed: 'completed',
@@ -31,6 +32,11 @@ let textsCap = {
     rejected: 'rejected',
 }
 textsCap = translated(textsCap, true)[1]
+export const applicationStatus = [
+    textsCap.applied,
+    textsCap.accepted,
+    textsCap.rejected,
+]
 export const approvalStatuses = {
     pendingApproval: 0,
     approved: 1,

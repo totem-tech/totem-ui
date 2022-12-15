@@ -112,9 +112,15 @@ export default class DataTable extends Component {
 		return [paginator, footer].filter(Boolean)
 	}
 
+	getColumnsVisible = () => {
+		const { columns, columnsHidden } = this.props
+		return columns.filter(x =>
+			!x.hidden && !columnsHidden.includes(x.name || x.key)
+		)
+	}
+
 	getHeaders(totalRows, columns, selectedIndexes) {
 		let {
-			columnsHidden,
 			headers: showHeaders,
 			selectable,
 			tableProps: tp,
@@ -124,10 +130,7 @@ export default class DataTable extends Component {
 		const { sortAsc, sortBy } = this.state
 		const { sortable } = { ...DataTable.defaultProps.tableProps, ...tp }
 
-		const columnsVisible = columns.filter(
-			x => !columnsHidden.includes(x.name) && !x.hidden
-		)
-		const headers = columnsVisible.map((x, i) => {
+		const headers = columns.map((x, i) => {
 			const columnSortable = sortable && x.key && x.sortable !== false
 			const sortKey = x.sortKey || x.key
 			return (
@@ -190,7 +193,11 @@ export default class DataTable extends Component {
 	}
 
 	getRows(filteredData, columns, selectedIndexes, pageNo) {
-		let { columnsHidden, perPage, rowProps, selectable } = this.props
+		let {
+			perPage,
+			rowProps,
+			selectable,
+		} = this.props
 		const nonAttrs = [
 			'content',
 			'draggableValueKey',
@@ -228,54 +235,51 @@ export default class DataTable extends Component {
 							/>
 						</Table.Cell>
 					)}
-					{columns.filter(({ hidden, name }) =>
-						!hidden && !columnsHidden.includes(name)
-					)
-						.map((cell, j) => {
-							let {
-								collapsing,
-								content,
-								draggable,
-								draggableValueKey,
+					{columns.map((cell, j) => {
+						let {
+							collapsing,
+							content,
+							draggable,
+							draggableValueKey,
+							key: contentKey,
+							onDragStart,
+							style,
+							textAlign = 'left',
+							title,
+						} = cell || {}
+						draggable = draggable !== false
+						content = isFn(content)
+							? content(item, key, items, this.props)
+							: cell.content || item[contentKey]
+						style = {
+							cursor: draggable ? 'grab' : undefined,
+							padding: collapsing ? '0 5px' : undefined,
+							...style,
+						}
+						const dragValue = draggableValueKey
+							? item[draggableValueKey] || ''
+							: null
+						const props = {
+							...objWithoutKeys(cell, nonAttrs),
+							key: key + j,
+							draggable,
+							onDragStart: !draggable
+								? undefined
+								: this.handleDragStartCb(dragValue, onDragStart, item),
+							style,
+							textAlign,
+						}
+						if (!isValidElement(content) && isObj(content)) {
+							// Prevents Objects being thrown on DOM which can cause error being thrown by React
+							console.warn('DataTable: unwanted object found on', {
 								key: contentKey,
-								onDragStart,
-								style,
-								textAlign = 'left',
-								title,
-							} = cell || {}
-							draggable = draggable !== false
-							content = isFn(content)
-								? content(item, key, items, this.props)
-								: cell.content || item[contentKey]
-							style = {
-								cursor: draggable ? 'grab' : undefined,
-								padding: collapsing ? '0 5px' : undefined,
-								...style,
-							}
-							const dragValue = draggableValueKey
-								? item[draggableValueKey] || ''
-								: null
-							const props = {
-								...objWithoutKeys(cell, nonAttrs),
-								key: key + j,
-								draggable,
-								onDragStart: !draggable
-									? undefined
-									: this.handleDragStartCb(dragValue, onDragStart, item),
-								style,
-								textAlign,
-							}
-							if (!isValidElement(content) && isObj(content)) {
-								// Prevents Objects being thrown on DOM which can cause error being thrown by React
-								console.warn('DataTable: unwanted object found on', {
-									key: contentKey,
-									title: title,
-									content,
-								})
-								content = JSON.stringify(content, null, 4)
-							}
-							return <Table.Cell {...props}>{content}</Table.Cell>
-						})}
+								title: title,
+								content,
+							})
+							content = JSON.stringify(content, null, 4)
+						}
+						return <Table.Cell {...props}>{content}</Table.Cell>
+					})}
 				</Table.Row>
 			)
 		).filter(Boolean)
@@ -505,10 +509,10 @@ export default class DataTable extends Component {
 		} = this.state
 
 		keywords = `${keywords || keywordsP || ''}`.trim()
-		const columns = columnsOriginal.filter(x => !!x && !x.hidden)
+		const columnsVisible = this.getColumnsVisible()
 		// Include extra searchable keys that are not visibile on the table
 		const keys = arrUnique([
-			...columns
+			...columnsVisible
 				.filter(x => !!x.key)
 				.map(x => x.key),
 			...(searchExtraKeys || []),
@@ -546,12 +550,12 @@ export default class DataTable extends Component {
 		this.state.pageNo = pageNo
 		const headers = this.getHeaders(
 			totalRows,
-			columns,
+			columnsVisible,
 			selectedIndexes,
 		)
 		const rows = this.getRows(
 			filteredData,
-			columns,
+			columnsVisible,
 			selectedIndexes,
 			pageNo
 		)
@@ -598,7 +602,7 @@ export default class DataTable extends Component {
 								<Table.Footer>
 									<Table.Row>
 										<Table.HeaderCell
-											colSpan={columns.length + 1}
+											colSpan={columnsVisible.length + 1}
 										>
 											{this.getFooter(totalPages, pageNo)}
 										</Table.HeaderCell>
@@ -624,7 +628,7 @@ DataTable.propTypes = {
 	columns: PropTypes.arrayOf(
 		PropTypes.shape({
 			// function/element/string: content to display for the each cell on this column.
-			// function props: currentItem, key, allItems, props
+			// function props: currentItem, id/index, allItems, props
 			content: PropTypes.any,
 			// indicates whether column cell should be draggable.
 			// Default: true
