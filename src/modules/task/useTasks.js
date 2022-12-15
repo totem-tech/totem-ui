@@ -23,6 +23,8 @@ import {
 } from './task'
 import PromisE from '../../utils/PromisE'
 import { rxBlockNumber } from '../../services/blockchain'
+import { subjectAsPromise } from '../../utils/reactHelper'
+import { rxIsLoggedIn } from '../../utils/chatClient'
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
     loadingMsg: 'loading tasks',
@@ -156,6 +158,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 subs.tasks && subs.tasks()
                 // create single list of unique Task IDs
                 const uniqueTaskIds = arrUnique(taskIds2d.flat())
+                await subjectAsPromise(rxIsLoggedIn, true)[0]
                 const detailsMap = await query.getDetailsByTaskIds(uniqueTaskIds)
                 subs.tasks = await query.orders(
                     uniqueTaskIds,

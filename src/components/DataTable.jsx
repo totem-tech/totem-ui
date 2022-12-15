@@ -90,12 +90,20 @@ export default class DataTable extends Component {
 	}
 
 	getFooter(totalPages, pageNo) {
-		let { footerContent, navLimit } = this.props
+		let {
+			footerContent,
+			tableProps: { unstackable },
+			navLimit,
+		} = this.props
 		const { isMobile } = this.state
 		const paginator = totalPages > 1 && (
 			<Paginator {...{
 				current: pageNo,
-				float: isMobile ? 'left' : 'right',
+				float: isMobile
+					? unstackable
+						? 'left'
+						: 'none'
+					: 'right',
 				key: 'paginator',
 				navLimit: navLimit,
 				total: totalPages,
@@ -490,7 +498,6 @@ export default class DataTable extends Component {
 
 	render() {
 		let {
-			columns: columnsOriginal,
 			data,
 			emptyMessage,
 			footerContent,
@@ -591,24 +598,28 @@ export default class DataTable extends Component {
 							...DataTable.defaultProps.tableProps, // merge when prop supplied
 							...tableProps,
 							El: Table,
-						}} >
-							<Table.Header>
-								<Table.Row>{headers}</Table.Row>
-							</Table.Header>
+						}}>
+							{headers && (
+								<Table.Header>
+									<Table.Row>{headers}</Table.Row>
+								</Table.Header>
+							)}
 
 							<Table.Body>{rows}</Table.Body>
 
-							{!footerContent && totalPages <= 1 ? undefined : (
-								<Table.Footer>
-									<Table.Row>
-										<Table.HeaderCell
-											colSpan={columnsVisible.length + 1}
-										>
-											{this.getFooter(totalPages, pageNo)}
-										</Table.HeaderCell>
-									</Table.Row>
-								</Table.Footer>
-							)}
+							{!footerContent && totalPages <= 1
+								? undefined
+								: (
+									<Table.Footer>
+										<Table.Row>
+											<Table.HeaderCell
+												colSpan={columnsVisible.length + 1}
+											>
+												{this.getFooter(totalPages, pageNo)}
+											</Table.HeaderCell>
+										</Table.Row>
+									</Table.Footer>
+								)}
 						</Invertible>
 					)}
 				</div>

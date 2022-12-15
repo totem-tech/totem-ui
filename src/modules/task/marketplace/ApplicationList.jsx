@@ -9,21 +9,29 @@ import Message, { statuses } from '../../../components/Message'
 import { format } from '../../../utils/time'
 import { Button, ButtonAcceptOrReject, UserID } from '../../../components/buttons'
 import { MOBILE, rxLayout } from '../../../services/window'
-import { closeModal, showInfo } from '../../../services/modal'
-import { applicationStatus } from '../task'
+import { closeModal, confirmAsPromise, showInfo } from '../../../services/modal'
+import { applicationStatus, queueableApis, queueables } from '../task'
 import ApplicationView from './ApplicationView'
+import { isFn, objClean } from '../../../utils/utils'
+import { bonsaiKeys, getBonsaiData } from '../TaskForm'
+import FormInput from '../../../components/FormInput'
+import { BehaviorSubject } from 'rxjs'
+import { addToQueue, checkComplete, QUEUE_TYPES } from '../../../services/queue'
 
 let textsCap = {
     accept: 'accept',
+    acceptApplication: 'accept application',
     applicant: 'applicant',
     appliedAt: 'applied at',
     emptyMessage: 'no applications received',
     identity: 'identity',
     loading: 'loading...',
+    rejectApplication: 'reject application',
+    rejectOthers: 'reject all other applicants',
     status: 'status',
     title: 'title',
     view: 'view',
-    viewApp: 'view appliation',
+    viewApp: 'review appliation',
 }
 textsCap = translated(textsCap, true)[1]
 
@@ -148,31 +156,155 @@ export const getColumns = (showStatusButtons = true) => {
     return columns
 }
 
-const getStatusContent = (application = {}, _i, _arr, props = {}) => {
+const getStatusContent = (application = {}, _1, _arr, props = {}) => {
     const {
         isMobile,
+        forceReload,
         modalId,
         task,
         taskId,
     } = props
-    const { _status, userId } = application
-    if (_status !== applicationStatus[0]) return _status
-        
-    return (
-        <ButtonAcceptOrReject {...{
-            acceptProps: { icon: 'check' },
-            acceptText: isMobile
-                ? '' // hide text on mobile
-                : undefined ,
-            rejectProps: { icon: 'close' },
-            rejectText: isMobile
-                ? '' // hide text on mobile
-                : undefined,
-            onAction: (_, accept) => {
+    const {
+        _status,
+        userId,
+        workerAddress,
+    } = application
 
-            },
-            title: textsCap.accept,
-        }} />
+    const accepted = _status === applicationStatus[1]
+    const rejected = _status === applicationStatus[2]
+    if (accepted) return _status
+        
+    const handleAction = async (_, accept) => {
+        const {
+            owner,
+            approver,
+            fulfiller,
+            isSell,
+            amountXTX,
+            isMarket,
+            orderType,
+            deadline,
+            dueDate,
+        } = task
+        const confirmId = taskId + workerAddress + 'confirm'
+        const handleResult = (success, err) => {
+            console.log(success, err)
+            err && showInfo({
+                collapsing: true,
+                content: (
+                    <Message {...{ 
+                        content: `${err || ''}`,
+                        icon: true,
+                        status: 'error',
+                    }} />
+                ),
+            })
+        }
+        const [dbValues, token] = getBonsaiData(task, task.owner)
+        const data = {
+            rejectOthers: true,
+            status: accept
+                ? 1
+                : 2,
+            taskId,
+            workerAddress,
+        }
+        const description = workerAddress
+        const title = accept
+            ? textsCap.acceptApplication
+            : textsCap.rejectApplication
+        const offChain = {
+            args: [data, null],
+            description,
+            func: queueableApis.marketApplication,
+            recordId: taskId,
+            then: handleResult,
+            title,
+            type: QUEUE_TYPES.CHATCLIENT,
+        }
+        const onChain = queueables.saveSpfso(
+            owner,
+            approver,
+            workerAddress,
+            isSell,
+            amountXTX,
+            isMarket,
+            orderType,
+            deadline,
+            dueDate,
+            taskId,
+            token,
+            {
+                description,
+                next: offChain,
+                then: handleResult,
+                title,
+            }
+        )
+        const confirmed = await confirmAsPromise({
+            confirmButton: (
+                <Button {...{
+                    content: accept
+                        ? textsCap.acceptApplication
+                        : textsCap.rejectApplication,
+                    negative: !accept,
+                    positive: accept,
+                }} />
+            ),
+            content: (
+                <div>
+                    <div style={{ marginBottom: 15 }}>
+                        <b>{textsCap.applicant}: </b><br/>
+                        <AddressName address={workerAddress} /> (<UserID userId={userId} />)
+                    </div>
+                    <FormInput {...{
+                        label: textsCap.rejectOthers,
+                        name: 'rejectOthers',
+                        onChange: (_, { value }) => data.rejectOthers = value,
+                        rxValue: new BehaviorSubject(accept),
+                        toggle: true,
+                        type: 'checkbox',
+                    }} />
+                </div>
+            ),
+            header: `${title}?`,
+            size: 'mini',
+        }, confirmId)
+        if (!confirmed) return
+
+        // if rejected, no need to update onchain data
+        const queueId = addToQueue(accept ? onChain : offChain)
+        console.log({queueId, taskId})
+
+        // keeps the button disabled until queue item execution is completed (success/error)
+        await checkComplete(queueId, true)
+
+        setTimeout(() => {
+            console.log('complete: shoulds stop loading spinner now')
+            closeModal(modalId)
+            isFn(forceReload) && forceReload()
+        })
+    }
+
+    return (
+        <div>
+            {/* {rejected && <div>{_status}</div>} */}
+            <ButtonAcceptOrReject {...{
+                acceptProps: { icon: 'check' },
+                acceptText: isMobile
+                    ? '' // hide text on mobile
+                    : undefined ,
+                rejectProps: {
+                    disabled: rejected,
+                    icon: 'close',
+                },
+                rejectText: isMobile
+                    ? '' // hide text on mobile
+                    : undefined,
+                onAction: handleAction,
+                title: textsCap.accept,
+            }} />
+        </div>
     )
 }
 export default ApplicationList

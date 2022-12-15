@@ -145,6 +145,33 @@ export const inputNames = Object.freeze({
     tags: 'tags',
     title: 'title',
 })
+// keys used to generate BONSAI token hash
+// keep it in the same order as in the `VALID_KEYS` array in the messaging service
+export const bonsaiKeys = [
+    inputNames.amountXTX,
+    inputNames.currency,
+    inputNames.deadline,
+    inputNames.description,
+    inputNames.dueDate,
+    inputNames.isClosed,
+    inputNames.isMarket,
+    inputNames.isSell,
+    inputNames.orderType,
+    inputNames.parentId,
+    inputNames.productId,
+    inputNames.proposalRequired,
+    inputNames.tags,
+    inputNames.title,
+]
+export const getBonsaiData = (values, ownerAddress) => {
+    const dbValues = objClean(values, bonsaiKeys)
+    const tokenData = hashTypes.taskHash
+        + ownerAddress
+        + JSON.stringify(dbValues)
+    const token = generateHash(tokenData)
+    return [dbValues, token]
+}
+
 export default class TaskForm extends Component {
     constructor(props) {
         super(props)
@@ -156,24 +183,6 @@ export default class TaskForm extends Component {
         this.rxAssignee = new BehaviorSubject()
         this.rxTags = new BehaviorSubject([])
         this.rxTagOptions = new BehaviorSubject([])
-        // keys used to generate BONSAI token hash
-        // keep it in the same order as in the `VALID_KEYS` array in the messaging service
-        this.bonsaiKeys = [
-            inputNames.amountXTX,
-            inputNames.currency,
-            inputNames.deadline,
-            inputNames.description,
-            inputNames.dueDate,
-            inputNames.isClosed,
-            inputNames.isMarket,
-            inputNames.isSell,
-            inputNames.orderType,
-            inputNames.parentId,
-            inputNames.productId,
-            inputNames.proposalRequired,
-            inputNames.tags,
-            inputNames.title,
-        ]
 
         this.state = {
             disabled: true,
@@ -700,11 +709,7 @@ export default class TaskForm extends Component {
             : values[inputNames.assignee]
         const isSell = values[inputNames.isSell]
         const title = values[inputNames.title]
-        const dbValues = objClean(values, this.bonsaiKeys)
-        const tokenData = hashTypes.taskHash
-            + ownerAddress
-            + JSON.stringify(dbValues)
-        const token = generateHash(tokenData)
+        const [dbValues, token] = getBonsaiData(values, ownerAddress)
         const nameCreateTask = 'createTask'
         const nameSaveTask = 'saveTask'
         const queueId = uuid.v1()

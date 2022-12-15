@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { unsubscribe } from '../../utils/reactHelper'
+import { rxIsLoggedIn } from '../../utils/chatClient'
+import { subjectAsPromise, unsubscribe } from '../../utils/reactHelper'
 import { isObj } from '../../utils/utils'
 import { query } from './task'
 import { addDetailsToTask, processOrder } from './useTasks'
@@ -16,9 +17,7 @@ export default function useTask(taskId, updateTrigger) {
                 order = processOrder(order, taskId)
                 mounted && setData({ task: order })
 
-                // // delay in case task is being updated
-                // await PromisE.delay(500)
-
+                await subjectAsPromise(rxIsLoggedIn, true)[0]
                 // fetch off-chain details
                 const detailsMap = await query.getDetailsByTaskIds([taskId])
                 order = addDetailsToTask(

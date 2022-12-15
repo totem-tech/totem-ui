@@ -31,7 +31,7 @@ const ApplicationView = props => {
                 {
                     content: x => (
                         <div style={{ whiteSpace: 'pre-line' }}>
-                            <Linkify>{x.proposal}</Linkify>
+                            <Linkify content={x.proposal} />
                         </div>
                     ),
                     key: 'proposal',

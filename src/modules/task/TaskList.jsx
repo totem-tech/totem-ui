@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
 import { getUser } from '../../utils/chatClient'
 import { format } from '../../utils/time'
-import { isFn, isObj } from '../../utils/utils'
+import { isFn, isObj, textEllipsis } from '../../utils/utils'
 // components
 import { Button, ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
@@ -69,10 +69,12 @@ let textsCap = {
     rejectTask: 'reject task',
     status: 'status',
     tags: 'tags',
+    task: 'task',
     taskOwner: 'task owner',
     title: 'title',
     yes: 'yes',
     view: 'view',
+    viewDetails: 'view details',
 }
 textsCap = translated(textsCap, true)[1]
 
@@ -104,6 +106,7 @@ export default function TaskList(props) {
         isMobile,
         isFulfillerList,
         isMarketplace,
+        isOwnedList,
     ))
     const { keywords = '' } = filter || {}
     const emptyMessage = isMarketplace
@@ -116,6 +119,7 @@ export default function TaskList(props) {
                 isMobile,
                 isFulfillerList,
                 isMarketplace,
+                isOwnedList,
             )
         )
     }, [isMobile, isFulfillerList, isMarketplace])
@@ -140,6 +144,9 @@ export default function TaskList(props) {
             data,
             emptyMessage,
             forceReload,
+            isFulfillerList,
+            isMarketplace,
+            isMobile,
             isOwnedList,
             inProgressIds,
             key: data,
@@ -195,7 +202,7 @@ export default function TaskList(props) {
                                     keywords: '',
                                 }),
                             },
-                        fluid: isMobile,
+                        style: isMobile ? { minWidth: '100%' } : {},
                         icon: 'search',
                         iconPosition: 'left',
                         name: 'search',
@@ -226,21 +233,8 @@ TaskList.propTypes = {
 TaskList.defaultProps = {
     listType: listTypes.owner,
 }
-
-const getActions = (_, taskId) => [{
-    icon: 'eye',
-    onClick: () => TaskDetails.asModal({ taskId }),
-    title: textsCap.techDetails,
-}]
-    .filter(Boolean)
-    .map((props, i) => (
-        <Button {...{
-            ...props,
-            key: `${i}-${props.title}`,
-        }} />
-    ))
 // Assignee/Fullfiler
-export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
+export const getAssigneeView = (task = {}, taskId, _, { forceReload, isMobile }) => {
     const {
         applications = [],
         fulfiller,
@@ -256,70 +250,85 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload }) => {
         && applications.map(x => x.userId)
         .includes((getUser() || {}).id)
     
-    return !isMarket || isAssigned
-        ? <AddressName {...{ address: fulfiller }} />
-        : (
-            <Button {...{
-                color: applied
-                    ? 'green'
-                    : !isOwner && !isClosed
-                        ? 'blue'
-                        : undefined,
-                content: isOwner
-                    ? `${textsCap.applications}: ${applications.length}`
-                    : applied
-                        ? textsCap.applied
-                        : isClosed
-                            ? textsCap.closed
-                            : textsCap.apply,
-                disabled: !!applied
-                    || (!isOwner && isClosed)
-                    || (isOwner && !applications.length),
-                fluid: true,
-                icon: isOwner
-                    ? 'eye'
-                    : applied
-                        ? 'check'
-                        : isClosed
-                            ? 'dont'//'warning circle'
-                            : 'play',
-                key: taskId,
-                onClick: () => {
-                    // open application form
-                    if (!isOwner) return showForm(ApplicationForm, {
-                        onSubmit: success => {
-                            console.log({ _, forceReload })
-                            success && isFn(forceReload) && forceReload()
-                        },
-                        proposalRequired,
-                        title,
-                        values: { taskId },
-                    })
+    if (!isMarket || isAssigned) return (
+        <div>
+            {isMobile && <b>{textsCap.assignee}: </b>}
+            <AddressName {...{ address: fulfiller }} />
+        </div>
+    )
+    return (
+        <Button {...{
+            color: applied
+                ? 'green'
+                : !isOwner && !isClosed
+                    ? 'blue'
+                    : undefined,
+            content: isOwner
+                ? `${textsCap.applications}: ${applications.length}`
+                : applied
+                    ? textsCap.applied
+                    : isClosed
+                        ? textsCap.closed
+                        : textsCap.apply,
+            disabled: !!applied
+                || (!isOwner && isClosed)
+                || (isOwner && !applications.length),
+            fluid: true,
+            icon: isOwner
+                ? 'list'
+                : applied
+                    ? 'check'
+                    : isClosed
+                        ? 'dont'//'warning circle'
+                        : 'play',
+            key: taskId,
+            onClick: () => {
+                // open application form
+                if (!isOwner) return showForm(ApplicationForm, {
+                    onSubmit: success => {
+                        success && isFn(forceReload) && forceReload()
+                    },
+                    proposalRequired,
+                    title,
+                    values: { taskId },
+                })
 
-                    const modalId = `${taskId}-applications`
-                    // show list of applications
-                    showInfo({
-                        collapsing: true,
-                        content: <ApplicationList {...{ modalId, taskId }} />,
-                        header: textsCap.applications,
-                        // size: 'tiny',
-                        subheader: `${textsCap.title}: ${title}`,
-                    }, modalId)
-                },
-                style: { whiteSpace: 'nowrap' }
-            }} />
-        )
+                const modalId = `${taskId}-applications`
+                // show list of applications
+                showInfo({
+                    collapsing: true,
+                    content: (
+                        <ApplicationList {...{
+                            forceReload,
+                            modalId,
+                            taskId,
+                        }} />
+                    ),
+                    header: textsCap.applications,
+                    // size: 'tiny',
+                    subheader: `${textsCap.title}: ${title}`,
+                }, modalId)
+            },
+            style: { whiteSpace: 'nowrap' }
+        }} />
+    )
 }
 // status cell view (with status related action buttons where appropriate)
-export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds }) => {
+export const getStatusView = (task, taskId, _, { inProgressIds }) => {
     const {
         fulfiller,
         isMarket,
         orderStatus,
         owner,
         _orderStatus,
-     } = task
-    if (isMarket) return `${_orderStatus}`
+    } = task
+    const btnStatus = (
+        <Button basic fluid>
+            {_orderStatus}
+        </Button>
+    )
+    if (isMarket) return btnStatus
+
     const isOpen = isMarket && owner === fulfiller
     const { address } = !isOpen && getIdentity(fulfiller) || getSelected()
     const isOwner = address === owner
@@ -333,6 +342,7 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
             if (isFulfiller) return (
                 <ButtonAcceptOrReject
                     disabled={inProgress}
+                    fluid
                     loading={inProgress}
                     onAction={async (e, accepted) => {
                         e.preventDefault()
@@ -352,6 +362,7 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
                 <Button
                     content={textsCap.createInvoice}
                     disabled={inProgress}
+                    fluid
                     loading={inProgress}
                     onClick={async (e) => {
                         e.preventDefault()
@@ -380,6 +391,7 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
                 <ButtonAcceptOrReject
                     acceptText={textsCap.pay}
                     disabled={inProgress}
+                    fluid
                     loading={inProgress}
                     onAction={async (e, accepted) => {
                         e.preventDefault()
@@ -395,50 +407,56 @@ export const getStatusView = (task, taskId, _, { isMarketPlace, inProgressIds })
             )
             break
     }
-    return `${_orderStatus}`
+    return btnStatus
 }
 
-const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
-    columns: [
-        !isMobile && !isMarketplace && {
+const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) => {
+    const actionsCol = {
+        collapsing: true,
+        content: (_, taskId) => (
+            <Button {...{
+                content: isMobile
+                    ? textsCap.viewDetails
+                    : undefined,
+                fluid: isMobile,
+                icon: 'eye',
+                onClick: () => TaskDetails.asModal({ taskId }),
+                title: textsCap.view,
+            }} />
+        ),
+        draggable: false,
+        textAlign: 'center',
+        title: textsCap.view,
+    }
+
+    const columns = [
+        !isMarketplace && {
             content: ({ tsCreated }) => format(tsCreated),
             collapsing: true,
             key: 'tsCreated',
             title: textsCap.createdAt,
         },
         {
-            content: !isMobile
-                ? undefined // display title only
-                : task => ( // display title and bounty amount
-                    <div>
-                        {task.title}
-                        <Text {...{
-                            color: 'grey',
-                            El: 'div',
-                            invertedColor: 'lightgrey',
-                        }}>
-                            <small>
-                                <Icon className='no-margin' name='money' />
-                                <span style={{ paddingLeft: 7 }}>
-                                    <Currency {...{
-                                        emptyMessage: textsCap.loading,
-                                        value: task.amountXTX,
-                                    }} />
-                                </span>
-                            </small>
-                        </Text>
-                    </div>
-                ),
             draggableValueKey: 'title',
             key: 'title',
-            style: { minWidth: 125 },
+            style: {
+                fontSize: !isMobile
+                    ? undefined
+                    : '110%',
+                minWidth: 125,
+            },
             title: textsCap.title,
         },
-        !isMobile && {
+        isMobile && {
+            content: x => textEllipsis(x.description, 100, 3, false),
+            key: 'description',
+        },
+        {
             collapsing: true,
             content: task => (
                 <Currency {...{
                     emptyMessage: textsCap.loading,
+                    prefix: isMobile && <Icon name='money' />,
                     value: task.amountXTX,
                 }} />
             ),
@@ -447,12 +465,15 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
             key: 'amountXTX',
             title: textsCap.bounty,
         },
-        (isMarketplace || !isMobile) && {
-            content: ({ createdBy, owner }) => (
-                <AddressName {...{
-                    address: owner,
-                    userId: createdBy,
-                }} />
+        isMarketplace && {
+            content: ({ createdBy, owner }, _1, _2, { isMobile }) => (
+                <div>
+                    {isMobile && <b>{textsCap.taskOwner}: </b>}
+                    <AddressName {...{
+                        address: owner,
+                        userId: createdBy,
+                    }} />
+                </div>
             ),
             onDragStart: (e, dragValue) => {
                 // if marketplace use "@userId" to search by createdBy property.
@@ -468,14 +489,14 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
             key: 'owner',
             title: textsCap.taskOwner,
         },
-        !(isMobile && isFulfillerList) && {
+        !isFulfillerList && {
             content: getAssigneeView,
             draggable: !isMarketplace,
             draggableValueKey: 'fulfiller',
             key: 'fulfiller',
             title: textsCap.assignee,
         },
-        !isMobile && {
+        {
             content: ({ tags = [] }) => (
                 <Tags {...{
                     onDragStart: e => {
@@ -495,7 +516,6 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
         !isMarketplace && {
             content: getStatusView,
             collapsing: true,
-            draggable: !isMarketplace,
             draggableValueKey: '_orderStatus',
             key: '_orderStatus',
             textAlign: 'center',
@@ -521,35 +541,44 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace) => ({
         //     key: '_approvalStatus',
         //     title: textsCap.approved,
         // },
-        {
-            collapsing: true,
-            content: getActions,
-            draggable: false,
-            textAlign: 'center',
-            title: textsCap.view,
-        },
-    ].filter(Boolean),
-    // no default sorting on marketplace
-    defaultSort: 'tsCreated',
-    defaultSortAsc: false,
-    // disable all actions if there is an unfinished queue item for this task ID
-    rowProps: (_task, taskId, _tasks, { inProgressIds }) =>
-        inProgressIds.has(taskId)
-        && { disabled: true }
-        || {},
-    searchable: !isMarketplace,
-    searchExtraKeys: ['_taskId', 'marketplace'],
-    searchOnChange: (keywords, { listType }) => tempCache.set(
-        'keywords-' + listType,
-        keywords,
-    ),
-    sortBy: isMarketplace
-        ? false
-        : undefined,
-    sortAsc: isMarketplace
-        ? true
-        : undefined,
-})
+        actionsCol,
+    ].filter(Boolean)
+
+    return {
+        columns,
+        columnsHidden: !isMobile
+            ? []
+            : [
+                'tsCreated',
+                'tags',
+                '_orderStatus',
+            ].filter(Boolean),
+        // no default sorting on marketplace
+        defaultSort: 'tsCreated',
+        defaultSortAsc: false,
+        headers: !isMobile,
+        // disable all actions if there is an unfinished queue item for this task ID
+        rowProps: (_task, taskId, _tasks, { inProgressIds }) =>
+            inProgressIds.has(taskId)
+            && { disabled: true }
+            || {},
+        searchable: !isMarketplace,
+        searchExtraKeys: ['_taskId', 'marketplace'],
+        searchOnChange: (keywords, { listType }) => tempCache.set(
+            'keywords-' + listType,
+            keywords,
+        ),
+        sortBy: isMarketplace
+            ? false
+            : undefined,
+        sortAsc: isMarketplace
+            ? true
+            : undefined,
+        tableProps: {
+            unstackable: false,
+        }
+    }
+}
 
 setTimeout(() => {
     // subscribe to queue item changes and store taskIds

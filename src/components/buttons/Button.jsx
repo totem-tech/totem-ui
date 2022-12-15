@@ -24,13 +24,14 @@ const Button = React.memo(props => {
 		positive,
 		primary,
 	} = props
+	const _inverted = useInverted()
 	inverted = isBool(inverted)
 		? inverted
 		: !color
 			&& !negative
 			&& !positive
 			&& !primary
-			&& useInverted()
+			&& _inverted
 	return (
 		<_Button {...{
             ...props,
