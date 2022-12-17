@@ -132,10 +132,12 @@ export const getColumns = (showStatusButtons = true) => {
         },
         {
             collapsing: true,
-            content: (application, _i, _arr, { task, taskId }) => (
+            content: (application = {}, _i, _arr, { task = {}, taskId }) => (
                 <Button {...{
                     icon: 'eye',
                     onClick: () => {
+                        console.log({task})
+                        console.log({application})
                         const modalId = `${taskId}-${application.workerAddress}`
                         const content = (
                             <ApplicationView {...{
