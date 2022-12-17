@@ -38,7 +38,7 @@ const StringReplace = props => {
         children,
         Component = 'span',
         componentProps,
-        content = children,
+        content = children || '',
         regex,
         replacer,
         unmatchedReplacer,
@@ -50,45 +50,49 @@ const StringReplace = props => {
         ? content
         : JSON.stringify(content, null, 4)
 
-    useEffect(() => { 
-        const matches = content.match(regex)
-        let elements = [content]
-        if (matches) {
-            const replacements = matches.map(str =>
-                <Component {...(
-                    isFn(componentProps)
-                        ? componentProps(str)
-                        : componentProps
-                )}>
-                    {isFn(replacer)
-                        ? replacer(str)
-                        : str}
-                </Component>
-            )
-            matches.forEach((match, i) => {
-                elements = elements.map(s =>
-                    isValidElement(s) // already replaced
-                        ? s 
-                        : `${s}`
-                            .split(match)
-                            .map((x, j) =>
-                                j === 0
-                                    ? [x]
-                                    : [replacements[i], x])
+    useEffect(() => {
+        try {
+            const matches = content.match(regex)
+            let elements = [content]
+            if (matches) {
+                const replacements = matches.map(str =>
+                    <Component {...(
+                        isFn(componentProps)
+                            ? componentProps(str)
+                            : componentProps
+                    )}>
+                        {isFn(replacer)
+                            ? replacer(str)
+                            : str}
+                    </Component>
                 )
-                    // double flattening required due to 3-dimentional Array
-                    .flat().flat()
-            })
+                matches.forEach((match, i) => {
+                    elements = elements.map(s =>
+                        isValidElement(s) // already replaced
+                            ? s
+                            : `${s}`
+                                .split(match)
+                                .map((x, j) =>
+                                    j === 0
+                                        ? [x]
+                                        : [replacements[i], x])
+                    )
+                        // double flattening required due to 3-dimentional Array
+                        .flat().flat()
+                })
+            }
+            elements = elements.map((children, i) =>
+                <React.Fragment {...{
+                    children: isFn(unmatchedReplacer) && !isValidElement(children)
+                        ? unmatchedReplacer(children)
+                        : children,
+                    key: i
+                }} />
+            )
+            setElements(elements)
+        } catch (err) {
+            console.warn('StringReplace', err)
         }
-        elements = elements.map((children, i) =>
-            <React.Fragment {...{
-                children: isFn(unmatchedReplacer) && !isValidElement(children)
-                    ? unmatchedReplacer(children)
-                    : children,
-                key: i
-            }} />
-        )
-        setElements(elements)
     }, [content])
 
 	return elements
@@ -162,19 +166,24 @@ export const Linkify = props => {
             replacer: !shorten
                 ? replacer
                 : url => {
-                    let shortUrl = !removeHttps
-                        ? url
-                        : url.replace(/^(http|https)\:\/\//, '')
-                    if (shorten) shortUrl = textEllipsis(
-                        shortUrl,
-                        shorten,
-                        5,
-                        false,
-                    )
-                    const finalUrl = isFn(replacer)
-                        ? replacer(shortUrl, url)
-                        : shortUrl
-                    return finalUrl
+                    try {
+                        let shortUrl = !removeHttps
+                            ? url
+                            : url.replace(/^(http|https)\:\/\//, '')
+                        if (shorten) shortUrl = textEllipsis(
+                            shortUrl,
+                            shorten,
+                            5,
+                            false,
+                        )
+                        const finalUrl = isFn(replacer)
+                            ? replacer(shortUrl, url)
+                            : shortUrl
+                        return finalUrl
+                    } catch (err) {
+                        console.warn('Linkify', err)
+                        return url
+                    }
                 }
         }} />
     )
