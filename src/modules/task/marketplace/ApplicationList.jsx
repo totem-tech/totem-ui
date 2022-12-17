@@ -145,13 +145,15 @@ export const getColumns = (showStatusButtons = true) => {
                                 taskId,
                             }} />
                         )
-                        showInfo({
+                        const modalProps = {
                             collapsing: true,
                             content,
                             header: textsCap.viewApp,
                             size: 'tiny',
                             subheader: `${textsCap.title}: ${task.title}`
-                        }, modalId)
+                        }
+                        showInfo(modalProps, modalId)
+                            .catch(console.warn)
                     },
                 }} />
             ),
