@@ -320,6 +320,7 @@ export const queueables = {
         queueProps,
         productId = PRODUCT_HASH_LABOUR,
     ) => {
+        isMarket = false // setting true does not allow updating fulfiller
         const func = !!orderId
             ? queueableApis.changeSpfso
             : queueableApis.createSpfso

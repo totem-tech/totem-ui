@@ -56,6 +56,12 @@ const DataTableVertical = (props) => {
                 fontWeight:  i > 0 
                     ? undefined
                     : 'bold',
+                paddingLeft: i == 0
+                    ? 25
+                    : undefined,
+                paddingRight: i === maxLen - 1
+                    ? 25
+                    : undefined,
                 ...columns[0].style,
             },
         }))

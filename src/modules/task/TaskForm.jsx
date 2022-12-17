@@ -176,19 +176,329 @@ export default class TaskForm extends Component {
     constructor(props) {
         super(props)
 
-        const { taskId, values } = this.props
+        const {
+            header,
+            taskId,
+            values,
+        } = this.props
         this.doUpdate = !!taskId
         this.rxCurrency = copyRxSubject(rxSelectedCurrency)
         this.rxCurrencies = new BehaviorSubject()
         this.rxAssignee = new BehaviorSubject()
         this.rxTags = new BehaviorSubject([])
         this.rxTagOptions = new BehaviorSubject([])
+        const inputs = [
+            {
+                hidden: true,
+                name: inputNames.parentId,
+            },
+            {
+                rxValue: new BehaviorSubject(false),
+                inline: true,
+                label: textsCap.marketplace,
+                multiple: false,
+                name: inputNames.isMarket,
+                options: [
+                    { label: textsCap.assignToPartner, value: false },
+                    { label: textsCap.publishToMarketPlace, value: true },
+                ],
+                radio: true,
+                required: true,
+                type: 'checkbox-group',
+            },
+            {
+                falseValue: true, // value when unchecked
+                hidden: values => !taskId || !values[inputNames.isMarket],
+                label: textsCap.isClosedLabel,
+                name: inputNames.isClosed,
+                toggle: true,
+                trueValue: false, // value when checked
+                type: 'checkbox',
+            },
+            {
+                rxValue: new BehaviorSubject(),
+                hidden: values => !!values[inputNames.isMarket],
+                label: textsCap.assignee,
+                name: inputNames.assignee,
+                options: [],
+                placeholder: textsCap.assigneePlaceholder,
+                required: true,
+                rxOptions: rxPartners,
+                rxOptionsModifier: partners => getPartnerOptions(
+                    partners,
+                    // whenever a partner is updated by clicking on the pencil icon,
+                    // this will trigger re-validation of assignee
+                    { onSubmit: this.triggerAssigneeUpdate },
+                ),
+                rxValue: this.rxAssignee,
+                selection: true,
+                search: ['keywords'],
+                type: 'dropdown',
+                validate: (_, { value: assignee }) => {
+                    if (!assignee) return
 
+                    const { address } = getSelected() || {}
+                    if (assignee === address) return textsCap.errAssginToSelf
+
+                    const partner = getPartner(assignee)
+                    const { userId } = partner || {}
+                    const userIdMissing = !!partner && !userId
+                    const handleClick = e => {
+                        e.preventDefault() // prevents form being submitted
+                        showForm(PartnerForm, {
+                            values: { address: assignee },
+                            onSubmit: this.triggerAssigneeUpdate
+                        })
+                    }
+                    
+                    return partner && userId
+                        ? null
+                        : (
+                            <div>
+                                {userIdMissing
+                                    ? textsCap.errAsigneeNoUserId
+                                    : textsCap.errAssigneeNotPartner}
+                                <div>
+                                    <Button {...{
+                                        content: userIdMissing
+                                            ? textsCap.updatePartner
+                                            : textsCap.addPartner,
+                                        onClick: handleClick,
+                                    }} />
+                                </div>
+                            </div>
+                        )
+                },
+            },
+            {
+                rxValue: new BehaviorSubject(),
+                label: textsCap.title,
+                maxLength: 80,
+                minLength: 3,
+                name: inputNames.title,
+                placeholder: textsCap.titlePlaceholder,
+                required: true,
+                type: 'text',
+            },
+            {
+                ...asInlineLabel({
+                    disabled: this.doUpdate,
+                    onCurrencies: currencies => {
+                        this.rxCurrencies.next(currencies)
+                        const { loading } = this.state
+                        loading.currencies = false
+                        this.setState({ loading })
+                    },
+                    rxValue: this.rxCurrency,
+                }),
+                label: textsCap.bountyLabel,
+                maxLength: 18,
+                min: 0, // allows bounty-free tasks
+                name: inputNames.bounty,
+                onChange: !taskId
+                    ? this.handleBountyChange
+                    : undefined,
+                placeholder: textsCap.bountyPlaceholder,
+                rxValue: new BehaviorSubject(),
+                required: true,
+                type: 'number',
+                useInput: true,
+                // width: 10,
+            },
+            {
+                hidden: true,
+                name: inputNames.currency,
+                onChange: async (...args) => { 
+                    const [_, values] = args
+                    const { inputs } = this.state
+                    const currency = values[inputNames.currency]
+                    const bounty = values[inputNames.bounty]
+                    const bountyIn = findInput(inputs, inputNames.bounty)
+                    const currencies = await subjectAsPromise(this.rxCurrencies, isArr)[0]
+                    const { decimals = 0 } = currencies.find(x => x.currency === currency) || {}
+                    bountyIn.decimals = parseInt(decimals || '') || 0
+                    bountyIn.message = null
+                    this.setState({ inputs })
+                    
+                    // trigger re-validation
+                    bountyIn.rxValue.next('')
+                    bountyIn.rxValue.next(bounty)
+                },
+                rxValue: this.rxCurrency,
+            },
+            {// hidden type to store bounty in XTX (regardless of display currency selected)
+                hidden: true,
+                name: inputNames.amountXTX,
+                required: true,
+                rxValue: new BehaviorSubject(0),
+            },
+            {
+                // hidden: true,//delete
+                name: inputNames.dates,
+                title: 'YYYY-MM-DD',
+                type: 'group',
+                inputs: [
+                    {
+                        rxValue: new BehaviorSubject(),
+                        label: textsCap.deadlineLabel,
+                        name: inputNames.deadline,
+                        onChange: (_, values) => {
+                            const { taskId } = this.props
+                            let dueDate = values[inputNames.dueDate]
+                            const deadline = values[inputNames.deadline]
+                            const dueDateIn = findInput(this.state.inputs, inputNames.dueDate)
+                            if (!dueDate || !taskId) {
+                                // reset 1 day after deadline if not already set or creating new task
+                                const date = strToDate(deadline)
+                                date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
+                                dueDate = format(date).substring(0, 10)
+                            }
+                            // reset and force re-evaluate due date
+                            !!taskId && dueDateIn.rxValue.next('')
+                            dueDateIn.rxValue.next(dueDate)
+                        },
+                        required: true,
+                        type: 'date',
+                        validate: (_, { value: deadline }) => {
+                            if (!deadline) return
+
+                            const diffMS = strToDate(deadline) - new Date()
+                            return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
+                        },
+                    },
+                    {
+                        disabled: values => !values[inputNames.deadline],
+                        // hidden: values => !values[inputNames.deadline], // hide if deadline is not selected
+                        label: textsCap.dueDateLabel,
+                        name: inputNames.dueDate,
+                        required: true,
+                        rxValue: new BehaviorSubject(),
+                        type: 'date',
+                        validate: (_, { value: dueDate }, values) => {
+                            if (!dueDate) return
+                            const deadline = values[inputNames.deadline]
+                            const diffMS = strToDate(dueDate) - strToDate(deadline)
+                            return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
+                        },
+                    },
+                ],
+            },
+            {
+                // Advanced section (Form type "group" with accordion)
+                accordion: {
+                    collapsed: true,
+                    styled: true,
+                },
+                icon: 'pen',
+                inline: false,
+                label: textsCap.advancedLabel,
+                name: inputNames.advancedGroup,
+                type: 'group',
+                // styleContainer: {width: '100%'},
+                grouped: true,
+                inputs: [
+                    {
+                        name: inputNames.isSell,
+                        type: 'hidden',
+                        value: 0, // 0 => buy order
+                    },
+                    {
+                        name: inputNames.productId,
+                        type: 'hidden',
+                        value: PRODUCT_HASH_LABOUR,
+                    },
+                    {
+                        hidden: values => !values[inputNames.isMarket],
+                            label: textsCap.proposalLabel,
+                        name: inputNames.proposalRequired,
+                        toggle: true,
+                        type: 'checkbox',
+                    },
+                    {
+                        disabled: true,
+                        hidden: values => !values[inputNames.isMarket], 
+                        inline: true,
+                        label: textsCap.orderTypeLabel,
+                        name: inputNames.orderType,
+                        options: [
+                            { label: textsCap.service, value: 0 },
+                            { label: textsCap.inventory, value: 1 },
+                            { label: textsCap.goods, value: 2 },
+                        ],
+                        radio: true,
+                        type: 'checkbox-group',
+                        value: 0, // default: service
+                    },
+                    {
+                        label: textsCap.descLabel,
+                        labelDetails: textsCap.descLabelDetails,
+                        maxLength: 500,
+                        minLength: 3,
+                        name: inputNames.description,
+                        placeholder: textsCap.descPlaceholder,
+                        required: false,
+                        type: 'textarea',
+                    },
+                    {
+                        allowAdditions: true,
+                        customMessages: {
+                            lengthMax: textsCap.errTagsMaxLen,
+                        },
+                        label: textsCap.tags,
+                        maxLength: 6,
+                        multiple: true,
+                        name: inputNames.tags,
+                        noResultsMessage: textsCap.tagsNoResultMsg,
+                        onAddItem: (_, { value = '' }) => {
+                            const newTag = [...value.match(/[a-z0-9]/ig)]
+                                .filter(Boolean)
+                                .join('')
+                                .toLowerCase()
+                            
+                            newTag !== value && this.rxTags.next(
+                                this.rxTags
+                                    .value
+                                    .concat(newTag)
+                                    .filter(x => !!x && x !== value)
+                            )
+                            const tags = arrUnique([
+                                ...this.rxTagOptions.value,
+                                newTag,
+                            ])
+                                .filter(Boolean)
+                                .sort()
+                            this.rxTagOptions.next(tags)
+                        },
+                        options: [],
+                        rxOptions: this.rxTagOptions,
+                        rxOptionsModifier: tags => arrUnique(tags)
+                            .map(value => ({
+                                key: value,
+                                text: value,
+                                value,
+                            })),
+                        rxValue: this.rxTags,
+                        placeholder: textsCap.tagsPlaceholder,
+                        selection: true,
+                        search: true,
+                        type: 'dropdown',
+                        validate: (_, { value = '' }) => {
+                            const invalid = value
+                                .join('')
+                                .length > 64
+                            return invalid && `${textsCap.errTagsMaxChars}: 32`
+                        }
+                    },
+                ],
+            },
+        ]
         this.state = {
             disabled: true,
-            header: isObj(values) && !!taskId
-                ? textsCap.formHeaderUpdate
-                : textsCap.formHeader,
+            header: header || (
+                isObj(values) && !!taskId
+                    ? textsCap.formHeaderUpdate
+                    : textsCap.formHeader
+            ),
             loading: {
                 currencies: true,
                 onMount: true,
@@ -201,307 +511,7 @@ export default class TaskForm extends Component {
                 ? undefined
                 : this.handleChange,
             onSubmit: this.handleSubmit,
-            inputs: [
-                {
-                    rxValue: new BehaviorSubject(false),
-                    inline: true,
-                    label: textsCap.marketplace,
-                    multiple: false,
-                    name: inputNames.isMarket,
-                    options: [
-                        { label: textsCap.assignToPartner, value: false },
-                        { label: textsCap.publishToMarketPlace, value: true },
-                    ],
-                    radio: true,
-                    required: true,
-                    type: 'checkbox-group',
-                },
-                {
-                    falseValue: true, // value when unchecked
-                    hidden: values => !taskId || !values[inputNames.isMarket],
-                    label: textsCap.isClosedLabel,
-                    name: inputNames.isClosed,
-                    toggle: true,
-                    trueValue: false, // value when checked
-                    type: 'checkbox',
-                },
-                {
-                    rxValue: new BehaviorSubject(),
-                    hidden: values => !!values[inputNames.isMarket],
-                    label: textsCap.assignee,
-                    name: inputNames.assignee,
-                    options: [],
-                    placeholder: textsCap.assigneePlaceholder,
-                    required: true,
-                    rxOptions: rxPartners,
-                    rxOptionsModifier: partners => getPartnerOptions(
-                        partners,
-                        // whenever a partner is updated by clicking on the pencil icon,
-                        // this will trigger re-validation of assignee
-                        { onSubmit: this.triggerAssigneeUpdate },
-                    ),
-                    rxValue: this.rxAssignee,
-                    selection: true,
-                    search: ['keywords'],
-                    type: 'dropdown',
-                    validate: (_, { value: assignee }) => {
-                        if (!assignee) return
-
-                        const { address } = getSelected() || {}
-                        if (assignee === address) return textsCap.errAssginToSelf
-
-                        const partner = getPartner(assignee)
-                        const { userId } = partner || {}
-                        const userIdMissing = !!partner && !userId
-                        const handleClick = e => {
-                            e.preventDefault() // prevents form being submitted
-                            showForm(PartnerForm, {
-                                values: { address: assignee },
-                                onSubmit: this.triggerAssigneeUpdate
-                            })
-                        }
-                        
-                        return partner && userId
-                            ? null
-                            : (
-                                <div>
-                                    {userIdMissing
-                                        ? textsCap.errAsigneeNoUserId
-                                        : textsCap.errAssigneeNotPartner}
-                                    <div>
-                                        <Button {...{
-                                            content: userIdMissing
-                                                ? textsCap.updatePartner
-                                                : textsCap.addPartner,
-                                            onClick: handleClick,
-                                        }} />
-                                    </div>
-                                </div>
-                            )
-                    },
-                },
-                {
-                    rxValue: new BehaviorSubject(),
-                    label: textsCap.title,
-                    maxLength: 80,
-                    minLength: 3,
-                    name: inputNames.title,
-                    placeholder: textsCap.titlePlaceholder,
-                    required: true,
-                    type: 'text',
-                },
-                {
-                    ...asInlineLabel({
-                        disabled: this.doUpdate,
-                        onCurrencies: currencies => {
-                            this.rxCurrencies.next(currencies)
-                            const { loading } = this.state
-                            loading.currencies = false
-                            this.setState({ loading })
-                        },
-                        rxValue: this.rxCurrency,
-                    }),
-                    label: textsCap.bountyLabel,
-                    maxLength: 18,
-                    min: 0, // allows bounty-free tasks
-                    name: inputNames.bounty,
-                    onChange: !taskId
-                        ? this.handleBountyChange
-                        : undefined,
-                    placeholder: textsCap.bountyPlaceholder,
-                    rxValue: new BehaviorSubject(),
-                    required: true,
-                    type: 'number',
-                    useInput: true,
-                    // width: 10,
-                },
-                {
-                    hidden: true,
-                    name: inputNames.currency,
-                    onChange: async (...args) => { 
-                        const [_, values] = args
-                        const { inputs } = this.state
-                        const currency = values[inputNames.currency]
-                        const bounty = values[inputNames.bounty]
-                        const bountyIn = findInput(inputs, inputNames.bounty)
-                        const currencies = await subjectAsPromise(this.rxCurrencies, isArr)[0]
-                        const { decimals = 0 } = currencies.find(x => x.currency === currency) || {}
-                        bountyIn.decimals = parseInt(decimals || '') || 0
-                        bountyIn.message = null
-                        this.setState({ inputs })
-                        
-                        // trigger re-validation
-                        bountyIn.rxValue.next('')
-                        bountyIn.rxValue.next(bounty)
-                    },
-                    rxValue: this.rxCurrency,
-                },
-                {// hidden type to store bounty in XTX (regardless of display currency selected)
-                    hidden: true,
-                    name: inputNames.amountXTX,
-                    required: true,
-                    rxValue: new BehaviorSubject(0),
-                },
-                {
-                    // hidden: true,//delete
-                    name: inputNames.dates,
-                    title: 'YYYY-MM-DD',
-                    type: 'group',
-                    inputs: [
-                        {
-                            rxValue: new BehaviorSubject(),
-                            label: textsCap.deadlineLabel,
-                            name: inputNames.deadline,
-                            onChange: (_, values) => {
-                                const { taskId } = this.props
-                                let dueDate = values[inputNames.dueDate]
-                                const deadline = values[inputNames.deadline]
-                                const dueDateIn = findInput(this.state.inputs, inputNames.dueDate)
-                                if (!dueDate || !taskId) {
-                                    // reset 1 day after deadline if not already set or creating new task
-                                    const date = strToDate(deadline)
-                                    date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
-                                    dueDate = format(date).substring(0, 10)
-                                }
-                                // reset and force re-evaluate due date
-                                !!taskId && dueDateIn.rxValue.next('')
-                                dueDateIn.rxValue.next(dueDate)
-                            },
-                            required: true,
-                            type: 'date',
-                            validate: (_, { value: deadline }) => {
-                                if (!deadline) return
-
-                                const diffMS = strToDate(deadline) - new Date()
-                                return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
-                            },
-                        },
-                        {
-                            disabled: values => !values[inputNames.deadline],
-                            // hidden: values => !values[inputNames.deadline], // hide if deadline is not selected
-                            label: textsCap.dueDateLabel,
-                            name: inputNames.dueDate,
-                            required: true,
-                            rxValue: new BehaviorSubject(),
-                            type: 'date',
-                            validate: (_, { value: dueDate }, values) => {
-                                if (!dueDate) return
-                                const deadline = values[inputNames.deadline]
-                                const diffMS = strToDate(dueDate) - strToDate(deadline)
-                                return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
-                            },
-                        },
-                    ],
-                },
-                {
-                    // Advanced section (Form type "group" with accordion)
-                    accordion: {
-                        collapsed: true,
-                        styled: true,
-                    },
-                    icon: 'pen',
-                    inline: false,
-                    label: textsCap.advancedLabel,
-                    name: inputNames.advancedGroup,
-                    type: 'group',
-                    // styleContainer: {width: '100%'},
-                    grouped: true,
-                    inputs: [
-                        {
-                            name: inputNames.isSell,
-                            type: 'hidden',
-                            value: 0, // 0 => buy order
-                        },
-                        {
-                            name: inputNames.productId,
-                            type: 'hidden',
-                            value: PRODUCT_HASH_LABOUR,
-                        },
-                        {
-                            hidden: values => !values[inputNames.isMarket],
-                                label: textsCap.proposalLabel,
-                            name: inputNames.proposalRequired,
-                            toggle: true,
-                            type: 'checkbox',
-                        },
-                        {
-                            disabled: true,
-                            hidden: values => !values[inputNames.isMarket], 
-                            inline: true,
-                            label: textsCap.orderTypeLabel,
-                            name: inputNames.orderType,
-                            options: [
-                                { label: textsCap.service, value: 0 },
-                                { label: textsCap.inventory, value: 1 },
-                                { label: textsCap.goods, value: 2 },
-                            ],
-                            radio: true,
-                            type: 'checkbox-group',
-                            value: 0, // default: service
-                        },
-                        {
-                            label: textsCap.descLabel,
-                            labelDetails: textsCap.descLabelDetails,
-                            maxLength: 500,
-                            minLength: 3,
-                            name: inputNames.description,
-                            placeholder: textsCap.descPlaceholder,
-                            required: false,
-                            type: 'textarea',
-                        },
-                        {
-                            allowAdditions: true,
-                            customMessages: {
-                                lengthMax: textsCap.errTagsMaxLen,
-                            },
-                            label: textsCap.tags,
-                            maxLength: 6,
-                            multiple: true,
-                            name: inputNames.tags,
-                            noResultsMessage: textsCap.tagsNoResultMsg,
-                            onAddItem: (_, { value = '' }) => {
-                                const newTag = [...value.match(/[a-z0-9]/ig)]
-                                    .filter(Boolean)
-                                    .join('')
-                                    .toLowerCase()
-                                
-                                newTag !== value && this.rxTags.next(
-                                    this.rxTags
-                                        .value
-                                        .concat(newTag)
-                                        .filter(x => !!x && x !== value)
-                                )
-                                const tags = arrUnique([
-                                    ...this.rxTagOptions.value,
-                                    newTag,
-                                ])
-                                    .filter(Boolean)
-                                    .sort()
-                                this.rxTagOptions.next(tags)
-                            },
-                            options: [],
-                            rxOptions: this.rxTagOptions,
-                            rxOptionsModifier: tags => arrUnique(tags)
-                                .map(value => ({
-                                    key: value,
-                                    text: value,
-                                    value,
-                                })),
-                            rxValue: this.rxTags,
-                            placeholder: textsCap.tagsPlaceholder,
-                            selection: true,
-                            search: true,
-                            type: 'dropdown',
-                            validate: (_, { value = '' }) => {
-                                const invalid = value
-                                    .join('')
-                                    .length > 64
-                                return invalid && `${textsCap.errTagsMaxChars}: 32`
-                            }
-                        },
-                    ],
-                },
-            ]
+            inputs,
         }
 
         this.originalSetState = this.setState
@@ -545,19 +555,20 @@ export default class TaskForm extends Component {
                 inputNames.deadline,
                 inputNames.dueDate,
             ])
-            if (currency === currencyDefault) {
-                values.bounty = amountXTX
-            } else {
-                // convert bounty amount from default currency to task currency
-                const [bounty, bountyStr] = await convertTo(
-                    amountXTX,
-                    currencyDefault,
-                    currency,
-                )
-                bounty && bountyIn
-                    .rxValue
-                    .next(Number(bountyStr))
-            }
+        }
+
+        if (!values.bounty && currency === currencyDefault) {
+            values.bounty = amountXTX
+        } else {
+            // convert bounty amount from default currency to task currency
+            const [bounty, bountyStr] = await convertTo(
+                amountXTX,
+                currencyDefault,
+                currency,
+            )
+            bounty && bountyIn
+                .rxValue
+                .next(Number(bountyStr))
         }
 
         this.oldValues = objClean(values, Object.values(inputNames))
@@ -709,6 +720,7 @@ export default class TaskForm extends Component {
             : values[inputNames.assignee]
         const isSell = values[inputNames.isSell]
         const title = values[inputNames.title]
+        const parentId = values[inputNames.parentId]
         const [dbValues, token] = getBonsaiData(values, ownerAddress)
         const nameCreateTask = 'createTask'
         const nameSaveTask = 'saveTask'
@@ -761,7 +773,9 @@ export default class TaskForm extends Component {
                 ownerAddress,
                 fulfiller,
                 isSell,
-                amountXTX,
+                isMarket
+                    ? 1 // set the minimum amount for the advert
+                    : amountXTX,
                 isMarket,
                 orderType,
                 deadline,
@@ -816,6 +830,12 @@ export default class TaskForm extends Component {
                 dbValues,
                 ownerAddress,
             ]
+        }
+
+        if (!this.doUpdate && !!parentId) {
+            // assigning marketplace task to an applicant
+            queueProps.recordId = parentId
+            queueProps.recordId = parentId
         }
 
         // notify assignee on creation only

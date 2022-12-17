@@ -79,7 +79,7 @@ export default class DataTable extends Component {
 		this.subscriptions = {}
 		this.subscriptions.layout = rxLayout.subscribe(layout => {
 			const isMobile = layout === MOBILE
-			if (this.state.isMObile === isMobile) return
+			if (this.state.isMobile === isMobile) return
 			this.setState({ isMobile })
 		})
 	}
@@ -202,18 +202,24 @@ export default class DataTable extends Component {
 
 	getRows(filteredData, columns, selectedIndexes, pageNo) {
 		let {
+			headers,
 			perPage,
 			rowProps,
 			selectable,
+			tableProps: { unstackable } = {}
 		} = this.props
+
+		const { isMobile } = this.state
 		const nonAttrs = [
 			'content',
 			'draggableValueKey',
 			'headerProps',
+			'includeTitleOnMobile',
 			'sortable',
 			'sortKey',
 			'title',
 		]
+		const isStackedNMobile = isMobile && !headers && !unstackable
 		return mapItemsByPage(
 			filteredData,
 			pageNo,
@@ -249,6 +255,7 @@ export default class DataTable extends Component {
 							content,
 							draggable,
 							draggableValueKey,
+							includeTitleOnMobile,
 							key: contentKey,
 							onDragStart,
 							style,
@@ -257,7 +264,12 @@ export default class DataTable extends Component {
 						} = cell || {}
 						draggable = draggable !== false
 						content = isFn(content)
-							? content(item, key, items, this.props)
+							? content(
+								item,
+								key,
+								items,
+								this.props,
+							)
 							: cell.content || item[contentKey]
 						style = {
 							cursor: draggable ? 'grab' : undefined,
@@ -273,7 +285,11 @@ export default class DataTable extends Component {
 							draggable,
 							onDragStart: !draggable
 								? undefined
-								: this.handleDragStartCb(dragValue, onDragStart, item),
+								: this.handleDragStartCb(
+									dragValue,
+									onDragStart,
+									item,
+								),
 							style,
 							textAlign,
 						}
@@ -285,6 +301,30 @@ export default class DataTable extends Component {
 								content,
 							})
 							content = JSON.stringify(content, null, 4)
+						}
+						if (isStackedNMobile && includeTitleOnMobile && content) {
+							content = (
+								<div style={{
+									display: 'table',
+									width: '100%',
+								}}>
+									<div style={{
+										display: 'table-cell',
+										maxWidth: '50%',
+									}}>
+										<b style={{ paddingRight: 7 }}>
+											{title}:
+										</b>
+									</div>
+									<div style={{
+										display: 'table-cell',
+										minWidth: '50%',
+										textAlign: 'right',
+									}}>
+										{content}
+									</div>
+								</div>
+							)
 						}
 						return <Table.Cell {...props}>{content}</Table.Cell>
 					})}

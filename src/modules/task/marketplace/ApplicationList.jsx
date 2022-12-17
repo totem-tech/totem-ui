@@ -1,22 +1,28 @@
-import React from 'react'
 import PropTypes from 'prop-types'
-import DataTable from '../../../components/DataTable'
+import React from 'react'
+import { BehaviorSubject } from 'rxjs'
+// utils
 import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactHelper'
-import AddressName from '../../partner/AddressName'
-import useTask from '../useTask'
-import Message, { statuses } from '../../../components/Message'
 import { format } from '../../../utils/time'
+// components
+import DataTable from '../../../components/DataTable'
+import Message, { statuses } from '../../../components/Message'
 import { Button, ButtonAcceptOrReject, UserID } from '../../../components/buttons'
-import { MOBILE, rxLayout } from '../../../services/window'
-import { closeModal, confirmAsPromise, showInfo } from '../../../services/modal'
-import { applicationStatus, queueableApis, queueables } from '../task'
-import ApplicationView from './ApplicationView'
-import { isFn, objClean } from '../../../utils/utils'
-import { bonsaiKeys, getBonsaiData } from '../TaskForm'
 import FormInput from '../../../components/FormInput'
-import { BehaviorSubject } from 'rxjs'
+// services
+import { closeModal, confirmAsPromise, showForm, showInfo } from '../../../services/modal'
 import { addToQueue, checkComplete, QUEUE_TYPES } from '../../../services/queue'
+import { MOBILE, rxLayout } from '../../../services/window'
+// modules
+import AddressName from '../../partner/AddressName'
+import { get as getPartner } from '../../partner/partner'
+import PartnerForm, { inputNames as partnerInputNames } from '../../partner/PartnerForm'
+import { applicationStatus, queueableApis } from '../task'
+import TaskForm, { inputNames as taskInputNames } from '../TaskForm'
+import useTask from '../useTask'
+import ApplicationView from './ApplicationView'
+import { isFn } from '../../../utils/utils'
 
 let textsCap = {
     accept: 'accept',
@@ -161,9 +167,10 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
         isMobile,
         forceReload,
         modalId,
-        task,
+        task = { },
         taskId,
     } = props
+    const { owner } = task
     const {
         _status,
         userId,
@@ -175,17 +182,6 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
     if (accepted) return _status
         
     const handleAction = async (_, accept) => {
-        const {
-            owner,
-            approver,
-            fulfiller,
-            isSell,
-            amountXTX,
-            isMarket,
-            orderType,
-            deadline,
-            dueDate,
-        } = task
         const confirmId = taskId + workerAddress + 'confirm'
         const handleResult = (success, err) => {
             console.log(success, err)
@@ -200,7 +196,6 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
                 ),
             })
         }
-        const [dbValues, token] = getBonsaiData(task, task.owner)
         const data = {
             rejectOthers: true,
             status: accept
@@ -222,25 +217,43 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
             title,
             type: QUEUE_TYPES.CHATCLIENT,
         }
-        const onChain = queueables.saveSpfso(
-            owner,
-            approver,
-            workerAddress,
-            isSell,
-            amountXTX,
-            isMarket,
-            orderType,
-            deadline,
-            dueDate,
-            taskId,
-            token,
-            {
-                description,
-                next: offChain,
-                then: handleResult,
-                title,
+
+        if (accept) {
+            // use the regular task form to create a new task and assignin to the applicant
+            const childTask = {
+                ...task,
+                fulfiller: workerAddress,
+                isMarket: false,
+                parentId: taskId,
             }
-        )
+            const openTaskForm = () => showForm(TaskForm, {
+                header: title,
+                inputsDisabled: Object.values(taskInputNames),
+                onSubmit: success => {
+                    console.log('TaskForm', { success })
+                    isFn(forceReload) && forceReload()
+                    closeModal(modalId)
+                },
+                subheader: `${textsCap.applicant}: @${userId}`,
+                submitText: textsCap.acceptApplication,
+                values: childTask,
+            })
+            // prompt to add worker as a partner
+            if (!!getPartner(workerAddress)) return openTaskForm()
+            
+            showForm(PartnerForm, {
+                subheader: 'Add the applicant identity as your partner',
+                onSubmit: done => done && openTaskForm(),
+                values: {
+                    [partnerInputNames.address]: workerAddress,
+                    [partnerInputNames.associatedIdentity]: owner,
+                    userId,
+                },
+                warnBackup: false,
+            })
+            return
+        }
+
         const confirmed = await confirmAsPromise({
             confirmButton: (
                 <Button {...{
@@ -273,17 +286,7 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
         if (!confirmed) return
 
         // if rejected, no need to update onchain data
-        const queueId = addToQueue(accept ? onChain : offChain)
-        console.log({queueId, taskId})
-
-        // keeps the button disabled until queue item execution is completed (success/error)
-        await checkComplete(queueId, true)
-
-        setTimeout(() => {
-            console.log('complete: shoulds stop loading spinner now')
-            closeModal(modalId)
-            isFn(forceReload) && forceReload()
-        })
+        addToQueue(offChain)
     }
 
     return (

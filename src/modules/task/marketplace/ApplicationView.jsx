@@ -63,7 +63,8 @@ const getLinks = isMobile => ({ links = [] }) => (
     <Linkify {...{
         content: links.join('\n'),
         replacer: (shortUrl, url) => {
-            const { hostname } = fallbackIfFails(() => new URL(url)) || {}
+            let { hostname = '' } = fallbackIfFails(() => new URL(url)) || {}
+            hostname.replace('www.', '')
             const name = knownIcons[hostname]
             const style = {}
             let color = knownColors[name]

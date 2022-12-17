@@ -420,7 +420,9 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
                     : undefined,
                 fluid: isMobile,
                 icon: 'eye',
-                onClick: () => TaskDetails.asModal({ taskId }),
+                onClick: () => TaskDetails
+                    .asModal({ taskId })
+                    .catch(console.warn),
                 title: textsCap.view,
             }} />
         ),
@@ -448,32 +450,35 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             title: textsCap.title,
         },
         isMobile && {
-            content: x => textEllipsis(x.description, 100, 3, false),
+            content: x => textEllipsis(
+                x.description,
+                200,
+                3,
+                false,
+            ),
             key: 'description',
+            title: textsCap.description,
         },
         {
             collapsing: true,
             content: task => (
                 <Currency {...{
                     emptyMessage: textsCap.loading,
-                    prefix: isMobile && <Icon name='money' />,
                     value: task.amountXTX,
                 }} />
             ),
             draggable: !isMarketplace,
             draggableValueKey: 'amountXTX',
+            includeTitleOnMobile: true,
             key: 'amountXTX',
             title: textsCap.bounty,
         },
         isMarketplace && {
-            content: ({ createdBy, owner }, _1, _2, { isMobile }) => (
-                <div>
-                    {isMobile && <b>{textsCap.taskOwner}: </b>}
-                    <AddressName {...{
-                        address: owner,
-                        userId: createdBy,
-                    }} />
-                </div>
+            content: ({ createdBy, owner }) => (
+                <AddressName {...{
+                    address: owner,
+                    userId: createdBy,
+                }} />
             ),
             onDragStart: (e, dragValue) => {
                 // if marketplace use "@userId" to search by createdBy property.
@@ -486,6 +491,7 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             draggableValueKey: isMarketplace
                 ? 'createdBy'
                 : 'owner',
+            includeTitleOnMobile: true,
             key: 'owner',
             title: textsCap.taskOwner,
         },

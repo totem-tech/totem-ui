@@ -735,7 +735,12 @@ export default class PartnerForm extends Component {
 	}
 
 	handleSubmit = deferred(() => {
-		const { autoSave, closeOnSubmit, onSubmit, warnBackup } = this.props
+		const {
+			autoSave,
+			closeOnSubmit,
+			onSubmit,
+			warnBackup,
+		} = this.props
 		const { inputs, values } = this.state
 		const doBackup = warnBackup && !this.doUpdate
 		let address = values[inputNames.address]
@@ -885,5 +890,5 @@ PartnerForm.defaultProps = {
 	autoSave: false,
 	closeOnSubmit: true,
 	size: 'tiny',
-	warnBackup: true,
+	warnBackup: false,
 }

@@ -557,6 +557,10 @@ body.inverted .ui.basic.inverted.segment.data-table {
 	background: #464646;
 	/* border: 1px solid #505050; */
 }
+/* stacked table on mobile: empty cell */
+body.mobile .ui.table:not(.unstackable) > tbody > tr > td:empty {
+    display: none !important;
+}
 /* DataTableVertical */
 body.inverted .ui.table.vertical tbody tr td:first-child {
     background: #696969 !important;
