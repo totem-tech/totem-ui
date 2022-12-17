@@ -136,8 +136,7 @@ export const getColumns = (showStatusButtons = true) => {
                 <Button {...{
                     icon: 'eye',
                     onClick: () => {
-                        console.log({task})
-                        console.log({application})
+                        console.log({ application })
                         const modalId = `${taskId}-${application.workerAddress}`
                         const content = (
                             <ApplicationView {...{

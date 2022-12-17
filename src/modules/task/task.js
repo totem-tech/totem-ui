@@ -15,7 +15,7 @@ import { processOrder } from './useTasks'
 
 export const PRODUCT_HASH_LABOUR = generateHash('labour')
 export const rxInProgressIds = new BehaviorSubject(new Set())
-const MODULE_KEY = 'task'
+export const MODULE_KEY = 'task'
 // read and write to cached storage
 const TX_STORAGE = 'tx_storage'
 let textsCap = {
@@ -192,6 +192,7 @@ export const queueables = {
                 txId,
             ],
             func: queueableApis.changeApproval,
+            module: MODULE_KEY,
             recordId: taskId,
             txId,
             type: TX_STORAGE,
@@ -219,6 +220,7 @@ export const queueables = {
                 txId,
             ],
             func: queueableApis.handleSpfso,
+            module: MODULE_KEY,
             recordId: taskId,
             txId,
             type: TX_STORAGE,
@@ -274,6 +276,7 @@ export const queueables = {
             amountXTX,
             args,
             func,
+            module: MODULE_KEY,
             recordId: orderId,
             txId,
             type: TX_STORAGE,
@@ -320,7 +323,6 @@ export const queueables = {
         queueProps,
         productId = PRODUCT_HASH_LABOUR,
     ) => {
-        isMarket = false // setting true does not allow updating fulfiller
         const func = !!orderId
             ? queueableApis.changeSpfso
             : queueableApis.createSpfso
@@ -362,6 +364,7 @@ export const queueables = {
             amountXTX,
             args,
             func,
+            module: MODULE_KEY,
             recordId: orderId,
             txId,
             type: TX_STORAGE,

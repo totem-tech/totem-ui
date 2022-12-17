@@ -30,6 +30,7 @@ import {
     handleUpdateStatus,
 } from './notificationHandlers'
 import {
+    MODULE_KEY,
     queueableApis,
     rxInProgressIds,
     statuses,
@@ -591,12 +592,19 @@ setTimeout(() => {
     rxOnSave.subscribe(value => {
         if (!isObj(value)) return
         const { task = {} } = value
-        const { func, recordId: taskId, status } = task
+        const {
+            func,
+            module,
+            recordId: taskId,
+            status,
+        } = task
+        if (!taskId) return
         // only handle queue tasks that are relevant for tasks
-        const taskRelated = Object
-            .values(queueableApis)
-            .includes(func)
-        if (!taskRelated || !taskId) return
+        const isTaskModuleRelated = module === MODULE_KEY
+            || Object
+                .values(queueableApis)
+                .includes(func)
+        if (!isTaskModuleRelated) return
 
         const isDone = [
             queueStatuses.ERROR,

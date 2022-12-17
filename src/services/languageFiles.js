@@ -137,6 +137,7 @@ export default [
     "./src/modules/rewards/notificationHandlers.jsx",
     "./src/modules/rewards/rewards.js",
     "./src/modules/task/TaskDetails.jsx",
+    "./src/modules/task/TaskForm copy.jsx",
     "./src/modules/task/TaskForm.jsx",
     "./src/modules/task/TaskList.jsx",
     "./src/modules/task/TaskView.jsx",

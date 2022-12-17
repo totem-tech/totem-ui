@@ -151,6 +151,9 @@ const VALID_KEYS = Object.freeze([
     //                          The name is used to pass through the data (eg: TX event data) to the @next queue items.
     'name',
 
+    // @module          string: (optional) optionally save the name of the module
+    'module',
+
     // @next            object: (optional) next task in this queue. Same keys as @VALID_KEYS
     //                          Will only be executed if the parent task was successful.
     'next',
@@ -554,14 +557,20 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
     try {
         const args = currentTask.args || []
         const argsProcessed = []
-        const hasDynamicArg = args.find(arg => isObj(arg) && arg.__taskName && arg.__resultSelector)
+        const hasDynamicArg = args.find(arg =>
+            isObj(arg)
+            && arg.__taskName
+            && arg.__resultSelector
+        )
         if (!hasDynamicArg) return []
 
         // throw 'test error 0'
         const getTaskByName = (task, name) => {
             // throw 'test error 2'
             if (task.name === name) return task
-            return !isObj(task.next) ? undefined : getTaskByName(task.next, name)
+            return !isObj(task.next)
+                ? undefined
+                : getTaskByName(task.next, name)
         }
         for (let i = 0; i < args.length; i++) {
             const arg = args[i]
@@ -575,7 +584,13 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
             const task = getTaskByName(rootTask, __taskName)
             const { result } = task || {}
             const argValue = eval(__resultSelector)
-            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask, task)
+            const processedArg = !isFn(argValue)
+                ? argValue
+                : argValue(
+                    result,
+                    rootTask,
+                    task,
+                )
             argsProcessed.push(processedArg)
         }
 
