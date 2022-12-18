@@ -106,6 +106,9 @@ const getInitialState = props => rxSetState => {
             type: 'text',
         },
         {
+            customMessages: {
+                lengthMin: true,
+            },
             hidden: !proposalRequired,
             label: textsCap.proposalLabel,
             labelDetails: (
