@@ -33,7 +33,7 @@ let textsCap = {
 }
 textsCap = translated(textsCap, true)[1]
 
-const UserID = React.memo(function UserId(props) {
+const UserID = React.memo(props => {
 	const {
 		address,
 		El,
@@ -151,7 +151,9 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 			content: textsCap.identityRequest,
 			icon: 'download',
 			onClick: () => showForm(IdentityRequestForm, {
-				values: { userIds: [userId] },
+				values: {
+					userIds: [userId],
+				},
 			}),
 			title: textsCap.identityRequest,
 		},
@@ -168,7 +170,9 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 		{
 			content: textsCap.introduce,
 			icon: 'handshake',
-			onClick: () => showForm(IntroduceUserForm, { values: { userId } }),
+			onClick: () => showForm(IntroduceUserForm, {
+				values: { userId },
+			}),
 			title: textsCap.introduce,
 		},
 	].filter(Boolean)
@@ -228,6 +232,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 	}
 	const modalId = userId
 	const modalProps = {
+		collapsing: true,
 		content,
 		header,
 		size: 'mini',

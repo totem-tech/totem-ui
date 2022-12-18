@@ -22,9 +22,9 @@ const useSearch = (filter = {}) => {
     useEffect(() => {
         let mounted = true
         if (keywords === useSearch.REFRESH_PLACEHOLDER) return setResult({})
+
         const handleResult = (detailsMap = new Map()) => {
             if (!mounted) return
-            // setResult({ result: detailsMap })
             const taskIds = [...detailsMap.keys()]
             // finally, subscribe to on-chain data for result tasks
             if (!taskIds.length) setResult({ result: new Map() })
@@ -51,7 +51,7 @@ const useSearch = (filter = {}) => {
         const handleLoggedIn = () => search(
             filter,
             handleResult,
-            err => setResult({
+            err => mounted && setResult({
                 message: {
                     content: err,
                     icon: true,

@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
-import { isAddress, objWithoutKeys } from '../../utils/utils'
+import { isAddress, objWithoutKeys, textEllipsis } from '../../utils/utils'
 import { Button } from '../../components/buttons'
 import LabelCopy from '../../components/LabelCopy'
 import { showForm } from '../../services/modal'
@@ -27,6 +27,7 @@ function AddressName(props) {
         allowCopy,
         Component,
         ignoreAttributes,
+        maxLength,
         style,
         userId,
     } = props
@@ -81,7 +82,14 @@ function AddressName(props) {
             }
             {addBtn}{!!name && ' '}
             {!!name
-                ? name
+                ? maxLength
+                    ? textEllipsis(
+                        name,
+                        maxLength,
+                        3,
+                        false,
+                    )
+                    : name
                 : !allowCopy
                     ? address
                     : (
@@ -103,6 +111,7 @@ AddressName.prototype = {
         PropTypes.elementType,
     ]).isRequired,
     ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
+    maxLength: PropTypes.number,
     // @userId: (optional) userId to be prefilled when adding as partner
     userId: PropTypes.string,
 }
@@ -116,5 +125,6 @@ AddressName.defaultProps = {
         'ignoreAttributes',
         'userId',
     ],
+    // maxLength: 32,
 }
 export default React.memo(AddressName)

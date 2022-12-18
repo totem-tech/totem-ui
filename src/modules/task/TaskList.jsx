@@ -6,7 +6,7 @@ import { getUser } from '../../utils/chatClient'
 import { format } from '../../utils/time'
 import { isFn, isObj, textEllipsis } from '../../utils/utils'
 // components
-import { Button, ButtonAcceptOrReject } from '../../components/buttons'
+import { Button, ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
@@ -474,13 +474,23 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             key: 'amountXTX',
             title: textsCap.bounty,
         },
-        isMarketplace && {
-            content: ({ createdBy, owner }) => (
-                <AddressName {...{
-                    address: owner,
-                    userId: createdBy,
-                }} />
-            ),
+        (isFulfillerList || isMarketplace) && {
+            content: ({ createdBy, owner, isOwner }) => {
+                if (isMarketplace && !isOwner) return (
+                    <UserID {...{
+                        address: owner,
+                        userId: createdBy
+                    }} />
+                )
+
+                return (
+                    <AddressName {...{
+                        address: owner,
+                        maxLength: isMobile ? 25 : 32,
+                        userId: createdBy,
+                    }} />
+                )
+            },
             onDragStart: (e, dragValue) => {
                 // if marketplace use "@userId" to search by createdBy property.
                 // Otherwise, use owner identity for local search

@@ -312,7 +312,10 @@ export default class DataTable extends Component {
 										display: 'table-cell',
 										maxWidth: '50%',
 									}}>
-										<b style={{ paddingRight: 7 }}>
+										<b style={{
+											paddingRight: 7,
+											whiteSpace: 'nowrap',
+										}}>
 											{title}:
 										</b>
 									</div>

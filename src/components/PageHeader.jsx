@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 // utils
-import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/utils'
+import { className, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
 import IdentityForm from '../modules/identity/IdentityForm'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
@@ -14,8 +14,6 @@ import {
 	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
 import { getUser, rxIsInMaintenanceMode, rxIsLoggedIn } from '../modules/chat/ChatClient'
-import Balance from '../modules/identity/Balance'
-import IdentityIcon from '../modules/identity/IdentityIcon'
 import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
 import IdentityShareForm from '../modules/identity/IdentityShareForm'
 import {
@@ -164,7 +162,12 @@ const PageHeaderView = React.memo(props => {
 					options: identityOptions,
 					selectOnNavigation: false,
 					style: { paddingRight: 0 },
-					text: textEllipsis(selected.name, isMobile ? 25 : 50, 3, false),
+					text: textEllipsis(
+						selected.name,
+						25,
+						3,
+						false,
+					),
 					value: selected.address,
 				}} />
 				<Dropdown
