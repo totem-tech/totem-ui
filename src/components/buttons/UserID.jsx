@@ -29,6 +29,7 @@ let textsCap = {
 	partner: 'partner',
 	partnerAdd: 'add partner',
 	reject: 'reject',
+	updatePartner: 'update partner',
 	userIdBtnTitle: 'click for more options',
 }
 textsCap = translated(textsCap, true)[1]
@@ -125,18 +126,20 @@ UserID.defaultProps = {
 	],
 }
 UserID.showModal = (userId, partnerAddress, onChatOpen) => {
-	const partner = partnerAddress
-		&& getPartner(partnerAddress)
-		|| getByUserId(userId)
+	const partner = partnerAddress && getPartner(partnerAddress)
+	const partnerById = !partner && getByUserId(userId)
 	const {
 		address,
 		name = '',
 		type,
 		visibility,
-	} = partner || {}
-	const addButtons = !name && [
+	} = partner || partnerById || {}
+	const btnTxt = !partner
+		? textsCap.partnerAdd
+		: textsCap.updatePartner
+	const addButtons = [
 		{
-			content: textsCap.partnerAdd,
+			content: btnTxt,
 			icon: 'user plus',
 			onClick: () => showForm(PartnerForm, {
 				// prevent form modal to auto close
@@ -148,10 +151,11 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 					[pInputNames.userId]: userId
 				},
 			}),
-			title: textsCap.partnerAdd,
+			title: btnTxt,
 		},
 		{
 			content: textsCap.identityRequest,
+			disabled: !partner,
 			icon: 'download',
 			onClick: () => showForm(IdentityRequestForm, {
 				values: {
