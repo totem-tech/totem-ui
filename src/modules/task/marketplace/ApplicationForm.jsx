@@ -11,6 +11,7 @@ import { getIdentityOptions } from '../../identity/getIdentityOptions'
 import { get as getIdentity, rxIdentities } from '../../identity/identity'
 import { queueableApis } from '../task'
 import { BehaviorSubject } from 'rxjs'
+import RxSubject from '../../../components/RxSubject'
 
 let textsCap = {
     header: 'task application',
@@ -25,7 +26,7 @@ let textsCap = {
     nameLabelDetails: 'this will be seen by recipients',
     namePlaceholder: 'enter a name to be shared',
     proposalLabel: 'proposal',
-    proposalPlaceholder: 'enter brief proposal to stand out by including key skills, experiences and any other relevant details.',
+    proposalPlaceholder: 'write your proposal to stand out by including key skills, experiences and any other relevant details.',
     successContent: 'once your application has been accepted the task will be assigned to you and you will receive a notification to accept or reject it.',
     successHeader: 'application submitted!',
     title: 'title',
@@ -70,6 +71,7 @@ const getInitialState = props => rxSetState => {
         values = {},
     } = props
     const rxName = new BehaviorSubject('')
+    const rxProposal = new BehaviorSubject('')
     const inputs = [
         {
             label: textsCap.workerLabel,
@@ -106,18 +108,40 @@ const getInitialState = props => rxSetState => {
         {
             hidden: !proposalRequired,
             label: textsCap.proposalLabel,
-            maxLength: 500,
+            labelDetails: (
+                <RxSubject {...{
+                    subject: rxProposal,
+                    valueModifier: (desc = '') => (
+                        <div style={{
+                            bottom: 0,
+                            color: !desc || (desc.length < 1800 && desc.length >= 50)
+                                ? 'grey'
+                                : desc.length >= 1800 && desc.length < 2000
+                                    ? 'orange'
+                                    : 'red',
+                            fontWeight: 'bold',
+                            position: 'absolute',
+                            right: 18,
+                        }}>
+                            {desc.length}/2000
+                        </div>
+                    ),
+                }} />
+            ),
+            maxLength: 2000,
             minLength: 50,
             name: inputNames.proposal,
-            placeholder: textsCap.proposalPlaceholder,
+            placeholder: `${textsCap.proposalPlaceholder} (50-2000)`,
             required: true,
+            rxValue: rxProposal,
             style: { minHeight: 150 },
+            styleContainer: { position: 'relative' },
             type: 'textarea',
         },
         {
             hidden: !proposalRequired,
             label: textsCap.linksLabel,
-            maxLength: 500,
+            maxLength: 504,
             name: inputNames.links,
             placeholder: `${textsCap.linksPlaceholder}\n\n${textsCap.linksPlaceholder2}`,
             required: false,
@@ -134,7 +158,7 @@ const getInitialState = props => rxSetState => {
 
                 for (let i = 0; i < links.length; i++) {
                     const link = links[i]
-                    if (link.length > 96) return textsCap.linksErrLength
+                    if (link.length > 100) return textsCap.linksErrLength
 
                     const invalid = !!validate(link, { required: true, type: TYPES.url })
                     if (invalid) return `${textsCap.linksErrInvalid}: ${link}`

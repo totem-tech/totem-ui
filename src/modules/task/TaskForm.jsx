@@ -55,6 +55,7 @@ import {
 } from './task'
 import { rxUpdater } from './useTasks'
 import { statuses } from '../../components/Message'
+import RxSubject from '../../components/RxSubject'
 
 let textsCap = {
     addPartner: 'add partner',
@@ -75,8 +76,8 @@ let textsCap = {
     dueDateLabel: 'due date',
     dueDateMinErrorMsg: 'due date must be at least 24 hours after deadline',
     descLabel: 'detailed description',
-    descLabelDetails: 'maximum 500 characters',
-    descPlaceholder: 'enter more details about the task',
+    descLabelDetails: 'maximum characters',
+    descPlaceholder: 'write detailed information about the task',
     errAssigneeNotPartner: 'assignee is not a partner!',
     errAsigneeNoUserId: 'partner does not have an User ID associated.',
     errAssginToSelf: 'you cannot assign a task to your currently selected identity',
@@ -95,7 +96,7 @@ let textsCap = {
     marketplaceDisclaimer: `
         Your task will be published to the marketplace.
         Anyone using Totem will be able to submit proposal to this Task.
-        You will then be able to accept or reject any proposal you wish.
+        You will then be able to accept or reject any application you wish.
     `,
     minBalanceRequired: 'minimum balance required',
     myself: 'myself',
@@ -217,9 +218,10 @@ const getInitialState = props => rxState => {
         values,
     } = props
     const isUpdate = !!taskId
+    const rxAssignee = new BehaviorSubject()
     const rxCurrency = copyRxSubject(rxSelectedCurrency)
     const rxCurrencies = new BehaviorSubject()
-    const rxAssignee = new BehaviorSubject()
+    const rxDescription = new BehaviorSubject('')
     const rxTags = new BehaviorSubject([])
     const rxTagOptions = new BehaviorSubject([])
     // forces assignee to be re-validated
@@ -472,13 +474,38 @@ const getInitialState = props => rxState => {
                     value: 0, // default: service
                 },
                 {
+                    customMessages: {
+                        lengthMin: true,
+                    },
                     label: textsCap.descLabel,
-                    labelDetails: textsCap.descLabelDetails,
-                    maxLength: 500,
-                    minLength: 3,
+                    labelDetails: (
+                        <RxSubject {...{
+                            subject: rxDescription,
+                            valueModifier: (desc = '') => (
+                                <div style={{
+                                    bottom: 0,
+                                    color: !desc || (desc.length < 1800 && desc.length >= 50)
+                                        ? 'grey'
+                                        : desc.length >= 1800 && desc.length < 2000
+                                            ? 'orange'
+                                            : 'red',
+                                    fontWeight: 'bold',
+                                    position: 'absolute',
+                                    right: 18,
+                                }}>
+                                    {desc.length}/2000
+                                </div>
+                            ),
+                        }} />
+                    ),
+                    maxLength: 2000,
+                    minLength: 50,
                     name: inputNames.description,
-                    placeholder: textsCap.descPlaceholder,
+                    placeholder: `${textsCap.descPlaceholder} (50-2000)`,
                     required: false,
+                    rxValue: rxDescription,
+                    style: { minHeight: 150 },
+                    styleContainer: { position: 'relative' },
                     type: 'textarea',
                 },
                 {

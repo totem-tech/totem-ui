@@ -566,7 +566,10 @@ export class FormInput extends Component {
 						|| !!invalid,
 				key: this.key,
 				required,
-				style: styleContainer,
+				style: {
+					...(containerProps || {}).style,
+					...styleContainer,
+				},
 				title: !editable && !attrs.title
 					&& errMsgs.readOnlyField
 					|| attrs.title,
