@@ -516,13 +516,13 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
         {
             content: ({ tags = [] }) => (
                 <Tags {...{
-                    onDragStart: e => {
+                    onDragStart: isMarketplace && (e => {
                         // add prefix: "tag:" to search by tag
                         e.dataTransfer.setData(
                             'Text',
                             `tag:${e.target.textContent}`,
                         )
-                    },
+                    }),
                     tags,
                 }} />
             ),
