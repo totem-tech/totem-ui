@@ -126,8 +126,8 @@ UserID.defaultProps = {
 }
 UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 	const partner = partnerAddress
-		? getPartner(partnerAddress)
-		: getByUserId(userId)
+		&& getPartner(partnerAddress)
+		|| getByUserId(userId)
 	const {
 		address,
 		name = '',
