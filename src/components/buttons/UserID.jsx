@@ -17,7 +17,7 @@ import IdentityRequestForm from '../../modules/identity/IdentityRequestForm'
 import IdentityShareForm from '../../modules/identity/IdentityShareForm'
 import IntroduceUserForm from '../../modules/identity/IntroduceUserForm'
 import { get as getPartner, getByUserId } from '../../modules/partner/partner'
-import PartnerForm from '../../modules/partner/PartnerForm'
+import PartnerForm, { inputNames as pInputNames } from '../../modules/partner/PartnerForm'
 import PartnerIcon from '../../modules/partner/PartnerIcon'
 import { ButtonGroup, ButtonGroupOr } from '.'
 
@@ -143,7 +143,10 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 				closeOnSubmit: false,
 				// after successfully adding partner close the original modal (confirm)
 				onSubmit: ok => ok && closeModal(modalId),
-				values: { userId },
+				values: {
+					[pInputNames.address]: partnerAddress,
+					[pInputNames.userId]: userId
+				},
 			}),
 			title: textsCap.partnerAdd,
 		},
