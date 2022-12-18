@@ -227,7 +227,7 @@ TaskDetails.propTypes = {
  * @returns {Promise}
  */
 TaskDetails.asModal = (props = {}, modalProps, modalId) => {
-    modalId =props.taskId || generateHash() // modalId || 'task-details-' + (props.taskId || generateHash())
+    modalId = props.taskId || generateHash()
     return showInfo({
         collapsing: true,
         header: textsCap.header,

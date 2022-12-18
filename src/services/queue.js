@@ -286,11 +286,13 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
  * 
  * @returns {String} supplied/newly generated ID
  */
-export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
+export const addToQueue = (queueItem, id, toastId = uuid.v1()) => {
+    id = id || uuid.v1()
     // prevent adding the same task again
     if (queue.get(id)) return
 
     queueItem = objClean(queueItem, VALID_KEYS)
+    queueItem.id = id
     queue.set(id, queueItem)
     _processTask(queueItem, id, toastId)
     return id
@@ -305,15 +307,21 @@ export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
  * 
  * @returns {Boolean|Promise}
  */
-export const checkComplete = async (id, wait = false) => {
+export const checkComplete = (id, wait = false) => {
+    // wait until 
+    if (wait) return subjectAsPromise(
+        rxOnSave,
+        ({ rootTask = {} } = {}) => {
+            const match = rootTask.id === id
+                && checkComplete(id)
+            console.log(id, rootTask.id, id === rootTask.id, checkComplete(id))
+            return match
+        }
+    )[0]
+
     const queueItem = isStr(id)
         ? queue.get(id)
         : id
-    if (wait) return await subjectAsPromise(
-        rxOnSave,
-        (value = {}) => (value.rootTask || {}).id === id
-            && checkComplete(id)
-    )[0]
     if (!queueItem) return true
 
     const { next, status } = queueItem
@@ -324,6 +332,7 @@ export const checkComplete = async (id, wait = false) => {
         && Object
             .values(QUEUE_TYPES)
             .includes(next.type)
+
     return !hasChild
         ? isComplete
         : checkComplete(next)
@@ -744,7 +753,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         task.result,
         task.txId,
     )
-    rxOnSave.next({ rootTask, task })
+    setTimeout(() => rxOnSave.next({ rootTask, task }))
     if (!done) return
 
     try {

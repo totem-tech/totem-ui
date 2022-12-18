@@ -26,7 +26,7 @@ import TaskDetails from './TaskDetails'
 import IdentityIcon from '../identity/IdentityIcon'
 
 let textsCap = {
-	assigntTaskMsg: 'assigned a task to you.',
+	assignedTaskMsg: 'assigned a task to you.',
 	dispute: 'dispute',
 	invoiceAccept: 'accept task invoice and pay assignee',
 	invoiceAcceptConfirm: 'accept invoice and pay the assignee?',
@@ -43,6 +43,13 @@ let textsCap = {
 	taskRejected: 'rejected the following task:',
 	viewTask: 'view task',
 	yourIdentity: 'your identity',
+
+	// marketplace related
+	mpAccepted: 'accepted your application and assigned a task to you',
+	mpApplied: 'applied to your marketplace task',
+	mpAppliedTotal: 'total applications',
+	mpRejected: 'rejected your marketplace task application'
+
 }
 textsCap = translated(textsCap, true)[1]
 const icon = 'tasks'
@@ -53,6 +60,10 @@ const CHILD_TYPES = {
 	assignmentResponse: 'assignment_response',
 	invoiced: 'invoiced',
 	invoicedResponse: 'invoiced_response',
+	// owner received new application
+	marketApply: 'marketplace_apply',
+	// applicant received response
+	marketApplyResponse: 'marketplace_apply_response',
 }
 
 /**
@@ -262,13 +273,25 @@ export const handleUpdateStatus = async (address, taskIds, statusCode, queueTitl
 				title: queueTitle,
 			},
 		)
-		const queueId = addToQueue(queueItem)
-		await checkComplete(queueId, true)
-		.then(console.warn)
+		await checkComplete(addToQueue(queueItem), true)
 	})
 	await Promise.all(promises)
+		.catch(console.log)
 }
 
+const getTaskDetailsBtn = (taskId, props) => (
+	<Button {...{
+		icon: 'eye',
+		onClick: e => {
+			e.preventDefault()
+			TaskDetails.asModal({ taskId })
+		},
+		size: 'tiny',
+		style: { padding: 3 },
+		title: textsCap.viewTask,
+		...props,
+	}} />
+)
 // set task related notification item view handlers
 setTimeout(() =>
 	[
@@ -278,8 +301,16 @@ setTimeout(() =>
 			type: TASK_TYPE,
 			handler: (id, notification = {}, { senderIdBtn }) => {
 				const { data, status } = notification
-				const { fulfillerAddress, taskId } = data || {}
-				const { address, name, usageType } = getIdentity(fulfillerAddress) || {}
+				const {
+					fulfillerAddress,
+					purpose,
+					taskId,
+				} = data || {}
+				const {
+					address,
+					name,
+					usageType,
+				} = getIdentity(fulfillerAddress) || {}
 				if (!name) {
 					// fulfillerAddress doesn't belong to the user!
 					remove(id)
@@ -291,19 +322,22 @@ setTimeout(() =>
 					accepted,
 					id,
 				)
+				let msg
+				switch (purpose) {
+					case 1:
+						msg = textsCap.mpAccepted
+						break
+					default:
+						msg = textsCap.assignedTaskMsg
+						break
+				}
 				const isLoading = queueStatuses.LOADING === status
 				const content = (
 					<div>
 						{senderIdBtn}
-						{` ${textsCap.assigntTaskMsg || ''}`.toLowerCase()}
+						{` ${msg || ''}`.toLowerCase()}
 						{' '}
-						<Button {...{
-							icon: 'eye',
-							onClick: () => TaskDetails.asModal({ taskId }),
-							size: 'tiny',
-							style: { padding: 3 },
-							title: textsCap.viewTask,
-						}} />
+						{getTaskDetailsBtn(taskId)}
 						<div>
 							<IdentityIcon {...{ address, usageType }} /> 
 							{textsCap.yourIdentity}: {name}
@@ -397,13 +431,7 @@ setTimeout(() =>
 							<b>{textsCap.task}: </b>
 							{taskTitle || taskId}
 							{' '}
-							<Button {...{
-								icon: 'eye',
-								onClick: () => TaskDetails.asModal({ taskId }),
-								size: 'tiny',
-								style: { padding: 3 },
-								title: textsCap.viewTask,
-							}} />
+							{getTaskDetailsBtn(taskId)}
 						</div>
 						<div>
 							<b>{textsCap.yourIdentity}: </b>
@@ -411,7 +439,33 @@ setTimeout(() =>
 						</div>
 					</div>
 				)
-				return { icon, content }
+				return { content, icon }
+			},
+		},
+
+		// marketplace related
+		{
+			childType: CHILD_TYPES.marketApply,
+			type: TASK_TYPE,
+			handler: (id, notification = {}, { senderIdBtn }) => {
+				const {
+					data: {
+						applications = 1, 
+						taskId,
+					} = {},
+				} = notification
+
+				const content = (
+					<div>
+						{senderIdBtn}
+						{' ' + textsCap.mpApplied + ' '}
+						{getTaskDetailsBtn(taskId)}
+						<div>
+							{textsCap.mpAppliedTotal}: {applications}
+						</div>
+					</div>
+				)
+				return {content, icon}
 			},
 		},
 	].forEach((x) => setItemViewHandler(x.type, x.childType, x.handler))

@@ -137,9 +137,9 @@ export default function HistoryList(props) {
                         {
                             icon: 'trash',
                             // negative: true,
-                            onClick: async () => {
+                            onClick: () => {
                                 const { groupId } = item
-                                const isComplete = await checkComplete(groupId)
+                                const isComplete = checkComplete(groupId)
                                 confirm({
                                     content: !isComplete
                                         ? textsCap.removeWarning

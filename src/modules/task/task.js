@@ -174,8 +174,8 @@ export const queueableApis = {
     createSpfso: 'api.tx.orders.createSpfso', // create SPFSO(Create Simple Prefunded Service Order)
     handleSpfso: 'api.tx.orders.handleSpfso', // update SPFSO
     // messaging service
-    marketApplication: 'client.taskMarketApplication',
     marketApply: 'client.taskMarketApply',
+    marketApplyResponse: 'client.taskMarketApplyResponse',
     updateDetails: 'client.task',
 }
 export const queueables = {

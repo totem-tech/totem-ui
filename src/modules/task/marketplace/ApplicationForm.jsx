@@ -8,8 +8,9 @@ import { iUseReducer } from '../../../utils/reactHelper'
 import { generateHash, isFn } from '../../../utils/utils'
 import { TYPES, validate } from '../../../utils/validator'
 import { getIdentityOptions } from '../../identity/getIdentityOptions'
-import { rxIdentities } from '../../identity/identity'
+import { get as getIdentity, rxIdentities } from '../../identity/identity'
 import { queueableApis } from '../task'
+import { BehaviorSubject } from 'rxjs'
 
 let textsCap = {
     header: 'task application',
@@ -20,6 +21,9 @@ let textsCap = {
     linksErrLength: 'please enter URL with shorter than 96 characters',
     linksErrMax: 'maximum 5 links allowed',
     loading: 'loading...',
+    nameLabel: 'change partner name',
+    nameLabelDetails: 'this will be seen by recipients',
+    namePlaceholder: 'enter a name to be shared',
     proposalLabel: 'proposal',
     proposalPlaceholder: 'enter brief proposal to stand out by including key skills, experiences and any other relevant details.',
     successContent: 'once your application has been accepted the task will be assigned to you and you will receive a notification to accept or reject it.',
@@ -32,6 +36,7 @@ let textsCap = {
 textsCap = translated(textsCap, true)[1]
 export const inputNames = {
     links: 'links',
+    name: 'name',
     proposal: 'proposal',
     taskId: 'taskId',
     workerAddress: 'workerAddress',
@@ -64,11 +69,17 @@ const getInitialState = props => rxSetState => {
         proposalRequired = true,
         values = {},
     } = props
+    const rxName = new BehaviorSubject('')
     const inputs = [
         {
             label: textsCap.workerLabel,
             labelDetails: textsCap.workerLabelDetails,
             name: inputNames.workerAddress,
+            onChange: (_, values) => {
+                // update name field
+                const { name = '' } = getIdentity(values[inputNames.workerAddress])
+                rxName.next(name)
+            },
             placeholder: textsCap.workerPlaceholder,
             required: true,
             rxOptions: rxIdentities,
@@ -76,6 +87,21 @@ const getInitialState = props => rxSetState => {
             search: ['keywords'],
             selection: true,
             type: 'dropdown',
+        },
+        {
+            label: textsCap.nameLabel,
+            labelDetails: (
+                <b style={{ color: 'deeppink' }}>
+                    {textsCap.nameLabelDetails}
+                </b>
+            ),
+            minLength: 3,
+            maxLength: 32,
+            name: inputNames.name,
+            placeholder: textsCap.namePlaceholder,
+            required: true,
+            rxValue: rxName,
+            type: 'text',
         },
         {
             hidden: !proposalRequired,

@@ -24,7 +24,7 @@ import {
     objClean,
 } from '../../utils/utils'
 // components
-import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import FormBuilder, { findInput, fillValues, getValues } from '../../components/FormBuilder'
 // services
 import {
     hashTypes,
@@ -200,6 +200,8 @@ export default function TaskForm(props) {
     return <FormBuilder {...formProps} />
 }
 TaskForm.propTypes = {
+    // use `1` to indicate acceptance & assignement of a marketplace task
+    purpose: PropTypes.number,
     taskId: PropTypes.string,
     values: PropTypes.object,
 }
@@ -336,9 +338,7 @@ const getInitialState = props => rxState => {
             maxLength: 18,
             min: 0, // allows bounty-free tasks
             name: inputNames.bounty,
-            onChange: !taskId
-                ? handleBountyChange
-                : undefined,
+            onChange: !taskId && handleBountyChange(props, rxState),
             placeholder: textsCap.bountyPlaceholder,
             rxValue: new BehaviorSubject(),
             required: true,
@@ -555,11 +555,12 @@ const getInitialState = props => rxState => {
         inputs,
     }
 
-
     if (!!taskId) {
         // disables submit button if values unchanged
-        state.handleChange = deferred((_, newValues) => {
+        // ToDo: not working due to isClose value change somewhere!!!!
+        state.onChange = deferred((_, newValues) => {
             const { oldValues, submitDisabled } = rxState.value
+            if (!oldValues) return
             newValues = objClean(newValues, Object.values(inputNames))
             submitDisabled.unchanged = JSON.stringify(oldValues) === JSON.stringify(newValues)
             rxState.next({ submitDisabled })
@@ -589,7 +590,6 @@ const getInitialState = props => rxState => {
 
         tags.length && rxTagOptions.next(tags)
 
-        fillValues(inputs, values, true)
         loading.onMount = false
         // state = { inputs, loading }
         state.inputsDisabled = isUpdate
@@ -617,11 +617,16 @@ const getInitialState = props => rxState => {
                 .next(Number(bountyStr))
         }
 
-        state.oldValues = objClean(values, Object.values(inputNames))
-        rxState.next(state)
+        state.oldValues = objClean(
+            getValues(inputs, values),
+            Object.values(inputNames),
+        )
+        fillValues(inputs, state.oldValues, true)
+        rxState.next({...state})
     }
 
-    init().catch(console.error)
+    // timeout required to reduce lag on startup
+    setTimeout(() => init().catch(console.error))
     return state
 }
 
@@ -736,6 +741,7 @@ const handleBountyChange = (props, rxState) => deferred((_, values) => {
 const handleSubmit = (props = {}, rxState) => async (_, values) => {
     let {
         onSubmit,
+        purpose,
         taskId,
         values: {
             owner = getSelected().address,
@@ -898,6 +904,7 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
                     // grab the taskId from the save previous item in the queue chain
                     __resultSelector: `(r, rt, offchainTask) => ({
                         fulfillerAddress: "${fulfiller}",
+                        purpose: ${purpose},
                         taskId: offchainTask.argsProcessed[0],
                     })`,
                 },
@@ -918,11 +925,6 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
     rxState.next({
         closeText: textsCap.close,
         loading: true,
-        message: {
-            header: extraProps.title,
-            icon: true,
-            status: 'loading',
-        },
         submitInProgress: true,
     })
     // add requests to the queue

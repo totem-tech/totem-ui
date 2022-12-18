@@ -145,42 +145,7 @@ class FormBuilder extends Component {
 		return props
 	}
 
-	getValues = (inputs = [], values = {}, inputName, newValue) =>
-		inputs.reduce((values, input) => {
-			const {
-				inputs: childInputs,
-				groupValues,
-				multiple,
-				name,
-				type,
-			} = input
-			const typeLC = (type || '').toLowerCase()
-			const isGroup = typeLC === 'group'
-			if (!isStr(name)) return values
-			if (isGroup) {
-				const newValues = this.getValues(
-					childInputs,
-					groupValues ? {} : values,
-					inputName,
-					newValue
-				)
-				if (!groupValues) return newValues
-				values[name] = newValues
-				return values
-			}
-			if (inputName && name === inputName) {
-				// for value grouping
-				values[name] = newValue
-			}
-			if (!hasValue(values[name]) && isDefined(input.value)) {
-				values[name] = input.value
-			}
-			if (multiple && type === 'dropdown' && !isArr(values[name])) {
-				// dropdown field with `multiple` -> value must always be an array
-				values[name] = []
-			}
-			return values
-		}, values)
+	getValues = getValues
 
 	handleChange = async (event, data, input, index, childIndex) => {
 		try {
@@ -634,7 +599,11 @@ export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 				input.checked = newValue === trueValue
 				break
 			case 'group':
-				fillValues(input.inputs, values, forceFill)
+				fillValues(
+					input.inputs,
+					values,
+					forceFill,
+				)
 				break
 			default:
 				input.value = newValue
@@ -666,6 +635,43 @@ export const resetInput = input => {
  * @param	{Array} inputs
  */
 export const resetForm = inputs => inputsForEach(inputs, resetInput)
+
+export const getValues = (inputs = [], values = {}, inputName, newValue) =>
+	inputs.reduce((values, input) => {
+		const {
+			inputs: childInputs,
+			groupValues,
+			multiple,
+			name,
+			type,
+		} = input
+		const typeLC = (type || '').toLowerCase()
+		const isGroup = typeLC === 'group'
+		if (!isStr(name)) return values
+		if (isGroup) {
+			const newValues = getValues(
+				childInputs,
+				groupValues ? {} : values,
+				inputName,
+				newValue
+			)
+			if (!groupValues) return newValues
+			values[name] = newValues
+			return values
+		}
+		if (inputName && name === inputName) {
+			// for value grouping
+			values[name] = newValue
+		}
+		if (!hasValue(values[name]) && isDefined(input.value)) {
+			values[name] = input.value
+		}
+		if (multiple && type === 'dropdown' && !isArr(values[name])) {
+			// dropdown field with `multiple` -> value must always be an array
+			values[name] = []
+		}
+		return values
+	}, values)
 
 /**
  * @name	inputsForEach
