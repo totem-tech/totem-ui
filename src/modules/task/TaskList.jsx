@@ -526,6 +526,7 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
                     tags,
                 }} />
             ),
+            draggable: false,
             key: 'tags',
             title: textsCap.tags,
             style: { maxWidth: 150 },
