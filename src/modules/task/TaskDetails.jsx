@@ -1,6 +1,3 @@
-/*
- * Read-only form that displays task details
- */
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 // components
@@ -11,7 +8,11 @@ import Message, { statuses } from '../../components/Message'
 // services
 import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { closeModal, showForm, showInfo } from '../../services/modal'
+import {
+    closeModal,
+    showForm,
+    showInfo,
+} from '../../services/modal'
 // utils
 import { getUser } from '../../utils/chatClient'
 import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
@@ -183,19 +184,19 @@ export default function TaskDetails(props = {}) {
         setTableProps(tableProps)
     }, [setTableProps, getStatusView, blockNum, inProgressIds, task])
 
-    if (!isObj(task) || !!error) return (
-        <Message {...{
+    tableProps.emptyMessage = !isObj(task) || !!error
+        ? {
             content: `${error || ''}` || textsCap.loading,
             icon: true,
             status: !!error 
                 ? statuses.ERROR
                 : statuses.LOADING
-        }} />
-    )
+        }
+        : undefined
     return (
         <div>
             <DataTableVertical {...tableProps} />
-            {!!taskId && task.allowEdit && (
+            {!!task && task.allowEdit && (
                 <div style={{ 
                     marginBottom: 14,
                     marginTop: -14,

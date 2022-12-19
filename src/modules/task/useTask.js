@@ -6,27 +6,33 @@ import { query } from './task'
 import { addDetailsToTask, processOrder } from './useTasks'
 
 export default function useTask(taskId, updateTrigger) {
-    const [{ error, task }, setData] = useState({})
+    const [data, setData] = useState({
+        error: null,
+        task: null,
+    })
 
     useEffect(() => {
         if (!taskId) return () => { }
         let mounted = true
         const handleResult = async order => {
             if (!isObj(order)) return
+            let error
             try {
                 order = processOrder(order, taskId)
-                mounted && setData({ task: order })
-
                 await subjectAsPromise(rxIsLoggedIn, true)[0]
                 // fetch off-chain details
                 const detailsMap = await query.getDetailsByTaskIds([taskId])
                 order = addDetailsToTask(
                     order,
-                    detailsMap.get(taskId),
+                    detailsMap.get(taskId) || {},
                 )
-                mounted && setData({ task: order })
-            } catch (error) {
-                mounted && setData({ error: `${error}`, task: order })
+            } catch (err) {
+                error = err
+            } finally {
+                mounted && setData({
+                    error: `${error || ''}`.replace('Error: ', ''),
+                    task: order,
+                })
             }
         }
         const sub = query.orders(
@@ -41,5 +47,5 @@ export default function useTask(taskId, updateTrigger) {
         }
     }, [taskId, updateTrigger])
 
-    return { error, task }
+    return data
 }
