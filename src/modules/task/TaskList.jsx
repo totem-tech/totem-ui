@@ -251,12 +251,8 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload, isMobile })
         && applications.map(x => x.userId)
         .includes((getUser() || {}).id)
     
-    if (!isMarket || isAssigned) return (
-        <div>
-            {isMobile && <b>{textsCap.assignee}: </b>}
-            <AddressName {...{ address: fulfiller }} />
-        </div>
-    )
+    if (!isMarket || isAssigned) return <AddressName {...{ address: fulfiller }} />
+
     return (
         <Button {...{
             color: applied
@@ -510,6 +506,7 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             content: getAssigneeView,
             draggable: !isMarketplace,
             draggableValueKey: 'fulfiller',
+            includeTitleOnMobile: true,
             key: 'fulfiller',
             title: textsCap.assignee,
         },
