@@ -133,27 +133,29 @@ export class FormInput extends Component {
 			rxValue,
 			rxValueModifier,
 		} = this.props
-		this.subscriptions.rxValue = isSubjectLike(rxValue) && rxValue.subscribe(value => {
-			value = isFn(rxValueModifier)
-				? rxValueModifier(value)
-				: value
-			if (this.value === value) return
-			this.handleChange({}, { ...this.props, value })
-		})
-		this.subscriptions.rxOptions = isSubjectLike(rxOptions) && rxOptions.subscribe(async options => {
-			options = !isFn(rxOptionsModifier)
-				? options
-				: await rxOptionsModifier(options)
-			if (!isArr(options)) return
-			this.setState({ options })
-			
-			if (!isSubjectLike(rxValue) || !hasValue(this.value) || multiple) return
-			
-			const isOption = !!options.find(o => o.value === this.value)				
-			// value no longer exists in the options list
-			// force clear selection
-			!isOption && rxValue.next(undefined)
-		})
+		this.subscriptions.rxValue = isSubjectLike(rxValue)
+			&& rxValue.subscribe(value => {
+				value = isFn(rxValueModifier)
+					? rxValueModifier(value)
+					: value
+				if (this.value === value) return
+				this.handleChange({}, { ...this.props, value })
+			})
+		this.subscriptions.rxOptions = isSubjectLike(rxOptions)
+			&& rxOptions.subscribe(async options => {
+				options = !isFn(rxOptionsModifier)
+					? options
+					: await rxOptionsModifier(options)
+				if (!isArr(options)) return
+				this.setState({ options })
+				
+				if (!isSubjectLike(rxValue) || !hasValue(this.value) || multiple) return
+				
+				const isOption = !!options.find(o => o.value === this.value)				
+				// value no longer exists in the options list
+				// force clear selection
+				!isOption && rxValue.next(undefined)
+			})
 	}
 
 	componentWillUnmount = () => {
@@ -177,17 +179,36 @@ export class FormInput extends Component {
 			validate,
 		} = this.props
 		// for custom input types (eg: UserIdInput)
-		if (data.invalid) return isFn(onChange) && onChange(event, data, this.props)
+		if (data.invalid) return isFn(onChange) && onChange(
+			event,
+			data,
+			this.props,
+		)
 
+		const {
+			persist, 
+			target: {
+				selectionEnd,
+				selectionStart,
+				setSelectionRange,
+			} = {},
+		} = event || {}
 		// Forces the synthetic event and it's value to persist
 		// Required for use with deferred function
-		event && isFn(event.persist) && event.persist()
+		isFn(persist) && event.persist()
 		const typeLower = multiple
 			? 'array'
 			: (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
-		const hasVal = hasValue(isCheck ? data.checked : data.value)
-		const customMsgs = { ...errMsgs, ...customMessages }
+		const hasVal = hasValue(
+			isCheck
+				? data.checked
+				: data.value
+		)
+		const customMsgs = {
+			...errMsgs,
+			...customMessages,
+		}
 		let err, validatorConfig, isANum
 		let { value } = data
 
@@ -283,6 +304,14 @@ export class FormInput extends Component {
 				rxValue.next(data.value)
 			}
 			this.setMessage(data.invalid, message)
+			try {
+				isFn(setSelectionRange) && event
+					.target
+					.setSelectionRange(
+						selectionStart,
+						selectionEnd,
+					)
+			} catch (_) { } // ignore unsupported
 		}
 
 		const cList = !!err || !hasVal
@@ -302,9 +331,15 @@ export class FormInput extends Component {
 				const icon = invalid
 					? iconInvalid
 					: iconValid
-				return (persist || invalid) && { icon, invalid, style, text }
+				return (persist || invalid) && {
+					icon,
+					invalid,
+					style,
+					text,
+				}
 			})
-			.filter(Boolean)
+				.filter(Boolean)
+		
 		if (cList.length > 0) {
 			err = !!cList.find(x => x.invalid)
 			message = {
@@ -368,10 +403,9 @@ export class FormInput extends Component {
 
 		// this makes sure there is no race condition
 		this.validateDeferred = this.validateDeferred || PromisE.deferred()
-		return this.validateDeferred(validatePromise).then(
-			handleValidate,
-			handleValidate,
-		)
+		return this
+			.validateDeferred(validatePromise)
+			.then(handleValidate, handleValidate)
 	}
 
 	setMessage = (invalid, message = {}) => this.setState({ invalid, message })
@@ -658,7 +692,9 @@ FormInput.propTypes = {
 	// Set `defer` to `null` to prevent using deferred mechanism
 	defer: PropTypes.number,
 	// attributes to ignore when passing on to input element
-	ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
+	ignoreAttributes: PropTypes.arrayOf(
+		PropTypes.string
+	),
 	// For text field types
 	inlineLabel: PropTypes.any,
 	// If field types is 'number', will validate as an integer. Otherwise, float is assumed.
@@ -693,13 +729,19 @@ FormInput.propTypes = {
 		PropTypes.object,
 	]),
 	name: PropTypes.string.isRequired,
-	label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+	label: PropTypes.oneOfType([
+		PropTypes.string,
+		PropTypes.element,
+	]),
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,
 	// @rxValue	BehaviorSubject: (optional)only applications to input types that uses the `options` property
 	// On value change `options` will be updated
-	rxOptions: PropTypes.oneOfType([PropTypes.instanceOf(BehaviorSubject), PropTypes.instanceOf(Subject)]),
+	rxOptions: PropTypes.oneOfType([
+		PropTypes.instanceOf(BehaviorSubject),
+		PropTypes.instanceOf(Subject),
+	]),
 	// @rxOptionsModifier function: (optional) allows value of rxOptions to be modified before being applied to input
 	rxOptionsModifier: PropTypes.func,
 	// @rxValue	BehaviorSubject: (optional) if supplied, rxValue and input value will be synced automatically
@@ -722,5 +764,4 @@ FormInput.defaultProps = {
 	type: 'text',
 	width: 16,
 }
-
 export default React.memo(FormInput)
