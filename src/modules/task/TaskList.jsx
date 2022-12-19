@@ -47,6 +47,7 @@ import {
 } from './task'
 import TaskDetails from './TaskDetails'
 import TaskForm, { inputNames } from './TaskForm'
+import { Icon } from 'semantic-ui-react'
 
 let textsCap = {
     acceptInvoice: 'accept invoice',
@@ -96,6 +97,13 @@ export const listTypes = Object.freeze({
 })
 // preserves search keywords for each list type until page reloads
 const tempCache = new Map()
+const adIcon = (
+    <Icon {...{
+        className: 'no-margin',
+        name: 'audio description',
+        style: { paddingRight: 3 },
+    }} />
+)
 
 export default function TaskList(props) {
     let {
@@ -422,7 +430,6 @@ export const getStatusView = (task, taskId, _, { inProgressIds }) => {
     }
     return btnStatus
 }
-
 const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) => {
     const actionsCol = {
         collapsing: true,
@@ -452,6 +459,12 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             title: textsCap.createdAt,
         },
         {
+            content: ({ isMarket, title }) => (
+                <span>
+                    {isOwnedList && isMarket && adIcon}
+                    {title}
+                </span>
+            ),
             draggableValueKey: 'title',
             key: 'title',
             style: {

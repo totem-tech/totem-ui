@@ -7,6 +7,7 @@ import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactHelper'
 import { fallbackIfFails, isObj } from '../../../utils/utils'
 import { getColumns } from './ApplicationList'
+import TotemButtonLogo from '../../../assets/logos/button-288-colour.png' //button-240-colour.png'
 
 let textsCap = {
     links: 'links',
@@ -58,12 +59,13 @@ const ApplicationView = props => {
 export default ApplicationView
 const Links = ({ links = [] }) => {
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    links = [...new Set([...links, 'https://totemaccounting.com'])]
     return (
         <Linkify {...{
             content: links.join('\n'),
             replacer: (shortUrl, url) => {
                 let { hostname = '' } = fallbackIfFails(() => new URL(url)) || {}
-                hostname.replace('www.', '')
+                hostname = hostname.replace('www.', '')
                 const name = knownIcons[hostname]
                 const style = {}
                 let color = knownColors[name]
@@ -71,9 +73,9 @@ const Links = ({ links = [] }) => {
                     color = undefined
                     style = { ...style, ...color }
                 }
-            
-                return (
-                    <div style={{ padding: '5px 0' }} title={url}>
+                const icon = React.isValidElement(name)
+                    ? name
+                    : (
                         <Icon {...{
                             className: 'no-margin',
                             color,
@@ -81,6 +83,11 @@ const Links = ({ links = [] }) => {
                             size: 'big',
                             style,
                         }} />
+                    )
+            
+                return (
+                    <div style={{ padding: '5px 0' }} title={url}>
+                        {icon}
                         <span> {name ? hostname : shortUrl}</span>
                     </div>
                 )
@@ -97,20 +104,50 @@ const knownColors = {
     reddit: { color: 'rgb(255, 69, 0)' },
     youtube: 'red',
 }
+const totemLogo = (
+    <img {...{
+        src: TotemButtonLogo,
+        style: {
+            marginRight: 5,
+            verticalAlign: 'middle',
+            width: 28,
+        }
+    }} />
+)
 const knownIcons = {
+    'angel.co': 'angellist',
+    'apple.com': 'apple',
+    'bitbucket.org': 'bitbucket',
+    'blogger.com': 'blogger',
     'discord.com': 'discord',
     'discord.gg': 'discord',
+    'drive.google.com': 'google drive',
+    'dropbox.com': 'dropbox',
     'facebook.com': 'facebook',
     'fb.me': 'facebook',
     'github.com': 'github',
     'gitlab.com': 'gitlab',
+    'google.com': 'google',
+    'hub.docker.com': 'docker',
     'instagram.com': 'instagram',
     'linkedin.com': 'linkedin',
     'medium.com': 'medium',
+    'npmjs.com': 'npm',
+    'pinterest.com': 'pinterest',
+    'producthunt.com': 'product hunt',
+    'play.google.com': 'google play',
     'reddit.com': 'reddit',
-    'telegram.com': 'telegram',
+    'slideshare.net': 'slideshare',
+    'stumbleupon.com': 'stumbleupon circle',
     't.me': 'telegram',
+    'telegram.com': 'telegram',
+    'totem.live': totemLogo,
+    'totemaccounting.com': totemLogo,
+    'trello.com': 'trello',
+    'tumblr.com': 'tumblr square',
+    'twitch.tv': 'twitch',
     'twitter.com': 'twitter',
+    'wa.me': 'whatsapp',
     'youtube.com': 'youtube',
     'youtu.be': 'youtube',
 }
