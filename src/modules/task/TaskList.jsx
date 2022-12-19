@@ -535,11 +535,10 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             content: getAssigneeView,
             draggable: !isMarketplace,
             draggableValueKey: 'fulfiller',
-            // dynamicProps: ({ fulfiller, isMarket, owner }) => ({
-            //     includeTitleOnMobile: owner !== fulfiller
-            //         || !isMarket,
-            // }),
-            // includeTitleOnMobile: true,
+            dynamicProps: ({ fulfiller, isMarket, owner }) => ({
+                includeTitleOnMobile: owner !== fulfiller
+                    || !isMarket,
+            }),
             key: 'fulfiller',
             title: textsCap.assignee,
         },
