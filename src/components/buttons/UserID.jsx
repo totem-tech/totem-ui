@@ -204,7 +204,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 		</div>
 	)
 	const header = (
-		<div className='header'>
+		<div className='header' style={{ marginBottom: 10 }}>
 			<span style={{ textTransform: 'lowercase' }}>
 				@{userId + ' '}
 			</span>
@@ -219,8 +219,8 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 				size: 'mini',
 				title: textsCap.clickToChat,
 			}} />
-			<div>
-				{name && (
+			{name && (
+				<div>
 					<small>
 						<b>{textsCap.partner}: </b>
 						<PartnerIcon {...{
@@ -230,8 +230,8 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 						}} />
 						{` ${name} `}
 					</small>
-				)}
-			</div>
+				</div>
+			)}
 		</div>
 	)
 	const contentProps = {
