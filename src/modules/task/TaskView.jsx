@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Menu, Tab } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
-import Message from '../../components/Message'
 import Text from '../../components/Text'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
@@ -98,9 +97,7 @@ export default function TaskView({ address, tab: _activeType }) {
         x.type === activeType
     )
 
-    return message
-        ? <Message {...message} />
-        : (
+    return (
             <div>
                 <Tab {...{
                     activeIndex,
@@ -116,6 +113,9 @@ export default function TaskView({ address, tab: _activeType }) {
                     address,
                     asTabPane: true,
                     // data,
+                    emptyMessage: message
+                        ? message
+                        : undefined,
                     key: activeType,
                     rxTasks,
                     style: { marginTop: 15 },

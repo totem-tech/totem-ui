@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Icon } from 'semantic-ui-react'
 import DataTableVertical from '../../../components/DataTableVertical'
 import { Linkify } from '../../../components/StringReplace'
 import { MOBILE, rxLayout } from '../../../services/window'
 import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactHelper'
-import { fallbackIfFails, isObj, textEllipsis } from '../../../utils/utils'
+import { fallbackIfFails, isObj } from '../../../utils/utils'
 import { getColumns } from './ApplicationList'
 
 let textsCap = {
@@ -15,38 +15,36 @@ let textsCap = {
 textsCap = translated(textsCap, true)[1]
 
 const ApplicationView = props => {
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     let {
         application,
         modalId,
         taskId,
         task,
     } = props
-    const columns = getColumns()
+    const [columns] = useState(() => [
+        ...getColumns(),
+        {
+            content: x => <Linkify content={x.proposal} />,
+            key: 'proposal',
+            headerProps: {
+                style: {
+                    minWidth: 100,
+                    verticalAlign: 'top',
+                },
+            },
+            style: { whiteSpace: 'pre-line' },
+            title: textsCap.proposal,
+        },
+        {
+            content: x => <Links {...x} />,
+            key: 'links',
+            title: textsCap.links,
+        }
+    ])
 
     return (
         <DataTableVertical {...{
-            columns: [
-                ...columns,
-                {
-                    content: x => (
-                        <div style={{ whiteSpace: 'pre-line' }}>
-                            <Linkify content={x.proposal} />
-                        </div>
-                    ),
-                    key: 'proposal',
-                    title: textsCap.proposal,
-                },
-                {
-                    content: getLinks(isMobile),
-                    key: 'links',
-                    title: (
-                        <div style={{ minWidth: 100 }}>
-                            {textsCap.links}
-                        </div>
-                    ),
-                }
-            ],
+            columns,
             columnsHidden: ['view'],
             data: [application],
 
@@ -58,39 +56,41 @@ const ApplicationView = props => {
     )
 }
 export default ApplicationView
-
-const getLinks = isMobile => ({ links = [] }) => (
-    <Linkify {...{
-        content: links.join('\n'),
-        replacer: (shortUrl, url) => {
-            let { hostname = '' } = fallbackIfFails(() => new URL(url)) || {}
-            hostname.replace('www.', '')
-            const name = knownIcons[hostname]
-            const style = {}
-            let color = knownColors[name]
-            if (isObj(color)) {
-                color = undefined
-                style = { ...style, ...color }
-            }
+const Links = ({ links = [] }) => {
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    return (
+        <Linkify {...{
+            content: links.join('\n'),
+            replacer: (shortUrl, url) => {
+                let { hostname = '' } = fallbackIfFails(() => new URL(url)) || {}
+                hostname.replace('www.', '')
+                const name = knownIcons[hostname]
+                const style = {}
+                let color = knownColors[name]
+                if (isObj(color)) {
+                    color = undefined
+                    style = { ...style, ...color }
+                }
             
-            return (
-                <div style={{ padding: '5px 0'}} title={url}>
-                    <Icon {...{
-                        className: 'no-margin',
-                        color,
-                        name: name || 'linkify',
-                        size: 'big',
-                        style,
-                    }} />
-                    <span> {name ? hostname : shortUrl}</span>
-                </div>
-            )
-        },
-        shorten: isMobile
-            ? 40
-            : 50,
-    }} />
-)
+                return (
+                    <div style={{ padding: '5px 0' }} title={url}>
+                        <Icon {...{
+                            className: 'no-margin',
+                            color,
+                            name: name || 'linkify',
+                            size: 'big',
+                            style,
+                        }} />
+                        <span> {name ? hostname : shortUrl}</span>
+                    </div>
+                )
+            },
+            shorten: isMobile
+                ? 40
+                : 50,
+        }} />
+    )
+}
 const knownColors = {
     gitlab: 'orange',
     medium: 'black',

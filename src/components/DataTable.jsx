@@ -19,6 +19,7 @@ import {
 	isStr,
 	arrUnique,
 	isObj,
+	hasValue,
 } from '../utils/utils'
 import { Button } from './buttons'
 import { Invertible } from './Invertible'
@@ -34,8 +35,7 @@ const mapItemsByPage = (data, pageNo, perPage, callback) => {
 	return arrMapSlice(data, start, end, callback)
 }
 
-const textsCap = translated(
-	{
+const textsCap = translated({
 		actions: 'actions',
 		deselectAll: 'deselect all',
 		noDataAvailable: 'no data available',
@@ -131,37 +131,47 @@ export default class DataTable extends Component {
 		let {
 			headers: showHeaders,
 			selectable,
-			tableProps: tp,
+			tableProps,
 		} = this.props
 		if (!showHeaders) return
 
 		const { sortAsc, sortBy } = this.state
-		const { sortable } = { ...DataTable.defaultProps.tableProps, ...tp }
-
-		const headers = columns.map((x, i) => {
-			const columnSortable = sortable && x.key && x.sortable !== false
-			const sortKey = x.sortKey || x.key
+		const { sortable } = {
+			...DataTable.defaultProps.tableProps,
+			...tableProps,
+		}
+		const headers = columns.map((column, i) => {
+			let {
+				headerProps = {},
+				key,
+				sortable: cSortable,
+				sortKey = key,
+				title,
+			} = column
+			cSortable = sortable
+				&& key
+				&& cSortable !== false
+			let handleClick
+			if (cSortable) handleClick = () => this.setState({
+				sortBy: sortKey,
+				sortAsc: sortBy === sortKey
+					? !sortAsc
+					: true,
+			})
 			return (
 				<Table.HeaderCell {...{
-					...x.headerProps,
-					content: x.title,
+					...headerProps,
+					content: title,
 					key: i,
-					onClick: () =>
-						columnSortable &&
-						this.setState({
-							sortBy: sortKey,
-							sortAsc: sortBy === sortKey
-								? !sortAsc
-								: true,
-						}),
+					onClick: handleClick,
 					sorted: sortBy !== sortKey
 						? null
 						: sortAsc
 							? 'ascending'
 							: 'descending',
 					style: {
-						...(x.headerProps || {}).style,
 						...styles.columnHeader,
+						...headerProps.style,
 					},
 					textAlign: 'center',
 				}} />
@@ -185,9 +195,8 @@ export default class DataTable extends Component {
 			? textsCap.deselectAll
 			: textsCap.selectAll
 		const title = `${t} (${numRows})`
-		headers.splice(
-			0,
-			0,
+		// add checkbox as the first column
+		headers.unshift(
 			<Table.HeaderCell
 				key='checkbox'
 				onClick={() => this.handleSelectAll(selectedIndexes)}
@@ -213,6 +222,7 @@ export default class DataTable extends Component {
 		const nonAttrs = [
 			'content',
 			'draggableValueKey',
+			'dynamicProps',
 			'headerProps',
 			'includeTitleOnMobile',
 			'sortable',
@@ -220,6 +230,83 @@ export default class DataTable extends Component {
 			'title',
 		]
 		const isStackedNMobile = isMobile && !headers && !unstackable
+		const getCell = (item, key, items) => (column, j) => {
+			const dynamicProps = isFn(column.dynamicProps) && column.dynamicProps(
+				item,
+				key,
+				items,
+				this.props,
+			) || {}
+			let {
+				collapsing,
+				content,
+				draggable,
+				draggableValueKey,
+				includeTitleOnMobile,
+				key: contentKey,
+				onDragStart,
+				style,
+				textAlign = 'left',
+				title,
+			} = {
+				...column,
+				...dynamicProps,
+				style: {
+					...column.style,
+					...dynamicProps.style,
+				}
+			}
+			draggable = draggable !== false
+			content = isFn(content)
+				? content(
+					item,
+					key,
+					items,
+					this.props,
+				)
+				: content || item[contentKey]
+			style = {
+				cursor: draggable
+					? 'grab'
+					: undefined,
+				padding: collapsing
+					? '0 5px'
+					: undefined,
+				...style,
+			}
+			const dragValue = draggableValueKey
+				? item[draggableValueKey] || ''
+				: null
+			const props = {
+				...objWithoutKeys(column, nonAttrs),
+				key: key + j,
+				draggable,
+				onDragStart: !draggable
+					? undefined
+					: this.handleDragStartCb(
+						dragValue,
+						onDragStart,
+						item,
+					),
+				style,
+				textAlign,
+			}
+			if (!isValidElement(content) && isObj(content)) {
+				// Prevents Objects being thrown on DOM which can cause error being thrown by React
+				console.warn('DataTable: unwanted object found on', {
+					key: contentKey,
+					title: title,
+					content,
+				})
+				content = JSON.stringify(content, null, 4)
+			}
+			const shouldUseTable = isStackedNMobile
+				&& includeTitleOnMobile
+				&& hasValue(content)
+			if (shouldUseTable) content = <CellAsTable {...{ content, title }} />
+
+			return <Table.Cell {...props}>{content}</Table.Cell>
+		}
 		return mapItemsByPage(
 			filteredData,
 			pageNo,
@@ -228,109 +315,37 @@ export default class DataTable extends Component {
 				<Table.Row {...{
 					key,
 					...(isFn(rowProps)
-						? rowProps(item, key, items, this.props)
+						? rowProps(
+							item,
+							key,
+							items,
+							this.props,
+						)
 						: rowProps || {}),
-				}} >
+				}}>
 					{selectable /* include checkbox to select items */ && (
-						<Table.Cell
-							onClick={() =>
-								this.handleRowSelect(key, selectedIndexes)
-							}
-							style={styles.checkboxCell}
-						>
-							<Icon
-								className='no-margin'
-								name={
-									(selectedIndexes.indexOf(key) >= 0
+						<Table.Cell {...{
+							onClick: () => this.handleRowSelect(key, selectedIndexes),
+							style: styles.checkboxCell,
+						}}>
+							<Icon {...{
+								className: 'no-margin',
+								name: (
+									selectedIndexes.indexOf(key) >= 0
 										? 'check '
-										: '') + 'square outline'
-								}
-								size='large'
-							/>
+										: ''
+								) + 'square outline',
+								size: 'large',
+							}} />
 						</Table.Cell>
 					)}
-					{columns.map((cell, j) => {
-						let {
-							collapsing,
-							content,
-							draggable,
-							draggableValueKey,
-							includeTitleOnMobile,
-							key: contentKey,
-							onDragStart,
-							style,
-							textAlign = 'left',
-							title,
-						} = cell || {}
-						draggable = draggable !== false
-						content = isFn(content)
-							? content(
-								item,
-								key,
-								items,
-								this.props,
-							)
-							: cell.content || item[contentKey]
-						style = {
-							cursor: draggable ? 'grab' : undefined,
-							padding: collapsing ? '0 5px' : undefined,
-							...style,
-						}
-						const dragValue = draggableValueKey
-							? item[draggableValueKey] || ''
-							: null
-						const props = {
-							...objWithoutKeys(cell, nonAttrs),
-							key: key + j,
-							draggable,
-							onDragStart: !draggable
-								? undefined
-								: this.handleDragStartCb(
-									dragValue,
-									onDragStart,
-									item,
-								),
-							style,
-							textAlign,
-						}
-						if (!isValidElement(content) && isObj(content)) {
-							// Prevents Objects being thrown on DOM which can cause error being thrown by React
-							console.warn('DataTable: unwanted object found on', {
-								key: contentKey,
-								title: title,
-								content,
-							})
-							content = JSON.stringify(content, null, 4)
-						}
-						if (isStackedNMobile && includeTitleOnMobile && content) {
-							content = (
-								<div style={{
-									display: 'table',
-									width: '100%',
-								}}>
-									<div style={{
-										display: 'table-cell',
-										maxWidth: '50%',
-									}}>
-										<b style={{
-											paddingRight: 7,
-											whiteSpace: 'nowrap',
-										}}>
-											{title}:
-										</b>
-									</div>
-									<div style={{
-										display: 'table-cell',
-										minWidth: '50%',
-										textAlign: 'right',
-									}}>
-										{content}
-									</div>
-								</div>
-							)
-						}
-						return <Table.Cell {...props}>{content}</Table.Cell>
-					})}
+					{columns.map(
+						getCell(
+							item,
+							key,
+							items,
+						)
+					)}
 				</Table.Row>
 			)
 		).filter(Boolean)
@@ -419,13 +434,13 @@ export default class DataTable extends Component {
 				action: !keywords
 					? undefined
 					: {
-							basic: true,
-							icon: {
-								className: 'no-margin',
-								name: 'close',
-							},
-							onClick: () => triggerSearchChange(''),
+						basic: true,
+						icon: {
+							className: 'no-margin',
+							name: 'close',
 						},
+						onClick: () => triggerSearchChange(''),
+					},
 				fluid: isMobile,
 				icon: 'search',
 				iconPosition: 'left',
@@ -684,6 +699,9 @@ DataTable.propTypes = {
 			// function/element/string: content to display for the each cell on this column.
 			// function props: currentItem, id/index, allItems, props
 			content: PropTypes.any,
+			// @dynamicProps func: dynamically add extra properties to cell based on cell content etc.
+			// Args: item, key, items, props
+			dynamicProps: PropTypes.func,
 			// indicates whether column cell should be draggable.
 			// Default: true
 			draggable: PropTypes.bool,
@@ -779,6 +797,31 @@ DataTable.defaultProps = {
 	},
 }
 
+export const CellAsTable = React.memo(({ content, title }) => (
+	<div style={{
+		display: 'table',
+		width: '100%',
+	}}>
+		<div style={{
+			display: 'table-cell',
+			maxWidth: '50%',
+		}}>
+			<b style={{
+				paddingRight: 7,
+				whiteSpace: 'nowrap',
+			}}>
+				{title}:
+			</b>
+		</div>
+		<div style={{
+			display: 'table-cell',
+			minWidth: '50%',
+			textAlign: 'right',
+		}}>
+			{content}
+		</div>
+	</div>
+))
 const styles = {
 	checkboxCell: {
 		padding: '0px 5px',

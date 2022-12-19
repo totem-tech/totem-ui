@@ -3,8 +3,10 @@ import React, { useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 // utils
 import { translated } from '../../../utils/languageHelper'
+import PromisE from '../../../utils/PromisE'
 import { useRxSubject } from '../../../utils/reactHelper'
 import { format } from '../../../utils/time'
+import { deferred, generateHash, isFn } from '../../../utils/utils'
 // components
 import DataTable from '../../../components/DataTable'
 import Message, { statuses } from '../../../components/Message'
@@ -22,8 +24,6 @@ import { applicationStatus, queueableApis } from '../task'
 import TaskForm, { inputNames as taskInputNames } from '../TaskForm'
 import useTask from '../useTask'
 import ApplicationView from './ApplicationView'
-import { deferred, generateHash, isFn } from '../../../utils/utils'
-import PromisE from '../../../utils/PromisE'
 
 let textsCap = {
     accept: 'accept',
@@ -221,7 +221,7 @@ const handleAction = (props, application) => async (_, accept) => {
         userId,
         workerAddress,
     } = application
-    const confirmId = taskId + workerAddress + 'confirm'
+    const confirmId = generateHash(taskId + workerAddress + 'confirm')
     const handleResult = async (success, err) => {
         if (err) return showInfo({
             collapsing: true,
@@ -279,9 +279,17 @@ const handleAction = (props, application) => async (_, accept) => {
                     taskInputNames.deadline,
                     taskInputNames.dueDate,
                 ].includes(name)),
-            onSubmit: success => success && addToQueue(offChain),
+            onSubmit: success => success
+             && addToQueue(offChain),
             purpose: 1, // to be included when notifying the user
-            subheader: `${textsCap.applicant}: @${userId}`,
+            subheader: (
+                <span>
+                    {textsCap.applicant + ': '}
+                    {userId
+                        ? `@${userId}`
+                        : <AddressName address={workerAddress} />}
+                </span>
+            ),
             submitText: textsCap.acceptApplication,
             values: childTask,
         })
@@ -317,7 +325,12 @@ const handleAction = (props, application) => async (_, accept) => {
             <div>
                 <div style={{ marginBottom: 15 }}>
                     <b>{textsCap.applicant}: </b><br/>
-                    <AddressName address={workerAddress} /> (<UserID userId={userId} />)
+                    <AddressName address={workerAddress} userId={userId} />
+                    {userId && (
+                        <span>
+                            {' '}(<UserID userId={userId} />)
+                        </span>
+                    )}
                 </div>
                 <FormInput {...{
                     label: textsCap.rejectOthers,

@@ -1,29 +1,39 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Icon } from 'semantic-ui-react'
 import { getUser } from '../../utils/chatClient'
 import { format } from '../../utils/time'
-import { isFn, isObj, textEllipsis } from '../../utils/utils'
+import {
+    isFn,
+    isObj,
+    textEllipsis,
+} from '../../utils/utils'
 // components
-import { Button, ButtonAcceptOrReject, UserID } from '../../components/buttons'
+import {
+    Button,
+    ButtonAcceptOrReject,
+    UserID,
+} from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import FormInput from '../../components/FormInput'
-import Message from '../../components/Message'
 import Tags from '../../components/Tags'
-import Text from '../../components/Text'
 // services
 import { translated } from '../../services/language'
-import { showForm, confirmAsPromise, showInfo } from '../../services/modal'
+import {
+    showForm,
+    confirmAsPromise,
+    showInfo,
+} from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
 import { useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import Currency from '../currency/Currency'
-import { get, get as getIdentity, getSelected } from '../identity/identity'
+import { get as getIdentity, getSelected } from '../identity/identity'
 import AddressName from '../partner/AddressName'
-import useSearch from './marketplace/useSearch'
 import ApplicationForm from './marketplace/ApplicationForm'
+import ApplicationList from './marketplace/ApplicationList'
+import useSearch from './marketplace/useSearch'
 import {
     handleAssignmentResponse,
     handleInvoicedResponse,
@@ -37,7 +47,6 @@ import {
 } from './task'
 import TaskDetails from './TaskDetails'
 import TaskForm, { inputNames } from './TaskForm'
-import ApplicationList from './marketplace/ApplicationList'
 
 let textsCap = {
     acceptInvoice: 'accept invoice',
@@ -87,12 +96,16 @@ export const listTypes = Object.freeze({
 })
 // preserves search keywords for each list type until page reloads
 const tempCache = new Map()
-// const toBeImplemented = () => alert('to be implemented')
+
 export default function TaskList(props) {
-    const { rxTasks, type } = props
+    let {
+        emptyMessage,
+        rxTasks,
+        type,
+    } = props
     const listType = listTypes[type] || listTypes.owner
     const isOwnedList = listType === listTypes.owner
-    // const isApproverList = listType === listTypes.approver
+    const isApproverList = listType === listTypes.approver
     const isFulfillerList = listType === listTypes.beneficiary
     const isMarketplace = listType === listTypes.marketplace
     const keywordsKey = 'keywords' + listType
@@ -110,9 +123,11 @@ export default function TaskList(props) {
         isOwnedList,
     ))
     const { keywords = '' } = filter || {}
-    const emptyMessage = isMarketplace
-        ? textsCap.emptyMsgMarketPlace
-        : undefined
+    emptyMessage = emptyMessage || message || (
+        isMarketplace
+            ? textsCap.emptyMsgMarketPlace
+            : undefined
+    )
     
     useEffect(() => {
         setTableProps(
@@ -125,7 +140,7 @@ export default function TaskList(props) {
         )
     }, [isMobile, isFulfillerList, isMarketplace])
     
-    if (message) return <Message {...message} />
+    // if (message) return <Message {...message} />
 
     const forceReload = () => {
         const { keywords } = filter
@@ -145,6 +160,7 @@ export default function TaskList(props) {
             data,
             emptyMessage,
             forceReload,
+            isApproverList,
             isFulfillerList,
             isMarketplace,
             isMobile,
@@ -235,7 +251,8 @@ TaskList.defaultProps = {
     listType: listTypes.owner,
 }
 // Assignee/Fullfiler
-export const getAssigneeView = (task = {}, taskId, _, { forceReload, isMobile }) => {
+export const getAssigneeView = (task = {}, taskId, _, props) => {
+    const { forceReload } = props
     const {
         applications = [],
         fulfiller,
@@ -246,12 +263,12 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload, isMobile })
         proposalRequired,
         title,
     } = task
-    const isAssigned = owner !== fulfiller && get(fulfiller)
+    const isAssigned = owner !== fulfiller
     let applied = !isOwner
         && applications.map(x => x.userId)
         .includes((getUser() || {}).id)
     
-    if (!isMarket || isAssigned) return <AddressName {...{ address: fulfiller }} />
+    if (isAssigned || !isMarket) return <AddressName {...{ address: fulfiller }} />
 
     return (
         <Button {...{
@@ -282,9 +299,9 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload, isMobile })
             onClick: () => {
                 // open application form
                 if (!isOwner) return showForm(ApplicationForm, {
-                    onSubmit: success => {
-                        success && isFn(forceReload) && forceReload()
-                    },
+                    onSubmit: success => success
+                        && isFn(forceReload)
+                        && forceReload(),
                     proposalRequired,
                     title,
                     values: { taskId },
@@ -302,7 +319,6 @@ export const getAssigneeView = (task = {}, taskId, _, { forceReload, isMobile })
                         }} />
                     ),
                     header: textsCap.applications,
-                    // size: 'tiny',
                     subheader: `${textsCap.title}: ${title}`,
                 }, modalId)
             },
@@ -506,7 +522,11 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             content: getAssigneeView,
             draggable: !isMarketplace,
             draggableValueKey: 'fulfiller',
-            includeTitleOnMobile: true,
+            // dynamicProps: ({ fulfiller, isMarket, owner }) => ({
+            //     includeTitleOnMobile: owner !== fulfiller
+            //         || !isMarket,
+            // }),
+            // includeTitleOnMobile: true,
             key: 'fulfiller',
             title: textsCap.assignee,
         },

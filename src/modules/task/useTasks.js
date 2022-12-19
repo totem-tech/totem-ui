@@ -346,10 +346,9 @@ export const processOrder = (order, id) => {
             _approvalStatus: approvalStatusNames[approvalStatus],
             _fulfiller: fulfiller === owner
                 ? null
-                : fulfiller, //<AddressName {...{ address: fulfiller }} />,
+                : fulfiller,
             _orderStatus: statusNames[orderStatus],
             _taskId: id, // list search
-            // _owner: <AddressName {...{ address: owner }} />,
         }
         return order
     } catch (err) {

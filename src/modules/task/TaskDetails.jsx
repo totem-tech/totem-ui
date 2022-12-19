@@ -93,6 +93,11 @@ export default function TaskDetails(props = {}) {
                     </div>
                 ),
                 key: 'description',
+                headerProps: {
+                    style: {
+                        verticalAlign: 'top',
+                    },
+                },
                 title: textsCap.description,
             },
             {
