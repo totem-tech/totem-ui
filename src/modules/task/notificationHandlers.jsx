@@ -468,5 +468,23 @@ setTimeout(() =>
 				return {content, icon}
 			},
 		},
+		{
+			childType: CHILD_TYPES.marketApplyResponse,
+			type: TASK_TYPE,
+			handler: (id, notification = {}, { senderIdBtn }) => {
+				const {
+					data: { taskId } = {},
+				} = notification
+
+				const content = (
+					<div>
+						{senderIdBtn}
+						{' ' + textsCap.mpRejected + ' '}
+						{getTaskDetailsBtn(taskId)}
+					</div>
+				)
+				return {content, icon}
+			},
+		},
 	].forEach((x) => setItemViewHandler(x.type, x.childType, x.handler))
 )
