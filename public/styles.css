@@ -526,8 +526,9 @@ body.inverted .ui.accordion.styled > .title:hover > .icon {
 	color: white !important;
 }
 /* button/group */
-.ui.button.inverted {
-    background: grey !important;
+.ui.button.inverted,
+body.inverted .ui.dropdown.button {
+    background: #545454 !important;
     box-shadow: none !important;
 	color: white !important;
 }
@@ -578,7 +579,6 @@ body.inverted .ui.table.vertical tbody tr:not(:last-child) td:first-child {
  */
 body.inverted input,
 body.inverted textarea,
-body.inverted .dropdown.button,
 body.inverted .dropdown.selection {
     background: #333 !important;
     border: 1px solid #333 !important;
@@ -597,6 +597,12 @@ body.inverted .ui.menu .ui.dropdown .menu > .item {
     background: #333 !important;
     border: none !important;
     color: white !important;
+}
+body.inverted .ui.dropdown > .menu.visible > *:not(:last-child) {
+    border-bottom: 1px solid #393939 !important;
+}
+body.inverted .ui.dropdown > .menu.visible {
+    border:  1px solid #565555 !important;
 }
 body.inverted .ui.dropdown .menu > .item > .description {
     color: #ccc !important;
