@@ -40,6 +40,7 @@ import {
     handleUpdateStatus,
 } from './notificationHandlers'
 import {
+    applicationStatus,
     MODULE_KEY,
     queueableApis,
     rxInProgressIds,
@@ -77,6 +78,7 @@ let textsCap = {
     marketSearch: 'search marketplace',
     no: 'no',
     pay: 'pay',
+    rejected: 'rejected',
     rejectTask: 'reject task',
     status: 'status',
     tags: 'tags',
@@ -288,6 +290,7 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
         && userId
         && applications
             .find(x => x.userId === userId)
+    const rejected = !!applied && applied.status === 2
     
     if (isAssigned || !isMarket) return <AddressName {...{ address: fulfiller }} />
 
@@ -300,11 +303,13 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
                     : undefined,
             content: isOwner
                 ? `${textsCap.applications}: ${applications.length}`
-                : applied
-                    ? textsCap.applied
-                    : isClosed
-                        ? textsCap.closed
-                        : textsCap.apply,
+                : rejected
+                ? textsCap.rejected  
+                    : applied
+                        ? textsCap.applied
+                        : isClosed
+                            ? textsCap.closed
+                            : textsCap.apply,
             disabled: !userId
                 || !!applied
                 || (!isOwner && isClosed)
