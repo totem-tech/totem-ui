@@ -599,6 +599,15 @@ const getInitialState = props => rxState => {
         const bountyIn = findInput(inputs, inputNames.bounty)
         if (!isObj(values) || !Object.keys(values).length) {
             loading.onMount = false
+
+            // ToDo: not working
+            // fillValues(
+            //     inputs,
+            //     {
+            //         [inputNames.proposalRequired]: true,
+            //     },
+            //     true,
+            // )
             return rxState.next({ inputs, loading })
         }
 
@@ -612,8 +621,18 @@ const getInitialState = props => rxState => {
         const tags = values[inputNames.tags] || []
         values[inputNames.tags] = tags
         // convert duedate and deadline block numbers to date format yyyy-mm-dd
-        if (deadline) values.deadline = blockToDate(deadline, currentBlock, true, 10)
-        if (dueDate) values.dueDate = blockToDate(dueDate, currentBlock, true, 10)
+        if (deadline) values.deadline = blockToDate(
+            deadline,
+            currentBlock,
+            true,
+            10,
+        )
+        if (dueDate) values.dueDate = blockToDate(
+            dueDate,
+            currentBlock,
+            true,
+            10,
+        )
 
         tags.length && rxTagOptions.next(tags)
 

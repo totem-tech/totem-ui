@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { rxIsLoggedIn } from '../../utils/chatClient'
+import { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
 import { subjectAsPromise, unsubscribe } from '../../utils/reactHelper'
 import { isObj } from '../../utils/utils'
 import { query } from './task'
@@ -19,7 +19,10 @@ export default function useTask(taskId, updateTrigger) {
             let error
             try {
                 order = processOrder(order, taskId)
-                await subjectAsPromise(rxIsLoggedIn, true)[0]
+
+                // wait until user is logged in
+                rxIsRegistered.value &&
+                    await subjectAsPromise(rxIsLoggedIn, true)[0]
                 // fetch off-chain details
                 const detailsMap = await query.getDetailsByTaskIds([taskId])
                 order = addDetailsToTask(

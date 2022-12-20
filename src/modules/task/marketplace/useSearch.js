@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getConnection } from '../../../services/blockchain'
-import { rxIsLoggedIn } from '../../../utils/chatClient'
-import { subjectAsPromise, useQueryBlockchain } from '../../../utils/reactHelper'
+import { rxIsLoggedIn, rxIsRegistered } from '../../../utils/chatClient'
+import { subjectAsPromise, unsubscribe, useQueryBlockchain } from '../../../utils/reactHelper'
 import { deferred } from '../../../utils/utils'
 import { query } from '../task'
 import { addDetailsToTask, processOrder } from '../useTasks'
@@ -21,6 +21,7 @@ const useSearch = (filter = {}) => {
 
     useEffect(() => {
         let mounted = true
+        const subs = {}
         if (keywords === useSearch.REFRESH_PLACEHOLDER) return setResult({})
 
         const handleResult = (detailsMap = new Map()) => {
@@ -48,7 +49,7 @@ const useSearch = (filter = {}) => {
             ])
         }
         // second, search & fetch marketplace tasks from messaging service
-        const handleLoggedIn = () => search(
+        const doSearch = () => search(
             filter,
             handleResult,
             err => mounted && setResult({
@@ -60,13 +61,18 @@ const useSearch = (filter = {}) => {
             })
         )
 
-        // first, make sure user is logged in
-        const [loginPromise, unsubscribe] = subjectAsPromise(rxIsLoggedIn, true)
-        loginPromise.then(handleLoggedIn)
+        if (rxIsRegistered.value) {
+            // wait until user is logged in
+            const [loginPromise, unsub] = subjectAsPromise(rxIsLoggedIn, true)
+            subs.login = unsub
+            loginPromise.then(doSearch)
+        } else {
+            doSearch()
+        }
 
         return () => {
             mounted = false
-            unsubscribe()
+            unsubscribe(subs)
         }
     }, [keywords])
 

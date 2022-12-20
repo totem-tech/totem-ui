@@ -101,9 +101,7 @@ const ContentSegment = props => {
 						color='grey'
 						link
 						name='expand'//'expand arrows alternate' 'compress'
-						onClick={() => {
-							toggleFullscreen(`#main-content div[name="${name}"]`)
-						}}
+						onClick={() => toggleFullscreen(`#main-content div#${name}`)}
 						size='mini'
 						style={{ display: 'inline' }}
 					/>

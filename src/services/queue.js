@@ -314,7 +314,6 @@ export const checkComplete = (id, wait = false) => {
         ({ rootTask = {} } = {}) => {
             const match = rootTask.id === id
                 && checkComplete(id)
-            console.log(id, rootTask.id, id === rootTask.id, checkComplete(id))
             return match
         }
     )[0]

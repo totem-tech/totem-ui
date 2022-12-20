@@ -2,14 +2,18 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
-import { isAddress, objWithoutKeys, textEllipsis } from '../../utils/utils'
+import {
+    isAddress,
+    objWithoutKeys,
+    textEllipsis,
+} from '../../utils/utils'
 import { Button } from '../../components/buttons'
 import LabelCopy from '../../components/LabelCopy'
 import { showForm } from '../../services/modal'
 import { rxIdentities } from '../identity/identity'
 import IdentityIcon from '../identity/IdentityIcon'
 import { rxPartners } from './partner'
-import PartnerForm from './PartnerForm'
+import PartnerForm, { inputNames } from './PartnerForm'
 import PartnerIcon from './PartnerIcon'
 
 const textsCap = translated({
@@ -28,6 +32,7 @@ function AddressName(props) {
         Component,
         ignoreAttributes,
         maxLength,
+        name: partnerName,
         style,
         userId,
     } = props
@@ -49,8 +54,9 @@ function AddressName(props) {
                 e.stopPropagation()
                 showForm(PartnerForm, {
                     values: {
-                        address,
-                        userId,
+                        [inputNames.address]: address,
+                        [inputNames.name]: partnerName,
+                        [inputNames.userId]: userId,
                     },
                 })
             },
@@ -112,6 +118,8 @@ AddressName.prototype = {
     ]).isRequired,
     ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
     maxLength: PropTypes.number,
+	// @name (optional): a name to be prefilled when adding as partner
+	name: PropTypes.string,
     // @userId: (optional) userId to be prefilled when adding as partner
     userId: PropTypes.string,
 }

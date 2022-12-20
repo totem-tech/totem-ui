@@ -503,7 +503,8 @@ body.inverted #main-content.inverted {
 /* anything inside the #main-content with .inverted class */
 body.inverted #main-content .inverted,
 body.inverted .accordion {
-	background: #464646;
+	/* background: #464646; */
+	background: #353535;
 	color: white;
 }
 body.inverted #main-content .icon.inverted {

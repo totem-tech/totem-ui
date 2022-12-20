@@ -6,21 +6,41 @@ import { translated } from '../../../utils/languageHelper'
 import PromisE from '../../../utils/PromisE'
 import { useRxSubject } from '../../../utils/reactHelper'
 import { format } from '../../../utils/time'
-import { deferred, generateHash, isFn } from '../../../utils/utils'
+import {
+    deferred,
+    generateHash,
+    isFn,
+} from '../../../utils/utils'
 // components
 import DataTable from '../../../components/DataTable'
 import Message, { statuses } from '../../../components/Message'
-import { Button, ButtonAcceptOrReject, UserID } from '../../../components/buttons'
+import {
+    Button,
+    ButtonAcceptOrReject,
+    UserID,
+} from '../../../components/buttons'
 import FormInput from '../../../components/FormInput'
 // services
-import { closeModal, confirmAsPromise, showForm, showInfo } from '../../../services/modal'
-import { addToQueue, checkComplete, QUEUE_TYPES } from '../../../services/queue'
+import {
+    closeModal,
+    confirmAsPromise,
+    showForm,
+    showInfo,
+} from '../../../services/modal'
+import {
+    addToQueue,
+    checkComplete,
+    QUEUE_TYPES,
+} from '../../../services/queue'
 import { MOBILE, rxLayout } from '../../../services/window'
 // modules
 import AddressName from '../../partner/AddressName'
 import { get as getPartner } from '../../partner/partner'
 import PartnerForm, { inputNames as pInputNames } from '../../partner/PartnerForm'
-import { applicationStatus, queueableApis } from '../task'
+import {
+    applicationStatus,
+    queueableApis,
+} from '../task'
 import TaskForm, { inputNames as taskInputNames } from '../TaskForm'
 import useTask from '../useTask'
 import ApplicationView from './ApplicationView'
@@ -28,6 +48,7 @@ import ApplicationView from './ApplicationView'
 let textsCap = {
     accept: 'accept',
     acceptApplication: 'accept application',
+    addPartner: 'add the applicant identity as your partner',
     applicant: 'applicant',
     appliedAt: 'applied at',
     emptyMessage: 'no applications received',
@@ -84,6 +105,8 @@ const ApplicationList = props => {
             searchable: applications.length > 10,
             sortAsc: false,
             sortBy: 'tsCreated',
+
+            
             // extra info used by cells
             forceReload: deferred(() => {
                 // reload application view
@@ -103,6 +126,14 @@ ApplicationList.propTypes = {
 }
 export default ApplicationList
 
+const getAddressBtn = ({ name, userId, workerAddress }) => (
+    <AddressName {...{
+        address: workerAddress,
+        name,
+        userId,
+    }} />
+)
+
 export const getColumns = (showStatusButtons = true) => {
     const columns = [
         {
@@ -118,22 +149,15 @@ export const getColumns = (showStatusButtons = true) => {
         },
         {
             collapsing: true,
-            content: ({ userId }, _1, _2, { modalId }) => (
-                <UserID {...{
-                    onChatOpen: () => closeModal(modalId),
-                    userId
-                }} />
+            content: (application, _1, _2, { modalId }) => getUserIdBtn(
+                application,
+                modalId,
             ),
             key: 'userId',
             title: textsCap.applicant,
         },
         {
-            content: ({ userId, workerAddress }) => (
-                <AddressName {...{
-                    address: workerAddress,
-                    userId,
-                }} />
-            ),
+            content: getAddressBtn,
             key: 'workerAddress',
             title: textsCap.identity,
         },
@@ -147,31 +171,7 @@ export const getColumns = (showStatusButtons = true) => {
         },
         {
             collapsing: true,
-            content: (application = {}, _i, _arr, { task = {}, taskId }) => (
-                <Button {...{
-                    icon: 'eye',
-                    onClick: () => {
-                        const modalId = `${taskId}-${application.workerAddress}`
-                        const content = (
-                            <ApplicationView {...{
-                                application,
-                                modalId,
-                                task,
-                                taskId,
-                            }} />
-                        )
-                        const modalProps = {
-                            collapsing: true,
-                            content,
-                            header: textsCap.viewApp,
-                            size: 'tiny',
-                            subheader: `${textsCap.title}: ${task.title}`
-                        }
-                        showInfo(modalProps, modalId)
-                            .catch(console.warn)
-                    },
-                }} />
-            ),
+            content: handleViewClick,
             name: 'view',
             title: textsCap.view,
         }
@@ -201,14 +201,23 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
                 rejectText: isMobile
                     ? '' // hide text on mobile
                     : undefined,
-                onAction: handleAction(props, application),
+                onAction: handleActionCb(props, application),
                 title: textsCap.accept,
             }} />
         </div>
     )
 }
+
+const getUserIdBtn = ({ name, userId, workerAddress }, modalId) => (
+    <UserID {...{
+        address: workerAddress,
+        name,
+        onChatOpen: () => modalId && closeModal(modalId),
+        userId
+    }} />
+)
         
-const handleAction = (props, application) => async (_, accept) => {
+const handleActionCb = (props, application) => async (_, accept) => {
     const {
         forceReload,
         modalId,
@@ -223,7 +232,7 @@ const handleAction = (props, application) => async (_, accept) => {
     } = application
     const confirmId = generateHash(taskId + workerAddress + 'confirm')
     const handleResult = async (success, err) => {
-        if (err) return showInfo({
+        if (!success) return err && showInfo({
             collapsing: true,
             content: (
                 <Message {...{ 
@@ -260,6 +269,7 @@ const handleAction = (props, application) => async (_, accept) => {
         title,
         type: QUEUE_TYPES.CHATCLIENT,
     }
+    const addressBtn = getAddressBtn(application)
 
     if (accept) {
         // use the regular task form to create a new task and assignin to the applicant
@@ -287,7 +297,7 @@ const handleAction = (props, application) => async (_, accept) => {
                     {textsCap.applicant + ': '}
                     {userId
                         ? `@${userId}`
-                        : <AddressName address={workerAddress} />}
+                        : addressBtn}
                 </span>
             ),
             submitText: textsCap.acceptApplication,
@@ -297,7 +307,7 @@ const handleAction = (props, application) => async (_, accept) => {
         if (!!getPartner(workerAddress)) return openTaskForm()
         
         showForm(PartnerForm, {
-            subheader: 'Add the applicant identity as your partner',
+            subheader: textsCap.addPartner,
             onSubmit: done => done && openTaskForm(),
             values: {
                 [pInputNames.address]: workerAddress,
@@ -325,10 +335,11 @@ const handleAction = (props, application) => async (_, accept) => {
             <div>
                 <div style={{ marginBottom: 15 }}>
                     <b>{textsCap.applicant}: </b><br/>
-                    <AddressName address={workerAddress} userId={userId} />
+                    {addressBtn}
                     {userId && (
                         <span>
-                            {' '}(<UserID userId={userId} />)
+                            {' '}
+                            ({getUserIdBtn(application, modalId)})
                         </span>
                     )}
                 </div>
@@ -350,5 +361,30 @@ const handleAction = (props, application) => async (_, accept) => {
     // if rejected, no need to update onchain data
     const qid = addToQueue(offChain)
     await checkComplete(qid, true)
-    console.log('completed', qid)
 }
+
+const handleViewClick = (application = {}, _i, _arr, { task = {}, taskId }) => (
+    <Button {...{
+        icon: 'eye',
+        onClick: () => {
+            const modalId = `${taskId}-${application.workerAddress}`
+            const content = (
+                <ApplicationView {...{
+                    application,
+                    modalId,
+                    task,
+                    taskId,
+                }} />
+            )
+            const modalProps = {
+                collapsing: true,
+                content,
+                header: textsCap.viewApp,
+                size: 'tiny',
+                subheader: `${textsCap.title}: ${task.title}`
+            }
+            showInfo(modalProps, modalId)
+                .catch(console.warn)
+        },
+    }} />
+)

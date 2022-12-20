@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { getUser } from '../../utils/chatClient'
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { format } from '../../utils/time'
 import {
     isFn,
@@ -124,6 +124,7 @@ export default function TaskList(props) {
         : [null, useRxSubject(rxTasks)[0]]
     const [inProgressIds] = useRxSubject(rxInProgressIds)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const [userId] = useRxSubject(rxIsRegistered, ok => ok && getUser().id)
     const [tableProps, setTableProps] = useState(getTableProps(
         isMobile,
         isFulfillerList,
@@ -161,19 +162,67 @@ export default function TaskList(props) {
             keywords,
         }))
     }
+
+    const searchable = !isMarketplace
+        ? true
+        : (
+            <FormInput {...{
+                // for advanced filtering
+                // filter by: 
+                //      tags(categories?),
+                //      amountXTX (convert from display currency if necessary)
+                //      deadline (convert timestamp to block number before search)
+                //      created after (tsCreated)
+                // search by: title, description, userId (filter by partner userId or own (default on first load??))
+                // action: {
+                //     icon: 'filter',
+                //     onClick: alert
+                // },
+                action: !keywords
+                    ? undefined
+                    : {
+                        basic: true,
+                        icon: {
+                            className: 'no-margin',
+                            name: 'close',
+                        },
+                        onClick: () => setFilter({
+                            ...filter,
+                            keywords: '',
+                        }),
+                    },
+                style: {
+                    minWidth: isMobile
+                        ? '100%'
+                        : undefined
+                },
+                icon: 'search',
+                iconPosition: 'left',
+                name: 'search',
+                onChange: async (_, { value = '' }) => setFilter({
+                    ...filter,
+                    keywords: value,
+                }),
+                onDragOver: e => e.preventDefault(),
+                onDrop: async e => {
+                    const keywords = e.dataTransfer.getData('Text')
+                    if (!keywords.trim()) return
+                    setFilter({ keywords })
+                },
+                placeholder: textsCap.marketSearch,
+                // this ensures the search occur on load
+                rxValue: new BehaviorSubject(keywords),
+                type: 'search',
+                value: keywords, 
+            }} />
+        )
+    
     return (
         <DataTable {...{
             ...props,
             ...tableProps,
             data,
             emptyMessage,
-            forceReload,
-            isApproverList,
-            isFulfillerList,
-            isMarketplace,
-            isMobile,
-            isOwnedList,
-            inProgressIds,
             key: data,
             keywords: isMarketplace
                 ? undefined
@@ -195,59 +244,22 @@ export default function TaskList(props) {
                     }),
                 },
             ].filter(Boolean),
-            rxTasks, // keep??
 
             // marketplace
+            searchable,
             searchHideOnEmpty: !isMarketplace,
-            searchable: !isMarketplace
-                ? true
-                : (
-                    <FormInput {...{
-                        // for advanced filtering
-                        // filter by: 
-                        //      tags(categories?),
-                        //      amountXTX (convert from display currency if necessary)
-                        //      deadline (convert timestamp to block number before search)
-                        //      created after (tsCreated)
-                        // search by: title, description, userId (filter by partner userId or own (default on first load??))
-                        // action: {
-                        //     icon: 'filter',
-                        //     onClick: alert
-                        // },
-                        action: !keywords
-                            ? undefined
-                            : {
-                                basic: true,
-                                icon: {
-                                    className: 'no-margin',
-                                    name: 'close',
-                                },
-                                onClick: () => setFilter({
-                                    ...filter,
-                                    keywords: '',
-                                }),
-                            },
-                        style: isMobile ? { minWidth: '100%' } : {},
-                        icon: 'search',
-                        iconPosition: 'left',
-                        name: 'search',
-                        onChange: async (_, { value = '' }) => setFilter({
-                            ...filter,
-                            keywords: value,
-                        }),
-                        onDragOver: e => e.preventDefault(),
-                        onDrop: async e => {
-                            const keywords = e.dataTransfer.getData('Text')
-                            if (!keywords.trim()) return
-                            setFilter({ keywords })
-                        },
-                        placeholder: textsCap.marketSearch,
-                        // this ensures the search occur on load
-                        rxValue: new BehaviorSubject(keywords),
-                        type: 'search',
-                        value: keywords, 
-                    }} />
-                ),
+
+            // extra information used by columns/cells
+            forceReload,
+            isApproverList,
+            isFulfillerList,
+            isMarketplace,
+            isMobile,
+            isOwnedList,
+            inProgressIds,
+            rxTasks, // keep??
+            userId,
+
         }} />
     )
 }
@@ -260,7 +272,7 @@ TaskList.defaultProps = {
 }
 // Assignee/Fullfiler
 export const getAssigneeView = (task = {}, taskId, _, props) => {
-    const { forceReload } = props
+    const { forceReload, userId } = props
     const {
         applications = [],
         fulfiller,
@@ -272,9 +284,10 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
         title,
     } = task
     const isAssigned = owner !== fulfiller
-    let applied = !isOwner
-        && applications.map(x => x.userId)
-        .includes((getUser() || {}).id)
+    const applied = !isOwner
+        && userId
+        && applications
+            .find(x => x.userId === userId)
     
     if (isAssigned || !isMarket) return <AddressName {...{ address: fulfiller }} />
 
@@ -292,7 +305,8 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
                     : isClosed
                         ? textsCap.closed
                         : textsCap.apply,
-            disabled: !!applied
+            disabled: !userId
+                || !!applied
                 || (!isOwner && isClosed)
                 || (isOwner && !applications.length),
             fluid: true,
@@ -459,8 +473,8 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             title: textsCap.createdAt,
         },
         {
-            content: ({ isMarket, title }) => (
-                <span>
+            content: ({ isMarket, title }, _1, _2, { isMobile }) => (
+                <span style={{ fontSize: isMobile ? '110%' : undefined }}>
                     {isOwnedList && isMarket && adIcon}
                     {title}
                 </span>

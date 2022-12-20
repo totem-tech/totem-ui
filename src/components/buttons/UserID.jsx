@@ -37,6 +37,7 @@ textsCap = translated(textsCap, true)[1]
 const UserID = React.memo(props => {
 	const {
 		address,
+		name,
 		El,
 		ignoreAttributes,
 		onClick,
@@ -70,6 +71,7 @@ const UserID = React.memo(props => {
 						userId,
 						address,
 						onChatOpen,
+						name,
 					)
 				},
 			onDragStart: e => {
@@ -89,7 +91,7 @@ const UserID = React.memo(props => {
 	)
 })
 UserID.propTypes = {
-	//@address partner identity
+	//@address (optional): partner identity
 	address: PropTypes.string,
 	El: PropTypes.oneOfType([
 		PropTypes.string,
@@ -97,6 +99,8 @@ UserID.propTypes = {
 		PropTypes.object, //for React.memo elements
 	]).isRequired,
 	ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
+	// @name (optional): a name to be used when adding as partner
+	name: PropTypes.string,
 	// @onClick function: use `null` to prevent showing modal
 	onClick: PropTypes.func,
 	// @onChatOpen function: callback invoked whenever chat is opened with the user from the user details modal
@@ -125,7 +129,7 @@ UserID.defaultProps = {
 		'userId',
 	],
 }
-UserID.showModal = (userId, partnerAddress, onChatOpen) => {
+UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 	const partner = partnerAddress && getPartner(partnerAddress)
 	const partnerById = !partner && getByUserId(userId)
 	const {
@@ -148,6 +152,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen) => {
 				onSubmit: ok => ok && closeModal(modalId),
 				values: {
 					[pInputNames.address]: partnerAddress,
+					[pInputNames.name]: partnerName || '',
 					[pInputNames.userId]: userId
 				},
 			}),
