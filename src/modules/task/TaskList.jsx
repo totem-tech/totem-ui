@@ -152,8 +152,6 @@ export default function TaskList(props) {
         )
     }, [isMobile, isFulfillerList, isMarketplace])
     
-    // if (message) return <Message {...message} />
-
     const forceReload = () => {
         const { keywords } = filter
         setFilter({
@@ -290,8 +288,9 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
     const application = !isOwner
         && userId
         && applications.find(x => x.userId === userId)
-    const applied = !!application
-    const rejected = !!application && application.status === 2
+    const applied = userId && !!application
+    const rejected = !!applied
+        && application.status === 2
     if (isAssigned || !isMarket) return <AddressName {...{ address: fulfiller }} />
 
     return (
@@ -300,10 +299,10 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
                 ? rejected
                     ? 'red'
                     : 'green'
-                : !isOwner && !isClosed
+                : !isOwner && !isClosed && !!userId
                     ? 'blue'
                     : undefined,
-            content: isOwner
+            content: isOwner || !userId
                 ? `${textsCap.applications}: ${applications.length}`
                 : rejected
                 ? textsCap.rejected  
@@ -317,7 +316,7 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
             || (isOwner && !applications.length),
             // || !!applied
             fluid: true,
-            icon: isOwner
+            icon: isOwner || !userId
                 ? 'list'
                 : applied
                     ? 'eye'

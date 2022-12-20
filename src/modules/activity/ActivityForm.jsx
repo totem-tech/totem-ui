@@ -1,18 +1,20 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { arrSort, generateHash, isFn, objClean } from '../../utils/utils'
+import { Button } from '../../components/buttons'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
+import { closeModal, confirm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { iUseReducer } from '../../utils/reactHelper'
+import {
+	generateHash,
+	isFn,
+	objClean,
+} from '../../utils/utils'
 import { getSelected, rxIdentities } from '../identity/identity'
-import Balance from '../identity/Balance'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 import { getProjects, queueables } from './activity'
 import ActivityTeamList from './ActivityTeamList'
-import { Button } from 'semantic-ui-react'
-import { closeModal, confirm } from '../../services/modal'
-import IdentityIcon from '../identity/IdentityIcon'
-import { iUseReducer } from '../../utils/reactHelper'
-import { getIdentityOptions } from '../identity/getIdentityOptions'
 
 let textsCap = {
 	create: 'create',
@@ -60,11 +62,11 @@ export default function ActivityForm(props) {
 			{
 				label: textsCap.nameLabel,
 				name: inputNames.name,
+				maxLength: 64,
 				minLength: 3,
 				placeholder: textsCap.namePlaceholder,
 				required: true,
 				type: 'text',
-				value: '',
 			},
 			{
 				disabled: !!props.hash,
@@ -82,10 +84,10 @@ export default function ActivityForm(props) {
 				label: textsCap.descLabel,
 				name: inputNames.description,
 				maxLength: 160,
+				minLength: 3,
 				placeholder: textsCap.descPlaceholder,
-				required: true,
+				required: false,
 				type: 'textarea',
-				value: '',
 			},
 		]
 		const state = {

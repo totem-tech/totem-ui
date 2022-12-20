@@ -63,6 +63,7 @@ class UserIdInput extends Component {
             excludeOwnId,
             includePartners,
             includeFromChat,
+            label,
             multiple,
             newUser,
             options,
@@ -106,12 +107,12 @@ class UserIdInput extends Component {
                 },
                 inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
                 labelPosition: 'left',
-                minLength: MIN_LENGTH,
                 maxLength: MAX_LENGTH,
+                minLength: MIN_LENGTH,
                 placeholder,
                 regex: userIdRegex,
                 reject: [excludeOwnId && ownId, ...reject].filter(Boolean),
-                rxValue,
+                rxValue, ///: copyRxSubject(rxValue, new BehaviorSubject()),
                 type: 'text',
                 useInput: true,
                 ...(!newUser
@@ -357,16 +358,17 @@ class UserIdInput extends Component {
         const { multiple } = this.props
         let { loading, options } = this.state
         loading = loading || this.props.loading
+        const props = {
+            ...objWithoutKeys(
+                this.props,
+                !multiple ? noAttrsTextField : noAttrs
+            ),
+            ...this.state,
+            loading,
+            options,
+        }
         return (
-            <FormInput {...{
-                ...objWithoutKeys(
-                    this.props,
-                    !multiple ? noAttrsTextField : noAttrs
-                ),
-                ...this.state,
-                loading,
-                options,
-            }} />
+            <FormInput {...props} />
         )
     }
 }

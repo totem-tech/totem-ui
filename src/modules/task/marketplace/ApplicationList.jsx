@@ -172,7 +172,7 @@ export const getColumns = (showStatusButtons = true) => {
         },
         {
             collapsing: true,
-            content: (application = {}, _i, _arr, { task = {}, taskId }) => (
+            content: (application = {}, _i, _arr, { modalId, task = {}, taskId }) => (
                 <Button {...{
                     icon: 'eye',
                     onClick: () => ApplicationView.asModal({

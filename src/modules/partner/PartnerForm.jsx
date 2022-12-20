@@ -185,182 +185,183 @@ export default class PartnerForm extends Component {
 			values,
 		}
 		this.state.inputs = [
-				{
-					inline: true,
-					label: textsCap.typeLabel,
-					name: inputNames.type,
-					options: [
-						{ label: textsCap.personal, value: types.PERSONAL },
-						{ label: textsCap.business, value: types.BUSINESS },
-					],
-					radio: true,
-					required: true,
-					rxValue: new BehaviorSubject(types.PERSONAL),
-					type: 'checkbox-group',
-				},
-				{
-					allowAdditions: false,
-					additionLabel: textsCap.addressAdditionLabel + ' ',
-					clearable: true,
-					// disable when adding new and address is prefilled (possibly from notification)
-					disabled: !this.doUpdate && !!ss58Decode(address),
-					hidden: this.doUpdate,
-					label: textsCap.addressLabel,
-					lazyLoad: true,
-					minCharacters: 1,
-					name: inputNames.address,
-					noResultsMessage: textsCap.addressEmptySearchMessage,
-					onAddItem: this.handleAddressAddItem,
-					onChange: this.handleAddressChange,
-					onSearchChange: deferred(this.handleAddressSearchChange, 300),
-					options: !address
-						? []
-						: [
-							{
-								key: address + name,
-								text: name || address,
-								value: address,
-							},
-						],
-					placeholder: textsCap.addressPlaceholder,
-					required: true,
-					search: ['search'],
-					selectOnNavigation: false,
-					selection: true,
-					type: 'dropdown',
-					validate: this.validateAddress,
-				},
-				{
-					label: textsCap.nameLabel,
-					maxLength: 64,
-					minLength: 3,
-					name: inputNames.name,
-					placeholder: textsCap.namePlaceholder,
-					required: true,
-					rxValue: new BehaviorSubject(''),
-					type: 'text',
-					validate: this.validateName,
-				},
-				{
-					clearable: true,
-					label: textsCap.associatedIdentityLabel,
-					name: inputNames.associatedIdentity,
-					options: [],
-					placeholder: textsCap.associatedIdentityPlaceholder,
-					rxOptions: rxIdentities,
-					rxOptionsModifier: getIdentityOptions,
-                    search: ['keywords'],
-					selection: true,
-					type: 'dropdown',
-				},
-				{
-					allowAdditions: true,
-					label: textsCap.tags,
-					name: inputNames.tags,
-					noResultsMessage: textsCap.tagsNoResultsMsg,
-					multiple: true,
-					onAddItem: this.handleAddTag,
-					options: arrUnique([...getAllTags(), ...tags]).map(tag => ({
-						key: tag,
-						text: tag,
-						value: tag,
-					})),
-					placeholder: textsCap.tagsPlaceholder,
-					type: 'dropdown',
-					search: true,
-					selection: true,
-					value: tags || [],
-				},
-				{
-					disabled:
-						this.doUpdate && visibility === visibilityTypes.PUBLIC,
-					inline: true,
-					label: textsCap.visibilityLabel,
-					name: inputNames.visibility,
-					options: [
-						{
-							label: textsCap.private,
-							value: visibilityTypes.PRIVATE,
-						},
-						{
-							disabled: true,
-							label: textsCap.public,
-							value: visibilityTypes.PUBLIC,
-						},
-					],
-					radio: true,
-					required: true,
-					rxValue: new BehaviorSubject(
-						values.visibility || visibilityTypes.PRIVATE
-					),
-					type: 'checkbox-group',
-				},
 			{
-					hidden: values => values[inputNames.visibility] === visibilityTypes.PUBLIC,
-					label: textsCap.userIdLabel,
-					name: inputNames.userId,
-					multiple: false,
-					placeholder: textsCap.userIdPlaceholder,
-					type: 'UserIdInput',
-				},
-				{
-					label: textsCap.regNumberLabel,
-					minLength: 3,
-					maxLength: 64,
-					name: inputNames.registeredNumber,
-					placeholder: textsCap.regNumberPlaceholder,
-				},
-				{
-					label: textsCap.vatNumberLabel,
-					minLength: 3,
-					maxLength: 64,
-					name: inputNames.vatNumber,
-					placeholder: textsCap.vatNumberPlaceholder,
-				},
-				{
-					accordion: {
-						collapsed: true,
-						styled: true,
-					},
-					hidden: values => !values[inputNames.address],
-					label: textsCap.locationGroupLabel,
-					name: inputNames.locationGroup,
-					type: 'group',
-					inputs: [
+				inline: true,
+				label: textsCap.typeLabel,
+				name: inputNames.type,
+				options: [
+					{ label: textsCap.personal, value: types.PERSONAL },
+					{ label: textsCap.business, value: types.BUSINESS },
+				],
+				radio: true,
+				required: true,
+				rxValue: new BehaviorSubject(types.PERSONAL),
+				type: 'checkbox-group',
+			},
+			{
+				allowAdditions: false,
+				additionLabel: textsCap.addressAdditionLabel + ' ',
+				clearable: true,
+				// disable when adding new and address is prefilled (possibly from notification)
+				disabled: !this.doUpdate && !!ss58Decode(address),
+				hidden: this.doUpdate,
+				label: textsCap.addressLabel,
+				lazyLoad: true,
+				minCharacters: 1,
+				name: inputNames.address,
+				noResultsMessage: textsCap.addressEmptySearchMessage,
+				onAddItem: this.handleAddressAddItem,
+				onChange: this.handleAddressChange,
+				onSearchChange: deferred(this.handleAddressSearchChange, 300),
+				options: !address
+					? []
+					: [
 						{
-							name: inputNames.locationFormHtml,
-							type: 'html',
-							content: this.getLocationForm(
-								location,
-								locationId,
-								{ submitText: null }
-							),
+							key: address + name,
+							text: name || address,
+							value: address,
 						},
 					],
-				},
-				{
-					accordion: {
-						collapsed: true,
-						styled: true,
+				placeholder: textsCap.addressPlaceholder,
+				required: true,
+				search: ['search'],
+				selectOnNavigation: false,
+				selection: true,
+				type: 'dropdown',
+				validate: this.validateAddress,
+			},
+			{
+				label: textsCap.nameLabel,
+				maxLength: 64,
+				minLength: 3,
+				name: inputNames.name,
+				placeholder: textsCap.namePlaceholder,
+				required: true,
+				rxValue: new BehaviorSubject(''),
+				type: 'text',
+				validate: this.validateName,
+			},
+			{
+				clearable: true,
+				label: textsCap.associatedIdentityLabel,
+				name: inputNames.associatedIdentity,
+				options: [],
+				placeholder: textsCap.associatedIdentityPlaceholder,
+				rxOptions: rxIdentities,
+				rxOptionsModifier: getIdentityOptions,
+				search: ['keywords'],
+				selection: true,
+				type: 'dropdown',
+			},
+			{
+				allowAdditions: true,
+				label: textsCap.tags,
+				name: inputNames.tags,
+				noResultsMessage: textsCap.tagsNoResultsMsg,
+				multiple: true,
+				onAddItem: this.handleAddTag,
+				options: arrUnique([...getAllTags(), ...tags]).map(tag => ({
+					key: tag,
+					text: tag,
+					value: tag,
+				})),
+				placeholder: textsCap.tagsPlaceholder,
+				type: 'dropdown',
+				search: true,
+				selection: true,
+				value: tags || [],
+			},
+			{
+				disabled:
+					this.doUpdate && visibility === visibilityTypes.PUBLIC,
+				inline: true,
+				label: textsCap.visibilityLabel,
+				name: inputNames.visibility,
+				options: [
+					{
+						label: textsCap.private,
+						value: visibilityTypes.PRIVATE,
 					},
-					hidden: values => !values[inputNames.address],
-					label: textsCap.contactGroupLabel,
-					name: inputNames.contactGroup,
-					type: 'group',
-					inputs: [
-						{
-							name: inputNames.contactFormHtml,
-							type: 'html',
-							content: this.getContactForm({
-								...contact,
-								name: (contact || {}).name
-									|| values.name,
-								[contactInputNames.partnerIdentity]: address,
-							}),
-						},
-					],
+					{
+						disabled: true,
+						label: textsCap.public,
+						value: visibilityTypes.PUBLIC,
+					},
+				],
+				radio: true,
+				required: true,
+				rxValue: new BehaviorSubject(
+					values.visibility || visibilityTypes.PRIVATE
+				),
+				type: 'checkbox-group',
+			},
+			{
+				hidden: values => values[inputNames.visibility] === visibilityTypes.PUBLIC,
+				label: textsCap.userIdLabel,
+				name: inputNames.userId,
+				multiple: false,
+				placeholder: textsCap.userIdPlaceholder,
+				type: 'UserIdInput',
+			},
+			{
+				label: textsCap.regNumberLabel,
+				minLength: 3,
+				maxLength: 64,
+				name: inputNames.registeredNumber,
+				placeholder: textsCap.regNumberPlaceholder,
+				rxValue: new BehaviorSubject(),
+			},
+			{
+				label: textsCap.vatNumberLabel,
+				minLength: 3,
+				maxLength: 64,
+				name: inputNames.vatNumber,
+				placeholder: textsCap.vatNumberPlaceholder,
+			},
+			{
+				accordion: {
+					collapsed: true,
+					styled: true,
 				},
-			].filter(Boolean)
+				hidden: values => !values[inputNames.address],
+				label: textsCap.locationGroupLabel,
+				name: inputNames.locationGroup,
+				type: 'group',
+				inputs: [
+					{
+						name: inputNames.locationFormHtml,
+						type: 'html',
+						content: this.getLocationForm(
+							location,
+							locationId,
+							{ submitText: null }
+						),
+					},
+				],
+			},
+			{
+				accordion: {
+					collapsed: true,
+					styled: true,
+				},
+				hidden: values => !values[inputNames.address],
+				label: textsCap.contactGroupLabel,
+				name: inputNames.contactGroup,
+				type: 'group',
+				inputs: [
+					{
+						name: inputNames.contactFormHtml,
+						type: 'html',
+						content: this.getContactForm({
+							...contact,
+							name: (contact || {}).name
+								|| values.name,
+							[contactInputNames.partnerIdentity]: address,
+						}),
+					},
+				],
+			},
+		].filter(Boolean)
 
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -369,16 +370,6 @@ export default class PartnerForm extends Component {
 	componentWillMount = () => {
 		this._mounted = true
 		const { inputs, values } = this.state
-		// const addressIn = findInput(inputs, 'address')
-		// const assocIn = findInput(inputs, inputNames.associatedIdentity)
-		// assocIn.options = arrSort(
-		// 	identityService.getAll().map(({ name, address }) => ({
-		// 		key: address,
-		// 		text: name,
-		// 		value: address,
-		// 	})),
-		// 	'text'
-		// )
 
 		values.address && setTimeout(async () => {
 			await this.checkVisibility(values.address)

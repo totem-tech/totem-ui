@@ -1,11 +1,16 @@
-import React, { Component } from 'react'
+import React from 'react'
 import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 // utils
 import PromisE from '../../utils/PromisE'
-import { copyRxSubject, iUseReducer, iUseState, subjectAsPromise, useRxSubject } from '../../utils/reactHelper'
+import {
+    copyRxSubject,
+    iUseState,
+    subjectAsPromise,
+    useRxSubject,
+} from '../../utils/reactHelper'
 import {
     blockToDate,
     format,
@@ -24,7 +29,12 @@ import {
     objClean,
 } from '../../utils/utils'
 // components
-import FormBuilder, { findInput, fillValues, getValues } from '../../components/FormBuilder'
+import FormBuilder, {
+    findInput,
+    fillValues,
+    getValues,
+} from '../../components/FormBuilder'
+import { statuses } from '../../components/Message'
 // services
 import {
     hashTypes,
@@ -54,8 +64,6 @@ import {
     queueables,
 } from './task'
 import { rxUpdater } from './useTasks'
-import { statuses } from '../../components/Message'
-import RxSubject from '../../components/RxSubject'
 
 let textsCap = {
     addPartner: 'add partner',
@@ -221,7 +229,6 @@ const getInitialState = props => rxState => {
     const rxAssignee = new BehaviorSubject()
     const rxCurrency = copyRxSubject(rxSelectedCurrency)
     const rxCurrencies = new BehaviorSubject()
-    const rxDescription = new BehaviorSubject('')
     const rxTags = new BehaviorSubject([])
     const rxTagOptions = new BehaviorSubject([])
     // forces assignee to be re-validated
@@ -478,34 +485,12 @@ const getInitialState = props => rxState => {
                         lengthMin: true,
                     },
                     label: textsCap.descLabel,
-                    labelDetails: (
-                        <RxSubject {...{
-                            subject: rxDescription,
-                            valueModifier: (desc = '') => (
-                                <div style={{
-                                    bottom: 0,
-                                    color: !desc || (desc.length < 1800 && desc.length >= 50)
-                                        ? 'grey'
-                                        : desc.length >= 1800 && desc.length < 2000
-                                            ? 'orange'
-                                            : 'red',
-                                    fontWeight: 'bold',
-                                    position: 'absolute',
-                                    right: 18,
-                                }}>
-                                    {desc.length}/2000
-                                </div>
-                            ),
-                        }} />
-                    ),
                     maxLength: 2000,
                     minLength: 50,
                     name: inputNames.description,
                     placeholder: `${textsCap.descPlaceholder} (50-2000)`,
                     required: false,
-                    rxValue: rxDescription,
                     style: { minHeight: 150 },
-                    styleContainer: { position: 'relative' },
                     type: 'textarea',
                 },
                 {

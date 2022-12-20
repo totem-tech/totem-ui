@@ -14,7 +14,7 @@ import {
     showInfo,
 } from '../../services/modal'
 // utils
-import { getUser } from '../../utils/chatClient'
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
 import { blockToDate, format } from '../../utils/time'
 import { generateHash, isObj } from '../../utils/utils'
@@ -60,13 +60,14 @@ export default function TaskDetails(props = {}) {
         forceReload: () => setReload(generateHash()),
     })
     const { error, task } = useTask(taskId, reload)
+    const [userId] = useRxSubject(rxIsRegistered, ok => ok && getUser().id)
 
     useEffect(() => {
         if (!task || !Object.keys(task).length) return () => { }
         
         const _task = { ...task, taskId }
         const ownerIsApprover = _task.owner === _task.approver
-        const userIsOwner = (getUser() || {}).id === _task.createdBy
+        const userIsOwner = userId === _task.createdBy
         const style = {
             maxLength: 150,
             minWidth: 110,
@@ -179,10 +180,9 @@ export default function TaskDetails(props = {}) {
             columns,
             data: new Map([[taskId, {..._task, blockNum}]]),
             emptyMessage: undefined,
-            inProgressIds,
         }
         setTableProps(tableProps)
-    }, [setTableProps, getStatusView, blockNum, inProgressIds, task])
+    }, [setTableProps, getStatusView, blockNum, task, userId])
 
     tableProps.emptyMessage = !isObj(task) || !!error
         ? {
@@ -193,9 +193,15 @@ export default function TaskDetails(props = {}) {
                 : statuses.LOADING
         }
         : undefined
+    
     return (
         <div>
-            <DataTableVertical {...tableProps} />
+            <DataTableVertical {...{
+                ...tableProps,
+                inProgressIds,
+                userId,
+
+            }} />
             {!!task && task.allowEdit && (
                 <div style={{ 
                     marginBottom: 14,

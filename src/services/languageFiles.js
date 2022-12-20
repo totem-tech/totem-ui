@@ -1,6 +1,7 @@
 export default [
     "./src/App.jsx",
     "./src/components/CatchReactErrors.jsx",
+    "./src/components/CharacterCount.jsx",
     "./src/components/CheckboxGroup.jsx",
     "./src/components/ContentSegment.jsx",
     "./src/components/DataTable.jsx",

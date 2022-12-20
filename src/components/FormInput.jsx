@@ -17,7 +17,6 @@ import {
 	isArr,
 	isFn,
 	isObj,
-	isStr,
 	objWithoutKeys,
 	searchRanked,
 	isBool,
@@ -39,6 +38,7 @@ import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 import { randomHex } from '../services/blockchain'
 import Text from './Text'
+import CharacterCount from './CharacterCount'
 
 // Memo-ify everything
 const Accordion = React.memo(S_Accordion)
@@ -104,17 +104,43 @@ const NON_ATTRIBUTES = Object.freeze([
 	'rxOptions',
 	'rxOptionsModifier',
 	'unique', // for array validation
+	'showCount',
+	'rxFocused',
 ])
+
+const NON_COUNT_TYPES = [
+	'button',
+	'checkbox',
+	'checkbox-group',
+	'date',
+	'dateinput',
+	'dropdown',
+	'file',
+	'html',
+	'radio',
+	'radio-group',
+	'group',
+	'useridinput',
+]
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
 export class FormInput extends Component {
 	constructor(props = {}) {
 		super(props)
 
-		const { defer, name } = props
+		const {
+			defer,
+			name,
+			rxFocused,
+		} = props
 		this.key = randomHex(name, 32)
-		this.state = { message: undefined }
+		this.state = {
+			message: undefined,
+		}
 		this.value = undefined
+		this.rxFocused = isSubjectLike(rxFocused)
+			? rxFocused
+			: new BehaviorSubject(false)
 		if (defer !== null) {
 			this.setMessage = deferred(this.setMessage, defer)
 		}
@@ -207,6 +233,9 @@ export class FormInput extends Component {
 		)
 		const customMsgs = {
 			...errMsgs,
+			// hide min & max length related error messages
+			lengthMax: true,
+			lengthMin: true,
 			...customMessages,
 		}
 		let err, validatorConfig, isANum
@@ -411,7 +440,7 @@ export class FormInput extends Component {
 	setMessage = (invalid, message = {}) => this.setState({ invalid, message })
 
 	render() {
-		const {
+		let {
 			accordion,
 			containerProps,
 			content,
@@ -425,10 +454,15 @@ export class FormInput extends Component {
 			label,
 			labelDetails,
 			loading,
+			maxLength,
 			message: externalMsg,
+			minLength,
 			name,
+			onBlur,
+			onFocus,
 			required,
 			rxValue,
+			showCount = true,
 			styleContainer,
 			trueValue = true,
 			type,
@@ -456,8 +490,16 @@ export class FormInput extends Component {
 				...this.props,
 				key: name,
 				loading: loadingS || loading,
+				onBlur: (...args) => {
+					isFn(onBlur) && onBlur(...args)
+					this.rxFocused.next(false)
+				},
+				onFocus: (...args) => {
+					isFn(onFocus) && onFocus(...args)
+					this.rxFocused.next(true)
+				},
 			},
-			[...NON_ATTRIBUTES, ...(ignoreAttributes || [])]
+			[...NON_ATTRIBUTES, ...(ignoreAttributes || [])],
 		)
 		attrs.id = attrs.id || name
 		attrs.ref = elementRef
@@ -571,6 +613,8 @@ export class FormInput extends Component {
 				inputEl = <TextArea {...attrs} />
 				break
 			case 'useridinput':
+				hideLabel = true
+				attrs.label = label
 				inputEl = <UserIdInput {...attrs} />
 				break
 			case 'file':
@@ -616,6 +660,15 @@ export class FormInput extends Component {
 						<label htmlFor={attrs.id} key='label'>
 							{label}
 						</label>,
+						!!showCount && !NON_COUNT_TYPES.includes(type) && (
+							<CharacterCount {...{
+								maxLength,
+								minLength,
+								name,
+								subject: rxValue,
+								show: this.rxFocused,
+							}} />
+						),
 						labelDetails && (
 							<div
 								key='labelDetails'
@@ -751,6 +804,8 @@ FormInput.propTypes = {
 	// element ref
 	elementRef: PropTypes.any,
 	required: PropTypes.bool,
+	// default true for supported input types
+	showCount: PropTypes.bool,
 	slider: PropTypes.bool, // For checkbox/radio
 	toggle: PropTypes.bool, // For checkbox/radio
 	value: PropTypes.any,

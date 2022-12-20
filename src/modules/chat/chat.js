@@ -26,6 +26,7 @@ import {
     setClass,
 } from '../../services/window'
 import { subjectAsPromise } from '../../utils/reactHelper'
+import { rxIsRegistered } from '../../utils/chatClient'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
@@ -79,6 +80,8 @@ export const checkOnlineStatus = () => {
 
 // create/get inbox key
 export const createInbox = (receiverIds = [], name, setOpen = false) => {
+    if (!rxIsRegistered.value) return
+
     const inboxKey = getInboxKey(receiverIds)
     let settings = inboxSettings(inboxKey)
     settings = {

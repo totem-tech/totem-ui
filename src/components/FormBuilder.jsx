@@ -11,9 +11,10 @@ import uuid from 'uuid'
 import { Button } from './buttons'
 import Message, { statuses } from '../components/Message'
 import { translated } from '../services/language'
-import { closeModal } from '../services/modal'
+import { closeModal, newId } from '../services/modal'
 import { MOBILE, rxLayout } from '../services/window'
 import {
+	generateHash,
 	hasValue,
 	isArr,
 	isBool,
@@ -40,7 +41,8 @@ class FormBuilder extends Component {
 		super(props)
 
 		const {
-			id = uuid.v1(), // Form ID
+			modalId,
+			id = modalId || newId('form__'), // Form ID
 			inputs,
 			open,
 		} = props
@@ -127,8 +129,7 @@ class FormBuilder extends Component {
 				  )
 				: undefined,
 			key: key || name,
-			name: `${inputNamePrefix}${name}`,
-			readOnly: toArray(inputsReadOnly).includes(name) || readOnly,
+			name: `${inputNamePrefix}_${name}`,
 			onChange: isGroup
 				? undefined
 				: (e, data) => this.handleChange(
@@ -138,6 +139,7 @@ class FormBuilder extends Component {
 					parentIndex || index,
 					parentIndex ? index : undefined
 				),
+			readOnly: toArray(inputsReadOnly).includes(name) || readOnly,
 			validate: isFn(validate)
 				? handleValidate
 				: undefined,
@@ -566,18 +568,23 @@ export default FormBuilder // Do not use React.memo()
  * @param   {Array}     inputs
  * @param   {Object}    values values to fill into the input. Property name/key is the name of the input.
  * @param   {Boolean}   forceFill whether to override existing, if any.
+ * @param	{Boolean}	createRxValue
  *
  * @returns {Array} inputs
  */
 export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 	if (!isObj(values)) return inputs
+	const createSubject = (inputs = []) => inputs.forEach(input => {
+		input.type = `${input.type || 'text'}`.toLowerCase()
+		if (input.type === 'group') return createSubject(input.inputs || [])
+
+		input.rxValue = input.rxValue || new BehaviorSubject()
+	})
+
+	createRxValue && createSubject(inputs)
 	Object.keys(values).forEach(name => {
 		const input = findInput(inputs, name)
 		if (!input) return
-
-		if (createRxValue && !isSubjectLike(input.rxValue)) {
-			input.rxValue = new BehaviorSubject()
-		}
 
 		let {
 			rxValue,
@@ -585,7 +592,6 @@ export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 			type,
 		} = input
 		const newValue = values[name]
-		type = (isStr(type) ? type : 'text').toLowerCase()
 
 		if (
 			type !== 'group'

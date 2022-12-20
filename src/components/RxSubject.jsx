@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { useRxSubject } from '../utils/reactHelper'
-import { BehaviorSubject, Subject } from 'rxjs'
 
 const RxSubject = props => {
     const {
@@ -27,7 +27,7 @@ RxSubject.propTypes = {
     initialValue: PropTypes.any,
     subject: PropTypes.oneOfType([
         PropTypes.instanceOf(BehaviorSubject),
-        PropTypes.instanceOf(Subject),
+        PropTypes.any,
     ]).isRequired,
     valueModifier: PropTypes.func,
 }

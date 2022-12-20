@@ -153,12 +153,17 @@ export const Linkify = props => {
         <StringReplace {...{
             ...props,
             componentProps: url => {
+                const cProps = isFn(componentProps)
+                    ? componentProps(url)
+                    : componentProps
                 const urlProps = {
                     href: url,
                     target: '_blank',
-                    ...isFn(componentProps)
-                        ? componentProps(url)
-                        : componentProps,
+                    ...cProps,
+                    style: {
+                        color: '#a3d1ff',
+                        ...(cProps || {}).style,
+                    }
                 }
                 if (url.match(EMAIL_REGEX)) urlProps.href = `mailto:${url}`
                 return urlProps

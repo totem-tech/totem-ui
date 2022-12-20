@@ -1,5 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
+import CharacterCount from '../../../components/CharacterCount'
 import FormBuilder, { fillValues } from '../../../components/FormBuilder'
 import { statuses } from '../../../components/Message'
 import { addToQueue, QUEUE_TYPES } from '../../../services/queue'
@@ -10,8 +12,6 @@ import { TYPES, validate } from '../../../utils/validator'
 import { getIdentityOptions } from '../../identity/getIdentityOptions'
 import { get as getIdentity, rxIdentities } from '../../identity/identity'
 import { queueableApis } from '../task'
-import { BehaviorSubject } from 'rxjs'
-import RxSubject from '../../../components/RxSubject'
 
 let textsCap = {
     header: 'task application',
@@ -71,7 +71,6 @@ const getInitialState = props => rxSetState => {
         values = {},
     } = props
     const rxName = new BehaviorSubject('')
-    const rxProposal = new BehaviorSubject('')
     const inputs = [
         {
             label: textsCap.workerLabel,
@@ -111,34 +110,12 @@ const getInitialState = props => rxSetState => {
             },
             hidden: !proposalRequired,
             label: textsCap.proposalLabel,
-            labelDetails: (
-                <RxSubject {...{
-                    subject: rxProposal,
-                    valueModifier: (desc = '') => (
-                        <div style={{
-                            bottom: 0,
-                            color: !desc || (desc.length < 1800 && desc.length >= 50)
-                                ? 'grey'
-                                : desc.length >= 1800 && desc.length < 2000
-                                    ? 'orange'
-                                    : 'red',
-                            fontWeight: 'bold',
-                            position: 'absolute',
-                            right: 18,
-                        }}>
-                            {desc.length}/2000
-                        </div>
-                    ),
-                }} />
-            ),
             maxLength: 2000,
             minLength: 50,
             name: inputNames.proposal,
             placeholder: `${textsCap.proposalPlaceholder} (50-2000)`,
             required: true,
-            rxValue: rxProposal,
             style: { minHeight: 150 },
-            styleContainer: { position: 'relative' },
             type: 'textarea',
         },
         {

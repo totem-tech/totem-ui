@@ -413,7 +413,9 @@ export const sidebarItems = [
     sidebarItemNames.push(name)
     return {
         ...item,
-        active: isBool(activeX) ? activeX : active,
+        active: isBool(activeX)
+            ? activeX
+            : active,
         contentProps,
         elementRef: React.createRef(),
         name,

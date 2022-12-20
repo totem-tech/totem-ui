@@ -15,6 +15,7 @@ import DataStorage from '../utils/DataStorage'
 import PromisE from '../utils/PromisE'
 import {
     className,
+    generateHash,
     isBool,
     isFn,
     isObj,
@@ -69,14 +70,16 @@ export const ModalsConainer = React.memo(() => {
  * @param   {*}         focusRef element reference to auto focus on
  */
 const add = (id, element, focusRef, onClose) => {
-    id = id || uuid.v1()
+    id = id || newId()
     modals.set(id, element)
     isFn(onClose) && onCloseHandlers.set(id, onClose)
     // If already in fullscreen, exit. Otherwise, modal will not be visible.
     toggleFullscreen()
 
     focusRef && setTimeout(() => {
-        const focus = focusRef.focus || focusRef.current && focusRef.current.focus
+        const focus = focusRef.focus
+            || focusRef.current
+            && focusRef.current.focus
         isFn(focus) && focus()
     }, 100)
     return id
@@ -108,7 +111,7 @@ export const closeModal = (id, delayMs = 0) => {
  */
 export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm = false) => {
     const focusRef = createRef()
-    modalId = modalId || uuid.v1()
+    modalId = modalId || newId()
     confirmProps = !isStr(confirmProps)
         ? confirmProps
         : { content: confirmProps }
@@ -295,6 +298,10 @@ const IConfirm = props => {
  */
 export const get = modalId => modals.get(modalId)
 
+export const newId = (prefix = 'modal_') => prefix
+    + generateHash(undefined, undefined, 32)
+        .replace('0x', '')
+
 /**
  * @name    showForm
  * @summary opens form in a modal dialog
@@ -312,7 +319,9 @@ export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     if (!isFn(FormComponent)) return
     const { onClose } = props
     // grab the default modalId if already defined in the defualtProps
-    modalId = modalId || (FormComponent.defaultProps || {}).modalId || uuid.v1()
+    modalId = modalId
+        || (FormComponent.defaultProps || {}).modalId
+        || newId('form_')
     const form = (
         <FormComponent {...{
             ...props,
@@ -324,7 +333,7 @@ export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     )
     if (!focusRef) setTimeout(() => {
         // if focusRef not supplied attempt to auto-focus first input element
-        const selector = `#form-${modalId} input:first-child`
+        const selector = `#${modalId} input:first-child`
         const firstInputEl = document.querySelector(selector)
         firstInputEl && firstInputEl.focus()
     }, 50)

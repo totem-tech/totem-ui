@@ -20,6 +20,7 @@ import { get as getPartner, getByUserId } from '../../modules/partner/partner'
 import PartnerForm, { inputNames as pInputNames } from '../../modules/partner/PartnerForm'
 import PartnerIcon from '../../modules/partner/PartnerIcon'
 import { ButtonGroup, ButtonGroupOr } from '.'
+import { rxIsRegistered } from '../../utils/chatClient'
 
 let textsCap = {
 	clickToChat: 'click to chat',
@@ -138,6 +139,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 		type,
 		visibility,
 	} = partner || partnerById || {}
+	const isRegistered = rxIsRegistered.value
 	const btnTxt = !partner
 		? textsCap.partnerAdd
 		: textsCap.updatePartner
@@ -160,7 +162,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 		},
 		{
 			content: textsCap.identityRequest,
-			disabled: !partner,
+			disabled: !isRegistered || !partner,
 			icon: 'download',
 			onClick: () => showForm(IdentityRequestForm, {
 				values: {
@@ -173,6 +175,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 	const buttons = [
 		{
 			content: textsCap.identityShare,
+			disabled: !isRegistered,
 			icon: 'share',
 			onClick: () => showForm(IdentityShareForm, {
 				values: { userIds: [userId] },
@@ -181,6 +184,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 		},
 		{
 			content: textsCap.introduce,
+			disabled: !isRegistered,
 			icon: 'handshake',
 			onClick: () => showForm(IntroduceUserForm, {
 				values: { userId },
@@ -213,17 +217,19 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 			<span style={{ textTransform: 'lowercase' }}>
 				@{userId + ' '}
 			</span>
-			<_Button {...{
-				circular: true,
-				icon: 'chat',
-				onClick: () => {
-					closeModal(modalId)
-					createInbox([userId], null, true)
-					isFn(onChatOpen) && onChatOpen(userId)
-				},
-				size: 'mini',
-				title: textsCap.clickToChat,
-			}} />
+			{isRegistered && (
+				<_Button {...{
+					circular: true,
+					icon: 'chat',
+					onClick: () => {
+						closeModal(modalId)
+						createInbox([userId], null, true)
+						isFn(onChatOpen) && onChatOpen(userId)
+					},
+					size: 'mini',
+					title: textsCap.clickToChat,
+				}} />
+			)}
 			{name && (
 				<div>
 					<small>
