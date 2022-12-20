@@ -1,17 +1,25 @@
 import React, { useState } from 'react'
 import { Icon } from 'semantic-ui-react'
+import TotemButtonLogo from '../../../assets/logos/button-288-colour.png'
 import DataTableVertical from '../../../components/DataTableVertical'
 import { Linkify } from '../../../components/StringReplace'
+import { showInfo } from '../../../services/modal'
 import { MOBILE, rxLayout } from '../../../services/window'
 import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactHelper'
-import { fallbackIfFails, isObj } from '../../../utils/utils'
+import {
+    fallbackIfFails,
+    generateHash,
+    isObj,
+} from '../../../utils/utils'
 import { getColumns } from './ApplicationList'
-import TotemButtonLogo from '../../../assets/logos/button-288-colour.png' //button-240-colour.png'
 
 let textsCap = {
     links: 'links',
     proposal: 'proposal',
+    reviewApp: 'review appliation',
+    title: 'title',
+    viewApp: 'view appliation',
 }
 textsCap = translated(textsCap, true)[1]
 
@@ -20,11 +28,12 @@ const ApplicationView = props => {
         application,
         modalId,
         taskId,
-        task,
+        task = {},
     } = props
+    const { proposalRequired } = task
     const [columns] = useState(() => [
         ...getColumns(),
-        {
+        proposalRequired && {
             content: x => <Linkify content={x.proposal} />,
             key: 'proposal',
             headerProps: {
@@ -36,12 +45,12 @@ const ApplicationView = props => {
             style: { whiteSpace: 'pre-line' },
             title: textsCap.proposal,
         },
-        {
+        proposalRequired && {
             content: x => <Links {...x} />,
             key: 'links',
             title: textsCap.links,
         }
-    ])
+    ].filter(Boolean))
 
     return (
         <DataTableVertical {...{
@@ -56,10 +65,41 @@ const ApplicationView = props => {
         }} />
     )
 }
+ApplicationView.asModal = (props, modalId, modalProps) => {
+    const { 
+        application,
+        modalId: _modalId,
+        task = {},
+        taskId,
+    } = props
+    const { isOwner } = task
+    modalId = _modalId || generateHash(
+        `${taskId}-${application.workerAddress}`
+    )
+    const content = (
+        <ApplicationView {...{
+            application,
+            modalId,
+            task,
+            taskId,
+        }} />
+    )
+    modalProps = {
+        collapsing: true,
+        header: !isOwner
+            ? textsCap.viewApp
+            : textsCap.reviewApp,
+        size: 'tiny',
+        subheader: `${textsCap.title}: ${task.title}`,
+        ...modalProps,
+        content,
+    }
+    return showInfo(modalProps, modalId)
+}
 export default ApplicationView
+
 const Links = ({ links = [] }) => {
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    links = [...new Set([...links, 'https://totemaccounting.com'])]
     return (
         <Linkify {...{
             content: links.join('\n'),

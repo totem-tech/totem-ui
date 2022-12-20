@@ -44,6 +44,7 @@ import {
 import TaskForm, { inputNames as taskInputNames } from '../TaskForm'
 import useTask from '../useTask'
 import ApplicationView from './ApplicationView'
+import { get as getIdentity } from '../../identity/identity'
 
 let textsCap = {
     accept: 'accept',
@@ -106,7 +107,6 @@ const ApplicationList = props => {
             sortAsc: false,
             sortBy: 'tsCreated',
 
-            
             // extra info used by cells
             forceReload: deferred(() => {
                 // reload application view
@@ -145,6 +145,7 @@ export const getColumns = (showStatusButtons = true) => {
                 true,
             ),
             key: 'tsCreated',
+            style: { minWidth: 120 },
             title: textsCap.appliedAt,
         },
         {
@@ -171,7 +172,17 @@ export const getColumns = (showStatusButtons = true) => {
         },
         {
             collapsing: true,
-            content: handleViewClick,
+            content: (application = {}, _i, _arr, { task = {}, taskId }) => (
+                <Button {...{
+                    icon: 'eye',
+                    onClick: () => ApplicationView.asModal({
+                        application,
+                        modalId,
+                        task,
+                        taskId,
+                    }),
+                }} />
+            ),
             name: 'view',
             title: textsCap.view,
         }
@@ -181,10 +192,15 @@ export const getColumns = (showStatusButtons = true) => {
 
 const getStatusContent = (application = {}, _1, _arr, props = {}) => {
     const { isMobile } = props
-    const { _status } = application
+    const { _status, workerAddress } = application
     const accepted = _status === applicationStatus[1]
     const rejected = _status === applicationStatus[2]
-    if (accepted) return _status
+    const isOwner = !!getIdentity(workerAddress)
+    if (accepted || isOwner) return (
+        <Button basic fluid>
+            {_status}
+        </Button>
+    )
 
     return (
         <div>
@@ -362,29 +378,3 @@ const handleActionCb = (props, application) => async (_, accept) => {
     const qid = addToQueue(offChain)
     await checkComplete(qid, true)
 }
-
-const handleViewClick = (application = {}, _i, _arr, { task = {}, taskId }) => (
-    <Button {...{
-        icon: 'eye',
-        onClick: () => {
-            const modalId = `${taskId}-${application.workerAddress}`
-            const content = (
-                <ApplicationView {...{
-                    application,
-                    modalId,
-                    task,
-                    taskId,
-                }} />
-            )
-            const modalProps = {
-                collapsing: true,
-                content,
-                header: textsCap.viewApp,
-                size: 'tiny',
-                subheader: `${textsCap.title}: ${task.title}`
-            }
-            showInfo(modalProps, modalId)
-                .catch(console.warn)
-        },
-    }} />
-)

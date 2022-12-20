@@ -49,6 +49,7 @@ import {
 import TaskDetails from './TaskDetails'
 import TaskForm, { inputNames } from './TaskForm'
 import { Icon } from 'semantic-ui-react'
+import ApplicationView from './marketplace/ApplicationView'
 
 let textsCap = {
     acceptInvoice: 'accept invoice',
@@ -286,12 +287,11 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
         title,
     } = task
     const isAssigned = owner !== fulfiller
-    const applied = !isOwner
+    const application = !isOwner
         && userId
-        && applications
-            .find(x => x.userId === userId)
-    const rejected = !!applied && applied.status === 2
-    
+        && applications.find(x => x.userId === userId)
+    const applied = !!application
+    const rejected = !!application && application.status === 2
     if (isAssigned || !isMarket) return <AddressName {...{ address: fulfiller }} />
 
     return (
@@ -313,28 +313,36 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
                             ? textsCap.closed
                             : textsCap.apply,
             disabled: !userId
-                || !!applied
-                || (!isOwner && isClosed)
-                || (isOwner && !applications.length),
+            || (!isOwner && isClosed)
+            || (isOwner && !applications.length),
+            // || !!applied
             fluid: true,
             icon: isOwner
                 ? 'list'
                 : applied
-                    ? 'check'
+                    ? 'eye'
                     : isClosed
                         ? 'dont'//'warning circle'
                         : 'play',
             key: taskId,
             onClick: () => {
+                console.log('clicked', {isOwner,applied, application})
                 // open application form
-                if (!isOwner) return showForm(ApplicationForm, {
-                    onSubmit: success => success
-                        && isFn(forceReload)
-                        && forceReload(),
-                    proposalRequired,
-                    title,
-                    values: { taskId },
-                })
+                if (!isOwner) {
+                    if (applied) return ApplicationView.asModal({
+                        application,
+                        taskId,
+                        task,
+                    })
+                    return showForm(ApplicationForm, {
+                        onSubmit: success => success
+                            && isFn(forceReload)
+                            && forceReload(),
+                        proposalRequired,
+                        title,
+                        values: { taskId },
+                    })
+                }
 
                 const modalId = `${taskId}-applications`
                 // show list of applications
@@ -360,6 +368,7 @@ export const getStatusView = (task, taskId, _, { inProgressIds }) => {
     const {
         fulfiller,
         isMarket,
+        isOwner,
         orderStatus,
         owner,
         _orderStatus,
@@ -373,7 +382,6 @@ export const getStatusView = (task, taskId, _, { inProgressIds }) => {
 
     const isOpen = isMarket && owner === fulfiller
     const { address } = !isOpen && getIdentity(fulfiller) || getSelected()
-    const isOwner = address === owner
     const isFulfiller = address === fulfiller
     const inProgress = inProgressIds && inProgressIds.has(taskId)
 
@@ -561,6 +569,8 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
                     || !isMarket,
             }),
             key: 'fulfiller',
+            // removes unnecessary extra padding when button is used
+            style: { padding: '.28571429em .78571429em' },
             title: textsCap.assignee,
         },
         {
