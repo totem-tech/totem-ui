@@ -297,7 +297,9 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
     return (
         <Button {...{
             color: applied
-                ? 'green'
+                ? rejected
+                    ? 'red'
+                    : 'green'
                 : !isOwner && !isClosed
                     ? 'blue'
                     : undefined,
