@@ -196,7 +196,7 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
     const accepted = _status === applicationStatus[1]
     const rejected = _status === applicationStatus[2]
     const isOwner = !!getIdentity(workerAddress)
-    if (accepted || isOwner) return (
+    if (accepted) return (
         <Button basic fluid>
             {_status}
         </Button>
