@@ -37,6 +37,7 @@ import {
     rxLayout,
     setClass,
 } from './window'
+import TaskList from '../modules/task/TaskList'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -76,6 +77,8 @@ const textsCap = translated({
         Once an Identity is stored in this list you can use it all over Totem. 
         To find out more, watch the video!
     `,
+
+    marketplace: 'marketplace',
 
     partnersTitle: 'partners',
     partnersHeader: 'Partner Contact List',
@@ -272,20 +275,29 @@ export const sidebarItems = [
         subHeader: textsCap.tasksSubheader,
     },
     {
+        content: TaskList,
+        contentProps: {
+            type: 'marketplace'
+        },
+        // href: `${window.location.protocol}//${window.location.host}/?module=tasks&tab=marketplace`,
+        icon: 'shop',
+        name: 'marketplace',
+        // onClick: e => {
+        //     e.preventDefault()
+        //     const item = setContentProps(
+        //         'tasks',
+        //         { tab: 'marketplace' },)
+        //     console.log({ item })
+        // },
+        target: '_blank',
+        title: textsCap.marketplace,
+    },
+    {
         content: TransferFundsForm,
         contentProps: { style: { maxWidth: 450 } },
         icon: 'send',
         header: textsCap.transferHeader,
         name: 'transfer',
-        // settings: () => (
-        //     <SettingsForm {...{
-        //         // only show timekeeping settings
-        //         inputsHidden: Object
-        //             .values(inputNames)
-        //             .filter(x => x !== inputNames.currency),
-        //         style: { maxWidth: 350 }
-        //     }} />
-        // ),
         subHeader: textsCap.transferSubheader,
         subHeaderDetails: textsCap.transferSubheaderDetails,
         title: textsCap.transferTitle,
@@ -380,12 +392,9 @@ export const sidebarItems = [
         title: textsCap.utilitiesTitle,
     },
     {
-        // anchorStyle: {
-        //     background: 'deeppink',
-        // },
+        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
         icon: 'rocket',
         name: 'crowdloan',
-        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
         target: '_blank',
         title: (
             <span>
@@ -433,7 +442,9 @@ export const setActive = (name, active = true, contentProps, hidden, toggle = tr
 
     const activeChanged = !!active !== !!item.active
     item.active = active
-    item.hidden = isBool(hidden) ? hidden : item.hidden
+    item.hidden = isBool(hidden)
+        ? hidden
+        : item.hidden
     item.contentProps = { ...item.contentProps, ...contentProps }
     statuses.set(name, active)
     item.rxTrigger.next(uuid.v1())

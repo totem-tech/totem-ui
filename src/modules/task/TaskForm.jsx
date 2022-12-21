@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
@@ -111,6 +111,7 @@ let textsCap = {
     nofityAssignee: 'notify assignee',
     orderTypeLabel: 'order type',
     proposalLabel: 'require applicants to submit a proposal',
+    publishOrder: 'publish a new marketplace order',
     publishToMarketPlace: 'publish to marketplace',
     taskIdParseError: 'failed to parse Task ID from transaction event data',
     service: 'service',
@@ -118,7 +119,7 @@ let textsCap = {
     tags: 'categorise with tags',
     tagsNoResultMsg: 'type tag and press ENTER to add',
     tagsPlaceholder: 'enter tags',
-    title: 'task title',
+    title: 'title',
     titlePlaceholder: 'enter a very short task description',
     updateFailed: 'failed to create task',
     updatePartner: 'update partner',
@@ -183,16 +184,16 @@ export const getBonsaiData = (values, ownerAddress) => {
 export default function TaskForm(props) {
     const {
         taskId,
-        values: {
-            allowEdit = true,
-            deadline,
-        } = {},
+        values = {},
     } = props
+    const { allowEdit = true, deadline } =  values
     const [state] = iUseState(getInitialState(props))
     const [deadlinePassed] = !taskId
         ? [false]
-        : useRxSubject(rxBlockNumber,
-            block => deadline > 0 && block >= deadline,
+        : useRxSubject(
+            rxBlockNumber,
+            block => deadline > 0
+                && block >= deadline,
         )
     const formProps = { ...props, ...state }
 
@@ -223,7 +224,7 @@ const getInitialState = props => rxState => {
         header,
         inputsDisabled = [],
         taskId,
-        values,
+        values = {},
     } = props
     const isUpdate = !!taskId
     const rxAssignee = new BehaviorSubject()
@@ -245,7 +246,6 @@ const getInitialState = props => rxState => {
             name: inputNames.parentId,
         },
         {
-            rxValue: new BehaviorSubject(false),
             inline: true,
             label: textsCap.marketplace,
             multiple: false,
@@ -256,6 +256,7 @@ const getInitialState = props => rxState => {
             ],
             radio: true,
             required: true,
+            rxValue: new BehaviorSubject(false),
             type: 'checkbox-group',
         },
         {
@@ -268,7 +269,6 @@ const getInitialState = props => rxState => {
             type: 'checkbox',
         },
         {
-            rxValue: new BehaviorSubject(),
             hidden: values => !!values[inputNames.isMarket],
             label: textsCap.assignee,
             name: inputNames.assignee,
@@ -286,41 +286,7 @@ const getInitialState = props => rxState => {
             selection: true,
             search: ['keywords'],
             type: 'dropdown',
-            validate: (_, { value: assignee }) => {
-                if (!assignee) return
-
-                const { address } = getSelected() || {}
-                if (assignee === address) return textsCap.errAssginToSelf
-
-                const partner = getPartner(assignee)
-                const { userId } = partner || {}
-                const userIdMissing = !!partner && !userId
-                const handleClick = e => {
-                    e.preventDefault() // prevents form being submitted
-                    showForm(PartnerForm, {
-                        values: { address: assignee },
-                        onSubmit: triggerAssigneeUpdate
-                    })
-                }
-                
-                return partner && userId
-                    ? null
-                    : (
-                        <div>
-                            {userIdMissing
-                                ? textsCap.errAsigneeNoUserId
-                                : textsCap.errAssigneeNotPartner}
-                            <div>
-                                <Button {...{
-                                    content: userIdMissing
-                                        ? textsCap.updatePartner
-                                        : textsCap.addPartner,
-                                    onClick: handleClick,
-                                }} />
-                            </div>
-                        </div>
-                    )
-            },
+            validate: handleAssigneeValidate,
         },
         {
             rxValue: new BehaviorSubject(),
@@ -335,6 +301,7 @@ const getInitialState = props => rxState => {
         {
             ...asInlineLabel({
                 disabled: isUpdate,
+                // callback when currency list is loaded
                 onCurrencies: currencies => {
                     rxCurrencies.next(currencies)
                     const { loading } = state
@@ -347,13 +314,12 @@ const getInitialState = props => rxState => {
             maxLength: 18,
             min: 0, // allows bounty-free tasks
             name: inputNames.bounty,
-            onChange: !taskId && handleBountyChange(props, rxState),
+            onChange: !taskId && handleBountyChangeCb(props, rxState),
             placeholder: textsCap.bountyPlaceholder,
             rxValue: new BehaviorSubject(),
             required: true,
             type: 'number',
             useInput: true,
-            // width: 10,
         },
         {
             hidden: true,
@@ -392,30 +358,10 @@ const getInitialState = props => rxState => {
                     rxValue: new BehaviorSubject(),
                     label: textsCap.deadlineLabel,
                     name: inputNames.deadline,
-                    onChange: (_, values) => {
-                        const { taskId } = props
-                        const { inputs } = rxState.value
-                        let dueDate = values[inputNames.dueDate]
-                        const deadline = values[inputNames.deadline]
-                        const dueDateIn = findInput(inputs, inputNames.dueDate)
-                        if (!dueDate || !taskId) {
-                            // reset 1 day after deadline if not already set or creating new task
-                            const date = strToDate(deadline)
-                            date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
-                            dueDate = format(date).substring(0, 10)
-                        }
-                        // reset and force re-evaluate due date
-                        !!taskId && dueDateIn.rxValue.next('')
-                        dueDateIn.rxValue.next(dueDate)
-                    },
+                    onChange: handleDeadlineChangeCb(taskId),
                     required: true,
                     type: 'date',
-                    validate: (_, { value: deadline }) => {
-                        if (!deadline) return
-
-                        const diffMS = strToDate(deadline) - new Date()
-                        return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
-                    },
+                    validate: handleDeadlineValidate,
                 },
                 {
                     disabled: values => !values[inputNames.deadline],
@@ -425,19 +371,14 @@ const getInitialState = props => rxState => {
                     required: true,
                     rxValue: new BehaviorSubject(),
                     type: 'date',
-                    validate: (_, { value: dueDate }, values) => {
-                        if (!dueDate) return
-                        const deadline = values[inputNames.deadline]
-                        const diffMS = strToDate(dueDate) - strToDate(deadline)
-                        return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
-                    },
+                    validate: handleDueDateValidate,
                 },
             ],
         },
         {
             // Advanced section (Form type "group" with accordion)
             accordion: {
-                collapsed: true,
+                collapsed: !values[inputNames.isMarket],
                 styled: true,
             },
             icon: 'pen',
@@ -460,8 +401,9 @@ const getInitialState = props => rxState => {
                 },
                 {
                     hidden: values => !values[inputNames.isMarket],
-                        label: textsCap.proposalLabel,
+                    label: textsCap.proposalLabel,
                     name: inputNames.proposalRequired,
+                    rxValue: new BehaviorSubject(true),
                     toggle: true,
                     type: 'checkbox',
                 },
@@ -503,26 +445,7 @@ const getInitialState = props => rxState => {
                     multiple: true,
                     name: inputNames.tags,
                     noResultsMessage: textsCap.tagsNoResultMsg,
-                    onAddItem: (_, { value = '' }) => {
-                        const newTag = [...value.match(/[a-z0-9]/ig)]
-                            .filter(Boolean)
-                            .join('')
-                            .toLowerCase()
-                        
-                        newTag !== value && rxTags.next(
-                            rxTags
-                                .value
-                                .concat(newTag)
-                                .filter(x => !!x && x !== value)
-                        )
-                        const tags = arrUnique([
-                            ...rxTagOptions.value,
-                            newTag,
-                        ])
-                            .filter(Boolean)
-                            .sort()
-                        rxTagOptions.next(tags)
-                    },
+                    onAddItem: handleTagsAddCb(rxTags),
                     options: [],
                     rxOptions: rxTagOptions,
                     rxOptionsModifier: tags => arrUnique(tags)
@@ -536,12 +459,10 @@ const getInitialState = props => rxState => {
                     selection: true,
                     search: true,
                     type: 'dropdown',
-                    validate: (_, { value = '' }) => {
-                        const invalid = value
-                            .join('')
-                            .length > 64
-                        return invalid && `${textsCap.errTagsMaxChars}: 32`
-                    }
+                    validate: (_, { value = '' }) => value
+                        .join('')
+                        .length > 64
+                        && `${textsCap.errTagsMaxChars}: 32`
                 },
             ],
         },
@@ -550,8 +471,10 @@ const getInitialState = props => rxState => {
         bountyDeferred: PromisE.deferred(),
         disabled: true,
         header: header || (
-            isObj(values) && !!taskId
+            !!taskId
                 ? textsCap.formHeaderUpdate
+                : values[inputNames.isMarket]
+                    ? textsCap.publishOrder
                 : textsCap.formHeader
         ),
         isUpdate,
@@ -563,39 +486,22 @@ const getInitialState = props => rxState => {
             isClosed: (values || {}).isClosed,
             unchanged: !!taskId,
         },
-        onSubmit: handleSubmit(props, rxState),
-        inputs,
-    }
-
-    if (!!taskId) {
         // disables submit button if values unchanged
         // ToDo: not working due to isClose value change somewhere!!!!
-        state.onChange = deferred((_, newValues) => {
+        onChange: !!taskId && deferred((_, newValues) => {
             const { oldValues, submitDisabled } = rxState.value
             if (!oldValues) return
             newValues = objClean(newValues, Object.values(inputNames))
             submitDisabled.unchanged = JSON.stringify(oldValues) === JSON.stringify(newValues)
             rxState.next({ submitDisabled })
-        }, 300)
+        }, 300),
+        onSubmit: handleSubmit(props, rxState),
+        inputs,
     }
 
     const init = async () => {
         const { loading } = state
         const bountyIn = findInput(inputs, inputNames.bounty)
-        if (!isObj(values) || !Object.keys(values).length) {
-            loading.onMount = false
-
-            // ToDo: not working
-            // fillValues(
-            //     inputs,
-            //     {
-            //         [inputNames.proposalRequired]: true,
-            //     },
-            //     true,
-            // )
-            return rxState.next({ inputs, loading })
-        }
-
         values[inputNames.currency] = values[inputNames.currency]
             || rxSelectedCurrency.value
         const currentBlock = await subjectAsPromise(rxBlockNumber)[0]
@@ -656,9 +562,71 @@ const getInitialState = props => rxState => {
         rxState.next({...state})
     }
 
-    // timeout required to reduce lag on startup
     setTimeout(() => init().catch(console.error))
     return state
+}
+
+const handleAssigneeValidate = (_, { value: assignee }) => {
+    if (!assignee) return
+
+    const { address } = getSelected() || {}
+    if (assignee === address) return textsCap.errAssginToSelf
+
+    const partner = getPartner(assignee)
+    const { userId } = partner || {}
+    const userIdMissing = !!partner && !userId
+    
+    return (!partner || !userId) && (
+        <div>
+            {userIdMissing
+                ? textsCap.errAsigneeNoUserId
+                : textsCap.errAssigneeNotPartner}
+            <div>
+                <Button {...{
+                    content: userIdMissing
+                        ? textsCap.updatePartner
+                        : textsCap.addPartner,
+                    onClick: e => {
+                        e.preventDefault() // prevents form being submitted
+                        showForm(PartnerForm, {
+                            values: { address: assignee },
+                            onSubmit: triggerAssigneeUpdate
+                        })
+                    },
+                }} />
+            </div>
+        </div>
+    )
+}
+
+const handleDeadlineChangeCb = taskId => (_, values) => {
+    const { inputs } = rxState.value
+    let dueDate = values[inputNames.dueDate]
+    const deadline = values[inputNames.deadline]
+    const dueDateIn = findInput(inputs, inputNames.dueDate)
+    if (!dueDate || !taskId) {
+        // reset 1 day after deadline if not already set or creating new task
+        const date = strToDate(deadline)
+        date.setSeconds(date.getSeconds() + dueDateMinMS / 1000 + 1)
+        dueDate = format(date).substring(0, 10)
+    }
+    // reset and force re-evaluate due date
+    !!taskId && dueDateIn.rxValue.next('')
+    dueDateIn.rxValue.next(dueDate)
+}
+
+const handleDeadlineValidate = (_, { value: deadline }) => {
+    if (!deadline) return
+
+    const diffMS = strToDate(deadline) - new Date()
+    return diffMS < deadlineMinMS && textsCap.deadlineMinErrorMsg
+}
+
+const handleDueDateValidate = (_, { value: dueDate }, values) => {
+    if (!dueDate) return
+    const deadline = values[inputNames.deadline]
+    const diffMS = strToDate(dueDate) - strToDate(deadline)
+    return diffMS < dueDateMinMS && textsCap.dueDateMinErrorMsg
 }
 
 // check if user has enough balance for the transaction including pre-funding amount (bounty)
@@ -666,20 +634,21 @@ const getInitialState = props => rxState => {
 // 1. deferred: to delay currency conversion while user is typing
 // 2. PromisE.deferred: makes sure even if deferred (1) resolves multiple times, only last execution is applied
 //          Eg: user types slowly and / or network is slow
-const handleBountyChange = (props, rxState) => deferred((_, values) => {
-    const { taskId, values: valuesOrg } = props
-    const { amountXTX: bountyOriginal } = valuesOrg || {}
-    const bounty = values[inputNames.bounty]     
+const handleBountyChangeCb = (props, rxState) => deferred((_, values) => {
     const {
         bountyDeferred,
         inputs,
         submitDisabled,
     } = rxState.value
+    const { address } = getSelected()
     const amountXTXIn = findInput(inputs, inputNames.amountXTX)
     const bountyIn = findInput(inputs, inputNames.bounty)
-    const valid = isValidNumber(bounty)
+    const { taskId, values: valuesOrg } = props
+    const { amountXTX: bountyOriginal } = valuesOrg || {}
+    const isMarket = values[inputNames.isMarket]
+    const bounty = values[inputNames.bounty]     
     const currency = values[inputNames.currency]
-    const { address } = getSelected()
+    const valid = isValidNumber(bounty)
     bountyIn.loading = valid
     bountyIn.invalid = false
     bountyIn.message = null
@@ -698,13 +667,19 @@ const handleBountyChange = (props, rxState) => deferred((_, values) => {
             // user account balance
             const freeBalance = balances.get(address)
             // no need to convert currency if amount is zero or XTX is the selected currency
-            const requireConversion = bounty && currency !== currencyDefault
+            const _bounty = isMarket
+                ? 1
+                : bounty
+            const _currency = isMarket
+                ? currencyDefault
+                : currency
+            const requireConversion = _bounty && _currency !== currencyDefault
             // amount in TOTEM
             const amount = !requireConversion
-                ? [bounty, bounty]
+                ? [_bounty, _bounty]
                 : await convertTo(
-                    bounty,
-                    currency,
+                    _bounty,
+                    _currency,
                     currencyDefault,
                 )
             resolve([parseInt(amount[0]), freeBalance])
@@ -960,4 +935,25 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
     })
     // add requests to the queue
     addToQueue(queueProps)
+}
+
+const handleTagsAddCb = rxValue => (_, { value = '' }) => {
+    const newTag = [...value.match(/[a-z0-9]/ig)]
+        .filter(Boolean)
+        .join('')
+        .toLowerCase()
+    
+    newTag !== value && rxValue.next(
+        rxValue
+            .value
+            .concat(newTag)
+            .filter(x => !!x && x !== value)
+    )
+    const tags = arrUnique([
+        ...rxTagOptions.value,
+        newTag,
+    ])
+        .filter(Boolean)
+        .sort()
+    rxTagOptions.next(tags)
 }

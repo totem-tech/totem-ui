@@ -45,18 +45,22 @@ class FormBuilder extends Component {
 			id = modalId || newId('form__'), // Form ID
 			inputs,
 			open,
+			rxValues = new BehaviorSubject(),
 		} = props
+		const values = getValues(inputs)
+		rxValues.next(values)
 		this.state = {
 			id,
 			open,
-			values: this.getValues(inputs),
+			rxValues,
+			values,
 		}
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
 
-	componentWillMount = () => (this._mounted = true)
-	componentWillUnmount = () => (this._mounted = false)
+	componentWillMount = () => this._mounted = true
+	componentWillUnmount = () => this._mounted = false
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (values, parentIndex) => (input, index) => {
@@ -98,7 +102,7 @@ class FormBuilder extends Component {
 			event,
 			data,
 			{
-				...this.state.values,
+				...this.state.rxValues.value,
 					// this is required because onChange() is trigger after validate().
 				// otherwise, current input will have the old value or last character missing for text/number inputs
 				[name]: data.value,
@@ -147,8 +151,6 @@ class FormBuilder extends Component {
 		return props
 	}
 
-	getValues = getValues
-
 	handleChange = async (event, data, input, index, childIndex) => {
 		try {
 			const {
@@ -160,19 +162,20 @@ class FormBuilder extends Component {
 				onChange: onInputChange,
 				onInvalid,
 			} = input
-			let { inputs } = this.props
-			let { values } = this.state
+			const { inputs } = this.props
+			const { rxValues } = this.state
 			const { invalid = false, value } = data
 			// for FormBuilder internal use
 			input._invalid = invalid
 			input.value = value
-			values = this.getValues(
+			const values = getValues(
 				inputs,
-				values,
+				rxValues.value,
 				name,
 				value,
 			)
-			this.setState({ message: null, values })
+			rxValues.next(values)
+			this.setState({ message: null })
 
 			// trigger input `onchange` callback if valid, otherwise `onInvalid` callback
 			const fn = invalid
@@ -220,8 +223,8 @@ class FormBuilder extends Component {
 			event.preventDefault()
 			event.stopPropagation()
 			const { onSubmit } = this.props
-			const { values } = this.state
-			isFn(onSubmit) && (await onSubmit(event, values))
+			const { rxValues } = this.state
+			isFn(onSubmit) && await onSubmit(event, rxValues.value)
 			this.setState({ message: null })
 		} catch (err) {
 			window.isDebug

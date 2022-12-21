@@ -133,6 +133,6 @@ AddressName.defaultProps = {
         'ignoreAttributes',
         'userId',
     ],
-    // maxLength: 32,
+    maxLength: 32,
 }
 export default React.memo(AddressName)

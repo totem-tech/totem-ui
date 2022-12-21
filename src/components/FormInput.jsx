@@ -662,6 +662,7 @@ export class FormInput extends Component {
 						</label>,
 						!!showCount && !NON_COUNT_TYPES.includes(type) && (
 							<CharacterCount {...{
+								key: 'CharacterCount',
 								maxLength,
 								minLength,
 								name,
@@ -669,7 +670,7 @@ export class FormInput extends Component {
 								show: this.rxFocused,
 							}} />
 						),
-						labelDetails && (
+						!!labelDetails && (
 							<div
 								key='labelDetails'
 								style={{
@@ -680,7 +681,7 @@ export class FormInput extends Component {
 								<small style={{ color: 'grey' }}>{labelDetails}</small>
 							</div>
 						),
-					]}
+					].filter(Boolean)}
 				{inputEl}
 				{message && <Message {...message} />}
 			</Form_Field>

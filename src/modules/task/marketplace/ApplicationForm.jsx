@@ -1,7 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import CharacterCount from '../../../components/CharacterCount'
 import FormBuilder, { fillValues } from '../../../components/FormBuilder'
 import { statuses } from '../../../components/Message'
 import { addToQueue, QUEUE_TYPES } from '../../../services/queue'

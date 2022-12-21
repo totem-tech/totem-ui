@@ -27,8 +27,8 @@ export default function TaskView({ address, tab: _activeType }) {
     const inverted = useInverted()
     address = address || useRxSubject(rxSelected)[0]
     const excludeTypes = [
-        // listTypes.marketplace,
-        listTypes.approver,
+        listTypes.marketplace,
+        // listTypes.approver,
     ]
     const [rxTasks] = useState(() => new BehaviorSubject(new Map()))
     const [allTasks = new Map(), message] = useTasks(

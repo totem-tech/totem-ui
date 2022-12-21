@@ -382,6 +382,9 @@ form.ui.form div.field > label {
 	text-transform: capitalize;
 }
 /* Group inputs: remove extra padding */
+.ui.form .fields.form-group {
+	margin: 0 -.5em 1em;
+}
 .ui.form .fields.form-group > .field > .field {
 	/* fix for secondary form input group */
 	margin-top: 0;

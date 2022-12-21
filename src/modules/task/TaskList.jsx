@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
@@ -29,7 +29,7 @@ import { useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import Currency from '../currency/Currency'
-import { get as getIdentity, getSelected } from '../identity/identity'
+import { get as getIdentity, getSelected, rxSelected } from '../identity/identity'
 import AddressName from '../partner/AddressName'
 import ApplicationForm from './marketplace/ApplicationForm'
 import ApplicationList from './marketplace/ApplicationList'
@@ -41,6 +41,7 @@ import {
 } from './notificationHandlers'
 import {
     applicationStatus,
+    approvalStatuses,
     MODULE_KEY,
     queueableApis,
     rxInProgressIds,
@@ -56,6 +57,7 @@ let textsCap = {
     acceptInvoiceDesc: 'accept the invoice and pay the assignee?',
     acceptInvoiceTitle: 'task - accept invoice',
     addPartner: 'add partner',
+    application: 'application',
     applications: 'applications',
     applied: 'applied',
     apply: 'apply',
@@ -79,6 +81,7 @@ let textsCap = {
     marketSearch: 'search marketplace',
     no: 'no',
     pay: 'pay',
+    publisher: 'publisher',
     rejected: 'rejected',
     rejectTask: 'reject task',
     status: 'status',
@@ -128,12 +131,7 @@ export default function TaskList(props) {
     const [inProgressIds] = useRxSubject(rxInProgressIds)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [userId] = useRxSubject(rxIsRegistered, ok => ok && getUser().id)
-    const [tableProps, setTableProps] = useState(getTableProps(
-        isMobile,
-        isFulfillerList,
-        isMarketplace,
-        isOwnedList,
-    ))
+    const [tableProps, setTableProps] = useState({})
     const { keywords = '' } = filter || {}
     emptyMessage = emptyMessage || message || (
         isMarketplace
@@ -143,15 +141,21 @@ export default function TaskList(props) {
     
     useEffect(() => {
         setTableProps(
-            getTableProps(
+            getTableProps({
+                isApproverList,
                 isMobile,
                 isFulfillerList,
                 isMarketplace,
                 isOwnedList,
-            )
+            })
         )
-    }, [isMobile, isFulfillerList, isMarketplace])
-    
+    }, [
+        isMobile,
+        isFulfillerList,
+        isMarketplace,
+        isApproverList,
+    ])
+
     const forceReload = () => {
         const { keywords } = filter
         setFilter({
@@ -235,6 +239,7 @@ export default function TaskList(props) {
                     content: textsCap.create,
                     icon: 'plus',
                     onClick: () => showForm(TaskForm, {
+                        inputsHidden: isMarketplace && [inputNames.isMarket] || [],
                         onSubmit: (ok, values) => ok
                             && !!values[inputNames.isMarket]
                             && forceReload(),
@@ -325,7 +330,6 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
                         : 'play',
             key: taskId,
             onClick: () => {
-                console.log('clicked', {isOwner,applied, application})
                 // open application form
                 if (!isOwner) {
                     if (applied) return ApplicationView.asModal({
@@ -458,7 +462,14 @@ export const getStatusView = (task, taskId, _, { inProgressIds }) => {
     }
     return btnStatus
 }
-const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) => {
+const getTableProps = (options) => {
+    const {
+        isMobile,
+        isFulfillerList,
+        isMarketplace,
+        isOwnedList,
+        isApproverList,
+    } = options
     const actionsCol = {
         collapsing: true,
         content: (_, taskId) => (
@@ -557,7 +568,9 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
                 : 'owner',
             includeTitleOnMobile: true,
             key: 'owner',
-            title: textsCap.taskOwner,
+            title: isMarketplace
+                ? textsCap.publisher
+                : textsCap.taskOwner,
         },
         !isFulfillerList && {
             content: getAssigneeView,
@@ -570,7 +583,9 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             key: 'fulfiller',
             // removes unnecessary extra padding when button is used
             style: { padding: '.28571429em .78571429em' },
-            title: textsCap.assignee,
+            title: isMarketplace
+                ? textsCap.application
+                : textsCap.assignee,
         },
         {
             content: ({ tags = [] }) => (
@@ -590,7 +605,7 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             title: textsCap.tags,
             style: { maxWidth: 150 },
         },
-        !isMarketplace && {
+        !isApproverList && !isMarketplace && {
             content: getStatusView,
             collapsing: true,
             draggableValueKey: '_orderStatus',
@@ -598,26 +613,33 @@ const getTableProps = (isMobile, isFulfillerList, isMarketplace, isOwnedList) =>
             textAlign: 'center',
             title: textsCap.status,
         },
-        // {
-        //     content: (task, taskId) => {
-        //         const { approvalStatus, approver, _approvalStatus } = task
-        //         const isPendingAproval = approvalStatus === approvalStatuses.pendingApproval
-        //         const isApprover = selectedAddress === approver
-        //         const approveInProgress = rxInProgressIds.value.has(taskId)
-        //
-        //         return !isApprover || !isPendingAproval ? _approvalStatus : (
-        //             <ButtonAcceptOrReject
-        //                 acceptText={textsCap.approve}
-        //                 disabled={approveInProgress}
-        //                 loading={approveInProgress}
-        //                 onAction={(_, approve) => handleApprove(taskId, approve)}
-        //             />
-        //         )
-        //     },
-        //     collapsing: true,
-        //     key: '_approvalStatus',
-        //     title: textsCap.approved,
-        // },
+        isApproverList && {
+            content: (task, taskId) => {
+                const {
+                    approvalStatus,
+                    approver,
+                    _approvalStatus,
+                } = task
+                const isPendingAproval = approvalStatus === approvalStatuses.pendingApproval
+                const isApprover = rxSelected.value === approver
+                const approveInProgress = rxInProgressIds
+                    .value
+                    .has(taskId)
+                if (!isApprover || !isPendingAproval) return _approvalStatus
+
+                return (
+                    <ButtonAcceptOrReject
+                        acceptText={textsCap.approve}
+                        disabled={approveInProgress}
+                        loading={approveInProgress}
+                        onAction={(_, approve) => handleApprove(taskId, approve)}
+                    />
+                )
+            },
+            collapsing: true,
+            key: '_approvalStatus',
+            title: textsCap.approved,
+        },
         actionsCol,
     ].filter(Boolean)
 

@@ -77,4 +77,4 @@ CharacterCount.propTypes = {
 CharacterCount.defaultProps = {
     hideOnEmpty: true,
 }
-export default CharacterCount
+export default React.memo(CharacterCount)
