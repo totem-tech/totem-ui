@@ -25,6 +25,7 @@ import { approvalStatusNames, rxInProgressIds } from './task'
 import TaskForm from './TaskForm'
 import { getAssigneeView, getStatusView } from './TaskList'
 import useTask from './useTask'
+import { Linkify } from '../../components/StringReplace'
 
 let textsCap = {
     amount: 'bounty amount',
@@ -91,7 +92,7 @@ export default function TaskDetails(props = {}) {
             {
                 content: x => (
                     <div style={{ whiteSpace: 'pre-wrap' }}>
-                        {x.description}
+                        <Linkify>{x.description}</Linkify>
                     </div>
                 ),
                 key: 'description',
@@ -218,7 +219,7 @@ export default function TaskDetails(props = {}) {
                             showForm(TaskForm, {
                                 taskId,
                                 values: task,
-                            }, taskId)
+                            })
                         },
                     }} />
                 </div>

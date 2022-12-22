@@ -12,7 +12,7 @@ import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
 import PartnerList from '../modules/partner/PartnerList'
 import SettingsForm, { inputNames } from '../forms/Settings'
-import TaskView from '../modules/task/TaskView'
+import Tasks from '../modules/task/Main'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
 import TransferFundsForm from '../modules/identity/TransferFundsForm'
 import UtilitiesView from '../views/UtilitiesView'
@@ -268,7 +268,7 @@ export const sidebarItems = [
         title: textsCap.timekeepingTitle,
     },
     {
-        content: TaskView,
+        content: Tasks,
         icon: 'tasks',
         name: 'tasks',
         title: textsCap.tasksTitle,

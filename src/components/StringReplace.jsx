@@ -12,6 +12,7 @@ import {
     textEllipsis,
     URL_REGEX,
 } from '../utils/utils'
+import { useInverted } from '../services/window'
 
 /**
  * @name	StringReplace
@@ -149,9 +150,12 @@ export const Linkify = props => {
         replacer,
         shorten,
     } = props
+    const inverted = useInverted()
     return (
         <StringReplace {...{
             ...props,
+            // must re-render on dark mode change
+            key: inverted,
             componentProps: url => {
                 const cProps = isFn(componentProps)
                     ? componentProps(url)
@@ -161,7 +165,9 @@ export const Linkify = props => {
                     target: '_blank',
                     ...cProps,
                     style: {
-                        color: '#a3d1ff',
+                        color: inverted
+                            ? '#a3d1ff'
+                            : undefined,
                         ...(cProps || {}).style,
                     }
                 }

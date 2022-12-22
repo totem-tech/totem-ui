@@ -262,8 +262,8 @@ const addDetailsToTasks = (address, tasks, detailsMap, uniqueTaskIds, save = tru
     return newTasks
 }
 
-export const addDetailsToTask = (task, details) => {
-    task = { ...task || {}, ...details || {} }
+export const addDetailsToTask = (task = {}, details = {}) => {
+    const _task = { ...task, ...details }
     const {
         applications = [],
         deadline = 0,
@@ -271,18 +271,21 @@ export const addDetailsToTask = (task, details) => {
         isMarket,
         proposalRequired = isMarket,
         tags = '',
-    } = task
+    } = _task
 
-    task.isClosed = isClosed || deadline < rxBlockNumber.value
-    task.proposalRequired = proposalRequired
-    task.tags = (
+    _task.isClosed = isClosed || deadline < rxBlockNumber.value
+    _task.proposalRequired = proposalRequired
+    _task.tags = (
         isStr(tags)
             ? tags.split(',')
             : tags || []
     ).filter(Boolean)
-    task.marketplace = isMarket
-        ? 'marketplace'
-        : ''
+    // task.marketplace = isMarket
+    //     ? 'marketplace'
+    //     : ''
+    _task.amountXTX = isMarket
+        && details.amountXTX
+        || task.amountXTX
 
     // add application status text
     applications.forEach(application => {
@@ -290,7 +293,7 @@ export const addDetailsToTask = (task, details) => {
             || applicationStatus[0]
     })
 
-    return task
+    return _task
 }
 
 /**

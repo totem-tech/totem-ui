@@ -34,7 +34,11 @@ const ApplicationView = props => {
     const [columns] = useState(() => [
         ...getColumns(),
         proposalRequired && {
-            content: x => <Linkify content={x.proposal} />,
+            content: x => (
+                <div style={{ whiteSpace: 'pre-wrap' }}>
+                    <Linkify content={x.proposal.trim()} />
+                </div>
+            ),
             key: 'proposal',
             headerProps: {
                 style: {
@@ -42,14 +46,13 @@ const ApplicationView = props => {
                     verticalAlign: 'top',
                 },
             },
-            style: { whiteSpace: 'pre-line' },
             title: textsCap.proposal,
         },
         proposalRequired && {
             content: x => <Links {...x} />,
             key: 'links',
             title: textsCap.links,
-        }
+        },
     ].filter(Boolean))
 
     return (
@@ -99,37 +102,64 @@ ApplicationView.asModal = (props, modalId, modalProps) => {
 export default ApplicationView
 
 const Links = ({ links = [] }) => {
+    if (!links.length) return ''
+
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const urls = links.reduce((obj, url) => ({
+        ...obj,
+        [url]: fallbackIfFails(() => new URL(url))
+            || { hostname: '' },
+    }), {})
+    const [knownurls, unknownUrls] = links
+        .reduce(([known, unknown], url) => {
+            const hn = urls[url]
+                .hostname
+                .replace('www.', '')
+            urls[url].hostname = hn
+            const target = knownIcons[hn]
+                ? known
+                : unknown
+            target.push(url)
+            return [known, unknown]
+        }, [[], []])
+
     return (
         <Linkify {...{
-            content: links.join('\n'),
+            content: [...knownurls, ...unknownUrls].join('\t'),
             replacer: (shortUrl, url) => {
-                let { hostname = '' } = fallbackIfFails(() => new URL(url)) || {}
-                hostname = hostname.replace('www.', '')
-                const name = knownIcons[hostname]
+                let { hostname = '' } = urls[url]
+                const icon = knownIcons[hostname]
                 const style = {}
-                let color = knownColors[name]
+                let color = knownColors[icon]
                 if (isObj(color)) {
                     color = undefined
                     style = { ...style, ...color }
                 }
-                const icon = React.isValidElement(name)
-                    ? name
-                    : (
-                        <Icon {...{
-                            className: 'no-margin',
-                            color,
-                            name: name || 'linkify',
-                            size: 'big',
-                            style,
-                        }} />
-                    )
-            
+                const iconOnly = unknownUrls.length === 0
+                const Component = iconOnly
+                    ? 'span'
+                    : 'div'
+
                 return (
-                    <div style={{ padding: '5px 0' }} title={url}>
-                        {icon}
-                        <span> {name ? hostname : shortUrl}</span>
-                    </div>
+                    <Component style={{ padding: '5px 0' }} title={url}>
+                        {React.isValidElement(icon)
+                            ? icon
+                            : (
+                                <Icon {...{
+                                    className: 'no-margin',
+                                    color,
+                                    name: icon || 'linkify',
+                                    size: 'big',
+                                    style,
+                                }} />
+                            )}
+                        {!iconOnly && (
+                            <span>
+                                {' '}
+                                {!icon ? shortUrl : hostname}
+                            </span>
+                        )}
+                    </Component>
                 )
             },
             shorten: isMobile

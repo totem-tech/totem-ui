@@ -4,6 +4,7 @@ import { isFn, objWithoutKeys } from '../../utils/utils'
 import { translated } from '../../services/language'
 import { useInverted } from '../../services/window'
 import Button from './Button'
+import { iUseState } from '../../utils/reactHelper'
 
 let textsCap = {
 	or: 'or',
@@ -25,13 +26,13 @@ const ButtonGroup = (props) => {
 		disabled,
 		El,
 		ignoreAttributes,
-		loading,
+		loading: loadingP,
 		onAction,
 		or,
 		orText,
 		values = [],
 	} = props
-	const [[_loading, index], setLoading] = useState([])
+	const [{ loading, index }, setLoading] = iUseState({})
 	const buttonsEl = buttons.map((button, i) => {
 		button = (isValidElement(button)
 			? button.props
@@ -49,21 +50,21 @@ const ButtonGroup = (props) => {
 				...button,
 				disabled: button.disabled
 					|| disabled
-					|| _loading,
+					|| loading,
 				loading: button.loading
-					|| loading
-					|| (_loading && index === i),
+					|| loadingP
+					|| (loading && index === i),
 				onClick: async (event) => {
 					event.stopPropagation()
 					event.preventDefault()
-					setLoading([true, i])
+					setLoading({ loading: true, index: i })
 					try {
 						isFn(button.onClick) && await button.onClick(event, values[i])
 						isFn(onAction) && await onAction(event, values[i])
 					} catch (err) {
-						console.log(err)
+						console.warn('ButtonGroup: unexpected error occured while executing onAction.', err)
 					} finally {
-						setLoading([false])
+						setLoading({ loading: false, index: null })
 					}
 				},
 			}} />,

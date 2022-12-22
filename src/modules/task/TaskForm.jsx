@@ -27,6 +27,7 @@ import {
     isObj,
     isValidNumber,
     objClean,
+    objWithoutKeys,
 } from '../../utils/utils'
 // components
 import FormBuilder, {
@@ -223,6 +224,7 @@ const getInitialState = props => rxState => {
     const {
         header,
         inputsDisabled = [],
+        inputsReadOnly = [],
         taskId,
         values = {},
     } = props
@@ -300,7 +302,10 @@ const getInitialState = props => rxState => {
         },
         {
             ...asInlineLabel({
-                disabled: isUpdate,
+                disabled: isUpdate || [
+                    ...inputsDisabled,
+                    ...inputsReadOnly,
+                ].includes(inputNames.bounty),
                 // callback when currency list is loaded
                 onCurrencies: currencies => {
                     rxCurrencies.next(currencies)
@@ -358,7 +363,7 @@ const getInitialState = props => rxState => {
                     rxValue: new BehaviorSubject(),
                     label: textsCap.deadlineLabel,
                     name: inputNames.deadline,
-                    onChange: handleDeadlineChangeCb(taskId),
+                    onChange: handleDeadlineChangeCb(taskId, rxState),
                     required: true,
                     type: 'date',
                     validate: handleDeadlineValidate,
@@ -445,7 +450,7 @@ const getInitialState = props => rxState => {
                     multiple: true,
                     name: inputNames.tags,
                     noResultsMessage: textsCap.tagsNoResultMsg,
-                    onAddItem: handleTagsAddCb(rxTags),
+                    onAddItem: handleTagsAddCb(rxTags, rxTagOptions),
                     options: [],
                     rxOptions: rxTagOptions,
                     rxOptionsModifier: tags => arrUnique(tags)
@@ -496,12 +501,24 @@ const getInitialState = props => rxState => {
             rxState.next({ submitDisabled })
         }, 300),
         onSubmit: handleSubmit(props, rxState),
-        inputs,
+        inputs: fillValues(
+            inputs,
+            objWithoutKeys(values, [
+                // to be filled later (below)
+                inputNames.bounty,
+                inputNames.dueDate,
+                inputNames.deadline,
+            ]),
+            true,
+            true,
+        ),
     }
 
     const init = async () => {
         const { loading } = state
         const bountyIn = findInput(inputs, inputNames.bounty)
+        const deadlineIn = findInput(inputs, inputNames.deadline)
+        const dueDateIn = findInput(inputs, inputNames.dueDate)
         values[inputNames.currency] = values[inputNames.currency]
             || rxSelectedCurrency.value
         const currentBlock = await subjectAsPromise(rxBlockNumber)[0]
@@ -511,24 +528,25 @@ const getInitialState = props => rxState => {
         const dueDate = values[inputNames.dueDate]
         const tags = values[inputNames.tags] || []
         values[inputNames.tags] = tags
-        // convert duedate and deadline block numbers to date format yyyy-mm-dd
-        if (deadline) values.deadline = blockToDate(
-            deadline,
-            currentBlock,
-            true,
-            10,
-        )
-        if (dueDate) values.dueDate = blockToDate(
-            dueDate,
-            currentBlock,
-            true,
-            10,
-        )
-
         tags.length && rxTagOptions.next(tags)
+        // convert duedate and deadline block numbers to date format yyyy-mm-dd
+        if (deadline) deadlineIn.rxValue.next(
+            blockToDate(
+                deadline,
+                currentBlock,
+                true,
+                10,
+            )
+        )
+        if (dueDate) dueDateIn.rxValue.next(
+            blockToDate(
+                dueDate,
+                currentBlock,
+                true,
+                10,
+            )
+        )
 
-        loading.onMount = false
-        // state = { inputs, loading }
         state.inputsDisabled = isUpdate
             ? arrUnique([
                 ...inputsDisabled,
@@ -540,28 +558,34 @@ const getInitialState = props => rxState => {
             ])
             : inputsDisabled
 
-        if (!values.bounty && currency === currencyDefault) {
-            values.bounty = amountXTX
+        let bounty
+        if (currency === currencyDefault) {
+            bounty = amountXTX
         } else {
             // convert bounty amount from default currency to task currency
-            const [bounty, bountyStr] = await convertTo(
+            const [bountyNum, bountyRounded] = await convertTo(
                 amountXTX,
                 currencyDefault,
                 currency,
             )
-            bounty && bountyIn
-                .rxValue
-                .next(Number(bountyStr))
+            bounty = !!values.amountXTX || bountyNum
+                ? Number(bountyRounded) || bountyNum // if after conversion amount is too small use unrounded value
+                : undefined
         }
+        values[inputNames.bounty] = bounty
+        setTimeout(() => {
+            // without timeout, it can cause a race condition
+            bounty && bountyIn.rxValue.next(bounty)
+        }, 150)
 
         state.oldValues = objClean(
-            getValues(inputs, values),
+            values,
             Object.values(inputNames),
         )
-        fillValues(inputs, state.oldValues, true)
+        loading.onMount = false
         rxState.next({...state})
     }
-
+    
     setTimeout(() => init().catch(console.error))
     return state
 }
@@ -599,7 +623,7 @@ const handleAssigneeValidate = (_, { value: assignee }) => {
     )
 }
 
-const handleDeadlineChangeCb = taskId => (_, values) => {
+const handleDeadlineChangeCb = (taskId, rxState) => (_, values) => {
     const { inputs } = rxState.value
     let dueDate = values[inputNames.dueDate]
     const deadline = values[inputNames.deadline]
@@ -667,19 +691,13 @@ const handleBountyChangeCb = (props, rxState) => deferred((_, values) => {
             // user account balance
             const freeBalance = balances.get(address)
             // no need to convert currency if amount is zero or XTX is the selected currency
-            const _bounty = isMarket
-                ? 1
-                : bounty
-            const _currency = isMarket
-                ? currencyDefault
-                : currency
-            const requireConversion = _bounty && _currency !== currencyDefault
+            const requireConversion = bounty && currency !== currencyDefault
             // amount in TOTEM
             const amount = !requireConversion
-                ? [_bounty, _bounty]
+                ? [bounty, bounty]
                 : await convertTo(
-                    _bounty,
-                    _currency,
+                    bounty,
+                    currency,
                     currencyDefault,
                 )
             resolve([parseInt(amount[0]), freeBalance])
@@ -687,7 +705,7 @@ const handleBountyChangeCb = (props, rxState) => deferred((_, values) => {
     })
     const handleBountyResult = result => {
         const [bountyAmount, freeBalance] = result || []
-        const bountyAmountWithFees = bountyAmount
+        const bountyAmountWithFees = (isMarket ? 1 : bountyAmount)
             + estimatedTxFee
             + minBalanceAterTx
         const gotBalance = (freeBalance - bountyAmountWithFees) >= 0
@@ -742,7 +760,7 @@ const handleBountyChangeCb = (props, rxState) => deferred((_, values) => {
     }
     bountyDeferred(promise)
         .then(handleBountyResult, handleErr)
-}, 300)
+}, 100)
 
 const handleSubmit = (props = {}, rxState) => async (_, values) => {
     let {
@@ -831,8 +849,9 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
             ownerAddress,
             fulfiller,
             isSell,
+            // set the minimum amount for the advert
             isMarket
-                ? 1 // set the minimum amount for the advert
+                ? 1
                 : amountXTX,
             isMarket,
             orderType,
@@ -937,7 +956,7 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
     addToQueue(queueProps)
 }
 
-const handleTagsAddCb = rxValue => (_, { value = '' }) => {
+const handleTagsAddCb = (rxValue, rxOptions) => (_, { value = '' }) => {
     const newTag = [...value.match(/[a-z0-9]/ig)]
         .filter(Boolean)
         .join('')
@@ -950,10 +969,10 @@ const handleTagsAddCb = rxValue => (_, { value = '' }) => {
             .filter(x => !!x && x !== value)
     )
     const tags = arrUnique([
-        ...rxTagOptions.value,
+        ...rxOptions.value,
         newTag,
     ])
         .filter(Boolean)
         .sort()
-    rxTagOptions.next(tags)
+    rxOptions.next(tags)
 }

@@ -116,6 +116,7 @@ const getInitialState = props => rxSetState => {
             required: true,
             style: { minHeight: 150 },
             type: 'textarea',
+            value: '',
         },
         {
             hidden: !proposalRequired,
@@ -164,6 +165,8 @@ const handleSubmit = (rxSetState, props) => (_, values) => {
         .split('\n')
         .map(x => x.trim())
         .filter(Boolean)
+    const pName = inputNames.proposal
+    values[pName] = values[pName].trim()
     
     rxSetState.next({
         message: {
