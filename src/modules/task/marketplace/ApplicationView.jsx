@@ -3,15 +3,11 @@ import { Icon } from 'semantic-ui-react'
 import TotemButtonLogo from '../../../assets/logos/button-288-colour.png'
 import DataTableVertical from '../../../components/DataTableVertical'
 import { Linkify } from '../../../components/StringReplace'
-import { showInfo } from '../../../services/modal'
+import { newId, showInfo } from '../../../services/modal'
 import { MOBILE, rxLayout } from '../../../services/window'
 import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactHelper'
-import {
-    fallbackIfFails,
-    generateHash,
-    isObj,
-} from '../../../utils/utils'
+import { fallbackIfFails, isObj } from '../../../utils/utils'
 import { getColumns } from './ApplicationList'
 
 let textsCap = {
@@ -76,9 +72,7 @@ ApplicationView.asModal = (props, modalId, modalProps) => {
         taskId,
     } = props
     const { isOwner } = task
-    modalId = _modalId || generateHash(
-        `${taskId}-${application.workerAddress}`
-    )
+    modalId = newId('application', `${taskId}-${application.workerAddress}`)
     const content = (
         <ApplicationView {...{
             application,

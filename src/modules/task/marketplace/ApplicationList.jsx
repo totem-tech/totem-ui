@@ -24,6 +24,7 @@ import FormInput from '../../../components/FormInput'
 import {
     closeModal,
     confirmAsPromise,
+    newId,
     showForm,
     showInfo,
 } from '../../../services/modal'
@@ -246,7 +247,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         userId,
         workerAddress,
     } = application
-    const confirmId = generateHash(taskId + workerAddress + 'confirm')
+    const confirmId = newId('confirm-application', taskId + workerAddress)
     const handleResult = async (success, err) => {
         if (!success) return err && showInfo({
             collapsing: true,

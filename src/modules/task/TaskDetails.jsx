@@ -10,6 +10,7 @@ import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import {
     closeModal,
+    newId,
     showForm,
     showInfo,
 } from '../../services/modal'
@@ -240,7 +241,7 @@ TaskDetails.propTypes = {
  * @returns {Promise}
  */
 TaskDetails.asModal = (props = {}, modalProps, modalId) => {
-    modalId = props.taskId || generateHash()
+    modalId = newId('task', props.taskId)
     return showInfo({
         collapsing: true,
         header: textsCap.header,

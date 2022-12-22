@@ -298,8 +298,8 @@ const IConfirm = props => {
  */
 export const get = modalId => modals.get(modalId)
 
-export const newId = (prefix = 'modal_') => prefix
-    + generateHash(undefined, undefined, 32)
+export const newId = (prefix = 'modal_', seed) => prefix
+    + generateHash(seed, undefined, 32)
         .replace('0x', '')
 
 /**

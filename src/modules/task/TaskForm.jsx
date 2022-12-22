@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import uuid from 'uuid'
 import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
@@ -21,10 +21,8 @@ import {
     deferred,
     generateHash,
     isArr,
-    isBool,
     isFn,
     isHash,
-    isObj,
     isValidNumber,
     objClean,
     objWithoutKeys,
@@ -33,7 +31,6 @@ import {
 import FormBuilder, {
     findInput,
     fillValues,
-    getValues,
 } from '../../components/FormBuilder'
 import { statuses } from '../../components/Message'
 // services
