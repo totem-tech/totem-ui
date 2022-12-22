@@ -17,12 +17,14 @@ const Button = React.memo(props => {
 	let {
 		color,
 		disabled,
+		icon,
 		inverted,
 		loading,
 		negative,
 		onClick,
 		positive,
 		primary,
+		title,
 	} = props
 	const _inverted = useInverted()
 	inverted = isBool(inverted)
@@ -31,18 +33,29 @@ const Button = React.memo(props => {
 			&& !negative
 			&& !positive
 			&& !primary
-			&& _inverted
+		&& _inverted
+	
 	return (
 		<_Button {...{
-            ...props,
+			...props,
+			icon: state.error
+				? 'warning sign'
+				:  icon,
 			inverted,
 			disabled: disabled || state.loading,
 			loading: loading || state.loading,
 			onClick: async (...args) => {
-				setState({ loading: true})
-				isFn(onClick) && await onClick(...args)
-				setState({ loading: false })
+				let error = false
+				setState({ error, loading: true })
+				try {
+					isFn(onClick) && await onClick(...args)
+				} catch (err) {
+					error = `${err}`
+				} finally {
+					setState({ error, loading: false })
+				}
 			},
+			title: state.error || title,
 		}} />
 	)
 })

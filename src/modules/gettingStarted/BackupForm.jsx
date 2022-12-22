@@ -1,13 +1,17 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
+import { Icon } from 'semantic-ui-react'
 import FormBuilder, {
-	checkFormInvalid,
 	fillValues,
 	findInput,
 } from '../../components/FormBuilder'
 import { MOBILE, rxLayout } from '../../services/window'
-import { confirm, confirmAsPromise, showForm } from '../../services/modal'
+import {
+	confirm,
+	confirmAsPromise,
+	showForm,
+} from '../../services/modal'
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import storage, { backup } from '../../utils/storageHelper'
@@ -18,18 +22,18 @@ import {
 	generateHash,
 	isFn,
 	isHex,
-	isStr,
-	isValidNumber,
-	randomInt,
 } from '../../utils/utils'
-import identity, { addFromUri, generateUri } from '../identity/identity'
+import identity from '../identity/identity'
 import partner from '../partner/partner'
 import location from '../location/location'
 import contact from '../contact/contact'
-import { Button, Icon } from 'semantic-ui-react'
 import Text from '../../components/Text'
-import { getActiveStep, MODULE_KEY, saveActiveStep, setActiveStep, stepIndexes } from './GettingStarted'
-import { decryptBackup, encryptBackup, generatePassword } from '.'
+import {
+	MODULE_KEY,
+	saveActiveStep,
+	stepIndexes,
+} from './GettingStarted'
+import { encryptBackup, generatePassword } from '.'
 import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/buttons/ButtonDelayed'
 import { setToast } from '../../services/toast'

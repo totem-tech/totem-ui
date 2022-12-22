@@ -164,12 +164,6 @@ export const Linkify = props => {
                     href: url,
                     target: '_blank',
                     ...cProps,
-                    style: {
-                        color: inverted
-                            ? '#a3d1ff'
-                            : undefined,
-                        ...(cProps || {}).style,
-                    }
                 }
                 if (url.match(EMAIL_REGEX)) urlProps.href = `mailto:${url}`
                 return urlProps

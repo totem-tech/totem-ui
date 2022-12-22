@@ -40,6 +40,7 @@ export const rxCurrencies = new Subject()
  * @param   {String} to         target currency ID
  * @param   {Number} decimals   (optional) number of decimal places to use. 
  *                               Default: decimals defined in `to` currency
+ * @param   {String|Number} dateOrROE  (optional) Ratio of Exchange or date (to retrieve exchange rate)
  * 
  * @returns {Array} [
  *                      @convertedAmount Number,
@@ -49,7 +50,7 @@ export const rxCurrencies = new Subject()
  *                      @toCurrency      Object
  *                  ]
  */
-export const convertTo = async (amount = 0, from, to, decimals, dateOrROE) => {
+export const convertTo = async (amount = 0, from, to, decimals, dateOrROE, decimalOverhead = 2) => {
     const currencies = await getCurrencies()
     const USD = 'USD'
     let fromCurrency, toCurrency, usdEntry
@@ -99,11 +100,11 @@ export const convertTo = async (amount = 0, from, to, decimals, dateOrROE) => {
     if (!isValidNumber(decimals)) {
         decimals = parseInt(toCurrency.decimals) || 0
     }
-    const rounded = convertedAmount.toFixed(decimals + 2)
+    const rounded = convertedAmount.toFixed(decimals + decimalOverhead)
 
     return [
         convertedAmount,
-        rounded.substr(0, rounded.length - (!decimals ? 3 : 2)),
+        rounded.substr(0, rounded.length - decimalOverhead - (!decimals ? 1 : 0)),
         decimals,
         fromCurrency,
         toCurrency,

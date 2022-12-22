@@ -64,15 +64,18 @@ const ApplicationView = props => {
         }} />
     )
 }
-ApplicationView.asModal = (props, modalId, modalProps) => {
-    const { 
+ApplicationView.asModal = (props, modalProps) => {
+    let { 
         application,
-        modalId: _modalId,
+        modalId,
         task = {},
         taskId,
     } = props
     const { isOwner } = task
-    modalId = newId('application', `${taskId}-${application.workerAddress}`)
+    modalId = modalId || newId(
+        'application',
+        `${taskId}-${application.workerAddress}`,
+    )
     const content = (
         <ApplicationView {...{
             application,

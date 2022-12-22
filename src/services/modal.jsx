@@ -16,6 +16,7 @@ import PromisE from '../utils/PromisE'
 import {
     className,
     generateHash,
+    isArr,
     isBool,
     isFn,
     isObj,
@@ -84,9 +85,16 @@ const add = (id, element, focusRef, onClose) => {
     }, 100)
     return id
 }
-
+/**
+ * @name    closeModal
+ * 
+ * @param   {String|Array}  id 
+ * @param   {Number}        delayMs (optional)
+ */
 export const closeModal = (id, delayMs = 0) => {
     if (delayMs > 0) return setTimeout(() => closeModal(id), delayMs)
+
+    if (isArr(id)) return id.forEach(idx => closeModal(idx))
 
     const onClose = onCloseHandlers.get(id)
     modals.delete(id)

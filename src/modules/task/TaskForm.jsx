@@ -564,6 +564,9 @@ const getInitialState = props => rxState => {
                 amountXTX,
                 currencyDefault,
                 currency,
+                undefined,
+                undefined,
+                0
             )
             bounty = !!values.amountXTX || bountyNum
                 ? Number(bountyRounded) || bountyNum // if after conversion amount is too small use unrounded value

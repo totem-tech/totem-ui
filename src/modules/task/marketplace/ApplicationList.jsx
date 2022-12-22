@@ -192,12 +192,18 @@ export const getColumns = (showStatusButtons = true) => {
 }
 
 const getStatusContent = (application = {}, _1, _arr, props = {}) => {
-    const { isMobile } = props
-    const { _status, workerAddress } = application
+    const {
+        isMobile,
+        task: { 
+            owner,
+        } = {},
+    } = props
+    const { _status } = application
     const accepted = _status === applicationStatus[1]
     const rejected = _status === applicationStatus[2]
-    const isOwner = !!getIdentity(workerAddress)
-    if (accepted) return (
+    const isOwner = owner && !!getIdentity(owner)
+    const showAction = !accepted && isOwner
+    if (!showAction) return (
         <Button basic fluid>
             {_status}
         </Button>
@@ -205,7 +211,6 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
 
     return (
         <div>
-            {/* {rejected && <div>{_status}</div>} */}
             <ButtonAcceptOrReject {...{
                 acceptProps: { icon: 'check' },
                 acceptText: isMobile
@@ -296,7 +301,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
             isMarket: false,
             parentId: taskId,
         }
-        const openTaskForm = () => showForm(TaskForm, {
+        const taskFormProps = {
             closeOnSubmit: true, // close modal after successful submission
             header: title,
             inputsDisabled: Object
@@ -319,7 +324,12 @@ const handleActionCb = (props, application) => async (_, accept) => {
             ),
             submitText: textsCap.acceptApplication,
             values: childTask,
-        })
+        }
+        const openTaskForm = () => showForm(
+            TaskForm,
+            taskFormProps,
+            modalId,
+        )
         // prompt to add worker as a partner
         if (!!getPartner(workerAddress)) return openTaskForm()
         
