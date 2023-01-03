@@ -1,39 +1,61 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
-import { subjectAsPromise, unsubscribe } from '../../utils/reactHelper'
+import { translated } from '../../utils/languageHelper'
+import {
+    iUseState,
+    subjectAsPromise,
+    unsubscribe,
+} from '../../utils/reactHelper'
 import { isObj } from '../../utils/utils'
 import { query } from './task'
 import { addDetailsToTask, processOrder } from './useTasks'
 
+let textsCap = {
+    task404: 'task not found'
+}
+textsCap = translated(textsCap, true)[1]
+
 export default function useTask(taskId, updateTrigger) {
-    const [data, setData] = useState({
+    const [state, setState] = iUseState({
+        children: null,
         error: null,
         task: null,
     })
 
     useEffect(() => {
         if (!taskId) return () => { }
+
         let mounted = true
-        const handleResult = async order => {
-            if (!isObj(order)) return
+        const handleResult = async (order, orderOrg) => {
+            const gotOrder = isObj(order)
+            order = order || {}
+
             let error
             try {
-                order = processOrder(order, taskId)
+                order = processOrder(order, taskId, orderOrg || {})
 
                 // wait until user is logged in
                 rxIsRegistered.value &&
                     await subjectAsPromise(rxIsLoggedIn, true)[0]
                 // fetch off-chain details
-                const detailsMap = await query.getDetailsByTaskIds([taskId])
-                order = addDetailsToTask(
-                    order,
-                    detailsMap.get(taskId) || {},
-                )
+                const detailsMap = await query
+                    .getDetailsByTaskIds([taskId])
+                let task = detailsMap.get(taskId)
+
+                if (!gotOrder && !task) return setState({ error: textsCap.task404 })
+
+                task.children = (
+                    task.isMarket && await query
+                        .getDetailsByParentId(taskId)
+                        .catch(() => { })
+                ) || new Map()
+                order = addDetailsToTask(order, task)
             } catch (err) {
                 error = err
             } finally {
-                mounted && setData({
-                    error: `${error || ''}`.replace('Error: ', ''),
+                mounted && setState({
+                    error: `${error || ''}`
+                        .replace('Error: ', ''),
                     task: order,
                 })
             }
@@ -50,5 +72,9 @@ export default function useTask(taskId, updateTrigger) {
         }
     }, [taskId, updateTrigger])
 
-    return data
+    useEffect(() => {
+        // subscribe to retrieve latest data about children
+    }, [state.children])
+
+    return state
 }

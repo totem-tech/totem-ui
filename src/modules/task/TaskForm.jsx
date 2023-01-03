@@ -929,7 +929,7 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
                     // grab the taskId from the save previous item in the queue chain
                     __resultSelector: `(r, rt, offchainTask) => ({
                         fulfillerAddress: "${fulfiller}",
-                        purpose: ${purpose},
+                        purpose: ${purpose || 0},
                         taskId: offchainTask.argsProcessed[0],
                     })`,
                 },

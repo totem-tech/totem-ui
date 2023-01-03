@@ -5,12 +5,12 @@ import React, {
     useState,
 } from 'react'
 import { render } from 'react-dom'
-import uuid from 'uuid'
 import {
     Button,
     Confirm,
     Icon,
 } from 'semantic-ui-react'
+import { rxIsRegistered } from '../utils/chatClient'
 import DataStorage from '../utils/DataStorage'
 import PromisE from '../utils/PromisE'
 import {
@@ -108,7 +108,7 @@ export const closeModal = (id, delayMs = 0) => {
  * @param   {Object|String} confirmProps props to be used in Semantic UI Confirm component.
  *                                       If string supplied, it will be used as `content` prop
  * @param   {String}        modalId      (optional) if supplied and any existing modal with this ID will be replaced.
- *                                       Otherwise, a random UUID will be generated.
+ *                                       Otherwise, a random ID will be generated.
  * @param   {Object}        contentProps (optional) props to be passed on to the content element
  * @param   {Boolean}       focusConfirm (optional) If value is
  *                                          - true or no cancel button, will focus confirm button.
@@ -382,6 +382,19 @@ setTimeout(() => {
     const referralCode = !fileName && getUrlParam('ref')
     if (!!referralCode) fileName = 'registration'
     if (!fileName) return
+
+    // if user is not registered, only allow registration, backup and restore forms
+    // to be opened through URL param
+    if (!rxIsRegistered.value) {
+        const allowedForms = [
+            'backup',
+            'reg', // short for registration
+            'restore',
+            'settings',
+        ]
+        const isValid = allowedForms.find(x => !fileName.startsWith(x))
+        if (!isValid) return
+    }
     try {
         fileName = (require('./languageFiles').default || [])
             .map(x => x.split('./src/forms/')[1])

@@ -37,6 +37,7 @@ export const getIdentityOptions = (identities = rxIdentities.value, formProps) =
                     <IdentityIcon {...{
                         address,
                         formProps: isObj(formProps) && formProps || {},
+                        key: address,
                         usageType,
                     }} />
                     {' ' + textEllipsis(name, 25, 3, false)}

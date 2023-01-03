@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
@@ -22,10 +22,6 @@ const textsCap = translated({
 // cache balances and locks
 export const rxBalances = new BehaviorSubject(new Map())
 export const rxLocks = new BehaviorSubject(new Map())
-
-window.rxBalances = rxBalances
-window.rxLocks = rxLocks
-
 export const Balance = props => {
 	let {
 		address,
@@ -42,7 +38,7 @@ export const Balance = props => {
 	// prevents update if value for the address is unchanged
 	const valueModifier = (newValue = new Map(), oldValue) => {
 		const value = newValue.get(address)
-		const update = isValidNumber(value) || isArr(value)
+		const update = (isValidNumber(value) || isArr(value))
 			&& value !== oldValue
 		return update
 			? value
@@ -238,11 +234,13 @@ setTimeout(() => {
 		unsubscribe(sub)
 		
 		const updateCache = subject => (result = []) => {
-			const balances = new Map()
-			result.forEach((value, i) =>
-				balances.set(addresses[i], value)
+			const map = new Map(
+				result.map((value, i) => [
+					addresses[i],
+					value,
+				])
 			)
-			subject.next(balances)
+			subject.next(map)
 		}
 		sub.balances = query(
 			'api.query.balances.freeBalance',

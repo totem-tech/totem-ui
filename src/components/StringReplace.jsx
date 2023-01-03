@@ -82,11 +82,11 @@ const StringReplace = props => {
                         .flat().flat()
                 })
             }
-            elements = elements.map((children, i) =>
+            elements = elements.map((unmatched, i) =>
                 <React.Fragment {...{
-                    children: isFn(unmatchedReplacer) && !isValidElement(children)
-                        ? unmatchedReplacer(children)
-                        : children,
+                    children: isFn(unmatchedReplacer) && !isValidElement(unmatched)
+                        ? unmatchedReplacer(unmatched)
+                        : unmatched,
                     key: i
                 }} />
             )

@@ -102,13 +102,13 @@ const ApplicationList = props => {
             columnsHidden,
             data: applications,
             emptyMessage: textsCap.emptyMessage,
-            isMobile,
-            modalId,
             searchable: applications.length > 10,
             sortAsc: false,
             sortBy: 'tsCreated',
-
+            
             // extra info used by cells
+            isMobile,
+            modalId,
             forceReload: deferred(() => {
                 // reload application view
                 setUpdateTrigger(generateHash())
@@ -150,19 +150,20 @@ export const getColumns = (showStatusButtons = true) => {
             title: textsCap.appliedAt,
         },
         {
-            collapsing: true,
-            content: (application, _1, _2, { modalId }) => getUserIdBtn(
+            // collapsing: true,
+            content: (application, _1, _2, { modalId, taskId }) => getUserIdBtn(
                 application,
                 modalId,
+                taskId,
             ),
             key: 'userId',
             title: textsCap.applicant,
         },
-        {
-            content: getAddressBtn,
-            key: 'workerAddress',
-            title: textsCap.identity,
-        },
+        // {
+        //     content: getAddressBtn,
+        //     key: 'workerAddress',
+        //     title: textsCap.identity,
+        // },
         {
             content: !showStatusButtons
                 ? undefined
@@ -173,12 +174,11 @@ export const getColumns = (showStatusButtons = true) => {
         },
         {
             collapsing: true,
-            content: (application = {}, _i, _arr, { modalId, task = {}, taskId }) => (
+            content: (application = {}, _i, _arr, { task = {}, taskId }) => (
                 <Button {...{
                     icon: 'eye',
                     onClick: () => ApplicationView.asModal({
                         application,
-                        modalId,
                         task,
                         taskId,
                     }),
@@ -230,11 +230,16 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
     )
 }
 
-const getUserIdBtn = ({ name, userId, workerAddress }, modalId) => (
+const getUserIdBtn = ({ name, userId, workerAddress }, modalId, taskId) => (
     <UserID {...{
         address: workerAddress,
         name,
-        onChatOpen: () => modalId && closeModal(modalId),
+        onChatOpen: () => closeModal([
+            modalId,
+            newId('application_', taskId),
+            newId('applications_', taskId),
+            newId('task_', taskId),
+        ]),
         userId
     }} />
 )
@@ -252,7 +257,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         userId,
         workerAddress,
     } = application
-    const confirmId = newId('confirm-application', taskId + workerAddress)
+    const confirmId = newId('confirm_', taskId)
     const handleResult = async (success, err) => {
         if (!success) return err && showInfo({
             collapsing: true,
@@ -311,8 +316,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
                     taskInputNames.deadline,
                     taskInputNames.dueDate,
                 ].includes(name)),
-            onSubmit: success => success
-             && addToQueue(offChain),
+            onSubmit: success => success && addToQueue(offChain),
             purpose: 1, // to be included when notifying the user
             subheader: (
                 <span>
@@ -366,7 +370,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
                     {userId && (
                         <span>
                             {' '}
-                            ({getUserIdBtn(application, modalId)})
+                            ({getUserIdBtn(application, modalId, taskId)})
                         </span>
                     )}
                 </div>

@@ -50,6 +50,7 @@ export const getPartnerOptions = (partners, formProps, includeIdentities = false
                     <PartnerIcon {...{
                         address,
                         formProps: isObj(formProps) && formProps || {},
+                        key: address,
                         type,
                         visibility,
                     }} />
@@ -61,21 +62,25 @@ export const getPartnerOptions = (partners, formProps, includeIdentities = false
     
     const options = arrReverse([
         [
-            includeIdentities && {
-                key: 'partners-header',
-                style: styles.itemHeader,
-                text: textsCap.partnerOptionsHeader,
-                value: '' // keep
-            },
+            includeIdentities
+                && partnerOptions.length
+                && {
+                    key: 'partners-header',
+                    style: styles.itemHeader,
+                    text: textsCap.partnerOptionsHeader,
+                    value: '' // keep
+                },
             ...partnerOptions,
         ],
         [
-            includeIdentities && {
-                key: 'identities-header',
-                style: styles.itemHeader,
-                text: textsCap.identityOptionsHeader,
-                value: '' // keep
-            },
+            includeIdentities
+                && identityOptions.length
+                && {
+                    key: 'identities-header',
+                    style: styles.itemHeader,
+                    text: textsCap.identityOptionsHeader,
+                    value: '' // keep
+                },
             ...identityOptions,
         ]
     ], reverse === true)

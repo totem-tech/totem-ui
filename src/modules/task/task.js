@@ -106,8 +106,17 @@ export const query = {
      */
     getDetailsByTaskIds: async (taskIds = []) => await client.taskGetById.promise(taskIds),
     /**
+     * @name    getDetailsByParentId
+     * @summary get off-chain task data (eg: title, description, tags...) from messaging service by parent task ID.
+     * 
+     * @param   {String} parentId parent task ID 
+     * 
+     * @returns {Map}    list of tasks
+     */
+    getDetailsByParentId: async (parentId) => await client.taskGetByParentId.promise(parentId),
+    /**
      * @name    getTaskIds
-     * @summary get lists of tasks for by types
+     * @summary get lists of tasks for by types from blockchain
      * 
      * @param {Array}       types one of more task list types. Valid types: ['owner', 'approver', 'beneficiary']
      * @param {String}      address user identity
@@ -151,7 +160,7 @@ export const query = {
                 const task = {
                     taskId,
                     ...taskDetails,
-                    ...processOrder(order, taskId, address),
+                    ...processOrder(order, taskId, order),
                     _tsCreated: format(taskDetails.tsCreated, true),
                 }
                 if (isStr(task.tags)) task.tags = task

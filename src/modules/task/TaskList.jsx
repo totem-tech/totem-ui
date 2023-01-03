@@ -23,6 +23,7 @@ import {
     showForm,
     confirmAsPromise,
     showInfo,
+    newId,
 } from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
 import { useRxSubject } from '../../services/react'
@@ -330,10 +331,17 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
                         : 'play',
             key: taskId,
             onClick: () => {
+                const modalId = newId(
+                    !isOwner
+                        ? 'application_'
+                        : 'applications_',
+                    taskId,
+                )
                 // open application form
                 if (!isOwner) {
                     if (applied) return ApplicationView.asModal({
                         application,
+                        modalId,
                         taskId,
                         task,
                     })
@@ -346,8 +354,6 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
                         values: { taskId },
                     })
                 }
-
-                const modalId = `${taskId}-applications`
                 // show list of applications
                 showInfo({
                     collapsing: true,

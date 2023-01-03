@@ -38,6 +38,7 @@ import {
     setClass,
 } from './window'
 import TaskList from '../modules/task/TaskList'
+import { rxIsRegistered } from '../utils/chatClient'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -545,39 +546,42 @@ const init = () => {
 
 setTimeout(() => {
     init()
-    let params = getUrlParam()
-    const modules = `${params.module || ''}`.trim()
-    const exclusive = `${params.exclusive || ''}`.toLowerCase() !== 'false'
-    if (!modules) return
+    if (rxIsRegistered.value) {
+        let params = getUrlParam()
+        const modules = `${params.module || ''}`
+            .trim()
+            .toLowerCase()
+        const exclusive = `${params.exclusive}`.toLowerCase() !== 'false'
+        if (!modules) return
+        const names = modules.split(',')
+            .map(x => x.trim().toLowerCase())
+        const items = exclusive
+            ? setActiveExclusive(names, true, params)
+            : names.map(name =>
+                setActive(name, true, params)
+            )
+        if (!items.filter(Boolean).length) return
 
-    const names = modules.split(',')
-        .map(x => x.trim().toLowerCase())
-    const items = exclusive
-        ? setActiveExclusive(names, true, params)
-        : names.map(name =>
-            setActive(name, true, params)
+        // only reset URL if exclusive
+        if (!exclusive) return
+
+        params = objToUrlParams(
+            objWithoutKeys(
+                params,
+                ['module', 'exclusive'],
+            )
         )
-    if (!items.filter(Boolean).length) return
-
-    // only reset URL if exclusive
-    if (!exclusive) return
-
-    params = objToUrlParams(
-        objWithoutKeys(
-            params,
-            ['module', 'exclusive'],
-        )
-    )
-    const url = [
-        location.protocol,
-        '//',
-        location.host,
-        params && '?',
-        params
-    ]
-        .filter(Boolean)
-        .join('')
-    history.pushState({}, null, url)
+        const url = [
+            location.protocol,
+            '//',
+            location.host,
+            params && '?',
+            params
+        ]
+            .filter(Boolean)
+            .join('')
+        history.pushState({}, null, url)
+    }
 })
 export default {
     getItem,

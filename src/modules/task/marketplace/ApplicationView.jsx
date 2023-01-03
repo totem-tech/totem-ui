@@ -7,7 +7,7 @@ import { newId, showInfo } from '../../../services/modal'
 import { MOBILE, rxLayout } from '../../../services/window'
 import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactHelper'
-import { fallbackIfFails, isObj } from '../../../utils/utils'
+import { fallbackIfFails, isObj, URL_REGEX } from '../../../utils/utils'
 import { getColumns } from './ApplicationList'
 
 let textsCap = {
@@ -72,10 +72,7 @@ ApplicationView.asModal = (props, modalProps) => {
         taskId,
     } = props
     const { isOwner } = task
-    modalId = modalId || newId(
-        'application',
-        `${taskId}-${application.workerAddress}`,
-    )
+    modalId = modalId || newId('application_', taskId)
     const content = (
         <ApplicationView {...{
             application,
@@ -101,6 +98,10 @@ export default ApplicationView
 const Links = ({ links = [] }) => {
     if (!links.length) return ''
 
+    links = links.map(link =>
+        [...link.match(URL_REGEX) || '']
+            .join('')
+    )
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const urls = links.reduce((obj, url) => ({
         ...obj,
@@ -124,7 +125,7 @@ const Links = ({ links = [] }) => {
         <Linkify {...{
             content: [...knownurls, ...unknownUrls].join('\t'),
             replacer: (shortUrl, url) => {
-                let { hostname = '' } = urls[url]
+                let { hostname = '' } = urls[url] || {}
                 const icon = knownIcons[hostname]
                 const style = {}
                 let color = knownColors[icon]
@@ -160,7 +161,7 @@ const Links = ({ links = [] }) => {
                 )
             },
             shorten: isMobile
-                ? 40
+                ? 30
                 : 50,
         }} />
     )

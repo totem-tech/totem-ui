@@ -143,6 +143,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 	const btnTxt = !partner
 		? textsCap.partnerAdd
 		: textsCap.updatePartner
+	const style = { width: '50%' }
 	const addButtons = [
 		{
 			content: btnTxt,
@@ -158,6 +159,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 					[pInputNames.userId]: userId
 				},
 			}),
+			style,
 			title: btnTxt,
 		},
 		{
@@ -169,6 +171,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 					userIds: [userId],
 				},
 			}),
+			style,
 			title: textsCap.identityRequest,
 		},
 	]
@@ -180,6 +183,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 			onClick: () => showForm(IdentityShareForm, {
 				values: { userIds: [userId] },
 			}),
+			style,
 			title: textsCap.identityShare,
 		},
 		{
@@ -189,6 +193,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 			onClick: () => showForm(IntroduceUserForm, {
 				values: { userId },
 			}),
+			style,
 			title: textsCap.introduce,
 		},
 	].filter(Boolean)

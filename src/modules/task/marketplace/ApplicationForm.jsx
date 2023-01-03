@@ -140,7 +140,11 @@ const getInitialState = props => rxSetState => {
                     const link = links[i]
                     if (link.length > 100) return textsCap.linksErrLength
 
-                    const invalid = !!validate(link, { required: true, type: TYPES.url })
+                    const invalid = !!validate(link, {
+                        required: true,
+                        strict: false,
+                        type: TYPES.url,
+                    })
                     if (invalid) return `${textsCap.linksErrInvalid}: ${link}`
                 }
             }

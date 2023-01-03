@@ -4,7 +4,7 @@ import PropTypes from 'prop-types'
 import { Button, UserID } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
-import Message, { statuses } from '../../components/Message'
+import { statuses } from '../../components/Message'
 // services
 import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
@@ -49,7 +49,7 @@ let textsCap = {
 textsCap = translated(textsCap, true)[1]
 
 export default function TaskDetails(props = {}) {
-    const { taskId } = props
+    const { modalId, taskId } = props
     const [blockNum] = useRxSubject(rxBlockNumber)
     const [inProgressIds = new Set()] = useRxSubject(rxInProgressIds)
     const [reload, setReload] = useState(0)
@@ -133,6 +133,7 @@ export default function TaskDetails(props = {}) {
                         }} />
                         {!userIsOwner && (
                             <UserID {...{
+                                onChatOpen: () => closeModal(modalId),
                                 prefix: ' (',
                                 suffix: ')',
                                 userId: x.createdBy,
@@ -241,7 +242,7 @@ TaskDetails.propTypes = {
  * @returns {Promise}
  */
 TaskDetails.asModal = (props = {}, modalProps, modalId) => {
-    modalId = newId('task', props.taskId)
+    modalId = newId('task_', props.taskId)
     return showInfo({
         collapsing: true,
         header: textsCap.header,

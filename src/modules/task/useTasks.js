@@ -113,7 +113,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                             return
                         }
                         const taskId = uniqueTaskIds[index]
-                        const task = processOrder(order, taskId)
+                        const task = processOrder(order, taskId, ordersOrg[index])
                         uniqueTasks.set(taskId, task)
                     })
 
@@ -273,6 +273,9 @@ export const addDetailsToTask = (task = {}, details = {}) => {
         tags = '',
     } = _task
 
+    _task.amountXTX = isMarket
+        && details.amountXTX
+        || task.amountXTX
     _task.isClosed = isClosed || deadline < rxBlockNumber.value
     _task.proposalRequired = proposalRequired
     _task.tags = (
@@ -280,12 +283,6 @@ export const addDetailsToTask = (task = {}, details = {}) => {
             ? tags.split(',')
             : tags || []
     ).filter(Boolean)
-    // task.marketplace = isMarket
-    //     ? 'marketplace'
-    //     : ''
-    _task.amountXTX = isMarket
-        && details.amountXTX
-        || task.amountXTX
 
     // add application status text
     applications.forEach(application => {
@@ -306,7 +303,7 @@ export const addDetailsToTask = (task = {}, details = {}) => {
  * 
  * @returns {Object}    order
  */
-export const processOrder = (order, id) => {
+export const processOrder = (order, id, orderOrg = order) => {
     try {
         let amountXTX = 0
         let {
@@ -324,9 +321,9 @@ export const processOrder = (order, id) => {
                 ? 0
                 : Number(amountHex) >= 0
                     ? Number(amountHex)
-                    : ordersOrg[index].value
-                        && isFn(ordersOrg[index].value.get)
-                        ? ordersOrg[index]
+                    : orderOrg.value
+                        && isFn(orderOrg.value.get)
+                        ? orderOrg
                             .value
                             .get('amountXTX')
                             .toNumber()
