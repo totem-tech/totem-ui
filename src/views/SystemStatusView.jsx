@@ -149,7 +149,7 @@ export default function SystemStatus() {
 				</GridColumn>
 				<GridColumn width={6}>
 					<FormInput {...{
-						checked: msMaintenanceMode,
+						// checked: msMaintenanceMode,
 						label: textsCap.maintenanceMode,
 						name: 'maintenance-mode',
 						readOnly: !isAdmin,
@@ -172,6 +172,7 @@ export default function SystemStatus() {
 								size: 'mini'
 							})
 						},
+						value: msMaintenanceMode,
 					}} />
 				</GridColumn>
 			</GridRow>

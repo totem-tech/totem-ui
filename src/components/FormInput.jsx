@@ -521,7 +521,9 @@ export class FormInput extends Component {
 				break
 			case 'checkbox':
 			case 'radio':
-				attrs.checked = value === trueValue
+				attrs.checked = isBool(attrs.checked)
+					? attrs.checked
+					: value === trueValue
 				attrs.label = (
 					<label>
 						<Text children={label} />
