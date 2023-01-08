@@ -39,6 +39,7 @@ import { unsubscribe } from '../services/react'
 import { randomHex } from '../services/blockchain'
 import Text from './Text'
 import CharacterCount from './CharacterCount'
+import { rxInverted } from '../services/window'
 
 // Memo-ify everything
 const Accordion = React.memo(S_Accordion)
@@ -655,33 +656,38 @@ export class FormInput extends Component {
 					? undefined
 					: width,
 			}}>
-				{!hideLabel &&
-					label && [
-						<label htmlFor={attrs.id} key='label'>
-							{label}
-						</label>,
-						!!showCount && !NON_COUNT_TYPES.includes(type) && (
-							<CharacterCount {...{
-								key: 'CharacterCount',
-								maxLength,
-								minLength,
-								name,
-								subject: rxValue,
-								show: this.rxFocused,
-							}} />
-						),
-						!!labelDetails && (
-							<div
-								key='labelDetails'
-								style={{
-									lineHeight: '15px',
-									margin: '-5px 0 8px 0',
-								}}
-							>
-								<small style={{ color: 'grey' }}>{labelDetails}</small>
-							</div>
-						),
-					].filter(Boolean)}
+				{!hideLabel && label && [
+					<label htmlFor={attrs.id} key='label'>
+						{label}
+					</label>,
+					!!showCount && !NON_COUNT_TYPES.includes(type) && (
+						<CharacterCount {...{
+							key: 'CharacterCount',
+							maxLength,
+							minLength,
+							name,
+							subject: rxValue,
+							show: this.rxFocused,
+						}} />
+					),
+					!!labelDetails && (
+						<div
+							key='labelDetails'
+							style={{
+								lineHeight: '15px',
+								margin: '-5px 0 8px 0',
+							}}
+						>
+							<small style={{
+								color: rxInverted.value
+									? '#d4cece'
+									: 'grey',
+							}}>
+								{labelDetails}
+							</small>
+						</div>
+					),
+				].filter(Boolean)}
 				{inputEl}
 				{message && <Message {...message} />}
 			</Form_Field>

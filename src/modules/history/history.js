@@ -4,11 +4,11 @@ import DataStorage from '../../utils/DataStorage'
 import storage from '../../utils/storageHelper'
 import { isObj, isStr, isValidNumber, isDefined } from '../../utils/utils'
 
-const key = 'history'
-export const MODULE_KEY = 'totem_' + key
+export const MODULE_KEY = 'totem_history'
 const history = new DataStorage(MODULE_KEY, true)
 export const rxHistory = history.rxData
 export const LIMIT_DEFAULT = 500 // default number of items to store
+export const UNLIMITED = -1
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
@@ -34,15 +34,20 @@ export const remove = id => history.delete(id)
 export const limit = (newLimit) => {
     let limit = rw().limit
     if (!isDefined(limit)) limit = LIMIT_DEFAULT
-    const changed = isValidNumber(newLimit) && limit != newLimit
+    if (limit === 0) limit = UNLIMITED
+
+    const changed = isValidNumber(newLimit)
+        && limit != newLimit
     if (changed) {
         limit = newLimit
         rw({ limit })
     }
 
-    if (limit === 0 || history.size <= limit) return limit
+    if (limit === UNLIMITED || history.size <= limit) return limit
 
-    const limitted = Array.from(history.getAll()).slice(-limit)
+    const limitted = Array
+        .from(history.getAll())
+        .slice(-limit)
     history.setAll(new Map(limitted), true)
     return limit
 }

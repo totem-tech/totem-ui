@@ -11,6 +11,7 @@ import { unsubscribe, useRxSubject } from '../../services/react'
 import { setToast } from '../../services/toast'
 import { convertTo, rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
+import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
     addAsset: 'add',
@@ -58,6 +59,7 @@ export default function AssetsForm(props) {
     
     const [state] = useState(() => {
         let formValues = {}
+        const isMobile = rxLayout.value === MOBILE
         const startYear = 2009
         const currentYear = new Date().getFullYear()
         const years = new Array(currentYear - startYear + 1)
@@ -132,7 +134,8 @@ export default function AssetsForm(props) {
                         getEmptyField(),
                         {
                             ...searchInput,
-                            className: 'hide-on-mobile',
+                            hidden: isMobile,
+                            // className: 'hide-on-mobile',
                             width: 4,
                         },
                     ]
@@ -191,10 +194,12 @@ export default function AssetsForm(props) {
                         },
                         {
                             ...btnListToggle,
-                            className: 'hide-on-mobile',
+                            // className: 'hide-on-mobile',
+                            hidden: isMobile,
                         },
                         {
-                            className: 'hide-on-mobile',
+                            // className: 'hide-on-mobile',
+                            hidden: isMobile,
                             name: inputNames.showList,
                             rxValue: rxShowList,
                             type: 'hidden',
@@ -221,12 +226,14 @@ export default function AssetsForm(props) {
                 },
                 {
                     ...btnListToggle,
-                    className: 'hide-on-desktop',
+                    // className: 'hide-on-desktop',
+                    hidden: !isMobile,
                     style: { marginTop: 10 },
                 },
                 {
                     ...searchInput,
-                    className: 'hide-on-desktop',
+                    // className: 'hide-on-desktop',
+                    hidden: !isMobile,
                 },
             ],
         }

@@ -137,7 +137,10 @@ export const getMessages = inboxKey => !inboxKey
     : [...chatHistory.get(inboxKey) || []]
 
 // get list of User IDs by inbox key
-export const getInboxUserIds = inboxKey => arrUnique((chatHistory.get(inboxKey) || []).map(x => x.senderId))
+export const getInboxUserIds = inboxKey => arrUnique(
+    (chatHistory.get(inboxKey) || [])
+        .map(x => x.senderId)
+)
 
 export function getUnreadCount() {
     const allSettings = rw().inbox || {}
