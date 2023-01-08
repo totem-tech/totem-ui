@@ -49,9 +49,9 @@ export const inputNames = {
 	ownerAddress: 'ownerAddress',
 }
 export const bonsaiKeys = [
+	inputNames.description,
 	inputNames.name,
 	inputNames.ownerAddress,
-	inputNames.description,
 ]
 // Create or update project form
 export default function ActivityForm(props) {
@@ -86,7 +86,7 @@ export default function ActivityForm(props) {
 				maxLength: 160,
 				minLength: 3,
 				placeholder: textsCap.descPlaceholder,
-				required: false,
+				required: true,
 				type: 'textarea',
 			},
 		]
@@ -125,9 +125,8 @@ const handleSubmit = (props, rxState) => (e, values) => {
 	const { onSubmit, hash: existingHash } = props
 	const create = !existingHash
 	const hash = existingHash || generateHash(values)
-	const token = generateHash(
-		objClean(values, bonsaiKeys)
-	)
+	const tokenData = objClean(values, bonsaiKeys)
+	const token = generateHash(tokenData)
 	const {
 		description: desc,
 		name: projectName,
