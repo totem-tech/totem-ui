@@ -27,6 +27,7 @@ import TaskForm from './TaskForm'
 import { getAssigneeView, getStatusView } from './TaskList'
 import useTask from './useTask'
 import { Linkify } from '../../components/StringReplace'
+import { MOBILE, rxLayout } from '../../services/window'
 
 let textsCap = {
     amount: 'bounty amount',
@@ -41,7 +42,7 @@ let textsCap = {
     id: 'ID',
     loading: 'loading...',
     orderStatus: 'order status',
-    owner: 'creator by',
+    owner: 'created by',
     title: 'title',
     updateTask: 'update task',
     updated: 'updated',
@@ -68,11 +69,22 @@ export default function TaskDetails(props = {}) {
         if (!task || !Object.keys(task).length) return () => { }
         
         const _task = { ...task, taskId }
-        const ownerIsApprover = _task.owner === _task.approver
-        const userIsOwner = userId === _task.createdBy
+        const {
+            approver,
+            createdBy,
+            description = '',
+            isMarket,
+            owner,
+        } = _task
+        const ownerIsApprover = owner === approver
+        const userIsOwner = userId === createdBy
+        const showOwnerId = !isMarket || userIsOwner
+        const isMobile = rxLayout.value === MOBILE
+        const width = !isMobile && description.length > 300
+            ? 190
+            : undefined
         const style = {
-            maxLength: 150,
-            minWidth: 110,
+            minWidth: width,
         }
         const columns = [
             {
@@ -116,6 +128,7 @@ export default function TaskDetails(props = {}) {
             },
             {
                 content: x => approvalStatusNames[x.approvalStatus],
+                hidden: ownerIsApprover || isMarket,
                 key: 'approvalStatus',
                 title: textsCap.approvalStatus,
             },
@@ -127,15 +140,17 @@ export default function TaskDetails(props = {}) {
             {
                 content: x => (
                     <span>
-                        <AddressName {...{
-                            address: x.owner,
-                            userId: x.createdBy,
-                        }} />
+                        {showOwnerId && (
+                            <AddressName {...{
+                                address: x.owner,
+                                userId: x.createdBy,
+                            }} />
+                        )}
                         {!userIsOwner && (
                             <UserID {...{
                                 onChatOpen: () => closeModal(modalId),
-                                prefix: ' (',
-                                suffix: ')',
+                                prefix: showOwnerId ? ' (' : '',
+                                suffix: showOwnerId ? ' )' : '',
                                 userId: x.createdBy,
                             }} />
                         )}
@@ -146,7 +161,7 @@ export default function TaskDetails(props = {}) {
             },
             {
                 content: x => <AddressName {...{ address: x.approver }} />,
-                hidden: ownerIsApprover,
+                hidden: ownerIsApprover || isMarket,
                 key: 'approver',
                 title: textsCap.approver,
             },
@@ -246,7 +261,6 @@ TaskDetails.asModal = (props = {}, modalProps, modalId) => {
     return showInfo({
         collapsing: true,
         header: textsCap.header,
-        size: 'tiny',
         ...modalProps,
         content: <TaskDetails {...{ ...props, modalId }} />,
     }, modalId)

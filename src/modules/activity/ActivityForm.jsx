@@ -154,7 +154,11 @@ const handleSubmit = (props, rxState) => (e, values) => {
 		submitDisabled: false,
 	})
 
-	rxState.next({ message, submitDisabled: true })
+	rxState.next({
+		message,
+		submitDisabled: true,
+		submitInProgress: true,
+	})
 
 	const handleOffChainResult = err => {
 		isFn(onSubmit) && onSubmit(!err, values)
@@ -180,9 +184,12 @@ const handleSubmit = (props, rxState) => (e, values) => {
 					? textsCap.submitErrorHeader
 					: textsCap.submitSuccessHeader,
 				icon: true,
-				status: !err ? 'success' : 'warning',
+				status: !err
+					? 'success'
+					: 'warning',
 			},
 			submitDisabled: false,
+			submitInProgress: false,
 			success: !err,
 		})
 		// trigger cache update

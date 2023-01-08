@@ -150,12 +150,7 @@ export default function TaskList(props) {
                 isOwnedList,
             })
         )
-    }, [
-        isMobile,
-        isFulfillerList,
-        isMarketplace,
-        isApproverList,
-    ])
+    }, [ isMobile, listType ])
 
     const forceReload = () => {
         const { keywords } = filter
@@ -478,7 +473,7 @@ const getTableProps = (options) => {
     } = options
     const actionsCol = {
         collapsing: true,
-        content: (_, taskId) => (
+        content: ({ description = '' }, taskId) => (
             <Button {...{
                 content: isMobile
                     ? textsCap.viewDetails
@@ -486,7 +481,11 @@ const getTableProps = (options) => {
                 fluid: isMobile,
                 icon: 'eye',
                 onClick: () => TaskDetails
-                    .asModal({ taskId })
+                    .asModal({ taskId }, {
+                        size: description.length > 500
+                            ? undefined
+                            : 'tiny'
+                    })
                     .catch(console.warn),
                 title: textsCap.view,
             }} />

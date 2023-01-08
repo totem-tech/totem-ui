@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
+import { statuses } from '../../../components/Message'
 import { getConnection } from '../../../services/blockchain'
 import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../../utils/chatClient'
 import { translated } from '../../../utils/languageHelper'
@@ -22,7 +23,13 @@ const rxTaskMarketCreated = new BehaviorSubject()
 const useSearch = (filter = {}) => {
     const [newId] = useRxSubject(rxTaskMarketCreated)
     const [queryArgs, setQueryArgs] = useState([])
-    const [{ message, result }, setResult] = useState({})
+    const [{ message, result }, setResult] = useState({
+        message: {
+            content: textsCap.loading,
+            icon: true,
+            status: statuses.LOADING,
+        }
+    })
     const { message: _msg } = useQueryBlockchain(...queryArgs)
     const [search] = useState(() =>
         deferred((filter, onResult, onError) => {

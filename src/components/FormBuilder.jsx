@@ -386,7 +386,7 @@ class FormBuilder extends Component {
 			closeProps.content = closeProps.content || (
 				isStr(closeText)
 					? closeText
-					: success || submitText === null
+					: submitInProgress || success || submitText === null
 						? textsCap.close
 						: textsCap.cancel
 			)					
