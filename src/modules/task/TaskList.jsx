@@ -76,7 +76,7 @@ let textsCap = {
     description: 'description',
     dispute: 'dispute',
     disputeTask: 'dispute task',
-    emptyMsgMarketPlace: 'search for marketplace tasks by title or description',
+    emptyMsgMarketPlace: 'search for marketplace tasks by title or tag (eg: "tag:remote")',
     loading: 'loading',
     marketplace: 'marketplace',
     marketSearch: 'search marketplace',
