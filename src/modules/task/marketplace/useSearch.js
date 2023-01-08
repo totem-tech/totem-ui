@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { getConnection } from '../../../services/blockchain'
 import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../../utils/chatClient'
+import { translated } from '../../../utils/languageHelper'
 import {
     subjectAsPromise,
     unsubscribe,
@@ -12,6 +13,10 @@ import { deferred } from '../../../utils/utils'
 import { query } from '../task'
 import { addDetailsToTask, processOrder } from '../useTasks'
 
+let textsCap = {
+    loading: 'loading...'
+}
+textsCap = translated(textsCap, true)[1]
 const rxTaskMarketCreated = new BehaviorSubject()
 
 const useSearch = (filter = {}) => {
@@ -65,6 +70,7 @@ const useSearch = (filter = {}) => {
                 true,
                 valueModifier,
                 true,
+                textsCap.loading,
                 // true // print results for debugging
             ])
         }

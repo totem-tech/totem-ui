@@ -134,7 +134,7 @@ export default function TaskList(props) {
     const [userId] = useRxSubject(rxIsRegistered, ok => ok && getUser().id)
     const [tableProps, setTableProps] = useState({})
     const { keywords = '' } = filter || {}
-    emptyMessage = emptyMessage || message || (
+    emptyMessage = message || emptyMessage || (
         isMarketplace
             ? textsCap.emptyMsgMarketPlace
             : undefined
