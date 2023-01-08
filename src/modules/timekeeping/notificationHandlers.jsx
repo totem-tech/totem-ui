@@ -6,10 +6,11 @@ import { addToQueue, QUEUE_TYPES, statuses } from '../../services/queue'
 import { fetchProjects } from '../activity/activity'
 import { getUser } from '../chat/ChatClient'
 import { find as findIdentity } from '../identity/identity'
+import IdentityIcon from '../identity/IdentityIcon'
 import { getMatchingIds, remove, search, setItemViewHandler } from '../notification/notification'
 import { getProject, getProjects, queueables } from './timekeeping'
 
-const textsCap = translated({
+let textsCap = {
     accept: 'accept',
     reject: 'reject',
     activity: 'activity',
@@ -26,7 +27,8 @@ const textsCap = translated({
     timekeeping: 'timekeeping',
 
     loadingData: 'loading data',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 // notification types
 const TK_TYPE = 'timekeeping'
 const TK_ChildTypes = {
@@ -144,15 +146,30 @@ setTimeout(() => [
                 return ''
             }
 
+            const { name, usageType } = identity
+
             item.content = (
                 <div>
                     {senderIdBtn} {textsCap.tkInvitationMsg}<br />
-                    {textsCap.yourIdentity}: <b>{identity.name}</b><br />
+                    {textsCap.yourIdentity}:
+                    <b>
+                        {' '}
+                        <IdentityIcon {...{ usageType }} />
+                        {' ' + name}
+                    </b>
+                    <br />
                     {textsCap.activity}: <b>{projectName}</b><br />
                     <ButtonGroupOr {...{
                         buttons: [
-                            { color: 'green', content: textsCap.accept, value: false },
-                            { color: 'red', content: textsCap.reject },
+                            {
+                                color: 'green',
+                                content: textsCap.accept,
+                                value: false,
+                            },
+                            {
+                                color: 'red',
+                                content: textsCap.reject,
+                            },
                         ],
                         disabled: status === statuses.LOADING,
                         fluid: true,

@@ -1,10 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, {
+	useCallback,
+	useEffect,
+	useState,
+} from 'react'
 import { Button } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
-import chatClient, { rxIsLoggedIn } from '../../../utils/chatClient'
+import chatClient, {
+	rxIsLoggedIn,
+	rxUserIdentity,
+} from '../../../utils/chatClient'
 import { bytesToHex } from '../../../utils/convert'
-import { rxForeUpdateCache } from '../../../utils/DataStorage'
+import { rxForceUpdateCache } from '../../../utils/DataStorage'
 import { translated } from '../../../utils/languageHelper'
 import { keyring } from '../../../utils/polkadotHelper'
 import PromisE from '../../../utils/PromisE'
@@ -22,19 +29,16 @@ import {
 import FAQ from '../../../components/FAQ'
 import FormBuilder, { findInput } from '../../../components/FormBuilder'
 import Message, { statuses } from '../../../components/Message'
+import BackupForm from '../../gettingStarted/BackupForm'
 import { rxHistory } from '../../history/history'
+import { getIdentityOptions } from '../../identity/getIdentityOptions'
 import identities, {
 	rxIdentities,
 	rxSelected,
 } from '../../identity/identity'
 import { rxPartners } from '../../partner/partner'
-import {
-	generateTweet,
-	getRewardIdentity,
-	statusCached,
-} from './claimKapex'
+import { generateTweet, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
-import BackupForm from '../../gettingStarted/BackupForm'
 
 let textsCap = {	    
 	continue: 'continue',    
@@ -103,13 +107,13 @@ function ClaimKAPEXForm(props) {
 	const setStatus = useCallback((status) => {
 		const now = new Date()
 		const { eligible, endDate = now, error, submitted } = status
-		const content = !!error
-            ? error
-            : !eligible
-                ? `${textsCap.errIneligible1} ${textsCap.errIneligible2}`
-                : submitted
-                    ? textsCap.errSubmitted
-                    : endDate && new Date(endDate) < now
+		const content = submitted
+			? textsCap.errSubmitted
+			: !!error
+				? error
+				: !eligible
+					? `${textsCap.errIneligible1} ${textsCap.errIneligible2}`
+					: endDate && new Date(endDate) < now
                         ? textsCap.errEnded
                         : null
 		
@@ -150,7 +154,7 @@ function ClaimKAPEXForm(props) {
 			// makes sure reward identity is saved to storage
 			await PromisE.delay(100)
 			
-			const rewardId = !!identities.get(getRewardIdentity())
+			const rewardId = !!identities.get(rxUserIdentity.value)
 			// check if the reward identity exists in the identities module
 			if (!rewardId) throw `${textsCap.errIneligible1} ${textsCap.errRewardId404}`
 
@@ -243,7 +247,7 @@ function ClaimKAPEXForm(props) {
 						</div>
 					)
 
-					rxForeUpdateCache.next(true)
+					rxForceUpdateCache.next(true)
 				} catch (err) {
 					message.status = statuses.ERROR
 					message.content = `${err}`
@@ -312,14 +316,9 @@ const getFormProps = () => {
 			options: [],
 			readOnly: true,
 			rxOptions: rxIdentities,
-			rxOptionsModifier: identitiesMap => Array
-				.from(identitiesMap)
-				.map(([value, { name }]) => ({
-					key: value,
-					text: <b>{name}</b>,
-					value,
-				})),
+			rxOptionsModifier: getIdentityOptions,
 			selection: true,
+			search: ['keywords'],
 			rxValue: new BehaviorSubject(),
 			type: 'dropdown',
 		},
@@ -402,8 +401,9 @@ const updateInputs = inputs => {
 	const tokenIn = findInput(inputs, inputNames.token)
 	const tweetBtn = findInput(inputs, inputNames.tweetBtn)
 	const selectedIdentity = rxSelected.value
-	const rewardIdentity = getRewardIdentity()
-	const switchIdenity = !!identities.get(rewardIdentity)
+	const rewardIdentity = rxUserIdentity.value
+	const rewardIdEntry = identities.get(rewardIdentity)
+	const switchIdenity = !!rewardIdEntry
 		&& rewardIdentity !== selectedIdentity
 	rewardIdIn.rxValue.next(rewardIdentity)
 	// If rewards identity is available it will be selected automatically.
@@ -463,11 +463,10 @@ const updateInputs = inputs => {
 	tokenIn.rxValue.next(uuid.v1())
 
 	// generate and attach signature
-	const address = getRewardIdentity()
-	const { uri } = identities.get(address) || {}
+	const { uri } = rewardIdEntry || {}
 	if (isStr(uri) && !isHex(uri)) {
-		keyring.add([identities.get(address).uri])
-		const pair = keyring.getPair(address)
+		keyring.add([identities.get(rewardIdentity).uri])
+		const pair = keyring.getPair(rewardIdentity)
 		const signature = bytesToHex(pair.sign(tokenIn.rxValue))
 		signatureIn.rxValue.next(signature)
 	}

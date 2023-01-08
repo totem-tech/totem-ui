@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
+import { getIdentityOptions } from '../modules/identity/getIdentityOptions'
 // import FormBuilder, { findInput } from '../components/FormBuilder'
 // import { newSignature, signingKeyPair, verifySignature } from '../utils/naclHelper'
 // import { encodeBase64, decodeBase64, decodeUTF8, hashToStr } from '../utils/convert'
 // services
-import identities from '../modules/identity/identity'
+import { rxIdentities } from '../modules/identity/identity'
 import { queueables } from '../services/blockchain'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 
@@ -18,13 +19,10 @@ export default class KeyRegistryPlayground extends Component {
                     label: 'Identity',
                     name: 'address',
                     onChange: this.generateSignature,
-                    options: identities.getAll().map(({ address, name }) => ({
-                        key: address,
-                        text: name,
-                        value: address,
-                    })),
+                    rxOptions: rxIdentities,
+                    rxOptionsModifier: getIdentityOptions,
                     required: true,
-                    search: true,
+                    search: ['keywords'],
                     selection: true,
                     type: 'dropdown',
                 },

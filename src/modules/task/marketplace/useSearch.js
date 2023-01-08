@@ -1,0 +1,113 @@
+import { useEffect, useState } from 'react'
+import { BehaviorSubject } from 'rxjs'
+import { getConnection } from '../../../services/blockchain'
+import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../../utils/chatClient'
+import {
+    subjectAsPromise,
+    unsubscribe,
+    useQueryBlockchain,
+    useRxSubject,
+} from '../../../utils/reactHelper'
+import { deferred } from '../../../utils/utils'
+import { query } from '../task'
+import { addDetailsToTask, processOrder } from '../useTasks'
+
+const rxTaskMarketCreated = new BehaviorSubject()
+
+const useSearch = (filter = {}) => {
+    const [newId] = useRxSubject(rxTaskMarketCreated)
+    const [queryArgs, setQueryArgs] = useState([])
+    const [{ message, result }, setResult] = useState({})
+    const { message: _msg } = useQueryBlockchain(...queryArgs)
+    const [search] = useState(() =>
+        deferred((filter, onResult, onError) => {
+            query.searchMarketplace(filter)
+                .then(onResult, onError)
+        }, 500)
+    )
+    let { keywords = '' } = filter
+    keywords = keywords.trim()
+
+    useEffect(() => {
+        let mounted = true
+        const subs = {}
+        if (keywords === useSearch.REFRESH_PLACEHOLDER) return setResult({})
+
+        const handleResult = (detailsMap = new Map()) => {
+            if (!mounted) return
+
+            const taskIds = [...detailsMap.keys()]
+            if (!taskIds.length) return setResult({
+                result: new Map(),
+            })
+
+            // finally, subscribe to on-chain data for result tasks
+            const valueModifier = (orders, ordersOrg) => {
+                orders.map((order, i) => {
+                    const id = taskIds[i]
+                    detailsMap.set(id, {
+                        ...processOrder(
+                            order,
+                            id,
+                            ordersOrg[i],
+                        ),
+                        ...addDetailsToTask(detailsMap.get(id)),
+                    })
+                })
+                mounted && setResult({
+                    result: new Map(detailsMap),
+                })
+            }
+            setQueryArgs([
+                getConnection(),
+                'api.query.orders.orders',
+                [taskIds],
+                true,
+                valueModifier,
+                true,
+                // true // print results for debugging
+            ])
+        }
+
+        // second, search & fetch marketplace tasks from messaging service
+        const doSearch = () => search(
+            filter,
+            handleResult,
+            err => mounted && setResult({
+                message: {
+                    content: err,
+                    icon: true,
+                    status: 'error',
+                }
+            })
+        )
+
+        if (rxIsRegistered.value) {
+            // wait until user is logged in
+            const [loginPromise, unsub] = subjectAsPromise(rxIsLoggedIn, true)
+            subs.login = unsub
+            loginPromise.then(doSearch)
+        } else {
+            doSearch()
+        }
+
+        return () => {
+            mounted = false
+            unsubscribe(subs)
+        }
+    }, [keywords, newId])
+
+    return [message || _msg, result]
+}
+useSearch.REFRESH_PLACEHOLDER = 'REFRESH_PLACEHOLDER'
+
+
+setTimeout(async () => {
+    // wait until user is logged in
+    await subjectAsPromise(rxIsLoggedIn, true)[0]
+    chatClient.onTaskMarketCreated(taskId =>
+        rxTaskMarketCreated.next(taskId)
+    )
+})
+
+export default useSearch

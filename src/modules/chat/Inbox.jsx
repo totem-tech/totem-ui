@@ -25,6 +25,7 @@ import { getLayout, MOBILE, rxLayout, setClass } from '../../services/window'
 import { unsubscribe } from '../../services/react'
 import { useRxSubject } from '../../utils/reactHelper'
 import { BehaviorSubject } from 'rxjs'
+import { rxIsRegistered } from '../../utils/chatClient'
 
 const [texts, textsCap] = translated({
     close: 'close',
@@ -250,14 +251,19 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
 
 const MessageInput = ({ className, onSubmit }) => {
     const [value, setValue] = useState('')
+    const [isRegistered] = useRxSubject(rxIsRegistered)
     const handleSubmit = e => {
         e.preventDefault()
         if (!value.trim()) return
         onSubmit(value)
         setValue('')
     }
+
     return (
-        <form {...{ className, onSubmit: handleSubmit }}>
+        <form {...{
+            className,
+            onSubmit: handleSubmit,
+        }}>
             <FormInput {...{
                 action: {
                     icon: 'paper plane outline',
@@ -265,6 +271,7 @@ const MessageInput = ({ className, onSubmit }) => {
                 },
                 autoComplete: 'off',
                 autoFocus: true,
+                disabled: !isRegistered,
                 fluid: true,
                 maxLength: 160,
                 name: 'message',

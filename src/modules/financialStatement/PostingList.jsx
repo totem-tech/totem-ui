@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Button } from 'semantic-ui-react'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { useRxSubject } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
-import { blockNumberToTS } from '../../utils/time'
+import { blockToDate } from '../../utils/time'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
+import AddressName from '../partner/AddressName'
 import useLedgerAcPostings from './useLedgerAcPostings'
 
 const textsCap = translated({
@@ -25,17 +25,22 @@ const PostingList = props => {
     const { address, ledgerAccount } = props
     if (!address || !ledgerAccount) return ''
 
+    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
     const [state] = useState(() => ({
         columns: [
-            {
+            !isMobile && {
+                collapsing: true,
                 textAlign: 'center',
                 key: 'tsEffective',
                 title: textsCap.date,
             },
             {
-                textAlign: 'center',
-                key: 'id',
-                title: textsCap.postingId,
+                collapsing: true,
+                content: ({ partnerAddress }) => <AddressName {...{ address: partnerAddress }} />,
+                draggableValueKey: 'partnerAddress',
+                key: 'partnerAddress',
+                textAlign: 'left',
+                title: textsCap.partner,
             },
             {
                 textAlign: 'center',
@@ -49,11 +54,10 @@ const PostingList = props => {
                 sortKey: 'credit',
                 title: textsCap.credit,
             },
-            {
-                draggableValueKey: 'partnerAddress',
-                key: '_partnerName',
+            !isMobile && {
                 textAlign: 'center',
-                title: textsCap.partner,
+                key: 'id',
+                title: textsCap.postingId,
             },
             {
                 collapsing: true,
@@ -61,10 +65,9 @@ const PostingList = props => {
                 textAlign: 'center',
                 title: textsCap.actions,
             },
-        ],
+        ].filter(Boolean),
     }))
     const data = useLedgerAcPostings(address, ledgerAccount, postingModifier)
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 
     return (
         <DataTable {...{
@@ -100,13 +103,20 @@ const getActions = (posting) => (
 )
 
 const postingModifier = (posting = {}) => {
-    const { blockNrSubmitted, blockNrEffective, id, isCredit, amount, partnerAddress } = posting
-    posting.tsSubmitted = blockNumberToTS(blockNrSubmitted, rxBlockNumber.value)
-    posting.tsEffective = blockNumberToTS(blockNrEffective, rxBlockNumber.value)
+    const {
+        blockNrSubmitted,
+        blockNrEffective,
+        id,
+        isCredit,
+        amount,
+        partnerAddress,
+    } = posting
+    posting.tsSubmitted = blockToDate(blockNrSubmitted, rxBlockNumber.value)
+    posting.tsEffective = blockToDate(blockNrEffective, rxBlockNumber.value)
     posting.credit = isCredit && amount || 0
     posting.debit = !isCredit && amount || 0
     posting.key = id
-    posting._partnerName = <AddPartnerBtn {...{ address: partnerAddress }} />
+    // posting._partnerName = <AddressName {...{ address: partnerAddress }} />
     posting._credit = !isCredit
         ? 0
         : (

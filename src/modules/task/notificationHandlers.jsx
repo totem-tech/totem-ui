@@ -1,37 +1,57 @@
 import React from 'react'
+import { Button } from 'semantic-ui-react'
 import { isArr } from '../../utils/utils'
-import { ButtonGroup } from '../../components/buttons'
+import { ButtonAcceptOrReject } from '../../components/buttons'
 import { translated } from '../../services/language'
-import { confirm } from '../../services/modal'
-import { addToQueue, QUEUE_TYPES, statuses as queueStatuses } from '../../services/queue'
+import { confirmAsPromise } from '../../services/modal'
+import {
+	addToQueue,
+	checkComplete,
+	QUEUE_TYPES,
+	statuses as queueStatuses,
+} from '../../services/queue'
 import { get as getIdentity } from '../identity/identity'
 import { get as getPartner } from '../partner/partner'
-import { getMatchingIds, remove, setItemViewHandler } from '../notification/notification'
-import { query, queueables, statuses } from './task'
+import {
+	getMatchingIds,
+	remove,
+	setItemViewHandler,
+} from '../notification/notification'
+import {
+	query,
+	queueables,
+	statuses,
+} from './task'
+import TaskDetails from './TaskDetails'
+import IdentityIcon from '../identity/IdentityIcon'
 
-const [texts, textsCap] = translated(
-	{
-		accept: 'accept',
-		assigntTaskMsg: 'assigned a task to you.',
-		dispute: 'dispute',
-		invoiceAccept: 'accept task invoice',
-		invoiceAcceptConfirm: 'accept invoice and pay the assignee?',
-		invoiceDispute: 'reject task invoice',
-		invoiceDisputeConfirm: 'reject invoice and dispute task?',
-		pay: 'pay',
-		reject: 'reject',
-		task: 'task',
-		taskAccept: 'accept task',
-		taskAccepted: 'accepted the following task:',
-		taskDisputed: 'disputed a task',
-		taskInvoiced: 'created an invoice',
-		taskPaid: 'made a payment to you',
-		taskReject: 'reject task',
-		taskRejected: 'rejected the following task:',
-		yourIdentity: 'your identity',
-	},
-	true
-)
+let textsCap = {
+	assignedTaskMsg: 'assigned a task to you.',
+	dispute: 'dispute',
+	invoiceAccept: 'accept task invoice and pay assignee',
+	invoiceAcceptConfirm: 'accept invoice and pay the assignee?',
+	invoiceDispute: 'reject task invoice',
+	invoiceDisputeConfirm: 'reject invoice and dispute task?',
+	pay: 'pay',
+	task: 'task',
+	taskAccept: 'accept task',
+	taskAccepted: 'accepted the following task:',
+	taskDisputed: 'disputed a task',
+	taskInvoiced: 'created an invoice',
+	taskPaid: 'made a payment to you',
+	taskReject: 'reject task',
+	taskRejected: 'rejected the following task:',
+	viewTask: 'view task',
+	yourIdentity: 'your identity',
+
+	// marketplace related
+	mpAccepted: 'accepted your application and assigned a task to you',
+	mpApplied: 'applied to your marketplace task',
+	mpAppliedTotal: 'total applications',
+	mpRejected: 'rejected your marketplace task application'
+
+}
+textsCap = translated(textsCap, true)[1]
 const icon = 'tasks'
 // Notification type
 const TASK_TYPE = 'task'
@@ -40,6 +60,10 @@ const CHILD_TYPES = {
 	assignmentResponse: 'assignment_response',
 	invoiced: 'invoiced',
 	invoicedResponse: 'invoiced_response',
+	// owner received new application
+	marketApply: 'marketplace_apply',
+	// applicant received response
+	marketApplyResponse: 'marketplace_apply_response',
 }
 
 /**
@@ -77,22 +101,33 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
 	const { orderStatus } = task || {}
 	const isFulfiller = task && task.fulfiller === fulfillerAddress
 	// invalid taskId or task cannot be accepted
-	if (!task || !isFulfiller || orderStatus !== statuses.submitted)
-		return removeTaskNotifs(taskId, CHILD_TYPES.assignment)
+	const invalid = !task || !isFulfiller || orderStatus !== statuses.created
+	if (invalid) return removeTaskNotifs(taskId, CHILD_TYPES.assignment)
 
-	confirm({
+	const confirmed = await confirmAsPromise({
 		size: 'mini',
-		content: accepted ? textsCap.taskAccept : textsCap.taskReject,
-		onConfirm: () =>
-			handleUpdateStatus(
-				fulfillerAddress,
-				taskId,
-				accepted ? statuses.accepted : statuses.rejected,
-				accepted ? textsCap.taskAccept : textsCap.taskReject,
-				(success) => success && removeTaskNotifs(taskId, CHILD_TYPES.assignment),
-				notificationId || getTaskNotifIds(taskId, CHILD_TYPES.assignment)
-			),
+		content: accepted
+			? textsCap.taskAccept
+			: textsCap.taskReject,
 	})
+	confirmed && await handleUpdateStatus(
+		fulfillerAddress,
+		taskId,
+		accepted
+			? statuses.accepted
+			: statuses.rejected,
+		accepted
+			? textsCap.taskAccept
+			: textsCap.taskReject,
+		(success) => success && removeTaskNotifs(
+			taskId,
+			CHILD_TYPES.assignment,
+		),
+		notificationId || getTaskNotifIds(
+			taskId,
+			CHILD_TYPES.assignment,
+		)
+	)
 }
 
 /**
@@ -105,20 +140,25 @@ export const handleAssignmentResponse = async (taskId, fulfillerAddress, accepte
  * @param   {String}    notificationId (optional)
  */
 export const handleInvoicedResponse = async (taskId, ownerAddress, accepted, notificationId) => {
-	confirm({
-		content: accepted ? textsCap.invoiceAcceptConfirm : textsCap.invoiceDisputeConfirm,
-		onConfirm: () =>
-			handleUpdateStatus(
-				ownerAddress,
-				taskId,
-				accepted ? statuses.completed : statuses.disputed,
-				accepted ? textsCap.invoiceAccept : textsCap.invoiceDispute,
-				// remove matching notifications
-				() => removeTaskNotifs(taskId, CHILD_TYPES.invoiced),
-				notificationId || getTaskNotifIds(taskId, CHILD_TYPES.invoiced)
-			),
+	const confirmed = await confirmAsPromise({
+		content: accepted
+			? textsCap.invoiceAcceptConfirm
+			: textsCap.invoiceDisputeConfirm,
 		size: 'mini',
 	})
+	confirmed && await handleUpdateStatus(
+		ownerAddress,
+		taskId,
+		accepted
+			? statuses.completed
+			: statuses.disputed,
+		accepted
+			? textsCap.invoiceAccept
+			: textsCap.invoiceDispute,
+		// remove matching notifications
+		() => removeTaskNotifs(taskId, CHILD_TYPES.invoiced),
+		notificationId || getTaskNotifIds(taskId, CHILD_TYPES.invoiced)
+	)
 }
 
 /**
@@ -133,13 +173,19 @@ export const handleInvoicedResponse = async (taskId, ownerAddress, accepted, not
  *                                          See queue service for list of arguments supplied.
  * @param   {String|Array}  notificationId  attach notification ids so that they are disabled when action is in-progress
  */
-export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, then, notificationId) => {
-	taskIds = isArr(taskIds) ? taskIds : [taskIds]
-	taskIds.forEach(async (taskId) => {
+export const handleUpdateStatus = async (address, taskIds, statusCode, queueTitle, then, notificationId) => {
+	taskIds = isArr(taskIds)
+		? taskIds
+		: [taskIds]
+	const promises = taskIds.map(async (taskId) => {
 		const task = await query.orders(taskId)
 		if (!task) return
-		const { owner: ownerAddress, fulfiller: fulfillerAddress } = task
-		const { title: taskTitle } = (await query.getDetailsByTaskIds([taskId])).get(taskId) || {}
+		const {
+			owner: ownerAddress,
+			fulfiller: fulfillerAddress,
+		} = task
+		const detailsMap = await query.getDetailsByTaskIds([taskId])
+		const { title: taskTitle } = detailsMap.get(taskId) || {}
 
 		// notification for appropriate statuses
 		let userId
@@ -166,7 +212,13 @@ export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, the
 					taskTitle,
 					ownerAddress,
 				}
-				notifyProps.args = [[userId], TASK_TYPE, CHILD_TYPES.assignmentResponse, null, data]
+				notifyProps.args = [
+					[userId],
+					TASK_TYPE,
+					CHILD_TYPES.assignmentResponse,
+					null,
+					data,
+				]
 				break
 			case statuses.invoiced: // fulfiller marked task as done
 				// recipient is the user themself
@@ -176,7 +228,13 @@ export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, the
 				if (!userId) break
 
 				data = { ownerAddress, taskId, taskTitle }
-				notifyProps.args = [[userId], TASK_TYPE, CHILD_TYPES.invoiced, null, data]
+				notifyProps.args = [
+					[userId],
+					TASK_TYPE,
+					CHILD_TYPES.invoiced,
+					null,
+					data,
+				]
 				break
 			case statuses.disputed: // owner rejected invoice
 			case statuses.completed: // owner approved invoice and payment is processed
@@ -191,22 +249,49 @@ export const handleUpdateStatus = (address, taskIds, statusCode, queueTitle, the
 					taskId,
 					taskTitle,
 				}
-				notifyProps.args = [[userId], TASK_TYPE, CHILD_TYPES.invoicedResponse, null, data]
+				notifyProps.args = [
+					[userId],
+					TASK_TYPE,
+					CHILD_TYPES.invoicedResponse,
+					null,
+					data,
+				]
 				break
 		}
 
-		addToQueue(
-			queueables.changeStatus(address, taskId, statusCode, {
+		const queueItem = queueables.changeStatus(
+			address,
+			taskId,
+			statusCode,
+			{
 				description: taskTitle || taskId,
-				next: userId ? notifyProps : null,
+				next: userId
+					? notifyProps
+					: null,
 				notificationId,
 				then,
 				title: queueTitle,
-			})
+			},
 		)
+		await checkComplete(addToQueue(queueItem), true)
 	})
+	await Promise.all(promises)
+		.catch(console.log)
 }
 
+const getTaskDetailsBtn = (taskId, props) => (
+	<Button {...{
+		icon: 'eye',
+		onClick: e => {
+			e.preventDefault()
+			TaskDetails.asModal({ taskId })
+		},
+		size: 'tiny',
+		style: { padding: 3 },
+		title: textsCap.viewTask,
+		...props,
+	}} />
+)
 // set task related notification item view handlers
 setTimeout(() =>
 	[
@@ -216,37 +301,53 @@ setTimeout(() =>
 			type: TASK_TYPE,
 			handler: (id, notification = {}, { senderIdBtn }) => {
 				const { data, status } = notification
-				const { fulfillerAddress, taskId } = data || {}
-				const { name } = getIdentity(fulfillerAddress) || {}
+				const {
+					fulfillerAddress,
+					purpose,
+					taskId,
+				} = data || {}
+				const {
+					address,
+					name,
+					usageType,
+				} = getIdentity(fulfillerAddress) || {}
 				if (!name) {
 					// fulfillerAddress doesn't belong to the user!
 					remove(id)
 					return {}
 				}
-
-				const buttons = [
-					{ color: 'blue', content: textsCap.accept },
-					{ color: 'red', content: textsCap.reject },
-				]
-				const onAction = (_, accepted) => handleAssignmentResponse(taskId, fulfillerAddress, accepted, id)
+				const onAction = async (_, accepted) => await handleAssignmentResponse(
+					taskId,
+					fulfillerAddress,
+					accepted,
+					id,
+				)
+				let msg
+				switch (purpose) {
+					case 1:
+						msg = textsCap.mpAccepted
+						break
+					default:
+						msg = textsCap.assignedTaskMsg
+						break
+				}
+				const isLoading = queueStatuses.LOADING === status
 				const content = (
 					<div>
-						{senderIdBtn} {texts.assigntTaskMsg}
+						{senderIdBtn}
+						{` ${msg || ''}`.toLowerCase()}
+						{' '}
+						{getTaskDetailsBtn(taskId)}
 						<div>
+							<IdentityIcon {...{ address, usageType }} /> 
 							{textsCap.yourIdentity}: {name}
 						</div>
-						<ButtonGroup
-							{...{
-								buttons,
-								disabled: status === queueStatuses.LOADING,
-								fluid: true,
-								loading: status === queueStatuses.LOADING,
-								onAction,
-								or: true,
-								// what to pass when respective button is clicked
-								values: [true, false, null],
-							}}
-						/>
+						<ButtonAcceptOrReject {...{
+							acceptColor: 'blue',
+							disabled: isLoading,
+							fluid: true,
+							onAction,
+						}} />
 					</div>
 				)
 				return { icon, content }
@@ -279,17 +380,13 @@ setTimeout(() =>
 			childType: CHILD_TYPES.invoiced,
 			type: TASK_TYPE,
 			handler: (id, notification = {}, { senderIdBtn }) => {
-				const { data = {} } = notification
+				const { data = {}, status } = notification
 				const { ownerAddress, taskId, taskTitle } = data
 				const ownerIdentity = getIdentity(ownerAddress)
 				// invalid task or does task not belong to user
 				if (!taskId || !ownerIdentity) return remove(id)
 
-				const buttons = [
-					{ color: 'blue', content: textsCap.pay },
-					{ color: 'red', content: textsCap.dispute },
-				]
-				const onAction = (_, accepted) => handleInvoicedResponse(taskId, ownerAddress, accepted, id)
+				const onAction = async (_, accepted) => await handleInvoicedResponse(taskId, ownerAddress, accepted, id)
 				const content = (
 					<div>
 						{senderIdBtn} {textsCap.taskInvoiced}
@@ -301,17 +398,13 @@ setTimeout(() =>
 							<b>{textsCap.yourIdentity}: </b>
 							{ownerIdentity.name}
 						</div>
-						<ButtonGroup
-							{...{
-								buttons,
-								disabled: status === queueStatuses.LOADING,
-								fluid: true,
-								loading: status === queueStatuses.LOADING,
-								onAction,
-								or: true,
-								values: [true, false, null],
-							}}
-						/>
+						<ButtonAcceptOrReject {...{
+							acceptText: textsCap.pay,
+							disabled: status === queueStatuses.LOADING,
+							fluid: true,
+							onAction,
+							rejectText: textsCap.dispute,
+						}} />
 					</div>
 				)
 				return { icon, content }
@@ -323,24 +416,74 @@ setTimeout(() =>
 			handler: (id, notification = {}, { senderIdBtn }) => {
 				const { data = {} } = notification
 				const { disputed, fulfillerAddress, taskId, taskTitle } = data
-				const identity = getIdentity(fulfillerAddress)
+				const { address, name, usageType } = getIdentity(fulfillerAddress)
 				// invalid task or task is not assigned to user's identity
-				if (!identity || !taskId) return remove(id)
+				if (!name || !taskId) return remove(id)
 
 				const content = (
 					<div>
-						{senderIdBtn} {disputed ? textsCap.taskDisputed : textsCap.taskPaid}
-						<div>
-							<b>{textsCap.yourIdentity}: </b>
-							{identity.name}
-						</div>
+						{senderIdBtn} {(
+							disputed
+								? textsCap.taskDisputed
+								: textsCap.taskPaid
+						).toLowerCase()}
 						<div>
 							<b>{textsCap.task}: </b>
 							{taskTitle || taskId}
+							{' '}
+							{getTaskDetailsBtn(taskId)}
+						</div>
+						<div>
+							<b>{textsCap.yourIdentity}: </b>
+							<IdentityIcon {...{address, usageType }} /> {name}
 						</div>
 					</div>
 				)
-				return { icon, content }
+				return { content, icon }
+			},
+		},
+
+		// marketplace related
+		{
+			childType: CHILD_TYPES.marketApply,
+			type: TASK_TYPE,
+			handler: (id, notification = {}, { senderIdBtn }) => {
+				const {
+					data: {
+						applications = 1, 
+						taskId,
+					} = {},
+				} = notification
+
+				const content = (
+					<div>
+						{senderIdBtn}
+						{' ' + textsCap.mpApplied + ' '}
+						{getTaskDetailsBtn(taskId)}
+						<div>
+							{textsCap.mpAppliedTotal}: {applications}
+						</div>
+					</div>
+				)
+				return {content, icon}
+			},
+		},
+		{
+			childType: CHILD_TYPES.marketApplyResponse,
+			type: TASK_TYPE,
+			handler: (id, notification = {}, { senderIdBtn }) => {
+				const {
+					data: { taskId } = {},
+				} = notification
+
+				const content = (
+					<div>
+						{senderIdBtn}
+						{' ' + textsCap.mpRejected + ' '}
+						{getTaskDetailsBtn(taskId)}
+					</div>
+				)
+				return {content, icon}
 			},
 		},
 	].forEach((x) => setItemViewHandler(x.type, x.childType, x.handler))

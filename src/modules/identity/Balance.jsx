@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
-import { isArr, isValidNumber } from '../../utils/utils'
+import { useRxSubject } from '../../utils/reactHelper'
+import { isArr, isMap, isValidNumber } from '../../utils/utils'
 import { Reveal } from '../../components/buttons'
 // services
 import { query } from '../../services/blockchain'
@@ -9,15 +11,17 @@ import { translated } from '../../services/language'
 import { unsubscribe } from '../../services/react'
 // modules
 import Currency from '../currency/Currency'
-import { useRxSubject } from '../../utils/reactHelper'
-import { MOBILE, rxLayout } from '../../services/window'
+import { rxIdentities } from './identity'
 
 const textsCap = translated({
 	loadingAccBal: 'loading account balance',
 	locked: 'locked',
-	total: 'funds',
+	total: 'total',
 }, true)[1]
 
+// cache balances and locks
+export const rxBalances = new BehaviorSubject(new Map())
+export const rxLocks = new BehaviorSubject(new Map())
 export const Balance = props => {
 	let {
 		address,
@@ -31,68 +35,87 @@ export const Balance = props => {
 		suffix,
 		unitDisplayed,
 	} = props
-	const balance = useBalance(address)
-	const locks = userLocks(address)
+	// prevents update if value for the address is unchanged
+	const valueModifier = (newValue = new Map(), oldValue) => {
+		const value = newValue.get(address)
+		const update = (isValidNumber(value) || isArr(value))
+			&& value !== oldValue
+		return update
+			? value
+			: useRxSubject.IGNORE_UPDATE
+	}
+	const isOwnIdentity = !!rxIdentities.value.get(address)
+	const balance = !isOwnIdentity
+		? useBalance(address)
+		: useRxSubject(rxBalances, valueModifier)[0]
+	const locks = !isOwnIdentity
+		? userLocks(address)
+		: useRxSubject(rxLocks, valueModifier)[0]
 	const isLoading = !isValidNumber(balance)
-	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-	const lockedBalance = locks.reduce((sum, next) => sum + next.amount, 0)
-	const freeBalance = isLoading
-		? undefined
-		: balance - lockedBalance
+	const totalLocked = (locks || [])
+		.reduce((sum, next) => sum + next.amount, 0)
 	style = {
 		cursor: 'pointer',
 		userSelect: 'none',
 		...style
 	}
-	
-	const getContent = showDetails => () => (
+	emptyMessage = emptyMessage !== null && (
+		<span title={!isLoading ? '' : textsCap.loadingAccBal}>
+			<Icon {...{
+				className: 'no-margin',
+				name: 'spinner',
+				loading: true,
+				style: { padding: 0 },
+			}} />
+			{emptyMessage}
+		</span>
+	)
+	const getContent = () => (
 		<Currency {...{
 			...props,
-			emptyMessage: emptyMessage !== null && (
-				<span title={!isLoading ? '' : textsCap.loadingAccBal}>
-					<Icon {...{
-						className: 'no-margin',
-						name: 'spinner',
-						loading: true,
-						style: { padding: 0 },
-					}} />
-					{emptyMessage}
+			emptyMessage,
+			prefix,
+			style,
+			suffix,
+			value: balance,
+		}} />
+	)
+	const getDetails = () => (
+		<Currency {...{
+			...props,
+			emptyMessage,
+			prefix: (
+				<span>
+					{detailsPrefix}<b>{textsCap.total}: </b>
 				</span>
 			),
-			prefix: showDetails
-				? (
-					<span>
-						{detailsPrefix}<b>{textsCap.total}: </b>
-					</span>
-				)
-				: prefix,
 			style,
-			suffix: !showDetails
-				? suffix
-				: (
+			suffix: (
 					<Currency {...{
 						prefix: (
 							<span>
 								{lockSeparator}
-								<b>{textsCap.locked}:</b>{' '}
+								<b>{textsCap.locked}: </b>
 							</span>
 						),
 						suffix: detailsSuffix,
-						value: lockedBalance,
+						value: totalLocked,
 						unitDisplayed,
 					}} />
 				),
-			value: showDetails
-				? balance
-				: freeBalance,
+			value: balance + totalLocked,
 		}} />
 	)
 	return showDetailed === null
-		? getContent(false)()
+		? getContent()
 		: (
 			<Reveal {...{
-				content: getContent(!showDetailed),
-				contentHidden: getContent(showDetailed),
+				content: showDetailed
+					? getDetails
+					: getContent,
+				contentHidden: showDetailed
+					? getContent
+					: getDetails,
 				ready: !isLoading,
 				toggleOnClick: true,
 				toggleOnHover: true,
@@ -115,7 +138,7 @@ Balance.defaultProps = {
 	lockSeparator: ' | ',
 	showDetailed: false,
 }
-export default Balance
+export default React.memo(Balance)
 
 /**
  * @name    useBalance
@@ -198,3 +221,38 @@ userLocks.propTypes = {
 		PropTypes.arrayOf(PropTypes.string),
 	]).isRequired,
 }
+
+setTimeout(() => {
+	let sub = {}
+	rxIdentities.subscribe((identities = new Map()) => {
+		const addresses = [...identities.keys()]
+		const addressesCached = [...rxBalances.value.keys()]
+		const unchanged = addresses.length === addressesCached.length
+			&& addresses.every(a => addressesCached.includes(a))
+		if (unchanged) return
+
+		unsubscribe(sub)
+		
+		const updateCache = subject => (result = []) => {
+			const map = new Map(
+				result.map((value, i) => [
+					addresses[i],
+					value,
+				])
+			)
+			subject.next(map)
+		}
+		sub.balances = query(
+			'api.query.balances.freeBalance',
+			[addresses, updateCache(rxBalances)],
+			true,
+			false,
+		)
+		sub.locks = query(
+			'api.query.balances.locks',
+			[addresses, updateCache(rxLocks)],
+			true,
+			false,
+		)
+	})
+}, 100)

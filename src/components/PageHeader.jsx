@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
 // utils
-import { arrSort, className, copyToClipboard, textEllipsis } from '../utils/utils'
+import { className, copyToClipboard, textEllipsis } from '../utils/utils'
 // forms
 import IdentityForm from '../modules/identity/IdentityForm'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
@@ -14,8 +14,8 @@ import {
 	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
 import { getUser, rxIsInMaintenanceMode, rxIsLoggedIn } from '../modules/chat/ChatClient'
-import Balance from '../modules/identity/Balance'
 import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
+import IdentityShareForm from '../modules/identity/IdentityShareForm'
 import {
 	rxNewNotification,
 	rxVisible as rxNotifVisible,
@@ -29,8 +29,14 @@ import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { unsubscribe, useRxSubject } from '../services/react'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
-import { useInverted, rxInverted, rxLayout, MOBILE, setInvertedBrowser } from '../services/window'
-import IdentityShareForm from '../modules/identity/IdentityShareForm'
+import {
+	MOBILE,
+	rxInverted,
+	rxLayout,
+	setInvertedBrowser,
+	useInverted,
+} from '../services/window'
+import { getIdentityOptions } from '../modules/identity/getIdentityOptions'
 
 const [texts, textsCap] = translated({
 	addressCopied: 'your identity copied to clipboard',
@@ -52,11 +58,9 @@ let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
 function PageHeader(props) {
-	const [wallets] = useRxSubject(
+	const [identityOptions] = useRxSubject(
 		rxIdentities,
-		map => Array
-			.from(map)
-			.map(([_, x]) => x)
+		getIdentityOptions,
 	)
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [[userId, isLoggedIn]] = useRxSubject(
@@ -72,7 +76,7 @@ function PageHeader(props) {
 		isLoggedIn,
 		isMobile,
 		isRegistered: !!userId,
-		wallets,
+		identityOptions,
 		onCopy: () => {
 			const { address } = getSelected()
 			if (!address) return
@@ -119,40 +123,14 @@ const PageHeaderView = React.memo(props => {
 		onFaucetRequest,
 		onSelection,
 		onShare,
-		wallets,
+		identityOptions,
 	} = props
 	const selected = getSelected() || {}
 	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
-	const walletOptions = arrSort(wallets || [], 'name')
-		.map(({ address, name }) => ({
-			key: address,
-			text: (
-				<React.Fragment>
-					<div style={{
-						color: 'black',
-						fontWeight: 'bold',
-						marginRight: 15,
-					}}>
-						{name}
-					</div>
-
-					<Balance {...{
-						address: address,
-						EL: 'div',
-						showDetailed: null,
-						style: {
-							color: 'grey',
-							textAlign: 'right',
-						}
-					}} />
-				</React.Fragment>
-			),
-			value: address
-		}))
 	const langCode = getSelectedLang() || ''
 	const topBar = (
 		<Menu
-			attached="top"
+			attached='top'
 			inverted
 			style={{
 				border: 'none',
@@ -162,9 +140,9 @@ const PageHeaderView = React.memo(props => {
 			}}
 		>
 			<Menu.Item onClick={!isRegistered || !isMobile ? undefined : toggleSidebarState}>
-				<Image size="mini" src={logoSrc} />
+				<Image size='mini' src={logoSrc} />
 			</Menu.Item>
-			<Menu.Menu position="right">
+			<Menu.Menu position='right'>
 				{!isMobile && isRegistered && buttons}
 				<Dropdown {...{
 					className: 'identity-dropdown',
@@ -181,10 +159,15 @@ const PageHeaderView = React.memo(props => {
 						rxNotifVisible.next(false)
 					},
 					open,
-					options: walletOptions,
+					options: identityOptions,
 					selectOnNavigation: false,
 					style: { paddingRight: 0 },
-					text: textEllipsis(selected.name, isMobile ? 25 : 50, 3, false),
+					text: textEllipsis(
+						selected.name,
+						25,
+						3,
+						false,
+					),
 					value: selected.address,
 				}} />
 				<Dropdown

@@ -1,19 +1,22 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import FormBuilder, { fillValues } from '../../components/FormBuilder'
-import { statuses } from '../../components/Message'
-import { closeModal, confirm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { iUseReducer } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import FormInput from '../../components/FormInput'
+import { statuses } from '../../components/Message'
+import { closeModal, confirm } from '../../services/modal'
 import {
 	arrSort,
+	deferred,
 	isFn,
 	objSetPropUndefined,
 } from '../../utils/utils'
 import identities from '../identity/identity'
-import partners from '../partner/partner'
+import partners, { rxPartners } from '../partner/partner'
+import PartnerIcon from '../partner/PartnerIcon'
 import {
 	get,
 	newId,
@@ -21,7 +24,7 @@ import {
 	set as save,
 	validationConf,
 } from './contact'
-import FormInput from '../../components/FormInput'
+import getPartnerOptions from '../partner/getPartnerOptions'
 
 const textsCap = translated(
 	{
@@ -45,8 +48,10 @@ const textsCap = translated(
 	true
 )[1]
 export const inputNames = {
+	autoSave: 'autoSave',
 	email: 'email',
 	id: 'id',
+	isUpdate: 'isUpdate',
 	partnerIdentity: 'partnerIdentity',
 	name: 'name',
 	phoneNumber: 'phoneNumber',
@@ -57,29 +62,42 @@ export const inputNames = {
 
 export default function ContactForm(props) {
 	const [state = []] = iUseReducer(null, rxSetState => {
-		let { autoSave, onChange, onSubmit, submitText, values = {} } = props
+		let {
+			autoSave,
+			onChange,
+			onSubmit,
+			submitText,
+			values = {},
+		} = props
 		// generate a random ID if not already provided
-		objSetPropUndefined(values, inputNames.id, newId())
+		objSetPropUndefined(
+			values,
+			inputNames.id,
+			newId(),
+		)
 		const id = values[inputNames.id]
 		let existingEntry = get(id)
 		values = { ...existingEntry, ...values }
+		const rxIsUpdate = new BehaviorSubject(!!existingEntry)
 		const partnerIdentity = values[inputNames.partnerIdentity]
-		const countryOptions = storage.countries
-			.map(([_, country]) => {
-				let { altSpellings = [], code, name, phoneCode } = country
-				return {
-					search: [phoneCode, name, ...altSpellings].join(' '),
-					description: code,
-					key: code,
-					value: phoneCode,
-					text: phoneCode,
-					title: name,
-				}
-			})
+		const countryOptions = storage
+			.countries
+			.map(([_, c]) => ({
+				search: [
+					c.phoneCode,
+					c.name,
+					...c.altSpellings,
+				].join(' '),
+				description: c.code,
+				key: c.code,
+				value: c.phoneCode,
+				text: c.phoneCode,
+				title: c.name,
+			}))
 			.filter(x => !!x.value)
 		const getSubmitText = () => submitText || submitText === null 
 			? submitText
-			: !!existingEntry
+			: !!rxIsUpdate.value
 				? textsCap.update
 				: undefined
 		const handleRemoveContact = () => {
@@ -106,6 +124,26 @@ export default function ContactForm(props) {
 					</div>
 				)
 			}
+			const handleConfirm = () => {
+				// empty the form if not on a modal
+				const autoSave = rxAutoSave.value
+				const names2Empty = [
+					[inputNames.autoSave, false],
+					[inputNames.isUpdate, false],
+					[inputNames.email],
+					[inputNames.phoneCode],
+					[inputNames.phoneNumber],
+				]
+				names2Empty.forEach(([name, value = '']) => {
+					const { rxValue } = findInput(inputs, name)
+					rxValue && rxValue.next(value)
+				})
+				autoSave && rxAutoSave.next(true)
+				// close if on a modal
+				modalId && closeModal(modalId)
+				remove(id)
+				isFn(onRemove) && onRemove(id, values)
+			}
 			confirm({
 				header: textsCap.removeContact,
 				content: content,
@@ -113,16 +151,23 @@ export default function ContactForm(props) {
 					content: textsCap.remove,
 					negative: true,
 				},
-				onConfirm: () => {
-					remove(id)
-					isFn(onRemove) && onRemove(id, values)
-					modalId && closeModal(modalId)
-				},
+				onConfirm: handleConfirm,
 				size: 'mini',
 			})
 		}
 		const rxPhoneCode = new BehaviorSubject()
+		const rxAutoSave = new BehaviorSubject(!!autoSave)
 		const inputs = [
+			{
+				hidden: true,
+				name: inputNames.isUpdate,
+				rxValue: rxIsUpdate,
+			},
+			{
+				hidden: true,
+				name: inputNames.autoSave,
+				rxValue: rxAutoSave,
+			},
 			{
 				...validationConf.name,
 				label: textsCap.nameLabel,
@@ -138,10 +183,8 @@ export default function ContactForm(props) {
 				hidden: !partnerIdentity,
 				label: textsCap.partnerIdentityLabel,
 				name: inputNames.partnerIdentity,
-				options: Array.from(partners.getAll()).map(([address, p]) => ({
-					text: p.name,
-					value: address,
-				})),
+				rxOptions: rxPartners,
+				rxOptionsModifier: getPartnerOptions,
 				selection: true,
 				type: 'dropdown',
 			},
@@ -151,6 +194,7 @@ export default function ContactForm(props) {
 				name: inputNames.email,
 				placeholder: textsCap.emailPlaceholder,
 				required: true,
+				rxValue: new BehaviorSubject(),				
 			},
 			{
 				name: inputNames.phoneGroup,
@@ -195,6 +239,7 @@ export default function ContactForm(props) {
 						name: inputNames.phoneNumber,
 						placeholder: '123456',
 						regex: /^[1-9][0-9\ ]+$/,
+						rxValue: new BehaviorSubject(),
 						styleContainer: { paddingLeft: 0 },
 						type: 'text',
 						validate: (e, { value: phone }, values) => {
@@ -208,7 +253,7 @@ export default function ContactForm(props) {
 			{
 				content: textsCap.removeContact,
 				fluid: true,
-				hidden: () => !existingEntry,
+				hidden: values => !values[inputNames.isUpdate],
 				icon: 'trash',
 				name: inputNames.removeBtn,
 				negative: true,
@@ -219,52 +264,55 @@ export default function ContactForm(props) {
 		]
 
 		const state = {
-			header: !existingEntry
+			header: !rxIsUpdate.value
 				? textsCap.headerCreate
 				: textsCap.headerUpdate,
-			inputs: fillValues(inputs, { ...existingEntry, ...values }),
-			onChange: (...args) => {
+			inputs: fillValues(inputs, values, false),
+			onChange: deferred((...args) => {
 				const [e, values, invalid] = args
 				if (invalid) return
 				
 				isFn(onChange) && onChange(...args)
-				if (!autoSave) return
+				if (!rxAutoSave.value) return
 				
-				existingEntry  = values
 				const id = values[inputNames.id]
-				save(values, false, true)
+				const saved = !!save(values, false, true)
+				if (!saved) return
+
 				isFn(onSubmit) && onSubmit(!invalid, values, id)
-				autoSave = props.autoSave
-			},
+				!rxIsUpdate.value && rxIsUpdate.next(true)
+			}, 300),
 			onSubmit: (e, values) => {
-				existingEntry = values
+				!rxIsUpdate.value && rxIsUpdate.next(true)
 				const id = values[inputNames.id]
 				// save to separate local stoarge
 				save(values)
 
-				autoSave = props.autoSave
 				const s = {
 					...state,
 					header: textsCap.headerUpdate,
-					message: !autoSave
+					message: !rxAutoSave.value
 						? undefined
 						: { 
 							header: textsCap.saved,
 							status: statuses.SUCCESS,
 						},
-					submitText: autoSave
+					submitText: rxAutoSave.value
 						? null
 						: getSubmitText(),
 					success: true,
 				}
 				rxSetState.next(s)
 				isFn(onSubmit) && onSubmit(true, values, id)
-				autoSave && setTimeout(() => rxSetState.next({...s, message: undefined}), 2000)
+				rxAutoSave.value && setTimeout(() => rxSetState.next({
+					...s,
+					message: undefined,
+				}), 2000)
 			},
 			submitText: getSubmitText(),
 		}
 
-		if (autoSave) {
+		if (rxAutoSave.value) {
 			state.closeText = null
 			state.subheader = textsCap.subheaderUpdate
 			state.submitText = null

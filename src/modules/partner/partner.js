@@ -142,6 +142,7 @@ export default {
     getByName,
     getByUserId,
     remove,
+    rxPartners,
     search,
     set,
     setPublic,

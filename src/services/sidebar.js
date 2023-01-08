@@ -12,7 +12,7 @@ import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
 import PartnerList from '../modules/partner/PartnerList'
 import SettingsForm, { inputNames } from '../forms/Settings'
-import TaskView from '../modules/task/TaskView'
+import Tasks from '../modules/task/Main'
 import TimekeepingView from '../modules/timekeeping/TimekeepingView'
 import TransferFundsForm from '../modules/identity/TransferFundsForm'
 import UtilitiesView from '../views/UtilitiesView'
@@ -37,6 +37,8 @@ import {
     rxLayout,
     setClass,
 } from './window'
+import TaskList from '../modules/task/TaskList'
+import { rxIsRegistered } from '../utils/chatClient'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -76,6 +78,8 @@ const textsCap = translated({
         Once an Identity is stored in this list you can use it all over Totem. 
         To find out more, watch the video!
     `,
+
+    marketplace: 'marketplace',
 
     partnersTitle: 'partners',
     partnersHeader: 'Partner Contact List',
@@ -265,11 +269,29 @@ export const sidebarItems = [
         title: textsCap.timekeepingTitle,
     },
     {
-        content: TaskView,
+        content: Tasks,
         icon: 'tasks',
         name: 'tasks',
         title: textsCap.tasksTitle,
         subHeader: textsCap.tasksSubheader,
+    },
+    {
+        content: TaskList,
+        contentProps: {
+            type: 'marketplace'
+        },
+        // href: `${window.location.protocol}//${window.location.host}/?module=tasks&tab=marketplace`,
+        icon: 'shop',
+        name: 'marketplace',
+        // onClick: e => {
+        //     e.preventDefault()
+        //     const item = setContentProps(
+        //         'tasks',
+        //         { tab: 'marketplace' },)
+        //     console.log({ item })
+        // },
+        target: '_blank',
+        title: textsCap.marketplace,
     },
     {
         content: TransferFundsForm,
@@ -277,15 +299,6 @@ export const sidebarItems = [
         icon: 'send',
         header: textsCap.transferHeader,
         name: 'transfer',
-        // settings: () => (
-        //     <SettingsForm {...{
-        //         // only show timekeeping settings
-        //         inputsHidden: Object
-        //             .values(inputNames)
-        //             .filter(x => x !== inputNames.currency),
-        //         style: { maxWidth: 350 }
-        //     }} />
-        // ),
         subHeader: textsCap.transferSubheader,
         subHeaderDetails: textsCap.transferSubheaderDetails,
         title: textsCap.transferTitle,
@@ -380,12 +393,9 @@ export const sidebarItems = [
         title: textsCap.utilitiesTitle,
     },
     {
-        // anchorStyle: {
-        //     background: 'deeppink',
-        // },
+        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
         icon: 'rocket',
         name: 'crowdloan',
-        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
         target: '_blank',
         title: (
             <span>
@@ -413,7 +423,9 @@ export const sidebarItems = [
     sidebarItemNames.push(name)
     return {
         ...item,
-        active: isBool(activeX) ? activeX : active,
+        active: isBool(activeX)
+            ? activeX
+            : active,
         contentProps,
         elementRef: React.createRef(),
         name,
@@ -431,7 +443,9 @@ export const setActive = (name, active = true, contentProps, hidden, toggle = tr
 
     const activeChanged = !!active !== !!item.active
     item.active = active
-    item.hidden = isBool(hidden) ? hidden : item.hidden
+    item.hidden = isBool(hidden)
+        ? hidden
+        : item.hidden
     item.contentProps = { ...item.contentProps, ...contentProps }
     statuses.set(name, active)
     item.rxTrigger.next(uuid.v1())
@@ -453,11 +467,11 @@ export const setActive = (name, active = true, contentProps, hidden, toggle = tr
  * @param   {Boolean}   active  whether to show/hide modules.
  *                              Default: `true`
  */
-export const setActiveExclusive = (names = [], active = true) => {
+export const setActiveExclusive = (names = [], active = true, contentProps = {}) => {
     const items = []
     sidebarItems.forEach(({ name }) => {
         const _active = names.includes(name) && !!active
-        const item = setActive(name, _active)
+        const item = setActive(name, _active, contentProps)
         if (names.includes(name)) items.push(item)
     })
     return items
@@ -491,6 +505,7 @@ export const scrollTo = name => {
         document.getElementById('main-content')
             .scrollTo(elRef.current.offsetLeft, elRef.current.offsetTop - 15)
     }, 100)
+
     return item
 }
 
@@ -531,37 +546,42 @@ const init = () => {
 
 setTimeout(() => {
     init()
-    let params = getUrlParam()
-    const modules = `${params.module || ''}`.trim()
-    const exclusive = `${params.exclusive || ''}`.toLowerCase() !== 'false'
-    if (!modules) return
+    if (rxIsRegistered.value) {
+        let params = getUrlParam()
+        const modules = `${params.module || ''}`
+            .trim()
+            .toLowerCase()
+        const exclusive = `${params.exclusive}`.toLowerCase() !== 'false'
+        if (!modules) return
+        const names = modules.split(',')
+            .map(x => x.trim().toLowerCase())
+        const items = exclusive
+            ? setActiveExclusive(names, true, params)
+            : names.map(name =>
+                setActive(name, true, params)
+            )
+        if (!items.filter(Boolean).length) return
 
-    const names = modules.split(',')
-        .map(x => x.trim().toLowerCase())
-    const items = exclusive
-        ? setActiveExclusive(names)
-        : names
-            .map(name => setActive(name))
-    if (!items.filter(Boolean).length) return
+        // only reset URL if exclusive
+        if (!exclusive) return
 
-    // hide all other modules
-
-    // only reset URL if exclusive
-    if (!exclusive) return
-
-    params = objToUrlParams(
-        objWithoutKeys(params, ['module', 'exclusive'])
-    )
-    const url = [
-        location.protocol,
-        '//',
-        location.host,
-        params && '?',
-        params
-    ]
-        .filter(Boolean)
-        .join('')
-    history.pushState({}, null, url)
+        params = objToUrlParams(
+            objWithoutKeys(
+                params,
+                ['module', 'exclusive'],
+            )
+        )
+        const url = [
+            location.protocol,
+            '//',
+            location.host,
+            params && '?',
+            params
+        ]
+            .filter(Boolean)
+            .join('')
+        history.pushState({}, null, url)
+    }
 })
 export default {
     getItem,

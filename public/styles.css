@@ -382,6 +382,9 @@ form.ui.form div.field > label {
 	text-transform: capitalize;
 }
 /* Group inputs: remove extra padding */
+.ui.form .fields.form-group {
+	margin: 0 -.5em 1em;
+}
 .ui.form .fields.form-group > .field > .field {
 	/* fix for secondary form input group */
 	margin-top: 0;
@@ -415,18 +418,6 @@ body.mobile .fields.form-group > .field:not(:last-child) {
 .accordion .message > .content > .content {
 	padding: initial !important;
 }
-/* Accordion when in dark mode */
-body.inverted .ui.accordion.styled {
-	border: 1px solid grey !important;
-	border-radius: 3px;
-}
-body.inverted .ui.accordion.styled > .title:not(:first-child) {
-	border-top: 1px solid grey;
-}
-body.inverted .ui.accordion.styled > .title.active > .icon,
-body.inverted .ui.accordion.styled > .title:hover > .icon {
-	color: white !important;
-}
 /* checkbox/radios: bold text when checked */
 input:checked ~ label {
 	font-weight: bold;
@@ -451,8 +442,8 @@ input[readonly] {
 	text-transform: initial;
 }
 body.mobile .ui.modal {
-	bottom: 0;
-	left: 0;
+	/* bottom: 0; */
+	/* left: 0; */
 	width: 100%;
 	margin: 0 !important;
 	max-height: 100%;
@@ -515,11 +506,42 @@ body.inverted #main-content.inverted {
 /* anything inside the #main-content with .inverted class */
 body.inverted #main-content .inverted,
 body.inverted .accordion {
-	background: #464646;
+	/* background: #464646; */
+	background: #353535;
 	color: white;
 }
 body.inverted #main-content .icon.inverted {
 	background: inherit;
+}
+/* Accordion when in dark mode */
+body.inverted .ui.accordion.styled {
+	border: 1px solid grey !important;
+	border-radius: 3px;
+}
+body.inverted .ui.accordion.styled > .title:not(:first-child) {
+	border-top: 1px solid grey;
+}
+body.inverted .ui.accordion.styled > .title.active > .icon,
+body.inverted .ui.accordion.styled > .title:hover > .icon {
+	color: white !important;
+}
+/* button/group */
+.ui.button.inverted,
+body.inverted .ui.dropdown.button {
+    background: #545454 !important;
+    box-shadow: none !important;
+	color: white !important;
+}
+.ui.inverted.buttons > .button.inverted {
+	border: 1px solid grey;
+    box-shadow: none !important;
+}
+.ui.inverted.buttons > .button.inverted:active,
+.ui.inverted.buttons > .button.inverted:focus,
+.ui.inverted.buttons > .button.inverted:hover {
+    /* border-bottom: 1px solid white !important;
+    border-top: 1px solid white !important; */
+	background: #393939 !important
 }
 /* Chat */
 body.inverted .chat-container {
@@ -540,13 +562,81 @@ body.inverted .ui.basic.inverted.segment.data-table {
 	background: #464646;
 	/* border: 1px solid #505050; */
 }
-/* Vertical DataTable */
+/* stacked table on mobile: empty cell */
+body.mobile .ui.table:not(.unstackable) > tbody > tr > td:empty {
+    display: none !important;
+}
+/* DataTableVertical */
 body.inverted .ui.table.vertical tbody tr td:first-child {
     background: #696969 !important;
     color: white !important;
 }
 body.inverted .ui.table.vertical tbody tr:not(:last-child) td:first-child {
     border-bottom: 1px solid #80808045 !important;    
+}
+/* 
+ * Form and Inputs
+ */
+body.inverted input,
+body.inverted textarea,
+body.inverted .dropdown.selection {
+    /* background: #333 !important; */
+    background: #555555 !important;
+    border: 1px solid #5d5d5d !important;
+    /* color: #ccc !important; */
+	color: white  !important;
+}
+body.inverted .ui.input *.disabled,
+body.inverted .ui.input *[readonly]{
+    background: grey !important;
+	border: 1px solid grey !important;
+}
+/* dropdown menu */
+body.inverted .ui.dropdown .menu,
+body.inverted .ui.dropdown .menu > .item,
+body.inverted .ui.menu .ui.dropdown .menu > .item {
+    background: #333 !important;
+    border: none !important;
+    color: white !important;
+}
+body.inverted .ui.dropdown > .menu.visible > *:not(:last-child) {
+    border-bottom: 1px solid #393939 !important;
+}
+body.inverted .ui.dropdown > .menu.visible {
+    border:  1px solid #565555 !important;
+}
+body.inverted .ui.dropdown .menu > .item > .description {
+    color: #ccc !important;
+}
+body.inverted .ui.dropdown .menu > .item.selected,
+body.inverted .ui.dropdown .menu > .item:hover,
+body.inverted .ui.menu .ui.dropdown .menu > .item.selected,
+body.inverted .ui.menu .ui.dropdown .menu > .item:hover {
+    color: white !important;
+    background: grey !important;
+}
+/* solves selected in-dropdown text being black colored when in dark mode */
+body.inverted .ui.selection.visible.dropdown>.text:not(.default) {
+	color: white !important;
+}
+/* Dropdown empty message */
+body.inverted .dropdown > .menu > .message {
+    color: white !important;
+}
+/* input acton/label */
+body.inverted .ui.input.label > .label,
+body.inverted .ui.input.action > .button {
+	background: #ccc !important;
+    border: 1px solid #ccc !important;
+    color: grey;
+}
+body.inverted .ui.input > .icon {
+    color: #ccc;
+}
+/* Label */
+.ui.label.inverted {
+    background: grey !important;
+    color: white !important;
 }
 /* Modals */
 body.inverted .ui.modal,
@@ -598,7 +688,6 @@ body.inverted .ui.steps .step:not(.active):after {
 	color: white !important;
 	transition: none;
 }
-
 body.inverted .ui.steps .step,
 body.inverted .ui.steps .step.active,
 body.inverted .ui.steps .step.active:after {

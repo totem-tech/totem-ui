@@ -61,14 +61,28 @@ function LabelCopy(props) {
         }
     }
 
-    const el = (
+    const trigger = (
         <El {...{
             ...objWithoutKeys(props, ignoreAttributes),
-            content: content === null || content
-                ? content
-                : textEllipsis(value, maxLength, numDots, split),
+            content: (
+                <span>
+                    {content === null || content
+                        ? content
+                        : textEllipsis(
+                            value,
+                            maxLength,
+                            numDots,
+                            split,
+                            )}
+                </span>
+            ),
             icon,
             key: 'El',
+            draggable: true,
+            onDragStart: e => {
+                e.stopPropagation()
+                e.dataTransfer.setData('Text', value)
+            },
             onClick: e => {
                 e.preventDefault()
                 isFn(onClick) && onClick(e, value)
@@ -96,7 +110,7 @@ function LabelCopy(props) {
             hideOnScroll: true,
             open: state.open,
             size: 'mini',
-            trigger: el,
+            trigger,
         }} />
     )
 }

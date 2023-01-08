@@ -1,17 +1,23 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Icon } from 'semantic-ui-react'
-import { getCurrencies, rxCurrencies} from './currency'
-import { usePromise, useRxSubject } from '../../utils/reactHelper'
+import { getCurrencies } from './currency'
+import { usePromise } from '../../utils/reactHelper'
 import FormInput from '../../components/FormInput'
 import { Reveal } from '../../components/buttons'
 import { isFn, objWithoutKeys } from '../../utils/utils'
+import PromisE from '../../utils/PromisE'
 
-const CurrencyDropdown = React.memo((props) => {
+const CurrencyDropdown = React.memo(props => {
     const { autoHideName, onCurrencies } = props
     props = objWithoutKeys(props, ['autoHideName', 'onCurrencies'])
     const [options = []] = usePromise(async () => {
         const currencies = await getCurrencies()
+        
+        // loading 700+ currencies on startup causes performance issues on form load.
+        // delay loading currencies to improve performance.
+        await PromisE.delay(100)
+
         isFn(onCurrencies) && onCurrencies(currencies)
 
         return currencies.map(({ _id, currency, name, ticker, type }) => {
@@ -21,7 +27,7 @@ const CurrencyDropdown = React.memo((props) => {
                         {currency}
                     </span>
                     {' - '}
-                    <span style={{ color: 'grey' }}>
+                    <span style={{ color: '#ccc' }}>
                         {name}
                     </span>
                 </span>

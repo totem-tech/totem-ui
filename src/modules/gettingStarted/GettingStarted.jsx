@@ -1,18 +1,18 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { Button, Icon, Step } from 'semantic-ui-react'
+import { Icon, Step } from 'semantic-ui-react'
+// utils
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactHelper'
 import storage from '../../utils/storageHelper'
 import { className, isFn, isValidNumber } from '../../utils/utils'
-// forms and components
+// components
+import { Button } from '../../components/buttons'
 import { Invertible } from '../../components/Invertible'
-import RestoreBackupForm from './RestoreBackupForm'
 // services
 import { showForm } from '../../services/modal'
-// import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { setToast } from '../../services/toast'
-// import { setActive } from '../../services/sidebar'
+import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import { createInbox, SUPPORT, TROLLBOX } from '../chat/chat'
 import { getUser, rxIsRegistered } from '../chat/ChatClient'
@@ -20,7 +20,7 @@ import RegistrationForm from '../chat/RegistrationForm'
 import { getSelected } from '../identity/identity'
 import IdentityForm from '../identity/IdentityForm'
 import BackupForm from './BackupForm'
-import { MOBILE, rxLayout } from '../../services/window'
+import RestoreBackupForm from './RestoreBackupForm'
 
 const texts = translated({
 	backupTitle: 'Backup your account',

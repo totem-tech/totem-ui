@@ -10,7 +10,6 @@ import {
 	arrUnique,
 	objHasKeys,
 	isObj,
-	randomInt,
 	objClean,
 } from '../../utils/utils'
 import FormBuilder, {
@@ -29,7 +28,8 @@ import {
 import ContactForm, {
 	inputNames as contactInputNames,
 } from '../contact/ContactForm'
-import identityService from '../identity/identity'
+import BackupForm from '../gettingStarted/BackupForm'
+import identityService, { rxIdentities } from '../identity/identity'
 import locations, {
 	newId as newLocationId,
 	requiredKeys as locationRequiredKeys,
@@ -41,7 +41,6 @@ import LocationForm, {
 import CompanyForm from './CompanyForm'
 import {
 	get,
-	getAddressName,
 	getAllTags,
 	getByName,
 	set,
@@ -49,55 +48,53 @@ import {
 	types,
 	visibilityTypes,
 } from './partner'
-import { Icon } from 'semantic-ui-react'
-import BackupForm from '../gettingStarted/BackupForm'
+import PartnerIcon from './PartnerIcon'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 
-const textsCap = translated(
-	{
-		addressAdditionLabel: 'use',
-		addressLabel: 'search for Company or Identity',
-		addressEmptySearchMessage: 'enter a compnay name to search',
-		addressPlaceholder: 'search by company details or identity',
-		addressValidationMsg1:
-			'partner already exists with the following name:',
-		addressValidationMsg2: 'please enter a valid Totem Identity',
-		associatedIdentityLabel: 'associated with your identity',
-		associatedIdentityPlaceholder: 'select one of your identities',
-		autoSaved: 'changes will be auto saved',
-		business: 'business',
-		contactGroupLabel: 'contact details',
-		close: 'close',
-		companyFormOnOpenMsg: `
-        You have chosen to make this partner public.
-        Please ensure you fill in the correct details.
-        Click cancel to abort making public.`,
-		header1: 'add partner',
-		header2: 'update partner',
-		locationGroupLabel: 'location',
-		nameLabel: 'partner name',
-		namePlaceholder: 'enter a name for this partner',
-		nameValidationMsg: 'please choose an unique partner name.',
-		personal: 'personal',
-		private: 'private',
-		public: 'public',
-		regNumberLabel: 'registered number',
-		regNumberPlaceholder: 'company registration number',
-		submitFailedMsg: 'failed to save partner',
-		submitSuccessMsg1: 'partner created successfully',
-		submitSuccessMsg2: 'partner updated successfully',
-		tags: 'tags',
-		tagsNoResultsMsg: 'enter tag and press enter to add, to tags list.',
-		tagsPlaceholder: 'enter tags',
-		typeLabel: 'partner usage type',
-		userIdInvalidMsg: 'please enter a valid user ID',
-		userIdLabel: 'user ID for this partner',
-		userIdPlaceholder: 'enter user ID for this partner',
-		visibilityLabel: 'decide partner visibility (on the network)',
-		vatNumberLabel: 'VAT number',
-		vatNumberPlaceholder: 'VAT registration number',
-	},
-	true
-)[1]
+let textsCap = {
+	addressAdditionLabel: 'use',
+	addressLabel: 'search for Company or Identity',
+	addressEmptySearchMessage: 'enter a compnay name to search',
+	addressPlaceholder: 'search by company details or identity',
+	addressValidationMsg1:
+		'partner already exists with the following name:',
+	addressValidationMsg2: 'please enter a valid Totem Identity',
+	associatedIdentityLabel: 'associated with your identity',
+	associatedIdentityPlaceholder: 'select one of your identities',
+	autoSaved: 'changes will be auto saved',
+	business: 'business',
+	contactGroupLabel: 'contact details',
+	close: 'close',
+	companyFormOnOpenMsg: `
+	You have chosen to make this partner public.
+	Please ensure you fill in the correct details.
+	Click cancel to abort making public.`,
+	header1: 'add partner',
+	header2: 'update partner',
+	locationGroupLabel: 'location',
+	nameLabel: 'partner name',
+	namePlaceholder: 'enter a name for this partner',
+	nameValidationMsg: 'please choose an unique partner name.',
+	personal: 'personal',
+	private: 'private',
+	public: 'public',
+	regNumberLabel: 'registered number',
+	regNumberPlaceholder: 'company registration number',
+	submitFailedMsg: 'failed to save partner',
+	submitSuccessMsg1: 'partner created successfully',
+	submitSuccessMsg2: 'partner updated successfully',
+	tags: 'tags',
+	tagsNoResultsMsg: 'enter tag and press enter to add, to tags list.',
+	tagsPlaceholder: 'enter tags',
+	typeLabel: 'partner usage type',
+	userIdInvalidMsg: 'please enter a valid user ID',
+	userIdLabel: 'user ID for this partner',
+	userIdPlaceholder: 'enter user ID for this partner',
+	visibilityLabel: 'decide partner visibility (on the network)',
+	vatNumberLabel: 'VAT number',
+	vatNumberPlaceholder: 'VAT registration number',
+}
+textsCap = translated(textsCap, true)[1]
 
 export const requiredFields = {
 	address: 'address',
@@ -133,7 +130,7 @@ export default class PartnerForm extends Component {
 		this.partner = values && get(values.address)
 		this.doUpdate = !!this.partner
 		values = { ...this.partner, ...values }
-		const { address, name, tags = [], visibility } = values
+		const { address, name, tags = [], type, visibility } = values
 		const query = { partnerIdentity: address }
 		const [locationId, location] = Array.from(
 			!address
@@ -157,8 +154,18 @@ export default class PartnerForm extends Component {
 		this.customAddresses = []
 		this.state = {
 			closeText: this.doUpdate && autoSave ? null : closeText,
-			header:
-				header || (this.doUpdate ? textsCap.header2 : textsCap.header1),
+			header: header || (
+				this.doUpdate
+					? textsCap.header2
+					: textsCap.header1
+			),
+			headerIcon: (
+				<PartnerIcon {...{
+					size: 'large',
+					type,
+					visibility,
+				}} />
+			),
 			message: {},
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
@@ -178,178 +185,183 @@ export default class PartnerForm extends Component {
 			values,
 		}
 		this.state.inputs = [
-				{
-					inline: true,
-					label: textsCap.typeLabel,
-					name: inputNames.type,
-					options: [
-						{ label: textsCap.personal, value: types.PERSONAL },
-						{ label: textsCap.business, value: types.BUSINESS },
-					],
-					radio: true,
-					required: true,
-					rxValue: new BehaviorSubject(types.PERSONAL),
-					type: 'checkbox-group',
-				},
-				{
-					allowAdditions: false,
-					additionLabel: textsCap.addressAdditionLabel + ' ',
-					clearable: true,
-					// disable when adding new and address is prefilled (possibly from notification)
-					disabled: !this.doUpdate && !!ss58Decode(address),
-					hidden: this.doUpdate,
-					label: textsCap.addressLabel,
-					lazyLoad: true,
-					minCharacters: 1,
-					name: inputNames.address,
-					noResultsMessage: textsCap.addressEmptySearchMessage,
-					onAddItem: this.handleAddressAddItem,
-					onChange: this.handleAddressChange,
-					onSearchChange: deferred(this.handleAddressSearchChange, 300),
-					options: !address
-						? []
-						: [
-							{
-								key: address + name,
-								text: name || address,
-								value: address,
-							},
-						],
-					placeholder: textsCap.addressPlaceholder,
-					required: true,
-					search: ['search'],
-					selectOnNavigation: false,
-					selection: true,
-					type: 'dropdown',
-					validate: this.validateAddress,
-				},
-				{
-					label: textsCap.nameLabel,
-					maxLength: 64,
-					minLength: 3,
-					name: inputNames.name,
-					placeholder: textsCap.namePlaceholder,
-					required: true,
-					rxValue: new BehaviorSubject(''),
-					type: 'text',
-					validate: this.validateName,
-				},
-				{
-					clearable: true,
-					label: textsCap.associatedIdentityLabel,
-					name: inputNames.associatedIdentity,
-					options: [],
-					placeholder: textsCap.associatedIdentityPlaceholder,
-					selection: true,
-					search: true,
-					type: 'dropdown',
-				},
-				{
-					allowAdditions: true,
-					label: textsCap.tags,
-					name: inputNames.tags,
-					noResultsMessage: textsCap.tagsNoResultsMsg,
-					multiple: true,
-					onAddItem: this.handleAddTag,
-					options: arrUnique([...getAllTags(), ...tags]).map(tag => ({
-						key: tag,
-						text: tag,
-						value: tag,
-					})),
-					placeholder: textsCap.tagsPlaceholder,
-					type: 'dropdown',
-					search: true,
-					selection: true,
-					value: tags || [],
-				},
-				{
-					disabled:
-						this.doUpdate && visibility === visibilityTypes.PUBLIC,
-					inline: true,
-					label: textsCap.visibilityLabel,
-					name: inputNames.visibility,
-					options: [
+			{
+				inline: true,
+				label: textsCap.typeLabel,
+				name: inputNames.type,
+				options: [
+					{ label: textsCap.personal, value: types.PERSONAL },
+					{ label: textsCap.business, value: types.BUSINESS },
+				],
+				radio: true,
+				required: true,
+				rxValue: new BehaviorSubject(types.PERSONAL),
+				type: 'checkbox-group',
+			},
+			{
+				allowAdditions: false,
+				additionLabel: textsCap.addressAdditionLabel + ' ',
+				clearable: true,
+				// disable when adding new and address is prefilled (possibly from notification)
+				disabled: !this.doUpdate && !!ss58Decode(address),
+				hidden: this.doUpdate,
+				label: textsCap.addressLabel,
+				lazyLoad: true,
+				minCharacters: 1,
+				name: inputNames.address,
+				noResultsMessage: textsCap.addressEmptySearchMessage,
+				onAddItem: this.handleAddressAddItem,
+				onChange: this.handleAddressChange,
+				onSearchChange: deferred(this.handleAddressSearchChange, 300),
+				options: !address
+					? []
+					: [
 						{
-							label: textsCap.private,
-							value: visibilityTypes.PRIVATE,
-						},
-						{
-							label: textsCap.public,
-							value: visibilityTypes.PUBLIC,
+							key: address + name,
+							text: name || address,
+							value: address,
 						},
 					],
-					radio: true,
-					required: true,
-					rxValue: new BehaviorSubject(
-						values.visibility || visibilityTypes.PRIVATE
-					),
-					type: 'checkbox-group',
-				},
-				{
-					label: textsCap.userIdLabel,
-					name: inputNames.userId,
-					multiple: false,
-					placeholder: textsCap.userIdPlaceholder,
-					type: 'UserIdInput',
-				},
-				{
-					label: textsCap.regNumberLabel,
-					minLength: 3,
-					maxLength: 64,
-					name: inputNames.registeredNumber,
-					placeholder: textsCap.regNumberPlaceholder,
-				},
-				{
-					label: textsCap.vatNumberLabel,
-					minLength: 3,
-					maxLength: 64,
-					name: inputNames.vatNumber,
-					placeholder: textsCap.vatNumberPlaceholder,
-				},
-				{
-					accordion: {
-						collapsed: true,
-						styled: true,
+				placeholder: textsCap.addressPlaceholder,
+				required: true,
+				search: ['search'],
+				selectOnNavigation: false,
+				selection: true,
+				type: 'dropdown',
+				validate: this.validateAddress,
+			},
+			{
+				label: textsCap.nameLabel,
+				maxLength: 64,
+				minLength: 3,
+				name: inputNames.name,
+				placeholder: textsCap.namePlaceholder,
+				required: true,
+				rxValue: new BehaviorSubject(''),
+				type: 'text',
+				validate: this.validateName,
+			},
+			{
+				clearable: true,
+				label: textsCap.associatedIdentityLabel,
+				name: inputNames.associatedIdentity,
+				options: [],
+				placeholder: textsCap.associatedIdentityPlaceholder,
+				rxOptions: rxIdentities,
+				rxOptionsModifier: getIdentityOptions,
+				search: ['keywords'],
+				selection: true,
+				type: 'dropdown',
+			},
+			{
+				allowAdditions: true,
+				label: textsCap.tags,
+				name: inputNames.tags,
+				noResultsMessage: textsCap.tagsNoResultsMsg,
+				multiple: true,
+				onAddItem: this.handleAddTag,
+				options: arrUnique([...getAllTags(), ...tags]).map(tag => ({
+					key: tag,
+					text: tag,
+					value: tag,
+				})),
+				placeholder: textsCap.tagsPlaceholder,
+				type: 'dropdown',
+				search: true,
+				selection: true,
+				value: tags || [],
+			},
+			{
+				disabled:
+					this.doUpdate && visibility === visibilityTypes.PUBLIC,
+				inline: true,
+				label: textsCap.visibilityLabel,
+				name: inputNames.visibility,
+				options: [
+					{
+						label: textsCap.private,
+						value: visibilityTypes.PRIVATE,
 					},
-					hidden: values => !values[inputNames.address],
-					label: textsCap.locationGroupLabel,
-					name: inputNames.locationGroup,
-					type: 'group',
-					inputs: [
-						{
-							name: inputNames.locationFormHtml,
-							type: 'html',
-							content: this.getLocationForm(
-								location,
-								locationId,
-								{ submitText: null }
-							),
-						},
-					],
-				},
-				{
-					accordion: {
-						collapsed: true,
-						styled: true,
+					{
+						disabled: true,
+						label: textsCap.public,
+						value: visibilityTypes.PUBLIC,
 					},
-					hidden: values => !values[inputNames.address],
-					label: textsCap.contactGroupLabel,
-					name: inputNames.contactGroup,
-					type: 'group',
-					inputs: [
-						{
-							name: inputNames.contactFormHtml,
-							type: 'html',
-							content: this.getContactForm({
-								...contact,
-								name: (contact || {}).name
-									|| values.name,
-								[contactInputNames.partnerIdentity]: address,
-							}),
-						},
-					],
+				],
+				radio: true,
+				required: true,
+				rxValue: new BehaviorSubject(
+					values.visibility || visibilityTypes.PRIVATE
+				),
+				type: 'checkbox-group',
+			},
+			{
+				hidden: values => values[inputNames.visibility] === visibilityTypes.PUBLIC,
+				label: textsCap.userIdLabel,
+				name: inputNames.userId,
+				multiple: false,
+				placeholder: textsCap.userIdPlaceholder,
+				type: 'UserIdInput',
+			},
+			{
+				label: textsCap.regNumberLabel,
+				minLength: 3,
+				maxLength: 64,
+				name: inputNames.registeredNumber,
+				placeholder: textsCap.regNumberPlaceholder,
+				rxValue: new BehaviorSubject(),
+			},
+			{
+				label: textsCap.vatNumberLabel,
+				minLength: 3,
+				maxLength: 64,
+				name: inputNames.vatNumber,
+				placeholder: textsCap.vatNumberPlaceholder,
+			},
+			{
+				accordion: {
+					collapsed: true,
+					styled: true,
 				},
-			].filter(Boolean)
+				hidden: values => !values[inputNames.address],
+				label: textsCap.locationGroupLabel,
+				name: inputNames.locationGroup,
+				type: 'group',
+				inputs: [
+					{
+						name: inputNames.locationFormHtml,
+						type: 'html',
+						content: this.getLocationForm(
+							location,
+							locationId,
+							{ submitText: null }
+						),
+					},
+				],
+			},
+			{
+				accordion: {
+					collapsed: true,
+					styled: true,
+				},
+				hidden: values => !values[inputNames.address],
+				label: textsCap.contactGroupLabel,
+				name: inputNames.contactGroup,
+				type: 'group',
+				inputs: [
+					{
+						name: inputNames.contactFormHtml,
+						type: 'html',
+						content: this.getContactForm({
+							...contact,
+							name: (contact || {}).name
+								|| values.name,
+							[contactInputNames.partnerIdentity]: address,
+						}),
+					},
+				],
+			},
+		].filter(Boolean)
 
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
@@ -358,16 +370,6 @@ export default class PartnerForm extends Component {
 	componentWillMount = () => {
 		this._mounted = true
 		const { inputs, values } = this.state
-		// const addressIn = findInput(inputs, 'address')
-		const assocIn = findInput(inputs, inputNames.associatedIdentity)
-		assocIn.options = arrSort(
-			identityService.getAll().map(({ name, address }) => ({
-				key: address,
-				text: name,
-				value: address,
-			})),
-			'text'
-		)
 
 		values.address && setTimeout(async () => {
 			await this.checkVisibility(values.address)
@@ -447,8 +449,8 @@ export default class PartnerForm extends Component {
 		contact.id = contact.id || newContactId(this.state.values[inputNames.address])
 		return (
 			<ContactForm {...{
-				El: 'div',
 				autoSave: true,
+				El: 'div',
 				inputsHidden: [
 					contactInputNames.name,
 					contactInputNames.partnerIdentity,
@@ -492,8 +494,8 @@ export default class PartnerForm extends Component {
 		locationId = locationId || newLocationId(this.state.values[inputNames.address])
 		return (
 			<LocationForm {...{
-				El: 'div',
 				autoSave: true,
+				El: 'div',
 				id: locationId,
 				inputsHidden: [
 					locationInputNames.name,
@@ -561,8 +563,13 @@ export default class PartnerForm extends Component {
 		visibilityIn.disabled = isPublic || !!com
 		// stuff to do only when creating an entry
 		if (!this.doUpdate) {
-			const { name: cName = '', registrationNumber: cReg } = com || {}
-			nameIn.type = !!com ? 'hidden' : 'text'
+			const {
+				name: cName = '',
+				registrationNumber: cReg,
+			} = com || {}
+			nameIn.type = !!com
+				? 'hidden'
+				: 'text'
 			// hide visitibity if company selected as it is already "public"
 			// only hide registration number if selected company contains a number
 			regNumIn.value = cReg || ''
@@ -602,9 +609,10 @@ export default class PartnerForm extends Component {
 		addressIn.loading = true
 		this.setState({ inputs })
 
-		const AddressOptionText = React.memo(({ name, subText }) => (
+		const OptionText = React.memo(({ name, subText }) => (
 			<div>
-				{name}
+				<PartnerIcon visibility={visibilityTypes.PUBLIC} />
+				{' ' + name}
 				<div style={{ color: 'grey' }}>
 					<small>{subText}</small>
 				</div>
@@ -612,19 +620,40 @@ export default class PartnerForm extends Component {
 		))
 
 		const handleResult = success => result => {
-			const err = !success ? result : null
-			const companies = success ? result : new Map()
+			const err = !success
+				? result
+				: null
+			const companies = success
+				? result
+				: new Map()
 			addressIn.loading = false
-			addressIn.allowAdditions = !err && companies.size === 0 && isValidAddress
+			addressIn.allowAdditions = !err
+				&& companies.size === 0
+				&& isValidAddress
 			addressIn.options = err || !companies
 				? []
 				: Array
 					.from(companies)
 					.map(([hash, company]) => {
-						const { countryCode, identity, name, regAddress = {} } = company
-						const { addressLine1, county, postCode, postTown } = regAddress 
+						const {
+							countryCode,
+							identity,
+							name,
+							regAddress = {},
+						} = company
+						const {
+							addressLine1,
+							county,
+							postCode,
+							postTown,
+						} = regAddress 
 						const key = identity
-						const ar = [addressLine1, postTown, postCode, county]
+						const ar = [
+							addressLine1,
+							postTown,
+							postCode,
+							county,
+						]
 						const subText = ar
 							.map(x => `${x || ''}`.trim())
 							.filter(Boolean)
@@ -635,9 +664,19 @@ export default class PartnerForm extends Component {
 							description: countryCode,
 							key, // also used for DropDown's search
 							name,
-							search: [name, identity, subText].join(' '),
+							search: [
+								name,
+								identity,
+								subText,
+							].join(' '),
 							style: { margin: '-6px 0' },
-							text: <AddressOptionText {...{ key, name, subText }} />,
+							text: (
+								<OptionText {...{
+									key,
+									name,
+									subText,
+								}} />
+							),
 							value: identity,
 						}
 					})
@@ -687,7 +726,12 @@ export default class PartnerForm extends Component {
 	}
 
 	handleSubmit = deferred(() => {
-		const { autoSave, closeOnSubmit, onSubmit, warnBackup } = this.props
+		const {
+			autoSave,
+			closeOnSubmit,
+			onSubmit,
+			warnBackup,
+		} = this.props
 		const { inputs, values } = this.state
 		const doBackup = warnBackup && !this.doUpdate
 		let address = values[inputNames.address]
@@ -837,5 +881,5 @@ PartnerForm.defaultProps = {
 	autoSave: false,
 	closeOnSubmit: true,
 	size: 'tiny',
-	warnBackup: true,
+	warnBackup: false,
 }

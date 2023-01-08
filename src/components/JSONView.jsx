@@ -33,8 +33,8 @@ export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {
             }
             if (isArr(value) || isArrLike(value) || isObj(value)) {
                 const res = toJSONView({
-                    data: value,
                     asEl: false,
+                    data: value,
                 })
                 value = res[0]
                 ellipsed = { ...ellipsed, ...res[1] }
@@ -84,7 +84,8 @@ export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {
                     .slice(1)
             ).flat()
         })
-    Array.from(elements)
+    Array
+        .from(elements)
         .forEach(([elementId, element]) => {
             arr = arr.map(x =>
                 isValidElement(x)

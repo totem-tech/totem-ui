@@ -14,6 +14,8 @@ import identities, { getSelected } from '../identity/identity'
 import partners, { rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import { query, queueables } from './timekeeping'
+import getPartnerOptions from '../partner/getPartnerOptions'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 
 const notificationType = 'timekeeping'
 const childType = 'invitation'
@@ -78,6 +80,8 @@ export default class TimeKeepingInviteForm extends Component {
                     onChange: this.handlePartnerChange,
                     options: [],
                     placeholder: textsCap.partnerLabel,
+                    rxOptions: rxPartners,
+                    rxOptionsModifier: partners => getPartnerOptions(partners, {}, true),
                     required: true,
                     search: ['text', 'value', 'description'],
                     selection: true,
@@ -106,7 +110,6 @@ export default class TimeKeepingInviteForm extends Component {
 
     async componentWillMount() {
         this._mounted = true
-        this.subscriptions = {}
         const { values } = this.props
         const { inputs } = this.state
         const proIn = findInput(inputs, 'projectHash')
@@ -129,44 +132,18 @@ export default class TimeKeepingInviteForm extends Component {
             'text'
         )
         proIn.invalid = proIn.options.length === 0
-        proIn.message = !proIn.invalid ? null : {
-            content: textsCap.zeroActivityWarning,
-            status: 'error'
-        }
+        proIn.message = !proIn.invalid
+            ? null
+            : {
+                content: textsCap.zeroActivityWarning,
+                status: 'error'
+            }
 
         values && fillValues(inputs, values)
         this.setState({ inputs })
-
-        // automatically update when partner list changes
-        this.subscriptions.partners = rxPartners.subscribe(map => {
-            const { inputs } = this.state
-            const partnerIn = findInput(inputs, 'workerAddress')
-            const { address: selectedAddress, name } = getSelected()
-            const options = Array.from(map)
-                .map(([address, { name, userId }]) => address !== selectedAddress && ({
-                    description: userId && '@' + userId,
-                    key: address,
-                    text: name,
-                    value: address
-                }))
-                .concat({
-                    // add selected identity so that project owner can invite themself
-                    description: textsCap.myself,
-                    key: selectedAddress + name,
-                    text: name,
-                    value: selectedAddress,
-                })
-                .filter(Boolean)
-            // populate partner's list
-            partnerIn.options = arrSort(options, 'text')
-            this.setState({ inputs })
-        })
     }
 
-    componentWillUnmount() {
-        this._mounted = false
-        unsubscribe(this.subscriptions)
-    }
+    componentWillUnmount = () => this._mounted = false
 
     handlePartnerChange = async (_, { projectHash: projectId, workerAddress }) => {
         const { inputs } = this.state

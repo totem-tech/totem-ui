@@ -4,13 +4,11 @@ import { BehaviorSubject } from 'rxjs'
 import storage from '../../utils/storageHelper'
 import {
 	arrSort,
-	className,
 	deferred,
 	isBool,
 	isFn,
-	objHasKeys,
 } from '../../utils/utils'
-import FormBuilder, { fillValues } from '../../components/FormBuilder'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../services/language'
 import { closeModal, confirm } from '../../services/modal'
 import identities from '../identity/identity'
@@ -18,39 +16,35 @@ import partners from '../partner/partner'
 import { get, remove, set } from './location'
 import { statuses } from '../../components/Message'
 import FormInput from '../../components/FormInput'
-import { Reveal } from '../../components/buttons'
-import { useRxSubject } from '../../utils/reactHelper'
 
-const textsCap = translated(
-	{
-		addressLine1Label: 'address line 1',
-		addressLine1Placeholder: 'Eg: 123A Street',
-		addressLine2Label: 'address line 2',
-		areYouSure: 'are you sure?',
-		cityLabel: 'city',
-		cityPlaceholder: 'enter your city',
-		countryLabel: 'country',
-		countryPlaceholder: 'select your country',
-		formHeaderCreate: 'add new location',
-		formHeaderUpdate: 'update location',
-		formSubheaderUpdate: 'changes will be auto-saved',
-		nameLabel: 'location name',
-		namePlaceholder: 'enter a name for this location',
-		partnerIdentityLabel: 'partner user ID',
-		partnerNameLabel: 'partner name',
-		postcodeLabel: 'postcode or zip',
-		postcodePlaceholder: 'enter your postcode or zip',
-		remove: 'remove',
-		removeLocation: 'remove location',
-		saved: 'saved',
-		saveLocation: 'save location',
-		stateLabel: 'state or province',
-		statePlaceholder: 'enter your state or province',
-		usedByIdentities: 'this location is used by the following identities:',
-		usedByPartners: 'this location is used by the following partners:',
-	},
-	true
-)[1]
+let textsCap = {
+	addressLine1Label: 'address line 1',
+	addressLine1Placeholder: 'Eg: 123A Street',
+	addressLine2Label: 'address line 2',
+	areYouSure: 'are you sure?',
+	cityLabel: 'city',
+	cityPlaceholder: 'enter your city',
+	countryLabel: 'country',
+	countryPlaceholder: 'select your country',
+	formHeaderCreate: 'add new location',
+	formHeaderUpdate: 'update location',
+	formSubheaderUpdate: 'changes will be auto-saved',
+	nameLabel: 'location name',
+	namePlaceholder: 'enter a name for this location',
+	partnerIdentityLabel: 'partner user ID',
+	partnerNameLabel: 'partner name',
+	postcodeLabel: 'postcode or zip',
+	postcodePlaceholder: 'enter your postcode or zip',
+	remove: 'remove',
+	removeLocation: 'remove location',
+	saved: 'saved',
+	saveLocation: 'save location',
+	stateLabel: 'state or province',
+	statePlaceholder: 'enter your state or province',
+	usedByIdentities: 'this location is used by the following identities:',
+	usedByPartners: 'this location is used by the following partners:',
+}
+textsCap = translated(textsCap, true)[1]
 
 export const requiredFields = {
 	city: 'city',
@@ -67,10 +61,11 @@ export const optionalFields = {
 export const inputNames = {
 	...requiredFields,
 	...optionalFields,
-	partnerName: 'partnerName',
-	removeBtn: 'removeBtn',
+	autoSave: 'autoSave',
 	groupCityPostcode: 'groupCityPostcode',
 	groupStateCountry: 'groupStateCountry',
+	partnerName: 'partnerName',
+	removeBtn: 'removeBtn',
 }
 
 export default class LocationForm extends Component {
@@ -88,11 +83,12 @@ export default class LocationForm extends Component {
 			submitText,
 			values,
 		} = props
-		const rxCountryCode = new BehaviorSubject()
 		this.id = id
 		const location = get(id)
 		values = { ...location, ...values }
 		const { partnerIdentity } = values
+		const rxCountryCode = new BehaviorSubject()
+		this.rxAutoSave = new BehaviorSubject(!!autoSave)
 		this.isUpdate = !!location
 		const partner = partners.get(partnerIdentity)
 		const noFlags = [
@@ -115,6 +111,11 @@ export default class LocationForm extends Component {
 				name: inputNames.partnerIdentity,
 				type: 'text',
 				value: partnerIdentity,
+			},
+			{
+				hidden: true,
+				name: inputNames.autoSave,
+				rxValue: this.rxAutoSave,
 			},
 			// for display purposes only
 			{
@@ -142,6 +143,7 @@ export default class LocationForm extends Component {
 				name: inputNames.addressLine1,
 				placeholder: textsCap.addressLine1Placeholder,
 				required: true,
+				rxValue: new BehaviorSubject(),
 				type: 'text',
 			},
 			{
@@ -150,6 +152,7 @@ export default class LocationForm extends Component {
 				maxLength: 64,
 				name: inputNames.addressLine2,
 				required: false,
+				rxValue: new BehaviorSubject(),
 				type: 'text',
 			},
 			{
@@ -165,6 +168,7 @@ export default class LocationForm extends Component {
 						name: inputNames.city,
 						placeholder: textsCap.cityPlaceholder,
 						required: true,
+						rxValue: new BehaviorSubject(),
 						type: 'text',
 						width: 8,
 					},
@@ -175,6 +179,7 @@ export default class LocationForm extends Component {
 						name: inputNames.postcode,
 						placeholder: textsCap.postcodePlaceholder,
 						required: true,
+						rxValue: new BehaviorSubject(),
 						type: 'text',
 						width: 8,
 					},
@@ -193,6 +198,7 @@ export default class LocationForm extends Component {
 						name: inputNames.state,
 						placeholder: textsCap.statePlaceholder,
 						required: true,
+						rxValue: new BehaviorSubject(),
 						type: 'text',
 						width: 8,
 					},
@@ -304,15 +310,15 @@ export default class LocationForm extends Component {
 		if (invalid) return
 
 		this.values = values
-		const { autoSave, onChange, onSubmit } = this.props
+		const { onChange, onSubmit } = this.props
 		isFn(onChange) && onChange(e, values)
-		if (!autoSave) return
+		if (!this.rxAutoSave.value) return
 		
-		// prevent saving without required fields
-		if (!objHasKeys(values, Object.keys(requiredFields), true)) return
+		const saved = !!set(values, this.id)
+		if (!saved) return
 
-		// new location created
 		if (!this.isUpdate) {
+			// new location created
 			this.isUpdate = true
 			this.setState({
 				subheader: textsCap.formSubheaderUpdate,
@@ -320,7 +326,6 @@ export default class LocationForm extends Component {
 				submitText: null,
 			})
 		}
-		set(values, this.id)
 		isFn(onSubmit) && onSubmit(true, values, this.id)
 	}
 
@@ -367,19 +372,45 @@ export default class LocationForm extends Component {
 			</div>
 		)
 		const handleConfirm = () => {
+			const autoSave = this.rxAutoSave.value
+			this.isUpdate = false
+			const names2Empty = [
+				[inputNames.autoSave, false],
+				[inputNames.addressLine1],
+				[inputNames.addressLine2],
+				[inputNames.city],
+				[inputNames.postcode],
+				[inputNames.state],
+				[inputNames.countryCode],
+			]
+			names2Empty.forEach(x => {
+				const [name, value = ''] = x
+				const { rxValue } = findInput(this.state.inputs, name)
+				rxValue && rxValue.next(value)
+			})
+			autoSave && this.rxAutoSave.next(true)
+
+			// close if on a modal
 			modalId && closeModal(modalId)
+			
+			// remove location from storage
 			remove(id)
-			// remove location ID form associated identitites and partners
-			identityMatches.forEach(([key, value]) =>
-				identities.set(key, {
-					...value,
-					locationId: null,
-				})
-			)
-			partnerMatches.forEach(([key, value]) => partners.set({
-				...value,
-				locationId: null,
-			}))
+
+			// remove location ID from associated identitites and partners
+			identityMatches
+				.forEach(([key, value]) =>
+					identities.set(key, {
+						...value,
+						locationId: null,
+					})
+				)
+			partnerMatches
+				.forEach(([key, value]) =>
+					partners.set({
+						...value,
+						locationId: null,
+					})
+				)
 			isFn(onRemove) && onRemove(id, this.values)
 		}
 		confirm({
@@ -397,11 +428,11 @@ export default class LocationForm extends Component {
 	}
 
 	handleSubmit = deferred((_, values) => {
-		let { autoSave, onSubmit } = this.props
+		const { onSubmit } = this.props
 		this.id = set(values, this.id)
 		// new location created
 		!this.isUpdate && this.setState({
-			message: !autoSave
+			message: !this.rxAutoSave.value
 				? undefined
 				: { 
 					header: textsCap.saved,
@@ -413,11 +444,10 @@ export default class LocationForm extends Component {
 		})
 		isFn(onSubmit) && onSubmit(true, values, this.id)
 		!this.isUpdate
-			&& autoSave
+			&& this.rxAutoSave.value
 			&& setTimeout(() => this.setState({
 				message: undefined,
 			}), 2000)
-		this.isUpdate = this.isUpdate || autoSave
 	}, 300)
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />

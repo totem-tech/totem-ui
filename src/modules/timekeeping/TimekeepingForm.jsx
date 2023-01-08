@@ -1,23 +1,43 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Button, Icon } from 'semantic-ui-react'
-import { deferred, hasValue, isBool, isDefined, isFn, isValidNumber, objCopy } from '../../utils/utils'
-import { BLOCK_DURATION_SECONDS, BLOCK_DURATION_REGEX, durationToSeconds, secondsToDuration, blockNumberToTS } from '../../utils/time'
+import { Button } from 'semantic-ui-react'
+import {
+    deferred,
+    hasValue,
+    isDefined,
+    isFn,
+} from '../../utils/utils'
+import {
+    BLOCK_DURATION_SECONDS,
+    BLOCK_DURATION_REGEX,
+    durationToSeconds,
+    secondsToDuration,
+    blockToDate,
+} from '../../utils/time'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import DataTableVertical from '../../components/DataTableVertical'
 // services
-import { query as queryBlockchain, getCurrentBlock } from '../../services/blockchain'
+import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../services/language'
-import { confirm, closeModal, showForm, confirmAsPromise } from '../../services/modal'
+import { confirm, confirmAsPromise } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { openStatuses, query as queryProject } from '../activity/activity'
-import identities, { getSelected } from '../identity/identity'
-import { getAddressName } from '../partner/partner'
-import { timerFormValues, getProjects, NEW_RECORD_HASH, query, queueables, statuses } from './timekeeping'
+import { getSelected } from '../identity/identity'
+import AddressName from '../partner/AddressName'
+import {
+    timerFormValues,
+    getProjects,
+    NEW_RECORD_HASH,
+    query,
+    queueables,
+    statuses,
+} from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
-import DataTableVertical from '../../components/DataTableVertical'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -45,6 +65,7 @@ let textsCap = {
     yes: 'yes',
     wallet: 'wallet',
 
+    activityOwner: 'activity owner',
     addedToQueue: 'added to queue',
     areYouSure: 'are you sure?',
     blockEnd: 'end block',
@@ -179,11 +200,11 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         status: 'loading',
         icon: true
     }
-    const currentBlock = await getCurrentBlock()
+    const currentBlock = await subjectAsPromise(rxBlockNumber)[0]
     const content = (
         <DataTableVertical {...{
             columns: [
-                { title: textsCap.identity, key: 'identity'},
+                { title: textsCap.identity, key: 'identity' },
                 { title: textsCap.activity, key: 'activity'},
                 { title: textsCap.duration, key: 'duration'},
                 { title: textsCap.numberOfBlocks, key: 'numberOfBlocks'},
@@ -192,23 +213,19 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
                 { title: textsCap.finishedAt, key: 'finishedAt'},
             ],
             data: [{
-                identity: getAddressName(workerAddress),
+                identity: <AddressName {...{ address: workerAddress }} />,
                 activity: projectName,
                 duration: duration,
                 numberOfBlocks: blockCount,
                 numberOfBreaks: breakCount,
-                startedAt: blockNumberToTS(currentBlock, blockStart),
-                finishedAt: blockNumberToTS(currentBlock, blockEnd),
+                startedAt: blockToDate(currentBlock, blockStart),
+                finishedAt: blockToDate(currentBlock, blockEnd),
             }],
-            // remove spacing around content
-            style: {
-                margin: '-36px -21px',
-                padding: 0,
-            }
         }} />
     )
 
     const proceed = await confirmAsPromise({
+        collapsing: true,
         cancelButton: textsCap.goBack,
         confirmButton: (
             <Button {...{
@@ -272,7 +289,7 @@ export default class TimekeepingForm extends Component {
                     type: 'dropdown',
                     options: [],
                     required: true,
-                    search: true,
+                    search: ['keywords'],
                     selection: true,
                     value: '',
                 },
@@ -312,20 +329,36 @@ export default class TimekeepingForm extends Component {
         const updateValues = blockNumber => {
             if (!this._mounted) return
             const { values: { inprogress } } = this.state
-            inprogress ? this.saveValues(blockNumber) : this.setState({ blockNumber })
+            inprogress
+                ? this.saveValues(blockNumber)
+                : this.setState({ blockNumber })
         }
         const updateProjects = deferred(projects => {
             if (!this._mounted) return
             const { inputs, values } = this.state
             const projectIn = findInput(inputs, 'projectHash')
-            const options = Array.from(projects).map(([hash, project]) => ({
-                key: hash,
-                project,
-                text: project.name || textsCap.unknown,
-                value: hash,
-            }))
+            const options = Array
+                .from(projects)
+                .map(([hash, project]) => {
+                    const { name, ownerAddress, userId } = project 
+                    return {
+                        description: (
+                            <AddressName {...{
+                                address: ownerAddress,
+                                title: textsCap.activityOwner,
+                                userId,
+                            }} />
+                        ),
+                        key: hash,
+                        project,
+                        text: name || textsCap.unknown,
+                        value: hash,
+                    }
+                })
             projectIn.options = options
-            projectIn.noResultsMessage = options.length === 0 ? textsCap.noProjectsMsg : undefined
+            projectIn.noResultsMessage = options.length === 0
+                ? textsCap.noProjectsMsg
+                : undefined
             // restore saved values
             if (!this.prefillDone) {
                 fillValues(inputs, values, true)
@@ -335,7 +368,8 @@ export default class TimekeepingForm extends Component {
             this.setState({ inputs })
         }, 100)
         // this.subscriptions.newHead = await queryBlockchain('api.rpc.chain.subscribeNewHeads', [updateValues])
-        this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
+        // this.subscriptions.blockNumber = await getCurrentBlock(updateValues)
+        this.subscriptions.blockNumber = rxBlockNumber.subscribe(updateValues)
         this.subscriptions.projects = await getProjects(true, updateProjects)
 
     }
@@ -349,7 +383,9 @@ export default class TimekeepingForm extends Component {
     handleProjectChange = async (_, values, index) => {
         let { projectHash: projectId, workerAddress } = values
         const { inputs } = this.state
-        const isValidProject = projectId && (inputs[index].options || []).find(x => x.value === projectId)
+        const isValidProject = projectId
+            && (inputs[index].options || [])
+                .find(x => x.value === projectId)
         if (!isValidProject) {
             // project hash doesnt exists in the options
             if (projectId) inputs[index].rxValue.next(null)
@@ -552,20 +588,20 @@ export default class TimekeepingForm extends Component {
     setIdentityOptions = async (projectId, workerAddress) => {
         if (!projectId) return
         const { inputs } = this.state
-        const identityIn = findInput(inputs, 'workerAddress')
-        const allIdentities = identities.getAll()
         const workers = await query.worker.listWorkers(projectId)
-        const options = allIdentities
-            // exclude projects that hasn't been accepted yet
-            .filter(({ address }) => workers.includes(address))
-            .map(({ address, name }) => ({
-                key: address,
-                text: name,
-                value: address,
-            }))
-        identityIn.options = options
-        const hasOption = options.find(({ value }) => value === workerAddress)
-        identityIn.rxValue.next(hasOption ? workerAddress : null)
+        const identityIn = findInput(inputs, 'workerAddress')
+        identityIn.options = getIdentityOptions()
+            .filter(x => workers.includes(x.value))
+        const isWorker = !!identityIn
+            .options
+            .find(({ value }) =>
+                value === workerAddress
+            )
+        identityIn.rxValue.next(
+            isWorker
+                ? workerAddress
+                : null
+        )
         this.setState({ inputs })
     }
 
@@ -573,29 +609,37 @@ export default class TimekeepingForm extends Component {
         const { closeText: closeTextP, onClose } = this.props
         const { closeText, inputs, message, values } = this.state
         const { duration, stopped, inprogress, manualEntry } = values
-        const durationValid = values && BLOCK_DURATION_REGEX.test(duration) && duration !== DURATION_ZERO
+        const durationValid = values
+            && BLOCK_DURATION_REGEX.test(duration)
+            && duration !== DURATION_ZERO
         const done = stopped || manualEntry
         const duraIn = inputs.find(x => x.name === 'duration')
-        const btnStyle = { width: 'calc( 50% - 12px )', margin: '3px 3px 15px' }
+        const btnStyle = {
+            margin: '3px 3px 15px',
+            width: 'calc( 50% - 12px )',
+        }
         const doneItems = ['workerAddress', 'reset']
-        inputs.filter(x => doneItems.indexOf(x.name) >= 0).forEach(x => x.hidden = !done)
+        inputs.filter(x => doneItems.indexOf(x.name) >= 0)
+            .forEach(x => x.hidden = !done)
         inputs.find(x => x.name === 'projectHash').disabled = inprogress
         duraIn.icon = manualEntry ? 'pencil' : null
         // Show resume item when timer is stopped
-        duraIn.action = !stopped || manualEntry ? undefined : {
-            icon: 'play',
-            // prevents annoying HTML form validation warnings from showing up when clicked
-            formNoValidate: true,
-            onClick: () => confirm({
-                header: textsCap.resumeTimer,
-                content: textsCap.resumeTimeWarning,
-                onConfirm: this.handleResume.bind(this),
-                confirmButton: textsCap.yes,
-                cancelButton: textsCap.no,
-                size: 'mini'
-            }),
-            title: textsCap.resumeTimer,
-        }
+        duraIn.action = !stopped || manualEntry
+            ? undefined
+            : {
+                icon: 'play',
+                // prevents annoying HTML form validation warnings from showing up when clicked
+                formNoValidate: true,
+                onClick: () => confirm({
+                    header: textsCap.resumeTimer,
+                    content: textsCap.resumeTimeWarning,
+                    onConfirm: this.handleResume.bind(this),
+                    confirmButton: textsCap.yes,
+                    cancelButton: textsCap.no,
+                    size: 'mini',
+                }),
+                title: textsCap.resumeTimer,
+            }
 
         const closeBtn = (
             <Button
@@ -603,9 +647,18 @@ export default class TimekeepingForm extends Component {
                 size='massive'
                 style={btnStyle}
                 onClick={(e, d) => {
-                    const { values: { inprogress } } = this.state
-                    const doCancel = () => this.handleReset(false) | isFn(onClose) && onClose(e, d)
-                    !inprogress ? doCancel() : confirm({
+                    const {
+                        values: {
+                            inprogress
+                        } = {},
+                    } = this.state
+                    const doCancel = () => {
+                        this.handleReset(false)
+                        isFn(onClose) && onClose(e, d)
+                    }
+                    if (!inprogress) return doCancel()
+
+                    confirm({
                         cancelButton: textsCap.noContinueTimer,
                         confirmButton: textsCap.yes,
                         content: textsCap.cancelWarning,
@@ -613,7 +666,6 @@ export default class TimekeepingForm extends Component {
                         onConfirm: doCancel,
                         size: 'tiny'
                     })
-
                 }}
             />
         )

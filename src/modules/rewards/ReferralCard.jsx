@@ -166,6 +166,7 @@ const tableProps = {
             title: 'User ID',
         },
         {
+            draggable: false,
             key: '_amount',
             sortKey: 'amount',
             title: 'Amount',

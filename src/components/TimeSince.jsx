@@ -15,7 +15,7 @@ import {
 import { Statistic } from 'semantic-ui-react'
 import { useInverted } from '../services/window'
 
-const texts = translated({
+let texts = {
     ago: 'ago',
     second: 'second',
     seconds: 'seconds',
@@ -29,7 +29,8 @@ const texts = translated({
     months: 'months',
     year: 'year',
     years: 'years',
-})[0]
+}
+texts = translated(texts)[0]
 
 const TimeSince = props => {
     const {
@@ -191,9 +192,11 @@ const _format = (dateFrom, dateTo = new Date()) => {
     return [_fmtSince(years, 'year', isPast), null] //yearMS
 }
 const _fmtSince = (value, unit, isPast) => {
-    return `${parseInt(value)} ${_fmtUnit(unit, value)} ${isPast ? texts.ago : ''}`
+    value = parseInt(value)
+    unit = _fmtUnit(unit, value)
+    return `${value} ${unit} ${isPast ? texts.ago : ''}`
 }
-const _fmtUnit = (unit, value) => texts[`${unit}${value > 1 ? 's' : ''}`]
+const _fmtUnit = (unit, value) => texts[`${unit}${value >= 1.5 ? 's' : ''}`] || unit
 
 // units in milliseconds
 const secondMS = 1000

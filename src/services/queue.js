@@ -3,21 +3,35 @@
  */
 import React from 'react'
 import uuid from 'uuid'
-import { BehaviorSubject, Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import DataStorage from '../utils/DataStorage'
 import { getTxFee, signAndSend } from '../utils/polkadotHelper'
-import { isArr, isFn, isObj, isStr, objClean, isValidNumber, isError, deferred } from '../utils/utils'
+import PromisE from '../utils/PromisE'
+import { BLOCK_DURATION_SECONDS } from '../utils/time'
+import {
+    deferred,
+    isArr,
+    isError,
+    isFn,
+    isObj,
+    isStr,
+    isValidNumber,
+    objClean,
+} from '../utils/utils'
 // services
 // keep the `client` variable as it will be used the `handleChatClient` function
 import _client, { rxIsConnected, rxIsInMaintenanceMode } from '../modules/chat/ChatClient'
-import { getConnection, query, getCurrentBlock } from './blockchain'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
+import {
+    getConnection,
+    query,
+    rxBlockNumber,
+} from './blockchain'
 import { translated } from './language'
 import { setToast } from './toast'
 import { rxOnline } from './window'
-import PromisE from '../utils/PromisE'
-import { BLOCK_DURATION_SECONDS } from '../utils/time'
+import { subjectAsPromise } from '../utils/reactHelper'
 
 const textsCap = translated({
     amount: 'amount',
@@ -136,6 +150,9 @@ const VALID_KEYS = Object.freeze([
     // @name            string: (optional) a name for the queue item. Should be unique in the queue chain. 
     //                          The name is used to pass through the data (eg: TX event data) to the @next queue items.
     'name',
+
+    // @module          string: (optional) optionally save the name of the module
+    'module',
 
     // @next            object: (optional) next task in this queue. Same keys as @VALID_KEYS
     //                          Will only be executed if the parent task was successful.
@@ -269,11 +286,13 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
  * 
  * @returns {String} supplied/newly generated ID
  */
-export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
+export const addToQueue = (queueItem, id, toastId = uuid.v1()) => {
+    id = id || uuid.v1()
     // prevent adding the same task again
     if (queue.get(id)) return
 
     queueItem = objClean(queueItem, VALID_KEYS)
+    queueItem.id = id
     queue.set(id, queueItem)
     _processTask(queueItem, id, toastId)
     return id
@@ -283,16 +302,39 @@ export const addToQueue = (queueItem, id = uuid.v1(), toastId = uuid.v1()) => {
  * @name    checkComplete
  * @summary check if queue chain has finished execution
  * 
- * @param   {Object} queuedTask 
+ * @param   {String|Object} id   queue ID
+ * @param   {Boolean}       wait whether to wait until queue item has completed execution (success/error)
  * 
- * @returns {Boolean}
+ * @returns {Boolean|Promise}
  */
-export const checkComplete = queuedTask => {
-    if (!queuedTask) return true
-    const { next, status } = queuedTask
-    const isComplete = [statuses.ERROR, statuses.SUCCESS].includes(status)
-    const hasChild = isObj(next) && !!next.func && Object.values(QUEUE_TYPES).includes(next.type)
-    return !hasChild ? isComplete : checkComplete(next)
+export const checkComplete = (id, wait = false) => {
+    // wait until 
+    if (wait) return subjectAsPromise(
+        rxOnSave,
+        ({ rootTask = {} } = {}) => {
+            const match = rootTask.id === id
+                && checkComplete(id)
+            return match
+        }
+    )[0]
+
+    const queueItem = isStr(id)
+        ? queue.get(id)
+        : id
+    if (!queueItem) return true
+
+    const { next, status } = queueItem
+    const isComplete = [statuses.ERROR, statuses.SUCCESS]
+        .includes(status)
+    const hasChild = isObj(next)
+        && !!next.func
+        && Object
+            .values(QUEUE_TYPES)
+            .includes(next.type)
+
+    return !hasChild
+        ? isComplete
+        : checkComplete(next)
 }
 
 /**
@@ -324,7 +366,7 @@ export const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3)
     } else if (isStarted) {
         // tx is already being executed
         // retreive current block number to check if transaction has failed
-        blockNum = await getCurrentBlock()
+        blockNum = await subjectAsPromise(rxBlockNumber)[0]
         diff = blockNum - isStarted
         if (diff > waitBlocks || !allowWait || !isValidNumber(waitBlocks)) {
             // sufficient amount has passed but the transaction was still not in the isSuccess list
@@ -349,6 +391,22 @@ export const checkTxStatus = async (api, txId, allowWait = true, waitBlocks = 3)
  * @returns {Object} queued task
  */
 export const getById = id => queue.get(id)
+
+/**
+ * @name    getByRecordId
+ * @summary get queue item by Record ID (task ID, timekeeping record ID....)
+ * 
+ * @param   {*} recordId 
+ * 
+ * @returns {Array} [id, queueItem]
+ */
+export const getByRecordId = recordId => {
+    const checkRID = item => item.recordId === recordId
+        || (isObj(item.next) && checkRID(item.next))
+    return queue
+        .toArray()
+        .find(([_, item]) => checkRID(item))
+}
 
 /**
  * @name handleChatClient
@@ -507,14 +565,20 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
     try {
         const args = currentTask.args || []
         const argsProcessed = []
-        const hasDynamicArg = args.find(arg => isObj(arg) && arg.__taskName && arg.__resultSelector)
+        const hasDynamicArg = args.find(arg =>
+            isObj(arg)
+            && arg.__taskName
+            && arg.__resultSelector
+        )
         if (!hasDynamicArg) return []
 
         // throw 'test error 0'
         const getTaskByName = (task, name) => {
             // throw 'test error 2'
             if (task.name === name) return task
-            return !isObj(task.next) ? undefined : getTaskByName(task.next, name)
+            return !isObj(task.next)
+                ? undefined
+                : getTaskByName(task.next, name)
         }
         for (let i = 0; i < args.length; i++) {
             const arg = args[i]
@@ -528,7 +592,13 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
             const task = getTaskByName(rootTask, __taskName)
             const { result } = task || {}
             const argValue = eval(__resultSelector)
-            const processedArg = !isFn(argValue) ? argValue : argValue(result, rootTask, task)
+            const processedArg = !isFn(argValue)
+                ? argValue
+                : argValue(
+                    result,
+                    rootTask,
+                    task,
+                )
             argsProcessed.push(processedArg)
         }
 
@@ -578,20 +648,33 @@ export const resumeQueue = () => queue.map(([id, task]) => {
  */
 const setMessage = (task, msg = {}, duration, id, silent = false) => {
     if (silent) return
-    const statusText = task.status !== SUSPENDED ? statusTitles[task.status] : textsCap.addedToQueue
+    const statusText = task.status !== SUSPENDED
+        ? statusTitles[task.status]
+        : textsCap.addedToQueue
     const header = `${msg.header || task.title}: 
         ${task.type.startsWith('tx_') ? textsCap.transaction : ''} ${statusText}`
-    const content = !msg.content ? task.description : (
-        !isArr(msg.content) ? msg.content : (
-            <div>
-                {msg.content.filter(Boolean).map((txt, i) => (
-                    <div key={i} style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                        {txt}
-                    </div>
-                ))}
-            </div>
-        )
+    const EL = ({ children }) => (
+        <div style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+            {children}
+        </div>
     )
+    const content = !msg.content
+        ? task.description
+        : !isArr(msg.content)
+            ? <EL>{msg.content}</EL>
+            : (
+                <div>
+                    {msg
+                        .content
+                        .filter(Boolean)
+                        .map((txt, i) => (
+                            <EL {...{
+                                children: txt,
+                                key: i,
+                            }} />
+                        ))}
+                </div>
+            )
 
     setToast({
         ...msg,
@@ -623,9 +706,11 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     const isSuccess = status === SUCCESS
     const isSuspended = status === SUSPENDED
     task.status = status
-    task.errorMessage = !errMsg || isStr(errMsg) ? errMsg : (
-        isError(errMsg) ? `${errMsg}` : JSON.stringify(errMsg, null, 4)
-    )
+    task.errorMessage = !errMsg || isStr(errMsg)
+        ? errMsg
+        : isError(errMsg)
+            ? `${errMsg}`
+            : JSON.stringify(errMsg, null, 4)
     const hasError = status === ERROR && task.errorMessage
     hasError && msg.content.unshift(task.errorMessage)
     // no need to display toast if status is suspended
@@ -667,7 +752,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         task.result,
         task.txId,
     )
-    rxOnSave.next({ rootTask, task })
+    setTimeout(() => rxOnSave.next({ rootTask, task }))
     if (!done) return
 
     try {
@@ -723,6 +808,8 @@ rxOnline.subscribe(resumeSuspended)
 
 export default {
     addToQueue,
+    checkComplete,
+    getById,
     queue,
     QUEUE_TYPES,
     resumeQueue,

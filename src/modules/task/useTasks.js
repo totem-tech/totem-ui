@@ -1,15 +1,30 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { format } from '../../utils/time'
-import { isFn, arrUnique, objCopy, isMap, isArr, isObj } from '../../utils/utils'
+import {
+    arrUnique,
+    isAddress,
+    isArr,
+    isFn,
+    isMap,
+    isStr,
+} from '../../utils/utils'
 // services
 import { translated } from '../../services/language'
-import { getAddressName } from '../partner/partner'
-import { approvalStatuses, approvalStatusNames, query, rwCache, statuses, statusNames } from './task'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
-import { isAddress } from 'web3-utils'
-import notification, { rxNewNotification } from '../notification/notification'
-
+import { get as getIdentity } from '../identity/identity'
+import { rxNewNotification } from '../notification/notification'
+import {
+    applicationStatus,
+    approvalStatuses,
+    approvalStatusNames,
+    query,
+    rwCache,
+    statuses,
+    statusNames,
+} from './task'
+import PromisE from '../../utils/PromisE'
+import { rxBlockNumber } from '../../services/blockchain'
+import { subjectAsPromise } from '../../utils/reactHelper'
+import { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
 const textsCap = translated({
     errorHeader: 'failed to load tasks',
     loadingMsg: 'loading tasks',
@@ -98,48 +113,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                             return
                         }
                         const taskId = uniqueTaskIds[index]
-                        let amountXTX = 0
-                        let {
-                            amountXTX: amountHex,
-                            approvalStatus,
-                            approver,
-                            fulfiller,
-                            // order can be null if storage has changed, in that case, use inaccessible status
-                            orderStatus = statuses.inaccessible,
-                            owner,
-                        } = order || {}
-                        try {
-                            amountXTX = !order
-                                ? 0
-                                : Number(amountHex) >= 0
-                                    ? Number(amountHex)
-                                    : ordersOrg[index].value
-                                        && isFn(ordersOrg[index].value.get)
-                                        ? ordersOrg[index]
-                                            .value
-                                            .get('amountXTX')
-                                            .toNumber()
-                                        : 0
-                        } catch (err) {
-                            // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
-                            console.log('amountXTX parse error', err)
-                        }
-                        const isOwner = address === owner
-                        const isSubmitted = orderStatus === statuses.submitted
-                        const isPendingApproval = approvalStatus == approvalStatuses.pendingApproval
-                        const isOwnerTheApprover = owner === approver
-                        let allowEdit = isOwner && isSubmitted && (isPendingApproval || isOwnerTheApprover)
-                        const task = {
-                            ...order,
-                            amountXTX,
-                            allowEdit,
-                            // pre-process values for use with DataTable
-                            _approvalStatus: approvalStatusNames[approvalStatus],
-                            _fulfiller: <AddPartnerBtn {...{ address: fulfiller }} />,
-                            _orderStatus: statusNames[orderStatus],
-                            _taskId: taskId, // list search
-                            _owner: <AddPartnerBtn {...{ address: owner }} />,
-                        }
+                        const task = processOrder(order, taskId, ordersOrg[index])
                         uniqueTasks.set(taskId, task)
                     })
 
@@ -154,22 +128,41 @@ export default function useTasks(types = [], address, timeout = 5000) {
                     )
                     newTasks.set(type, typeTasks)
                 })
-                newTasks = addDetails(address, newTasks, detailsMap, uniqueTaskIds)
+                newTasks = addDetailsToTasks(
+                    address,
+                    newTasks,
+                    detailsMap,
+                    uniqueTaskIds,
+                )
                 done = true
                 setMessage(null)
                 setTasks(newTasks)
             } catch (err) {
+                done = true
                 setError(err)
             }
         }
+        let loaded = false
         const handleTaskIds = async (taskIds2d) => {
             if (!mounted) return
+
+            // delay update to make sure off-chain detials are stored and can be retrieved
+            if (loaded) {
+                subs.tasks && subs.tasks()
+                await PromisE.delay(300)
+            }
+            loaded = true
+
             try {
+                // unsubscribe from existing subscriptions
                 subs.tasks && subs.tasks()
                 // create single list of unique Task IDs
                 const uniqueTaskIds = arrUnique(taskIds2d.flat())
+
+                // wait until user is logged in
+                rxIsRegistered.value &&
+                    await subjectAsPromise(rxIsLoggedIn, true)[0]
                 const detailsMap = await query.getDetailsByTaskIds(uniqueTaskIds)
-                console.log({ taskIds2d, uniqueTaskIds })
                 subs.tasks = await query.orders(
                     uniqueTaskIds,
                     handleOrdersCb(
@@ -181,6 +174,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                     true,
                 )
             } catch (err) {
+                done = true
                 setError(err)
             }
         }
@@ -190,12 +184,10 @@ export default function useTasks(types = [], address, timeout = 5000) {
             if (!mounted || done) return
             setMessage(null)
             const tasks = getCached(address, types)
-            console.log('handleOrdersCb: setTimeout -> cached', { tasks })
             setTasks(tasks)
         }, timeout)
 
         setMessage(loadingMsg)
-        // window.isDebug && console.log({ address })
 
         query
             .getTaskIds(types, address, handleTaskIds)
@@ -223,7 +215,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
             let newTasks = null
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
-                newTasks = addDetails(address, tasks, detailsMap, taskIds)
+                newTasks = addDetailsToTasks(address, tasks, detailsMap, taskIds)
             } catch (err) {
                 //ignore error
                 console.error(err)
@@ -243,7 +235,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
     return [tasks, message]
 }
 
-const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
+const addDetailsToTasks = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
     if (!isMap(tasks)) return new Map()
     // no off-chain details to attach
     if (!detailsMap.size) return tasks
@@ -255,29 +247,117 @@ const addDetails = (address, tasks, detailsMap, uniqueTaskIds, save = true) => {
                 let task = typeTasks.get(id)
                 if (!task) return
 
-                task._fulfiller = (
-                    <AddPartnerBtn {...{
-                        address: task.fulfiller,
-                        userId: task.createdBy
-                    }} />
+                typeTasks.set(
+                    id,
+                    addDetailsToTask(
+                        task,
+                        detailsMap.get(id),
+                    )
                 )
-                task._owner = (
-                    <AddPartnerBtn {...{
-                        address: task.owner,
-                        userId: task.createdBy
-                    }} />
-                )
-                task = objCopy(detailsMap.get(id) || {}, task)
-                task = { ...task, ...detailsMap.get(id) }
-                task._tsCreated = format(task.tsCreated, true)
-                typeTasks.set(id, task || {})
             })
-            // tasks.set(type, typeTasks)
             newTasks.set(type, typeTasks)
             return [type, Array.from(typeTasks)]
         })
     save && setCache(address, cacheableAr)
     return newTasks
+}
+
+export const addDetailsToTask = (task = {}, details = {}) => {
+    const _task = { ...task, ...details }
+    const {
+        applications = [],
+        deadline = 0,
+        isClosed = false,
+        isMarket,
+        proposalRequired = isMarket,
+        tags = '',
+    } = _task
+
+    _task.amountXTX = isMarket
+        && details.amountXTX
+        || task.amountXTX
+    _task.isClosed = isClosed || deadline < rxBlockNumber.value
+    _task.proposalRequired = proposalRequired
+    _task.tags = (
+        isStr(tags)
+            ? tags.split(',')
+            : tags || []
+    ).filter(Boolean)
+
+    // add application status text
+    applications.forEach(application => {
+        application._status = applicationStatus[application.status]
+            || applicationStatus[0]
+    })
+
+    return _task
+}
+
+/**
+ * @name    processOrder
+ * @summary add status text, partner name etc to order
+ * 
+ * @param   {Object}    order   task order
+ * @param   {String}    id      task ID 
+ * @param   {String}    address user identity (owner, fulfiller, viewer...)
+ * 
+ * @returns {Object}    order
+ */
+export const processOrder = (order, id, orderOrg = order) => {
+    try {
+        let amountXTX = 0
+        let {
+            amountXTX: amountHex,
+            approvalStatus,
+            approver,
+            deadline,
+            fulfiller,
+            // order can be null if storage has changed, in that case, use inaccessible status
+            orderStatus = statuses.inaccessible,
+            owner,
+        } = order || {}
+        try {
+            amountXTX = !order
+                ? 0
+                : Number(amountHex) >= 0
+                    ? Number(amountHex)
+                    : orderOrg.value
+                        && isFn(orderOrg.value.get)
+                        ? orderOrg
+                            .value
+                            .get('amountXTX')
+                            .toNumber()
+                        : 0
+        } catch (err) {
+            // ignore error. should only happen when amountXTX is messed up due to blockchain storage reset
+            console.log('amountXTX parse error', err)
+        }
+        const isOwner = !!getIdentity(owner)
+        const isEditableStatus = [
+            statuses.created,
+            statuses.rejected,
+        ].includes(orderStatus)
+        const allowEdit = isOwner
+            && isEditableStatus
+            && deadline > rxBlockNumber.value
+        order = {
+            ...order,
+            amountXTX,
+            allowEdit,
+            isOwner,
+            // pre-process values for use with DataTable
+            _approvalStatus: approvalStatusNames[approvalStatus],
+            _fulfiller: fulfiller === owner
+                ? null
+                : fulfiller,
+            _orderStatus: statusNames[orderStatus],
+            _taskId: id, // list search
+        }
+        return order
+    } catch (err) {
+        console.log(err)
+        return order
+    }
 }
 
 // automatically update task details whenever a new notification is recieved about a task

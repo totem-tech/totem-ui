@@ -90,7 +90,7 @@ export const getAll = () => contacts.getAll()
  * 
  * @returns {String}
  */
-export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 64)
+export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 32)
     .replace('0x', '')
 
 /**
@@ -171,6 +171,7 @@ export const set = (contact, replace = false, silent) => {
         id,
         objClean(contact, Object.keys(validationConf))
     )
+    return id
 }
 
 /**

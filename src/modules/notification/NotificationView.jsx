@@ -27,7 +27,7 @@ export default function NotificationView() {
 		// on mobile view scroll to bottom (first item) of the list
 		const shouldScroll = visible
 			&& rxLayout.value === MOBILE
-			&& !window._notification_scroll_done
+			// && !window._notification_scroll_done
 		if (shouldScroll) {
 			setTimeout(() => {
 				const containerEl = document.querySelector('.notification-list')
@@ -37,8 +37,8 @@ export default function NotificationView() {
 		}
 		return visible
 	})
+	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
 	const [[items, allRead]] = useRxSubject(rxNotifications, map => {
-		const isMobile = rxLayout.value === MOBILE
 		const items = Array.from(map)
 			//// dummy notifications for testing only
 			// .concat(
@@ -77,7 +77,7 @@ export default function NotificationView() {
 				}} />
 			))
 		return [
-			arrReverse(items, isMobile),
+			items,
 			Array
 				.from(map)
 				.every(([_, x]) => !!x.read)
@@ -85,7 +85,7 @@ export default function NotificationView() {
 	})
 	const buttons = [
 		{
-			basic: true,
+			// basic: true,
 			compact: true,
 			content: textsCap.btnDelete,
 			icon: 'trash',
@@ -105,11 +105,11 @@ export default function NotificationView() {
 			}),
 		},
 		{
-			basic: true,
+			// basic: true,
 			compact: true,
 			content: textsCap.btnRead,
 			disabled: allRead,
-			icon: 'envelope open',
+			icon: 'envelope open outline',
 			key: 'all',
 			labelPosition: 'right',
 			onClick: () => confirm({
@@ -127,16 +127,14 @@ export default function NotificationView() {
 		},
 	]
 
-	return (
+	return visible && items.length > 0 && (
 		<div className='notification-list'>
-			{visible && (
-				<ButtonGroup {...{
-					buttons,
-					className: 'actions',
-					fluid: true,
-				}} />
-			)}
-			{visible && items}
+			<ButtonGroup {...{
+				buttons,
+				className: 'actions',
+				fluid: true,
+			}} />
+			{arrReverse(items, isMobile)}
 		</div>
 	)
 }

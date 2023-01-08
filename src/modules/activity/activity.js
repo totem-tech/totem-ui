@@ -46,10 +46,12 @@ setTimeout(() => rxSelected.subscribe(() => getProjects(true)))
 // @timeout         integer: (optional) duration in milliseconds to timeout the request
 //
 // Returns          map: list of projects
-export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000) => {
+export const fetchProjects = async (recordIds = [], ownAddress, isOwner, timeout = 10000) => {
     recordIds = await new PromisE(recordIds)
     recordIds = arrUnique(
-        recordIds.map(id => isStr(id) ? id : bytesToHex(id))
+        recordIds.map(id =>
+            isStr(id) ? id : bytesToHex(id)
+        )
     ).filter(Boolean)
     if (recordIds.length === 0) return new Map()
     const { firstSeen, totalBlocks } = tkQuery.project
@@ -60,11 +62,17 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
         client.projectsByHashes.promise(recordIds),
     ])
     const result = await PromisE.timeout(promise, timeout)
-    const [arFristSeen, arTotalBlocks, arStatusCode, clientResult] = result
+    const [
+        arFristSeen,
+        arTotalBlocks,
+        arStatusCode,
+        clientResult,
+    ] = result
     const [projects = new Map(), unknownIds = []] = clientResult || []
 
     // Records that are somehow not found in the off-chain database
     unknownIds.forEach(recordId => projects.set(recordId, {}))
+    isOwner = isOwner && !!ownAddress
 
     // process projects to include extra information
     const projectsArr = Array.from(projects).map(([recordId, project]) => {
@@ -80,8 +88,12 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
             ownerName: ownerName,
             firstSeen: arFristSeen[index],
             totalBlocks: arTotalBlocks[index],
-            ownerAddress: ownerAddress || ownAddress,
-            isOwner: ownAddress === ownerAddress || getSelected().address === ownerAddress,
+            ownerAddress: isOwner
+                ? ownAddress
+                : ownerAddress,
+            isOwner: isOwner
+                || ownAddress === ownerAddress
+                || getSelected().address === ownerAddress,
             name: name || '',
             description: description || '',
         }]
@@ -95,7 +107,7 @@ export const fetchProjects = async (recordIds = [], ownAddress, timeout = 10000)
 // Params:
 // @recordids   array: array of project IDs
 export const forceUpdate = async (recordIds, ownerAddress) => {
-    const updateProjects = await fetchProjects(recordIds, ownerAddress)
+    const updateProjects = await fetchProjects(recordIds, ownerAddress, true)
     const projects = await getProjects()
     Array.from(updateProjects).forEach(
         ([recordId, project]) => projects.set(recordId, project)
@@ -163,7 +175,7 @@ export const getProjects = async (forceUpdate = false, callback, timeout = 10000
         })())
     } else if (forceUpdate) {
         // once-off update
-        config.updatePromise = fetchProjects(query.listByOwner(address), address)
+        config.updatePromise = fetchProjects(query.listByOwner(address), address, true)
         // update rxProjects
         config.updatePromise.then(projects => saveProjects(projects, address))
     }
@@ -293,7 +305,7 @@ export const queueables = {
     //
     // Params:
     // @ownerAddress    string
-    // @recordId     string: project ID
+    // @recordId        string: project ID
     // @token           string: hash generated using project details
     //
     // Returns          object

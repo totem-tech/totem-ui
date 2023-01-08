@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react'
-import { Button, Icon } from 'semantic-ui-react'
+import { Icon } from 'semantic-ui-react'
+import { useRxSubject } from '../../utils/reactHelper'
 import { format } from '../../utils/time'
 import {
     clearClutter,
     isFn,
     textEllipsis,
 } from '../../utils/utils'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../services/language'
 import {
@@ -15,11 +17,11 @@ import {
 } from '../../services/modal'
 import {
     checkComplete,
-    getById as getQueueItemById,
     remove as removeQueueItem,
     statuses,
 } from '../../services/queue'
-import { getAddressName } from '../partner/partner'
+import { MOBILE, rxLayout } from '../../services/window'
+import AddressName from '../partner/AddressName'
 import {
     clearAll,
     getAll,
@@ -27,8 +29,6 @@ import {
     rxHistory,
 } from './history'
 import HistoryItemDetailsForm from './HistoryItemDetailsForm'
-import { MOBILE, rxLayout } from '../../services/window'
-import { useRxSubject } from '../../utils/reactHelper'
 
 const textsCap = translated({
     action: 'action',
@@ -119,8 +119,10 @@ export default function HistoryList(props) {
                 },
                 {
                     collapsing: true,
+                    content: ({ identity }) => <AddressName {...{ address: identity }} />,
+                    draggableValueKey: 'identity',
                     hidden: isMobile,
-                    key: '_identity',
+                    key: 'identity',
                     title: textsCap.identity,
                 },
                 {
@@ -137,8 +139,7 @@ export default function HistoryList(props) {
                             // negative: true,
                             onClick: () => {
                                 const { groupId } = item
-                                const rootTask = getQueueItemById(groupId)
-                                const isComplete = checkComplete(rootTask)
+                                const isComplete = checkComplete(groupId)
                                 confirm({
                                     content: !isComplete
                                         ? textsCap.removeWarning
@@ -199,7 +200,7 @@ export default function HistoryList(props) {
             topRightMenu: [{
                 content: textsCap.delete,
                 icon: 'trash',
-                onClick: ids => ids.forEach(removeHistoryItem)
+                onClick: ids => removeHistoryItem(ids),
             }]
         }
         return state
@@ -215,8 +216,6 @@ export default function HistoryList(props) {
                     .split(' ')
                     .map(x => textEllipsis(x, 20))
                     .join(' ')
-                // add identity name if available
-                item._identity = getAddressName(item.identity)
                 item._timestamp = format(item.timestamp, true)
                 // to make the entire object searchable
                 item._search = JSON.stringify(item)

@@ -1,16 +1,31 @@
 import React from 'react'
-import { className, isFn, isMap, isObj } from '../utils/utils'
+import { MOBILE, rxLayout } from '../services/window'
+import { useRxSubject } from '../utils/reactHelper'
+import {
+    className,
+    isFn,
+    isMap,
+    isObj,
+    objWithoutKeys
+} from '../utils/utils'
 import DataTable from './DataTable'
 
 const DataTableVertical = (props) => {
+    const [isMobile] = [rxLayout.value === MOBILE]//useRxSubject(rxLayout, l => l === MOBILE)
     let {
         columns = [],
+        columnsHidden = [],
         data: items = [],
         tableProps = {},
     } = props
     if (isObj(items)) items = [items]
-    columns = columns.filter(x => !!x && !x.hidden)
 
+    columns = columns.filter(x =>
+        !!x
+        && !x.hidden
+        && !columnsHidden.includes(x.name || x.key)
+    )
+    
     const vData = columns.map(column => {
         const { content, key, title } = column
         const isAMap = isMap(items)
@@ -24,26 +39,54 @@ const DataTableVertical = (props) => {
                     ? x[1]
                     : x
                 return isFn(content)
-                    ? content(item, index, items, props)
+                    ? content(
+                        item,
+                        index,
+                        items,
+                        props,
+                    )
                     : item[key]
             })
         return [title, ...row]
     })
+
     const maxLen = vData.reduce((max, next) =>
         next.length > max
             ? next.length
             : max,
-    0)
+        0,
+    )
+    
+    const padding = isMobile
+        ? 15
+        : 25
     const vColumns = new Array(maxLen)
         .fill(0)
         .map((_, i) => ({
             active: i === 0,
+            draggable: false,
+            dynamicProps: (_, index) => {
+                const column = columns[index] || {}
+                const isHeader = i === 0
+                return isHeader
+                    ? column.headerProps
+                    : objWithoutKeys(columns, ['content'])
+            },
             key: `${i}`,
-            style: i > 0 
-                ? undefined
-                : { fontWeight: 'bold' }
+            style: {
+                fontWeight: i > 0
+                    ? undefined
+                    : 'bold',
+                paddingLeft: i == 0
+                    ? padding
+                    : undefined,
+                paddingRight: i === maxLen - 1
+                    ? padding
+                    : undefined,
+                ...columns[0].style,
+            },
         }))
-    
+        
     return (
         <DataTable {...{
             perPage: columns.length,

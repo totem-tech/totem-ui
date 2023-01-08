@@ -2,7 +2,7 @@ import React from 'react'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
-import { generateHash, hasValue, isObj } from '../../utils/utils'
+import { hasValue, isObj } from '../../utils/utils'
 import {
 	get as getContact,
 	newId as newContactId,
@@ -11,7 +11,6 @@ import {
 } from '../contact/contact'
 import { inputNames as contactInputNames } from '../contact/ContactForm'
 import {
-	get as getLocation,
 	search as searchLocation,
 	newId as newLocationId,
 	remove as removeLocation,
@@ -23,23 +22,20 @@ import {
 	rxVisible,
 	setItemViewHandler,
 } from '../notification/notification'
+import AddressName from './AddressName'
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
 
-const textsCap = translated({
+let textsCap = {
 	addPartner: 'add partner',
 	ignore: 'ignore',
-	indentityIntroduceMsg: 'recommended you to share your identity with the following user:',
-	identityRequestMsg: 'requested an identity',
-	identityShareMsg: 'identity received from:',
+	identityShareMsg: 'shared an identity',
 	introducedBy: 'introduced by',
 	partnerName: 'partner name',
-	reason: 'reason',
-	share: 'share',
 	updatePartner: 'update partner',
 	unexpectedError: 'unexpected error occurred!',
-	yourIdentity: 'your identity',
-}, true)[1]
+}
+textsCap = translated(textsCap, true)[1]
 
 // identity received from other user
 const handleIdentityReceived = (
@@ -48,9 +44,14 @@ const handleIdentityReceived = (
 	{ senderId, senderIdBtn }
 ) => {
 	const { data, message } = notification
-	const { address, contactDetails, introducedBy, location, name } = data || {}
+	const {
+		address,
+		contactDetails,
+		introducedBy,
+		location,
+	} = data || {}
 	const partner = get(address)
-	const onAction = (_, accepted) => {
+	const onAction = async (_, accepted) => {
 		try {
 			if (!accepted) return remove(id)
 
@@ -83,7 +84,7 @@ const handleIdentityReceived = (
 					: removeContact(contactId)
 			}
 			if (hasLocation) {
-				saveLocation(
+				const savedId = saveLocation(
 					{
 						...existingLocation,
 						...location,
@@ -91,6 +92,7 @@ const handleIdentityReceived = (
 					},
 					locationId,
 				)
+				console.log(locationId === savedId)
 			}
 			if (hasContact) {
 				saveContact(
@@ -134,17 +136,18 @@ const handleIdentityReceived = (
 	}
 
 	return {
-		icon: { name: 'user plus' },
+		icon: { name: 'user circle outline' },
 		content: (
 			<div>
 				<div>
 					<b>
-						{textsCap.identityShareMsg} {senderIdBtn}
+						{senderIdBtn} {textsCap.identityShareMsg.toLowerCase()}
 					</b>
 				</div>
 				{partner && (
 					<div style={{ fontSize: '75%' }}>
-						{textsCap.partnerName}: {partner.name || name}
+						<b>{textsCap.partnerName}: </b>
+						<AddressName {...{ address }} />
 					</div>
 				)}
 				{introducedBy && (
@@ -159,8 +162,7 @@ const handleIdentityReceived = (
 						: textsCap.addPartner,
 					onAction,
 					rejectText: textsCap.ignore,
-				}}
-				/>
+				}} />
 				<div>{message}</div>
 			</div>
 		),

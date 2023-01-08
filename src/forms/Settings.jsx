@@ -1,20 +1,19 @@
 import React, { Component } from 'react'
-import { BehaviorSubject } from 'rxjs'
 // utils
 import { arrSort, deferred, isObj } from '../utils/utils'
 // components
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-import FormInput from '../components/FormInput'
 // modules
 import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
 import client from '../modules/chat/ChatClient'
 import {
-    getCurrencies,
     rxSelected as rxSelectedCurrency,
     setSelected as setSelectedCurrency
 } from '../modules/currency/currency'
+import { asInput } from '../modules/currency/CurrencyDropdown'
 import { limit as historyItemsLimit } from '../modules/history/history'
+import TimekeepingSettings from '../modules/timekeeping/TimekeepingSettings'
 // services
 import { nodes, nodesDefault, setNodes } from '../services/blockchain'
 import {
@@ -23,11 +22,9 @@ import {
     setSelected as setSelectedLang,
     translated,
 } from '../services/language'
-import { gridColumns } from '../services/window'
 import { confirm, confirmAsPromise } from '../services/modal'
 import { copyRxSubject } from '../services/react'
-import { asInput } from '../modules/currency/CurrencyDropdown'
-import TimekeepingSettings from '../modules/timekeeping/TimekeepingSettings'
+import { gridColumns } from '../services/window'
 
 let textsCap = {
     chatLimitLabel: 'messages per chat',
@@ -37,7 +34,7 @@ let textsCap = {
     gridLabel: 'main content columns',
     gsCurrencyLabel: 'display currency',
     gsLanguageLabel: 'language (experimental)',
-    historyLbl: 'history limit',
+    historyLbl: 'user activity history limit',
     historyLblDetails: 'maximum number items to keep',
     kbShortcuts: 'keyboard shortcuts',
     langConfirmCancelBtn: 'later',
@@ -178,10 +175,12 @@ export default class SettingsForm extends Component {
                     labelDetails: textsCap.historyLblDetails,
                     name: inputNames.historyLimit,
                     onChange: this.handleHistoryLimitChange,
-                    options: [0, 10, 50, 100, 500, 1000]
+                    options: [-1, 10, 50, 100, 500, 1000]
                         .map((limit, i) => ({
                             key: i,
-                            text: limit || textsCap.unlimited,
+                            text: limit === -1
+                                ? textsCap.unlimited
+                                : limit,
                             value: limit,
                         })),
                     selection: true,
@@ -236,6 +235,7 @@ export default class SettingsForm extends Component {
                 },
                 {
                     content: `${textsCap.kbShortcuts} (K)`,
+                    fluid: true,
                     icon: 'keyboard',
                     name: inputNames.kbShortcutsBtn,
                     onClick: showKeyboardShortcuts,

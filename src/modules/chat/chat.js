@@ -26,6 +26,7 @@ import {
     setClass,
 } from '../../services/window'
 import { subjectAsPromise } from '../../utils/reactHelper'
+import { rxIsRegistered } from '../../utils/chatClient'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
@@ -79,6 +80,8 @@ export const checkOnlineStatus = () => {
 
 // create/get inbox key
 export const createInbox = (receiverIds = [], name, setOpen = false) => {
+    if (!rxIsRegistered.value) return
+
     const inboxKey = getInboxKey(receiverIds)
     let settings = inboxSettings(inboxKey)
     settings = {
@@ -99,11 +102,13 @@ export const createInbox = (receiverIds = [], name, setOpen = false) => {
 }
 
 // unique user ids from all messages in chat history
-export const getChatUserIds = (includeTrollbox = true) => arrUnique(Object.keys(inboxesSettings())
-    .filter(key => key !== TROLLBOX)
-    .map(key => key.split(','))
-    .flat()
-    .concat(includeTrollbox ? getInboxUserIds(TROLLBOX) : []))
+export const getChatUserIds = (includeTrollbox = true) => arrUnique(
+    Object.keys(inboxesSettings())
+        .filter(key => key !== TROLLBOX)
+        .map(key => key.split(','))
+        .flat()
+        .concat(includeTrollbox ? getInboxUserIds(TROLLBOX) : [])
+)
 
 // returns inbox storage key
 export const getInboxKey = receiverIds => {
@@ -132,7 +137,10 @@ export const getMessages = inboxKey => !inboxKey
     : [...chatHistory.get(inboxKey) || []]
 
 // get list of User IDs by inbox key
-export const getInboxUserIds = inboxKey => arrUnique((chatHistory.get(inboxKey) || []).map(x => x.senderId))
+export const getInboxUserIds = inboxKey => arrUnique(
+    (chatHistory.get(inboxKey) || [])
+        .map(x => x.senderId)
+)
 
 export function getUnreadCount() {
     const allSettings = rw().inbox || {}

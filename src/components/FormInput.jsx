@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject, Subject } from 'rxjs'
 import {
 	Accordion as S_Accordion,
-	Button as S_Button,
 	Checkbox as S_Checkbox,
 	Dropdown as S_Dropdown,
 	Form,
@@ -18,7 +17,6 @@ import {
 	isArr,
 	isFn,
 	isObj,
-	isStr,
 	objWithoutKeys,
 	searchRanked,
 	isBool,
@@ -28,6 +26,7 @@ import {
 	isDefined,
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
+import { Button } from './buttons'
 import Message, { statuses } from './Message'
 import { Invertible } from './Invertible'
 // Custom Inputs
@@ -39,12 +38,13 @@ import { translated } from '../services/language'
 import { unsubscribe } from '../services/react'
 import { randomHex } from '../services/blockchain'
 import Text from './Text'
+import CharacterCount from './CharacterCount'
+import { rxInverted } from '../services/window'
 
 // Memo-ify everything
 const Accordion = React.memo(S_Accordion)
 const Accordion_Content = React.memo(S_Accordion.Content)
 const Accordion_Title = React.memo(S_Accordion.Title)
-const Button = React.memo(S_Button)
 const Checkbox = React.memo(S_Checkbox)
 const Dropdown = React.memo(S_Dropdown)
 const Form_Field = React.memo(Form.Field)
@@ -104,17 +104,44 @@ const NON_ATTRIBUTES = Object.freeze([
 	// dynamic options for input types with options
 	'rxOptions',
 	'rxOptionsModifier',
+	'unique', // for array validation
+	'showCount',
+	'rxFocused',
 ])
+
+const NON_COUNT_TYPES = [
+	'button',
+	'checkbox',
+	'checkbox-group',
+	'date',
+	'dateinput',
+	'dropdown',
+	'file',
+	'html',
+	'radio',
+	'radio-group',
+	'group',
+	'useridinput',
+]
 export const nonValueTypes = Object.freeze(['button', 'html'])
 
 export class FormInput extends Component {
 	constructor(props = {}) {
 		super(props)
 
-		const { defer, name } = props
+		const {
+			defer,
+			name,
+			rxFocused,
+		} = props
 		this.key = randomHex(name, 32)
-		this.state = { message: undefined }
+		this.state = {
+			message: undefined,
+		}
 		this.value = undefined
+		this.rxFocused = isSubjectLike(rxFocused)
+			? rxFocused
+			: new BehaviorSubject(false)
 		if (defer !== null) {
 			this.setMessage = deferred(this.setMessage, defer)
 		}
@@ -126,32 +153,36 @@ export class FormInput extends Component {
 	componentWillMount() {
 		this._mounted = true
 		this.subscriptions = {}
-		const { rxOptions, rxOptionsModifier, rxValue, rxValueModifier } = this.props
-		if (isSubjectLike(rxValue)) {
-			this.subscriptions.rxValue = rxValue.subscribe(value => {
+		const {
+			multiple = false,
+			rxOptions,
+			rxOptionsModifier,
+			rxValue,
+			rxValueModifier,
+		} = this.props
+		this.subscriptions.rxValue = isSubjectLike(rxValue)
+			&& rxValue.subscribe(value => {
 				value = isFn(rxValueModifier)
 					? rxValueModifier(value)
 					: value
 				if (this.value === value) return
 				this.handleChange({}, { ...this.props, value })
 			})
-		}
-		if (isSubjectLike(rxOptions)) {
-			this.subscriptions.rxOptions = rxOptions.subscribe(options => {
+		this.subscriptions.rxOptions = isSubjectLike(rxOptions)
+			&& rxOptions.subscribe(async options => {
 				options = !isFn(rxOptionsModifier)
 					? options
-					: rxOptionsModifier(options)
+					: await rxOptionsModifier(options)
 				if (!isArr(options)) return
 				this.setState({ options })
 				
-				if (!isSubjectLike(rxValue) || !hasValue(this.value)) return
+				if (!isSubjectLike(rxValue) || !hasValue(this.value) || multiple) return
 				
 				const isOption = !!options.find(o => o.value === this.value)				
 				// value no longer exists in the options list
 				// force clear selection
 				!isOption && rxValue.next(undefined)
 			})
-		}
 	}
 
 	componentWillUnmount = () => {
@@ -164,30 +195,58 @@ export class FormInput extends Component {
 			criteria = [],
 			criteriaHeader,
 			customMessages,
-			falseValue: falseValue = false,
+			falseValue = false,
+			multiple,
 			integer,
 			onChange,
 			required,
 			rxValue,
-			trueValue: trueValue = true,
+			trueValue = true,
 			type,
 			validate,
 		} = this.props
 		// for custom input types (eg: UserIdInput)
-		if (data.invalid) return isFn(onChange) && onChange(event, data, this.props)
+		if (data.invalid) return isFn(onChange) && onChange(
+			event,
+			data,
+			this.props,
+		)
 
+		const {
+			persist, 
+			target: {
+				selectionEnd,
+				selectionStart,
+				setSelectionRange,
+			} = {},
+		} = event || {}
 		// Forces the synthetic event and it's value to persist
 		// Required for use with deferred function
-		event && isFn(event.persist) && event.persist()
-		const typeLower = (type || '').toLowerCase()
+		isFn(persist) && event.persist()
+		const typeLower = multiple
+			? 'array'
+			: (type || '').toLowerCase()
 		const isCheck = ['checkbox', 'radio'].indexOf(typeLower) >= 0
-		const hasVal = hasValue(isCheck ? data.checked : data.value)
-		const customMsgs = { ...errMsgs, ...customMessages }
+		const hasVal = hasValue(
+			isCheck
+				? data.checked
+				: data.value
+		)
+		const customMsgs = {
+			...errMsgs,
+			// hide min & max length related error messages
+			lengthMax: true,
+			lengthMin: true,
+			...customMessages,
+		}
 		let err, validatorConfig, isANum
 		let { value } = data
 
 		if (hasVal && !err) {
 			switch (typeLower) {
+				case 'array': 
+					validatorConfig = { type: TYPES.array }
+					break
 				case 'checkbox':
 				case 'radio':
 					// Sematic UI's Checkbox component only supports string and number as value
@@ -228,7 +287,9 @@ export class FormInput extends Component {
 				case 'text':
 				case 'textarea':
 				default:
-					value = `${!isDefined(value) ? '' : value}`
+					value = isArr(value)
+						? value
+						: `${!isDefined(value) ? '' : value}`
 					validatorConfig = validatorConfig || { type: TYPES.string }
 					break
 			}
@@ -273,6 +334,14 @@ export class FormInput extends Component {
 				rxValue.next(data.value)
 			}
 			this.setMessage(data.invalid, message)
+			try {
+				isFn(setSelectionRange) && event
+					.target
+					.setSelectionRange(
+						selectionStart,
+						selectionEnd,
+					)
+			} catch (_) { } // ignore unsupported
 		}
 
 		const cList = !!err || !hasVal
@@ -292,9 +361,15 @@ export class FormInput extends Component {
 				const icon = invalid
 					? iconInvalid
 					: iconValid
-				return (persist || invalid) && { icon, invalid, style, text }
+				return (persist || invalid) && {
+					icon,
+					invalid,
+					style,
+					text,
+				}
 			})
-			.filter(Boolean)
+				.filter(Boolean)
+		
 		if (cList.length > 0) {
 			err = !!cList.find(x => x.invalid)
 			message = {
@@ -326,17 +401,21 @@ export class FormInput extends Component {
 		if (!!err || !isFn(validate)) return triggerChange()
 
 		const handleValidate = msg => {
-			err = !!msg
 			const isEl = React.isValidElement(msg)
 			message = isBool(msg) || !msg
 				? !!message
 					? message 
 					: null // no need to display a message
 				: {
-					content: isEl ? msg : `${msg}`,
+					content: isEl
+						? msg
+						: `${msg}`,
 					status: statuses.ERROR,
 					...(!isEl && isObj(msg) ? msg : {}),
 				}
+			err = isObj(message) && !isEl
+				? message.status === statuses.ERROR
+				: !!message
 			triggerChange()
 		}
 
@@ -354,16 +433,15 @@ export class FormInput extends Component {
 
 		// this makes sure there is no race condition
 		this.validateDeferred = this.validateDeferred || PromisE.deferred()
-		return this.validateDeferred(validatePromise).then(
-			handleValidate,
-			handleValidate,
-		)
+		return this
+			.validateDeferred(validatePromise)
+			.then(handleValidate, handleValidate)
 	}
 
 	setMessage = (invalid, message = {}) => this.setState({ invalid, message })
 
 	render() {
-		const {
+		let {
 			accordion,
 			containerProps,
 			content,
@@ -377,13 +455,20 @@ export class FormInput extends Component {
 			label,
 			labelDetails,
 			loading,
+			maxLength,
 			message: externalMsg,
+			minLength,
 			name,
+			onBlur,
+			onFocus,
 			required,
 			rxValue,
+			showCount = true,
 			styleContainer,
+			trueValue = true,
 			type,
 			useInput: useInputOrginal,
+			value = (rxValue || {}).value,
 			width,
 		} = this.props
 		let useInput = useInputOrginal
@@ -406,8 +491,16 @@ export class FormInput extends Component {
 				...this.props,
 				key: name,
 				loading: loadingS || loading,
+				onBlur: (...args) => {
+					isFn(onBlur) && onBlur(...args)
+					this.rxFocused.next(false)
+				},
+				onFocus: (...args) => {
+					isFn(onFocus) && onFocus(...args)
+					this.rxFocused.next(true)
+				},
 			},
-			[...NON_ATTRIBUTES, ...(ignoreAttributes || [])]
+			[...NON_ATTRIBUTES, ...(ignoreAttributes || [])],
 		)
 		attrs.id = attrs.id || name
 		attrs.ref = elementRef
@@ -428,13 +521,14 @@ export class FormInput extends Component {
 				break
 			case 'checkbox':
 			case 'radio':
-				attrs.toggle = typeLC !== 'radio' && attrs.toggle
-				attrs.type = 'checkbox'
+				attrs.checked = value === trueValue
 				attrs.label = (
 					<label>
 						<Text children={label} />
 					</label>
 				)
+				attrs.toggle = typeLC !== 'radio' && attrs.toggle
+				attrs.type = 'checkbox'
 				delete attrs.value
 				hideLabel = true
 				inputEl = <Checkbox {...attrs} />
@@ -467,7 +561,7 @@ export class FormInput extends Component {
 					? searchRanked(attrs.search)
 					: attrs.search
 				attrs.style = { ...attrs.style }
-				attrs.options = options || attrs.options
+				attrs.options = options || attrs.options || []
 				attrs.value = (rxValue ? rxValue.value : attrs.value)
 					|| (attrs.multiple ? [] : '')
 				inputEl = <Dropdown {...attrs} />
@@ -520,6 +614,8 @@ export class FormInput extends Component {
 				inputEl = <TextArea {...attrs} />
 				break
 			case 'useridinput':
+				hideLabel = true
+				attrs.label = label
 				inputEl = <UserIdInput {...attrs} />
 				break
 			case 'file':
@@ -549,7 +645,10 @@ export class FormInput extends Component {
 						|| !!invalid,
 				key: this.key,
 				required,
-				style: styleContainer,
+				style: {
+					...(containerProps || {}).style,
+					...styleContainer,
+				},
 				title: !editable && !attrs.title
 					&& errMsgs.readOnlyField
 					|| attrs.title,
@@ -557,23 +656,38 @@ export class FormInput extends Component {
 					? undefined
 					: width,
 			}}>
-				{!hideLabel &&
-					label && [
-						<label htmlFor={attrs.id} key='label'>
-							{label}
-						</label>,
-						labelDetails && (
-							<div
-								key='labelDetails'
-								style={{
-									lineHeight: '15px',
-									margin: '-5px 0 8px 0',
-								}}
-							>
-								<small style={{ color: 'grey' }}>{labelDetails}</small>
-							</div>
-						),
-					]}
+				{!hideLabel && label && [
+					<label htmlFor={attrs.id} key='label'>
+						{label}
+					</label>,
+					!!showCount && !NON_COUNT_TYPES.includes(type) && (
+						<CharacterCount {...{
+							key: 'CharacterCount',
+							maxLength,
+							minLength,
+							name,
+							subject: rxValue,
+							show: this.rxFocused,
+						}} />
+					),
+					!!labelDetails && (
+						<div
+							key='labelDetails'
+							style={{
+								lineHeight: '15px',
+								margin: '-5px 0 8px 0',
+							}}
+						>
+							<small style={{
+								color: rxInverted.value
+									? '#d4cece'
+									: 'grey',
+							}}>
+								{labelDetails}
+							</small>
+						</div>
+					),
+				].filter(Boolean)}
 				{inputEl}
 				{message && <Message {...message} />}
 			</Form_Field>
@@ -638,7 +752,9 @@ FormInput.propTypes = {
 	// Set `defer` to `null` to prevent using deferred mechanism
 	defer: PropTypes.number,
 	// attributes to ignore when passing on to input element
-	ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
+	ignoreAttributes: PropTypes.arrayOf(
+		PropTypes.string
+	),
 	// For text field types
 	inlineLabel: PropTypes.any,
 	// If field types is 'number', will validate as an integer. Otherwise, float is assumed.
@@ -673,13 +789,19 @@ FormInput.propTypes = {
 		PropTypes.object,
 	]),
 	name: PropTypes.string.isRequired,
-	label: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+	label: PropTypes.oneOfType([
+		PropTypes.string,
+		PropTypes.element,
+	]),
 	onChange: PropTypes.func,
 	placeholder: PropTypes.string,
 	readOnly: PropTypes.bool,
 	// @rxValue	BehaviorSubject: (optional)only applications to input types that uses the `options` property
 	// On value change `options` will be updated
-	rxOptions: PropTypes.oneOfType([PropTypes.instanceOf(BehaviorSubject), PropTypes.instanceOf(Subject)]),
+	rxOptions: PropTypes.oneOfType([
+		PropTypes.instanceOf(BehaviorSubject),
+		PropTypes.instanceOf(Subject),
+	]),
 	// @rxOptionsModifier function: (optional) allows value of rxOptions to be modified before being applied to input
 	rxOptionsModifier: PropTypes.func,
 	// @rxValue	BehaviorSubject: (optional) if supplied, rxValue and input value will be synced automatically
@@ -689,6 +811,8 @@ FormInput.propTypes = {
 	// element ref
 	elementRef: PropTypes.any,
 	required: PropTypes.bool,
+	// default true for supported input types
+	showCount: PropTypes.bool,
 	slider: PropTypes.bool, // For checkbox/radio
 	toggle: PropTypes.bool, // For checkbox/radio
 	value: PropTypes.any,
@@ -702,5 +826,4 @@ FormInput.defaultProps = {
 	type: 'text',
 	width: 16,
 }
-
 export default React.memo(FormInput)

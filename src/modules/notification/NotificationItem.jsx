@@ -2,17 +2,30 @@ import React from 'react'
 import { isFn } from '../../utils/utils'
 // components
 import { UserID } from '../../components/buttons'
-import TimeSince from '../../components/TimeSince'
 import { Message } from '../../components/Message'
+import TimeSince from '../../components/TimeSince'
 // services
 import { itemViewHandlers, remove, toggleRead } from './notification'
 
 export default function NotificationItem({ id, notification }) {
-    const { from, type, childType, message, data, tsCreated, read, status } = notification || {}
+    const {
+        from,
+        type,
+        childType,
+        message,
+        tsCreated,
+        read,
+        status,
+    } = notification || {}
     const key = `${type}:${childType || ''}`
     const handler = itemViewHandlers[key]
     const senderId = from || notification.senderId // (previously used)
-    const senderIdBtn = <UserID userId={senderId} />
+    const senderIdBtn = (
+        <UserID {...{
+            style: { color: 'deeppink' },
+            userId: senderId,
+        }} />
+    )
     const isCustom = isFn(handler)
     let msg = {
         ...(isCustom
@@ -35,15 +48,15 @@ export default function NotificationItem({ id, notification }) {
         </div>
     )
     const msgStatus = msg.status || status
-    
+    const isLoading = status === 'loading'
     return (
         <Message {...{
             ...msg,
-            icon: status === 'loading'
+            icon: isLoading
                 ? true
                 : msg.icon || { name: 'bell outline' },
             className: 'list-item',
-            onClick: () => toggleRead(id),
+            onClick: () => !isLoading && toggleRead(id),
             onDismiss: e => e.stopPropagation() | remove(id),
             status: read
                 ? 'basic'

@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import ContactForm, { inputNames } from './ContactForm'
-import { Button } from 'semantic-ui-react'
 
-const textsCap = translated(
-	{
+let textsCap = {
 		action: 'action',
 		add: 'add',
 		email: 'email',
@@ -14,9 +14,8 @@ const textsCap = translated(
 		name: 'name',
 		phone: 'phone',
 		update: 'update',
-	},
-	true
-)[1]
+}
+textsCap = translated(textsCap, true)[1]
 
 export const ContactList = props => {
 	const [tableProps] = useState(() => ({
@@ -87,7 +86,6 @@ export const ContactList = props => {
 		<DataTable {...{
 			...props,
 			...tableProps,
-			// keywords: 'first',
 			topLeftMenu: [
 				{
 					// add user contact details
@@ -99,5 +97,11 @@ export const ContactList = props => {
 		}} />
 	)
 }
-ContactList.propTypes = {}
+ContactList.propTypes = {
+	// contact entries
+	data: PropTypes.oneOfType([
+		PropTypes.array,
+		PropTypes.instanceOf(Map),
+	]),
+}
 ContactList.defaultProps = {}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Checkbox, Button, Icon } from 'semantic-ui-react'
+import { Button } from '../../components/buttons'
 import { textEllipsis } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { ButtonGroup, UserID } from '../../components/buttons'
@@ -8,41 +8,37 @@ import Tags from '../../components/Tags'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
 import { useRxSubject } from '../../services/react'
+import { MOBILE, rxLayout } from '../../services/window'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
 import {
 	getAddressName,
 	remove,
 	rxPartners,
 	setPublic,
-	types,
 	visibilityTypes,
 } from './partner'
 import CompanyForm from './CompanyForm'
 import PartnerForm, { inputNames } from './PartnerForm'
-import { MOBILE, rxLayout } from '../../services/window'
+import PartnerIcon from './PartnerIcon'
 
-const textsCap = translated(
-	{
-		add: 'add',
-		business: 'business',
-		chat: 'chat',
-		delete: 'delete',
-		edit: 'edit',
-		personal: 'personal',
-		public: 'public',
-		request: 'request',
-		tags: 'tags',
-		update: 'update',
-		usage: 'usage',
-		columnPublicTitle1: 'a public company cannot be changed to private.',
-		columnPublicTitle2:
-			'click to add a company with this identity to the public database',
-		partnerName: 'partner name',
-		removePartner: 'remove partner',
-		usedBy: 'used by',
-	},
-	true
-)[1]
+let textsCap = {
+	add: 'add',
+	chat: 'chat',
+	delete: 'delete',
+	edit: 'edit',
+	public: 'public',
+	request: 'request',
+	tags: 'tags',
+	update: 'update',
+	usage: 'usage',
+	columnPublicTitle1: 'a public company cannot be changed to private.',
+	columnPublicTitle2:
+		'click to add a company with this identity to the public database',
+	partnerName: 'partner name',
+	removePartner: 'remove partner',
+	usedBy: 'used by',
+}
+textsCap = translated(textsCap, true)[1]
 
 export default function PartnerList(props = {}) {
 	const [tableProps] = useRxSubject(rxLayout, getTableProps)
@@ -56,10 +52,11 @@ export default function PartnerList(props = {}) {
 				tags = [],
 				type,
 				userId,
+				visibility,
 			} = partner
+			const isPublic = visibilityTypes.PUBLIC === visibility
 			partner._address = textEllipsis(address, 15, 3)
-			partner._associatedIdentity =
-				associatedIdentity && getAddressName(associatedIdentity)
+			partner._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
 			partner._name = (
 				<div style={{ margin: !userId ? 0 : '-10px 0' }}>
 					<div {...{
@@ -80,6 +77,9 @@ export default function PartnerList(props = {}) {
 			partner._tags = <Tags tags={tags} />
 			// makes tags searchable
 			partner._tagsStr = tags.join(' ')
+			partner._type = isPublic
+				? visibilityTypes.PUBLIC
+				: type
 			return partner
 		})
 	)
@@ -93,32 +93,16 @@ const getTableProps = layout => {
 		columns: [
 			{
 				collapsing: true,
-				content: p => {
-					const { type, visibility } = p
-					const isPersonal = type === types.PERSONAL
-					const isPublic = visibility === visibilityTypes.PUBLIC
-					const icons = {
-						business: { name: 'building', title: textsCap.business },
-						personal: { name: 'user circle', title: textsCap.personal },
-						public: {
-							color: 'blue',
-							name: 'certificate',
-							title: textsCap.public,
-						},
-					}
-					const icon = isPublic
-						? icons.public
-						: isPersonal
-							? icons.personal
-							: icons.business
-					return (
-						<Icon {...{
-							className: 'no-margin',
-							size: 'large',
-							...icon,
-						}} />
-					)
-				},
+				content: ({ address, type, visibility }) => (
+					<PartnerIcon {...{
+						address,
+						draggable: true,
+						key: address,
+						size: 'large',
+						type,
+						visibility,
+					}} />
+				),
 				draggable: false,
 				headerProps: { style: { borderRight: 'none' } },
 				style: {
@@ -137,6 +121,7 @@ const getTableProps = layout => {
 				title: textsCap.partnerName,
 			},
 			!isMobile && {
+				draggableValueKey: 'associatedIdentity',
 				key: '_associatedIdentity',
 				title: textsCap.usedBy,
 				style: { maxWidth: 200 },
@@ -153,12 +138,12 @@ const getTableProps = layout => {
 				draggable: false,
 				title: textsCap.edit,
 			},
-			!isMobile && {
-				content: getVisibilityContent,
-				collapsing: true,
-				textAlign: 'center',
-				title: textsCap.public,
-			},
+			// !isMobile && {
+			// 	content: getVisibilityContent,
+			// 	collapsing: true,
+			// 	textAlign: 'center',
+			// 	title: textsCap.public,
+			// },
 		].filter(Boolean),
 		defaultSort: 'name',
 		emptyMessage: null,
@@ -167,39 +152,21 @@ const getTableProps = layout => {
 			'associatedIdentity',
 			'name',
 			'visibility',
-			'_tagsStr',
 			'userId',
+			'_tagsStr',
+			'_type',
 		],
 		searchable: true,
 		topLeftMenu: [
 			{
 				El: ButtonGroup,
 				buttons: [
-					{ content: textsCap.add, icon: 'plus' },
+					{
+						content: textsCap.add,
+						icon: 'plus',
+					},
 					{ content: textsCap.request },
 				],
-				// onAction: (_, addPartner) => {
-				// // Immediately re-opens the form on update mode
-				// 	const handleSubmit = (ok, partner) => ok && _showForm({
-				// 			autoSave: true,
-				// 			key: 'saved',
-				// 			values: partner,
-				// 		})
-				// 	const _showForm = (props = {}) => showForm(
-				// 		addPartner
-				// 			? PartnerForm
-				// 			: IdentityRequestForm,
-				// 		props,
-				// 		addPartner ? 'add-partner' : 'request-identity',
-				// 	)
-
-				// 	_showForm({
-				//		closeOnSubmit: false,
-				// 		onSubmit: addPartner
-				// 			? handleSubmit
-				// 			: undefined,
-				// 	})
-				// },
 				onAction: (_, addPartner) => showForm(
 					addPartner
 						? PartnerForm
@@ -248,29 +215,29 @@ function getActions(partner = {}) {
 		.map(props => <Button key={props.title} {...props} />)
 }
 
-function getVisibilityContent(partner = {}) {
-	const { address, name, visibility } = partner
-	const isPublic = visibility === visibilityTypes.PUBLIC
-	return (
-		<div
-			title={
-				isPublic
-					? textsCap.columnPublicTitle1
-					: textsCap.columnPublicTitle2
-			}
-		>
-			<Checkbox
-				checked={isPublic}
-				toggle
-				onChange={(_, { checked }) =>
-					checked &&
-					showForm(CompanyForm, {
-						values: { name, identity: address },
-						onSubmit: (e, v, success) =>
-							success && setPublic(address),
-					})
-				}
-			/>
-		</div>
-	)
-}
+// function getVisibilityContent(partner = {}) {
+// 	const { address, name, visibility } = partner
+// 	const isPublic = visibility === visibilityTypes.PUBLIC
+// 	return (
+// 		<div
+// 			title={
+// 				isPublic
+// 					? textsCap.columnPublicTitle1
+// 					: textsCap.columnPublicTitle2
+// 			}
+// 		>
+// 			<Checkbox
+// 				checked={isPublic}
+// 				toggle
+// 				onChange={(_, { checked }) =>
+// 					checked &&
+// 					showForm(CompanyForm, {
+// 						values: { name, identity: address },
+// 						onSubmit: (e, v, success) =>
+// 							success && setPublic(address),
+// 					})
+// 				}
+// 			/>
+// 		</div>
+// 	)
+// }

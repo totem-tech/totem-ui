@@ -2,15 +2,15 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
-import { Button } from 'semantic-ui-react'
 import PromisE from '../../utils/PromisE'
-import { blockNumberToTS } from '../../utils/time'
-import { isArr, deferred, isFn } from '../../utils/utils'
+import { blockToDate } from '../../utils/time'
+import { isArr, deferred, isFn, isBool } from '../../utils/utils'
+import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import {
     hashTypes,
     queueables as bcQueueables,
-    getCurrentBlock,
+    rxBlockNumber,
 } from '../../services/blockchain'
 import { translated } from '../../services/language'
 import { confirm, showForm } from '../../services/modal'
@@ -18,12 +18,15 @@ import { addToQueue } from '../../services/queue'
 import { unsubscribe } from '../../services/react'
 import { MOBILE, rxLayout } from '../../services/window'
 import identities, {
+    get as getIdentity,
     getSelected,
     rxIdentities,
     rxSelected,
 } from '../identity/identity'
-import { getAddressName, rxPartners } from '../partner/partner'
-import PartnerForm from '../partner/PartnerForm'
+import AddressName from '../partner/AddressName'
+import { rxPartners } from '../partner/partner'
+import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
+import SumDuration from './SumDuration'
 import {
     getProjects,
     statuses,
@@ -32,11 +35,9 @@ import {
     blocksToDuration,
     rxDurtionPreference,
 } from './timekeeping'
-import SumDuration from './SumDuration'
-import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
-import TimekeepingInviteForm from './TimekeepingInviteForm'
 import TimekeepingDetailsForm from './TimekeepingDetails'
-import PartnerBtn from '../partner/AddPartnerBtn'
+import TimekeepingInviteForm from './TimekeepingInviteForm'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -109,23 +110,30 @@ class TimeKeepingList extends Component {
     constructor(props) {
         super(props)
 
+        const { manage } = props
         this.recordIds = []
         this.rxData = new BehaviorSubject(new Map())
         this.rxSelectedIds = new BehaviorSubject([])
         this.inProgressBtns = new Map()
         const columns = [
             {
-                hidden: () => this.state.isMobile,
                 collapsing: true,
+                hidden: () => this.state.isMobile,
                 key: '_end_block',
                 title: textsCap.finishedAt,
             },
             {
+                hidden: () => manage && this.state.isMobile,
                 key: 'projectName',
                 title: textsCap.activity,
                 style: { minWidth: 125 }
             },
-            { key: '_workerName', title: textsCap.workerIdentity },
+            {
+                content: ({ workerAddress }) => <AddressName {...{ address: workerAddress }} />,
+                draggableValueKey: 'workerAddress',
+                key: 'workerAddress',
+                title: textsCap.workerIdentity,
+            },
             { key: 'duration', textAlign: 'center', title: textsCap.duration },
             // { key: 'start_block', title: texts.blockStart },
             // { key: 'end_block', title: texts.blockEnd },
@@ -146,11 +154,12 @@ class TimeKeepingList extends Component {
             }
         ]
         this.state = {
-            inprogressIds: [],
             columns,
             data: new Map(),
             defaultSort: '_end_block',
             defaultSortAsc: false,
+            inProgressIds: [],
+            isMobile: props.isMobile,
             loading: false,
             perPage: 10,
             onRowSelect: selectedIds => this.rxSelectedIds.next([...selectedIds]),
@@ -218,14 +227,30 @@ class TimeKeepingList extends Component {
                 },
                 {
                     key: 'actionArchive',
-                    onClick: selectedHashes => confirm({
-                        content: `${textsCap.selected}: ${selectedHashes.length}`,
-                        header: `${this.props.archive ? textsCap.unarchiveRecord : textsCap.archiveRecord}?`,
-                        onConfirm: () => selectedHashes.forEach(h =>
-                            this.handleArchive(h, !this.props.archive)
-                        ),
-                        size: 'mini',
-                    }),
+                    onClick: async selectedHashes => {
+                        const { data } = this.state
+                        const identities = rxIdentities.value
+                        const arr = selectedHashes
+                            .map(hash => {
+                                const { workerAddress } = data.get(hash) || {}
+                                return identities.get(workerAddress)
+                                    && [hash, workerAddress]
+                            })
+                            .filter(Boolean)
+                        if (!arr.length) return // none eligible
+
+                        confirm({
+                            content: `${textsCap.selected}: ${arr.length}`,
+                            header: `${this.props.archive ? textsCap.unarchiveRecord : textsCap.archiveRecord}?`,
+                            onConfirm: () => arr
+                                .forEach(([hash, workerAddress]) => this.handleArchive(
+                                    hash,
+                                    !this.props.archive,
+                                    workerAddress,
+                                )),
+                            size: 'mini',
+                        })
+                    },
                 }
             ],
         }
@@ -250,7 +275,12 @@ class TimeKeepingList extends Component {
     init = deferred(async () => {
         this.subs = this.subs || {}
         unsubscribe(this.subs)
-        const { archive, manage, projectId } = this.props
+        const {
+            archive,
+            isMobile,
+            manage,
+            projectId,
+        } = this.props
         const {
             list,
             listArchive,
@@ -307,13 +337,14 @@ class TimeKeepingList extends Component {
         }
 
         this.subs.inProgressIds = rxInProgressIds.subscribe(ar => {
-            this.setState({ inprogressIds: ar })
+            this.setState({ inProgressIds: ar })
             // this.updateRecords()
         })
         // update record details whenever triggered
         this.subs.trigger = rxTrigger.subscribe(() => {
             this.updateRecords()
         })
+        if (isBool(isMobile)) return // externally controlled
         this.subs.isMobile = rxLayout.subscribe(l =>
             this.setState({ isMobile: l === MOBILE })
         )
@@ -321,12 +352,13 @@ class TimeKeepingList extends Component {
 
     getActionButtons = (record, hash, asButton = true) => {
         const { archive, manage } = this.props
-        const { inprogressIds = [] } = this.state
+        const { inProgressIds = [] } = this.state
         const {
             approved,
             locked,
-            projectOwnerAddress,
+            // projectOwnerAddress,
             submit_status,
+            workerAddress,
         } = record
         const editableStatuses = [
             statuses.draft,
@@ -334,8 +366,8 @@ class TimeKeepingList extends Component {
             statuses.reject,
         ]
         const isSubmitted = submit_status === statuses.submit
-        const inProgress = inprogressIds.includes(hash)
-        const isOwner = projectOwnerAddress === getSelected().address
+        const inProgress = inProgressIds.includes(hash)
+        // const isOwner = projectOwnerAddress === getSelected().address
         const isBtnInprogress = title =>  this.inProgressBtns.get(hash) === title
         const buttons = [
             {
@@ -417,7 +449,7 @@ class TimeKeepingList extends Component {
                 disabled: inProgress,
                 icon: 'reply all',
                 loading: isBtnInprogress(textsCap.unarchive),
-                onClick: () => this.handleArchive(hash, false, textsCap.unarchive),
+                onClick: () => this.handleArchive(hash, false, workerAddress),
                 title: textsCap.unarchive
             }
         ].filter(Boolean)
@@ -447,7 +479,7 @@ class TimeKeepingList extends Component {
         let [records, projects, currentBlock] = await PromisE.all(
             query.record.get(recordIds, null, true),
             getProjects(),
-            getCurrentBlock()
+            subjectAsPromise(rxBlockNumber)[0]
         )
 
         records = records.map((record, i) => {
@@ -474,8 +506,8 @@ class TimeKeepingList extends Component {
                     workerAddress: worker || '',// && ss58Encode(worker) || '',
                     projectOwnerAddress: ownerAddress,
                     projectName: name,
-                    _end_block: blockNumberToTS(end_block, currentBlock),
-                    _start_block: blockNumberToTS(start_block, currentBlock),
+                    _end_block: blockToDate(end_block, currentBlock),
+                    _start_block: blockToDate(start_block, currentBlock),
                 }
             ]
         })
@@ -498,14 +530,6 @@ class TimeKeepingList extends Component {
                 record.rejected = submit_status === statuses.reject
                 record.draft = submit_status === statuses.draft
                 record.projectName = projectName || textsCap.unknown
-                record._workerName = getAddressName(workerAddress) || (
-                    <PartnerBtn {...{
-                        address: workerAddress,
-                        partnerFormProps: {
-                             associatedIdentity: projectOwnerAddress,
-                        }
-                    }} />
-                )
                 record._status = locked
                     ? textsCap.locked
                     : statusTexts[submit_status]
@@ -556,23 +580,18 @@ class TimeKeepingList extends Component {
         addToQueue(task)
     }
 
-    handleArchive = (recordId, archive = true, title) => {
-        const { manage } = this.props
-        const { data } = this.state
-        const { projectOwnerAddress, workerAddress } = data.get(recordId) || {}
-        const address = manage
-            ? projectOwnerAddress
-            : workerAddress
-        if (!address) return
-
+    handleArchive = (recordId, archive = true, workerAddress) => {
+        const title = archive
+            ? textsCap.archiveRecord
+            : textsCap.unarchiveRecord
         this.setBtnInprogress(recordId, title)
         const queueProps = bcQueueables.archiveRecord(
-            address,
+            workerAddress,
             hashTypes.timeRecordHash,
             recordId,
             archive,
             {
-                title: textsCap.archiveRecord,
+                title,
                 description: `${textsCap.hash}: ${recordId}`,
                 then: () => {
                     this.setBtnInprogress(recordId)
@@ -696,7 +715,7 @@ class TimeKeepingList extends Component {
     render() {
         const { archive, hideTimer, manage } = this.props
         const { columns, topLeftMenu, topRightMenu } = this.state
-        columns.find(x => x.key === '_workerName').hidden = !manage
+        columns.find(x => x.key === 'workerAddress').hidden = !manage
         topLeftMenu.find(x => x.key === 'timer').hidden = hideTimer
         topRightMenu.forEach(item => {
             // un/archive action is always visible
@@ -739,6 +758,11 @@ class TimeKeepingList extends Component {
                         ? column.hidden()
                         : column.hidden
                 })),
+                style: {
+                    paddingTop: 15,
+                    ...this.props.style,
+                    ...this.state.style,
+                },
             }} />
         )
     }

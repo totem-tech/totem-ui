@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Icon, Menu, Dropdown } from 'semantic-ui-react'
 import { isFn, className } from '../utils/utils'
+import { useInverted } from '../services/window'
 
 const handleSelect = (props, target) => {
     const { current, onSelect, total } = props
@@ -72,10 +73,15 @@ const getNumberItems = props => {
 }
 function Paginator(props) {
     const { current, float, total } = props
+    const inverted = useInverted()
     const next = current + 1
     const prev = current - 1
     return (
-        <Menu {...{ pagination: true, style: { float } }}>
+        <Menu {...{
+            inverted,
+            pagination: true,
+            style: { float },
+        }}>
             <Menu.Item
                 as="a"
                 icon

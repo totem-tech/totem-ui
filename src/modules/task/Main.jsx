@@ -1,16 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Menu, Tab } from 'semantic-ui-react'
-import Message from '../../components/Message'
-import Text from '../../components/Text'
-import TaskList, { listTypes } from './TaskList'
-import { rxSelected } from '../identity/identity'
-import { translated } from '../../services/language'
-import useTasks from './useTasks'
-import { rwSettings } from './task'
-import { useInverted } from '../../services/window'
-import { useRxSubject } from '../../services/react'
 import { BehaviorSubject } from 'rxjs'
+import Text from '../../components/Text'
+import { translated } from '../../services/language'
+import { useRxSubject } from '../../services/react'
+import { useInverted } from '../../services/window'
+import { rxSelected } from '../identity/identity'
+import { rwSettings } from './task'
+import TaskList, { listTypes } from './TaskList'
+import useTasks from './useTasks'
 
 const textsCap = translated({
     approver: 'to approve',
@@ -24,20 +23,27 @@ const textsCap = translated({
     unknown: 'unknown',
 }, true)[1]
 
-export default function TaskView({ address, activeType: _activeType }) {
+export default function TaskView({ address, tab: _activeType }) {
     const inverted = useInverted()
     address = address || useRxSubject(rxSelected)[0]
+    const excludeTypes = [
+        listTypes.marketplace,
+        // listTypes.approver,
+    ]
     const [rxTasks] = useState(() => new BehaviorSubject(new Map()))
     const [allTasks = new Map(), message] = useTasks(
         Object
             .values(listTypes)
-            .filter(x => x !== listTypes.marketplace),
+            .filter(x => ![
+                ...excludeTypes,
+                listTypes.marketplace
+            ].includes(x)),
         address,
     )
     const [activeType, setActiveType] = useState(
         _activeType
         || rwSettings().activeType
-        || 'owner'
+        || listTypes.owner
     )
     const data = activeType !== listTypes.marketplace
         && allTasks
@@ -53,54 +59,63 @@ export default function TaskView({ address, activeType: _activeType }) {
         {
             name: textsCap.ownerTasks,
             title: textsCap.ownerTasksDesc,
-            type: 'owner',
+            type: listTypes.owner,
         },
         {
             name: textsCap.beneficiary,
             title: textsCap.beneficiaryDesc,
-            type: 'beneficiary',
+            type: listTypes.beneficiary,
         },
         {
             name: textsCap.approver,
             title: textsCap.approverDesc,
-            type: 'approver',
+            type: listTypes.approver,
         },
-        // {
-        //     name: textsCap.marketplace,
-        //     title: textsCap.marketplaceDesc,
-        //     type: 'marketplace',
-        // },
-    ].map(({ name, title, type }) => ({
-        active: true,
-        inverted,
-        menuItem: <Menu.Item  {...{
-            content: <Text>{name}</Text>,
-            key: type,
-            // remember open tab index
-            onClick: () => rwSettings({ activeType: type }) | setActiveType(type),
-            title,
-        }} />,
-        type,
-    }))
+        {
+            name: textsCap.marketplace,
+            title: textsCap.marketplaceDesc,
+            type: listTypes.marketplace,
+        },
+    ]
+        .filter(x => !excludeTypes.includes(x.type))
+        .map(({ name, title, type }) => ({
+            active: true,
+            inverted,
+            menuItem: (
+                <Menu.Item  {...{
+                    content: <Text>{name}</Text>,
+                    key: type,
+                    // remember open tab index
+                    onClick: () => rwSettings({ activeType: type }) | setActiveType(type),
+                    title,
+                }} />
+            ),
+            type,
+        }))
 
     const activeIndex = panes.findIndex(x =>
         x.type === activeType
     )
 
-    return message
-        ? <Message {...message} />
-        : (
+    return (
             <div>
                 <Tab {...{
                     activeIndex,
-                    menu: { inverted, secondary: true, pointing: true },
+                    menu: {
+                        inverted,
+                        secondary: true,
+                        pointing: true,
+                    },
                     panes,
                     key: activeIndex + activeType, // forces active pane to re-render on each change
                 }} />
                 <TaskList {...{
                     address,
                     asTabPane: true,
-                    data,
+                    // data,
+                    emptyMessage: message
+                        ? message
+                        : undefined,
                     key: activeType,
                     rxTasks,
                     style: { marginTop: 15 },
@@ -111,5 +126,5 @@ export default function TaskView({ address, activeType: _activeType }) {
 }
 TaskView.propTypes = {
     address: PropTypes.string,
-    activeType: PropTypes.string,
+    tab: PropTypes.string,
 }

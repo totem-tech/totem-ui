@@ -1,7 +1,6 @@
 import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import {
-	Button,
 	Dropdown,
 	Grid,
 	Icon,
@@ -20,10 +19,11 @@ import {
 	isStr,
 	arrUnique,
 	isObj,
-	isDefined,
+	hasValue,
 } from '../utils/utils'
+import { Button } from './buttons'
 import { Invertible } from './Invertible'
-import Message from './Message'
+import Message, { statuses } from './Message'
 import Paginator from './Paginator'
 import { translated } from '../services/language'
 import { MOBILE, rxLayout } from '../services/window'
@@ -35,8 +35,7 @@ const mapItemsByPage = (data, pageNo, perPage, callback) => {
 	return arrMapSlice(data, start, end, callback)
 }
 
-const textsCap = translated(
-	{
+const textsCap = translated({
 		actions: 'actions',
 		deselectAll: 'deselect all',
 		noDataAvailable: 'no data available',
@@ -51,7 +50,13 @@ export default class DataTable extends Component {
 	constructor(props) {
 		super(props)
 
-		let { columns, defaultSort, defaultSortAsc, pageNo, sortBy } = props
+		let {
+			columns,
+			defaultSort,
+			defaultSortAsc,
+			pageNo,
+			sortBy,
+		} = props
 		if (!defaultSort && sortBy !== false) {
 			const { key, sortKey } = columns.find(x =>
 				!!x.key && x.sortable !== false
@@ -74,7 +79,7 @@ export default class DataTable extends Component {
 		this.subscriptions = {}
 		this.subscriptions.layout = rxLayout.subscribe(layout => {
 			const isMobile = layout === MOBILE
-			if (this.state.isMObile === isMobile) return
+			if (this.state.isMobile === isMobile) return
 			this.setState({ isMobile })
 		})
 	}
@@ -85,12 +90,20 @@ export default class DataTable extends Component {
 	}
 
 	getFooter(totalPages, pageNo) {
-		let { footerContent, navLimit } = this.props
+		let {
+			footerContent,
+			tableProps: { unstackable },
+			navLimit,
+		} = this.props
 		const { isMobile } = this.state
 		const paginator = totalPages > 1 && (
 			<Paginator {...{
 				current: pageNo,
-				float: isMobile ? 'left' : 'right',
+				float: isMobile
+					? unstackable
+						? 'left'
+						: 'none'
+					: 'right',
 				key: 'paginator',
 				navLimit: navLimit,
 				total: totalPages,
@@ -107,39 +120,58 @@ export default class DataTable extends Component {
 		return [paginator, footer].filter(Boolean)
 	}
 
+	getColumnsVisible = () => {
+		const { columns, columnsHidden } = this.props
+		return columns.filter(x =>
+			!x.hidden && !columnsHidden.includes(x.name || x.key)
+		)
+	}
+
 	getHeaders(totalRows, columns, selectedIndexes) {
-		let { columnsHidden, headers: showHeaders, selectable, tableProps: tp } = this.props
+		let {
+			headers: showHeaders,
+			selectable,
+			tableProps,
+		} = this.props
 		if (!showHeaders) return
 
 		const { sortAsc, sortBy } = this.state
-		const { sortable } = { ...DataTable.defaultProps.tableProps, ...tp }
-
-		const columnsVisible = columns.filter(
-			x => !columnsHidden.includes(x.name) && !x.hidden
-		)
-		const headers = columnsVisible.map((x, i) => {
-			const columnSortable = sortable && x.key && x.sortable !== false
-			const sortKey = x.sortKey || x.key
+		const { sortable } = {
+			...DataTable.defaultProps.tableProps,
+			...tableProps,
+		}
+		const headers = columns.map((column, i) => {
+			let {
+				headerProps = {},
+				key,
+				sortable: cSortable,
+				sortKey = key,
+				title,
+			} = column
+			cSortable = sortable
+				&& key
+				&& cSortable !== false
+			let handleClick
+			if (cSortable) handleClick = () => this.setState({
+				sortBy: sortKey,
+				sortAsc: sortBy === sortKey
+					? !sortAsc
+					: true,
+			})
 			return (
 				<Table.HeaderCell {...{
-					...x.headerProps,
-					content: x.title,
+					...headerProps,
+					content: title,
 					key: i,
-					onClick: () =>
-						columnSortable &&
-						this.setState({
-							sortBy: sortKey,
-							sortAsc: sortBy === sortKey ? !sortAsc : true,
-						}),
-					sorted:
-						sortBy !== sortKey
-							? null
-							: sortAsc
+					onClick: handleClick,
+					sorted: sortBy !== sortKey
+						? null
+						: sortAsc
 							? 'ascending'
 							: 'descending',
 					style: {
-						...(x.headerProps || {}).style,
 						...styles.columnHeader,
+						...headerProps.style,
 					},
 					textAlign: 'center',
 				}} />
@@ -149,19 +181,22 @@ export default class DataTable extends Component {
 		if (!selectable) return headers
 		// include checkbox to select items
 		const n = selectedIndexes.length
-		const iconName = `${n > 0 ? 'check ' : ''}square${
-			n === 0 || n != totalRows ? ' outline' : ''
-		}`
+		const iconName = n <= 0
+			? 'square outline'
+			: n < totalRows
+				? 'minus square outline'
+				: 'check square'
 		const deselect = n === totalRows
 			|| (n > 0 && n < totalRows)
-		const numRows = deselect ? n : totalRows
+		const numRows = deselect
+			? n
+			: totalRows
 		const t = deselect
 			? textsCap.deselectAll
 			: textsCap.selectAll
 		const title = `${t} (${numRows})`
-		headers.splice(
-			0,
-			0,
+		// add checkbox as the first column
+		headers.unshift(
 			<Table.HeaderCell
 				key='checkbox'
 				onClick={() => this.handleSelectAll(selectedIndexes)}
@@ -175,15 +210,103 @@ export default class DataTable extends Component {
 	}
 
 	getRows(filteredData, columns, selectedIndexes, pageNo) {
-		let { columnsHidden, perPage, rowProps, selectable } = this.props
+		let {
+			headers,
+			perPage,
+			rowProps,
+			selectable,
+			tableProps: { unstackable } = {}
+		} = this.props
+
+		const { isMobile } = this.state
 		const nonAttrs = [
 			'content',
 			'draggableValueKey',
+			'dynamicProps',
 			'headerProps',
+			'includeTitleOnMobile',
 			'sortable',
 			'sortKey',
 			'title',
 		]
+		const isStackedNMobile = isMobile && !headers && !unstackable
+		const getCell = (item, key, items) => (column, j) => {
+			const dynamicProps = isFn(column.dynamicProps) && column.dynamicProps(
+				item,
+				key,
+				items,
+				this.props,
+			) || {}
+			let {
+				collapsing,
+				content,
+				draggable,
+				draggableValueKey,
+				includeTitleOnMobile,
+				key: contentKey,
+				onDragStart,
+				style,
+				textAlign = 'left',
+				title,
+			} = {
+				...column,
+				...dynamicProps,
+				style: {
+					...column.style,
+					...dynamicProps.style,
+				}
+			}
+			draggable = draggable !== false
+			content = isFn(content)
+				? content(
+					item,
+					key,
+					items,
+					this.props,
+				)
+				: content || item[contentKey]
+			style = {
+				cursor: draggable
+					? 'grab'
+					: undefined,
+				padding: collapsing
+					? '0 5px'
+					: undefined,
+				...style,
+			}
+			const dragValue = draggableValueKey
+				? item[draggableValueKey] || ''
+				: null
+			const props = {
+				...objWithoutKeys(column, nonAttrs),
+				key: key + j,
+				draggable,
+				onDragStart: !draggable
+					? undefined
+					: this.handleDragStartCb(
+						dragValue,
+						onDragStart,
+						item,
+					),
+				style,
+				textAlign,
+			}
+			if (!isValidElement(content) && isObj(content)) {
+				// Prevents Objects being thrown on DOM which can cause error being thrown by React
+				console.warn('DataTable: unwanted object found on', {
+					key: contentKey,
+					title: title,
+					content,
+				})
+				content = JSON.stringify(content, null, 4)
+			}
+			const shouldUseTable = isStackedNMobile
+				&& includeTitleOnMobile
+				&& hasValue(content)
+			if (shouldUseTable) content = <CellAsTable {...{ content, title }} />
+
+			return <Table.Cell {...props}>{content}</Table.Cell>
+		}
 		return mapItemsByPage(
 			filteredData,
 			pageNo,
@@ -192,75 +315,37 @@ export default class DataTable extends Component {
 				<Table.Row {...{
 					key,
 					...(isFn(rowProps)
-						? rowProps(item, key, items, this.props)
+						? rowProps(
+							item,
+							key,
+							items,
+							this.props,
+						)
 						: rowProps || {}),
-				}} >
+				}}>
 					{selectable /* include checkbox to select items */ && (
-						<Table.Cell
-							onClick={() =>
-								this.handleRowSelect(key, selectedIndexes)
-							}
-							style={styles.checkboxCell}
-						>
-							<Icon
-								className='no-margin'
-								name={
-									(selectedIndexes.indexOf(key) >= 0
+						<Table.Cell {...{
+							onClick: () => this.handleRowSelect(key, selectedIndexes),
+							style: styles.checkboxCell,
+						}}>
+							<Icon {...{
+								className: 'no-margin',
+								name: (
+									selectedIndexes.indexOf(key) >= 0
 										? 'check '
-										: '') + 'square outline'
-								}
-								size='large'
-							/>
+										: ''
+								) + 'square outline',
+								size: 'large',
+							}} />
 						</Table.Cell>
 					)}
-					{columns.filter(({ hidden, name }) =>
-						!hidden && !columnsHidden.includes(name)
-					)
-						.map((cell, j) => {
-							let {
-								collapsing,
-								content,
-								draggable,
-								draggableValueKey,
-								key: contentKey,
-								onDragStart,
-								style,
-								textAlign = 'left',
-								title,
-							} = cell || {}
-							draggable = draggable !== false
-							content = isFn(content)
-								? content(item, key, items, this.props)
-								: cell.content || item[contentKey]
-							style = {
-								cursor: draggable ? 'grab' : undefined,
-								padding: collapsing ? '0 5px' : undefined,
-								...style,
-							}
-							const dragValue = draggableValueKey
-								? item[draggableValueKey] || ''
-								: null
-							const props = {
-								...objWithoutKeys(cell, nonAttrs),
-								key: key + j,
-								draggable,
-								onDragStart: !draggable
-									? undefined
-									: this.handleDragStartCb(dragValue, onDragStart, item),
-								style,
-								textAlign,
-							}
-							if (!isValidElement(content) && isObj(content)) {
-								// Prevents Objects being thrown on DOM which can cause error being thrown by React
-								console.warn('DataTable: unwanted object found on', {
-									key: contentKey,
-									title: title,
-									content,
-								})
-								content = JSON.stringify(content, null, 4)
-							}
-							return <Table.Cell {...props}>{content}</Table.Cell>
-						})}
+					{columns.map(
+						getCell(
+							item,
+							key,
+							items,
+						)
+					)}
 				</Table.Row>
 			)
 		).filter(Boolean)
@@ -344,41 +429,52 @@ export default class DataTable extends Component {
 		// if searchable is a valid element search is assumed to be externally handled
 		const searchEl = showSearch &&
 			(React.isValidElement(searchable)
-			&& searchable
-			|| (
-				<Input {...{
-					action: !keywords
-						? undefined
-						: {
-								basic: true,
-								icon: {
-									className: 'no-margin',
-									name: 'close',
-								},
-								onClick: () => triggerSearchChange(''),
-							},
-					fluid: isMobile,
-					icon: 'search',
-					iconPosition: 'left',
-					onChange: (_, d) => triggerSearchChange(d.value),
-					onDragOver: e => e.preventDefault(),
-					onDrop: e => {
-						const keywords = e.dataTransfer.getData('Text')
-						if (!keywords.trim()) return
-						triggerSearchChange(keywords)
+			&& searchable || (
+			<Input {...{
+				action: !keywords
+					? undefined
+					: {
+						basic: true,
+						icon: {
+							className: 'no-margin',
+							name: 'close',
+						},
+						onClick: () => triggerSearchChange(''),
 					},
-					placeholder: textsCap.search,
-					type: 'search', // enables escape to clear
+				fluid: isMobile,
+				icon: 'search',
+				iconPosition: 'left',
+				onChange: (_, d) => triggerSearchChange(d.value),
+				onDragOver: e => e.preventDefault(),
+				onDrop: e => {
+					const keywords = e.dataTransfer.getData('Text')
+					if (!keywords.trim()) return
+					triggerSearchChange(keywords)
+				},
+				placeholder: textsCap.search,
+				style: { maxWidth: '100%' },
+				type: 'search', // enables escape to clear
 				value: keywords || '',
 			}} />
 		))
 		
+		const { topGrid = {} } = this.props
+		const {
+			left: {
+				computer:  computerL = showSearch ? 9 : 16,
+				tablet: tabletL = 16,
+			} = { },
+			right: {
+				computer = 7,
+				tablet = 16,
+			} = {},
+		} = topGrid
 		const leftBtns = (
-			<Grid.Column
-				tablet={16}
-				computer={showSearch ? 9 : 16}
-				style={{ padding: 0 }}
-			>
+			<Grid.Column {...{
+				tablet: tabletL, //16,
+				computer: computerL,// showSearch ? 9 : 16,
+				style: { padding: 0 },
+			}} >
 				{!isMobile && actions}
 				{actionButtons.map((item, i) => {
 					if (React.isValidElement(item) || !isObj(item)) return item
@@ -405,14 +501,14 @@ export default class DataTable extends Component {
 			<Grid columns={showSearch ? 2 : 1} style={styles.tableTopContent}>
 				<Grid.Row>
 					{leftBtns}
-					<Grid.Column
-						tablet={16}
-						computer={7}
-						style={{
+					<Grid.Column {...{
+						tablet,//: 16,
+						computer,//: 7,
+						style: {
 							padding: 0,
 							textAlign: 'right',
-						}}
-					>
+						},
+					}} >
 						{searchEl}
 						{isMobile && actions}
 					</Grid.Column>
@@ -460,7 +556,6 @@ export default class DataTable extends Component {
 
 	render() {
 		let {
-			columns: columnsOriginal,
 			data,
 			emptyMessage,
 			footerContent,
@@ -470,37 +565,62 @@ export default class DataTable extends Component {
 			style,
 			tableProps,
 		} = this.props
-		let { keywords, pageNo, selectedIndexes, sortAsc, sortBy } = this.state
+		let {
+			keywords,
+			pageNo,
+			selectedIndexes,
+			sortAsc,
+			sortBy,
+		} = this.state
 
-		keywords = `${isDefined(keywords) ? keywords : keywordsP || ''}`.trim()
-		const columns = columnsOriginal.filter(x => !!x && !x.hidden)
+		keywords = `${keywords || keywordsP || ''}`.trim()
+		const columnsVisible = this.getColumnsVisible()
 		// Include extra searchable keys that are not visibile on the table
 		const keys = arrUnique([
-			...columns
+			...columnsVisible
 				.filter(x => !!x.key)
 				.map(x => x.key),
 			...(searchExtraKeys || []),
 		])
 		let filteredData = !keywords
 			? data
-			: search(data, keywords, keys)
+			: search(
+				data,
+				keywords,
+				keys,
+			)
 		filteredData = !sortBy
 			? filteredData
-			: sort(filteredData, sortBy, !sortAsc, false)
+			: sort(
+				filteredData,
+				sortBy,
+				!sortAsc,
+				true,
+			)
 		selectedIndexes = selectedIndexes.filter(
-			index => !!(isArr(data) ? data[index] : data.get(index))
+			index => !!(
+				isArr(data)
+					? data[index]
+					: data.get(index)
+			)
 		)
 		// actual total
 		const totalItems = data.size || data.length
 		// filtered total
 		const totalRows = filteredData.length || filteredData.size || 0
 		const totalPages = Math.ceil(totalRows / perPage)
-		pageNo = pageNo > totalPages ? 1 : pageNo
+		pageNo = pageNo > totalPages
+			? 1
+			: pageNo
 		this.state.pageNo = pageNo
-		const headers = this.getHeaders(totalRows, columns, selectedIndexes)
+		const headers = this.getHeaders(
+			totalRows,
+			columnsVisible,
+			selectedIndexes,
+		)
 		const rows = this.getRows(
 			filteredData,
-			columns,
+			columnsVisible,
 			selectedIndexes,
 			pageNo
 		)
@@ -511,6 +631,8 @@ export default class DataTable extends Component {
 		} else if (isStr(emptyMessage)) {
 			emptyMessage = { content: emptyMessage }
 		}
+		const isEmpty = totalRows === 0
+		const isLoading = isEmpty && (emptyMessage || {}).status === statuses.LOADING
 		
 		return (
 			<Invertible {...{
@@ -523,10 +645,10 @@ export default class DataTable extends Component {
 					...style,
 				},
 			}} >
-				{this.getTopContent(totalRows, selectedIndexes)}
+				{!isLoading && this.getTopContent(totalRows, selectedIndexes)}
 
 				<div style={styles.tableContent}>
-					{totalRows === 0 && emptyMessage && (
+					{isEmpty && emptyMessage && (
 						<Message {...emptyMessage} />
 					)}
 					{totalRows > 0 && (
@@ -534,24 +656,28 @@ export default class DataTable extends Component {
 							...DataTable.defaultProps.tableProps, // merge when prop supplied
 							...tableProps,
 							El: Table,
-						}} >
-							<Table.Header>
-								<Table.Row>{headers}</Table.Row>
-							</Table.Header>
+						}}>
+							{headers && (
+								<Table.Header>
+									<Table.Row>{headers}</Table.Row>
+								</Table.Header>
+							)}
 
 							<Table.Body>{rows}</Table.Body>
 
-							{!footerContent && totalPages <= 1 ? undefined : (
-								<Table.Footer>
-									<Table.Row>
-										<Table.HeaderCell
-											colSpan={columns.length + 1}
-										>
-											{this.getFooter(totalPages, pageNo)}
-										</Table.HeaderCell>
-									</Table.Row>
-								</Table.Footer>
-							)}
+							{!footerContent && totalPages <= 1
+								? undefined
+								: (
+									<Table.Footer>
+										<Table.Row>
+											<Table.HeaderCell
+												colSpan={columnsVisible.length + 1}
+											>
+												{this.getFooter(totalPages, pageNo)}
+											</Table.HeaderCell>
+										</Table.Row>
+									</Table.Footer>
+								)}
 						</Invertible>
 					)}
 				</div>
@@ -559,6 +685,10 @@ export default class DataTable extends Component {
 		)
 	}
 }
+const gridProps = PropTypes.shape({
+	computer: PropTypes.number,
+	tablet: PropTypes.number,
+})
 DataTable.propTypes = {
 	// data: PropTypes.oneOfType([
 	//     PropTypes.array,
@@ -567,8 +697,11 @@ DataTable.propTypes = {
 	columns: PropTypes.arrayOf(
 		PropTypes.shape({
 			// function/element/string: content to display for the each cell on this column.
-			// function props: currentItem, key, allItems, props
+			// function props: currentItem, id/index, allItems, props
 			content: PropTypes.any,
+			// @dynamicProps func: dynamically add extra properties to cell based on cell content etc.
+			// Args: item, key, items, props
+			dynamicProps: PropTypes.func,
 			// indicates whether column cell should be draggable.
 			// Default: true
 			draggable: PropTypes.bool,
@@ -595,7 +728,10 @@ DataTable.propTypes = {
 	// array of column `name`s to hide
 	columnsHidden: PropTypes.array,
 	// Object key to set initial sort by
-	defaultSort: PropTypes.string,
+	defaultSort: PropTypes.oneOfType([
+		PropTypes.bool,
+		PropTypes.string,
+	]),
 	defaultSortAsc: PropTypes.bool.isRequired,
 	emptyMessage: PropTypes.oneOfType([
 		PropTypes.object,
@@ -628,6 +764,10 @@ DataTable.propTypes = {
 	// if truthy, will show number of items selected
 	showSelectedCount: PropTypes.bool,
 	tableProps: PropTypes.object.isRequired, // table element props
+	topGrid: PropTypes.shape({
+		left: gridProps,
+		right: gridProps,
+	}),
 	topLeftMenu: PropTypes.arrayOf(PropTypes.object),
 	topRightMenu: PropTypes.arrayOf(PropTypes.object),
 }
@@ -649,7 +789,7 @@ DataTable.defaultProps = {
 	selectable: false,
 	showSelectedCount: true,
 	tableProps: {
-		celled: true,
+		celled: false,
 		selectable: true,
 		sortable: true,
 		unstackable: true,
@@ -657,6 +797,31 @@ DataTable.defaultProps = {
 	},
 }
 
+export const CellAsTable = React.memo(({ content, title }) => (
+	<div style={{
+		display: 'table',
+		width: '100%',
+	}}>
+		<div style={{
+			display: 'table-cell',
+			maxWidth: '50%',
+		}}>
+			<b style={{
+				paddingRight: 7,
+				whiteSpace: 'nowrap',
+			}}>
+				{title}:
+			</b>
+		</div>
+		<div style={{
+			display: 'table-cell',
+			minWidth: '50%',
+			textAlign: 'right',
+		}}>
+			{content}
+		</div>
+	</div>
+))
 const styles = {
 	checkboxCell: {
 		padding: '0px 5px',

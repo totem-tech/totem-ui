@@ -2,7 +2,7 @@ import { BehaviorSubject } from 'rxjs'
 import { generateMnemonic } from 'bip39'
 import DataStorage from '../../utils/DataStorage'
 import { keyring } from '../../utils/polkadotHelper'
-import { isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
+import { isBool, isObj, isStr, objClean, objHasKeys } from '../../utils/utils'
 
 const identities = new DataStorage('totem_identities')
 export const DEFAULT_NAME = 'Default' // default identity name
@@ -55,7 +55,10 @@ export const getAll = () => identities.map(([_, x]) => ({ ...x }))
  *
  * @returns {Object}
  */
-export const getSelected = () => identities.find({ selected: true }, true, true) || getAll()[0]
+export const getSelected = () => {
+	const selected = identities.find({ selected: true }, true, true)
+	return selected || getAll()[0]
+}
 
 export const find = addressOrName => identities.find({ address: addressOrName, name: addressOrName }, true, false, true)
 
@@ -94,11 +97,15 @@ export const set = (address, identity) => {
 	const existingItem = identities.get(address)
 	if (!existingItem && !objHasKeys(identity, REQUIRED_KEYS, true)) return
 
-	const { selected, type, usageType } = identity
+	const { type, usageType } = identity
 	const isUsageTypeValid = Object.values(USAGE_TYPES).includes(usageType)
 	identity.type = type || 'sr25519'
-	identity.selected = !!selected
-	identity.usageType = !isUsageTypeValid ? USAGE_TYPES.PERSONAL : usageType
+	if (!isBool(identity.selected)) {
+		identity.selected = !!(existingItem || {}).selected
+	}
+	identity.usageType = !isUsageTypeValid
+		? USAGE_TYPES.PERSONAL
+		: usageType
 	//  merge with existing values and get rid of any unwanted properties
 	identity = objClean({ ...existingItem, ...identity }, VALID_KEYS)
 	identities.set(address, identity)

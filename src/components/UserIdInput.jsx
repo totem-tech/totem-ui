@@ -1,13 +1,14 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { arrUnique, isFn, objWithoutKeys, arrSort, isStr, deferred } from '../utils/utils'
+import { arrUnique, isFn, objWithoutKeys, arrSort, isStr, deferred, isSubjectLike, isArr } from '../utils/utils'
 import FormInput from './FormInput'
 import { getChatUserIds } from '../modules/chat/chat'
 import client, { getUser } from '../modules/chat/ChatClient'
 import { translated } from '../services/language'
 import partners from '../modules/partner/partner'
 import PromisE from '../utils/PromisE'
+import { copyRxSubject } from '../utils/reactHelper'
 
 const textsCap = translated({
     add: 'add',
@@ -62,6 +63,7 @@ class UserIdInput extends Component {
             excludeOwnId,
             includePartners,
             includeFromChat,
+            label,
             multiple,
             newUser,
             options,
@@ -71,9 +73,31 @@ class UserIdInput extends Component {
             searchQuery,
             value,
         } = props
-        placeholder = placeholder || textsCap.enterUserId
-        rxValue = rxValue || new BehaviorSubject(value || (multiple ? [] : ''))
         const useDropwdown = multiple || includeFromChat || includePartners || options
+        placeholder = placeholder || textsCap.enterUserId
+        rxValue = isSubjectLike(rxValue)
+            ? rxValue
+            : new BehaviorSubject(value)
+        if (useDropwdown) {
+            value = isStr(rxValue.value)
+                ? value.split(',')
+                : value || []
+            if (!multiple) value = value[0]
+            options = arrUnique([
+                ...isArr(value)
+                    ? value
+                    : [value].filter(Boolean),
+                (options || []).map(x => x.value),
+            ])
+                .filter(isStr)
+                .sort()
+                .map(id => ({
+                    key: id,
+                    text: id,
+                    value: id,
+                }))
+            rxValue.next(value)
+        }
         const ownId = (getUser() || {}).id
         let input = !useDropwdown
             ? {
@@ -83,12 +107,12 @@ class UserIdInput extends Component {
                 },
                 inlineLabel: { icon: { className: 'no-margin', name: 'at' } },
                 labelPosition: 'left',
-                minLength: MIN_LENGTH,
                 maxLength: MAX_LENGTH,
+                minLength: MIN_LENGTH,
                 placeholder,
                 regex: userIdRegex,
                 reject: [excludeOwnId && ownId, ...reject].filter(Boolean),
-                rxValue,
+                rxValue, ///: copyRxSubject(rxValue, new BehaviorSubject()),
                 type: 'text',
                 useInput: true,
                 ...(!newUser
@@ -114,7 +138,7 @@ class UserIdInput extends Component {
                     }),
             }
             : {
-                additionLabel: `${textsCap.add} @`,
+                additionLabel: `${textsCap.add}: @`,
                 allowAdditions,
                 clearable,
                 multiple: multiple,
@@ -123,7 +147,7 @@ class UserIdInput extends Component {
                 onClose: () => this.setState({ open: false }),
                 onOpen: () => this.setState({ open: true }),
                 onSearchChange: this.handleSearchChange,
-                options: options || [],
+                options,
                 placeholder,
                 rxValue,
                 search: true,
@@ -143,53 +167,70 @@ class UserIdInput extends Component {
 
     componentWillMount() {
         this._mounted = true
-        let { options } = this.state
-        let { excludeOwnId, includeFromChat, includePartners, multiple, value } = this.props
-        value = value || (multiple ? [] : '')
-        if (!options) return this.setState({ value })
+        let {
+            options = [],
+            rxValue,
+            type,
+        } = this.state
+        if (type !== 'dropdown') return
 
-        const userIds = options.map(x => x.value)
+        let {
+            excludeOwnId,
+            includeFromChat,
+            includePartners,
+        } = this.props
+
+        let userIds = []
+        let chatOptions = []
         // include user IDs from partners list
-        if (includePartners) {
-            const partnerOptions = []
-            Array.from(partners.getAll())
-                .forEach(([_, { name, userId }]) => {
+        let partnerOptions = !includePartners
+            ? []
+            : [...partners.getAll().values()]
+                .map(({ name, userId }) => {
                     if (!userId || userIds.includes(userId)) return
-                    userIds.push(userId) // prevents dupplicates
-                    partnerOptions.push({
+
+                    userIds.push(userId)
+                    return {
                         description: name,
                         icon: 'users',
                         key: userId,
                         text: userId,
                         title: textsCap.partner,
                         value: userId,
-                    })
-                    return true
+                    }
                 })
-            options = options.concat(arrSort(partnerOptions, 'text'))
-        }
+                .filter(Boolean)
 
         // include user IDs from chat history
         if (includeFromChat) {
-            const historyUserIds = getChatUserIds()
+            chatOptions = getChatUserIds(false)
                 .filter(id => !userIds.includes(id))
-            const huiOptions = arrSort(historyUserIds.map(id => ({
-                icon: 'chat',
-                key: id,
-                text: id,
-                title: textsCap.fromChatHistory,
-                value: id,
-            })), 'text')
-            options = options.concat(huiOptions)
+                .map(id => ({
+                    icon: 'chat',
+                    key: id,
+                    text: id,
+                    title: textsCap.fromChatHistory,
+                    value: id,
+                }))
         }
+        userIds = userIds.concat(chatOptions.map(x => x.value))
+        options = [
+            ...options.filter(x =>
+                !userIds.includes(x.value)
+            ),
+            ...partnerOptions,
+            ...chatOptions,
+        ]
         // prevents user from selecting their own ID
-        if (excludeOwnId) options = options.filter(x =>
-            x.value !== (getUser() || {}).id
-        )
-
+        if (excludeOwnId) {
+            const { id: ownId } = getUser() || {}
+            options = options.filter(x =>
+                x.value !== ownId
+            )
+        }
         // sort by user ID
         options = arrSort(options, 'value')
-        this.setState({ options, value })
+        this.setState({ options })
     }
 
     componentWillUnmount() {
@@ -228,7 +269,7 @@ class UserIdInput extends Component {
         client.idExists(userId, (err, exists) => {
             const input = this.state
             input.loading = false
-            input.message = exists ? undefined : {
+            input.message = !exists && {
                 content: `${textsCap.invalidUserId}: ${userId}`,
                 icon: true,
                 status: 'warning',
@@ -239,14 +280,20 @@ class UserIdInput extends Component {
                 removeNewValue()
             } else {
                 // required to prevent Semantic's unexpected behaviour!!
-                value = !multiple ? value : arrUnique([...value, userId])
-                const optionExists = input.options.find(x => x.value === userId)
+                value = !multiple
+                    ? value
+                    : arrUnique([...value, userId])
+                const optionExists = input
+                    .options
+                    .find(x => x.value === userId)
                 // add newly added user id as an option
-                !optionExists && input.options.push({
-                    key: userId,
-                    text: '@' + userId,
-                    value: userId
-                })
+                !optionExists && input
+                    .options
+                    .push({
+                        key: userId,
+                        text: '@' + userId,
+                        value: userId
+                    })
             }
             // trigger a value change
             isFn(onChange) && onChange(e, { ...data, invalid: false, value })
@@ -311,16 +358,17 @@ class UserIdInput extends Component {
         const { multiple } = this.props
         let { loading, options } = this.state
         loading = loading || this.props.loading
+        const props = {
+            ...objWithoutKeys(
+                this.props,
+                !multiple ? noAttrsTextField : noAttrs
+            ),
+            ...this.state,
+            loading,
+            options,
+        }
         return (
-            <FormInput {...{
-                ...objWithoutKeys(
-                    this.props,
-                    !multiple ? noAttrsTextField : noAttrs
-                ),
-                ...this.state,
-                loading,
-                options,
-            }} />
+            <FormInput {...props} />
         )
     }
 }

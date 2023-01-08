@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Button } from 'semantic-ui-react'
 import storage from '../../utils/storageHelper'
 import { isArr, isStr } from '../../utils/utils'
+import { Button } from '../../components/buttons'
 import ContentSegment from '../../components/ContentSegment'
 import CheckboxGroup from '../../components/CheckboxGroup'
 // forms

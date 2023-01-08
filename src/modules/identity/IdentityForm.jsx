@@ -33,6 +33,7 @@ import { getAll as getContacts, rxContacts } from '../contact/contact'
 import BackupForm from '../gettingStarted/BackupForm'
 import { statuses } from '../../components/Message'
 import PromisE from '../../utils/PromisE'
+import IdentityIcon from './IdentityIcon'
 
 const textsCap = translated(
 	{
@@ -97,8 +98,18 @@ export default class IdentityForm extends Component {
 	constructor(props) {
 		super(props)
 
-		let { autoSave, header, message, submitText, values } = props
-		const { address, restore } = values || {}
+		let {
+			autoSave,
+			header,
+			message,
+			submitText,
+			values,
+		} = props
+		const {
+			address,
+			restore,
+			usageType,
+		} = values || {}
 		const existingValues = get(address)
 		this.values = { ...existingValues, ...values }
 		this.rxAddress = new BehaviorSubject(address)
@@ -287,6 +298,12 @@ export default class IdentityForm extends Component {
 				? null // hide close button
 				: undefined,
 			header: this.header,
+			headerIcon: (
+				<IdentityIcon {...{
+					size: 'large',
+					usageType,
+				}} />
+			),
 			subheader: this.doUpdate && autoSave
 				? textsCap.autoSaved
 				: undefined,
@@ -591,6 +608,8 @@ export default class IdentityForm extends Component {
 IdentityForm.propTypes = {
 	// whether to auto save when upadating identity
 	autoSave: PropTypes.bool,
+	onChange: PropTypes.func,
+	onSubmit: PropTypes.func,
 	values: PropTypes.shape({
 		address: PropTypes.string, // required when updating
 		name: PropTypes.string,
@@ -604,6 +623,8 @@ IdentityForm.propTypes = {
 		tags: PropTypes.arrayOf(PropTypes.string),
 		vatNumber: PropTypes.string,
 	}),
+	// whether to warn user to download a backup after creating/restoring an identity
+	warnBackup: PropTypes.bool,
 }
 IdentityForm.defaultProps = {
 	autoSave: true,

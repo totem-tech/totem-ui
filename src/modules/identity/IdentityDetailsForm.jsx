@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 //utils
 import storage from '../../utils/storageHelper'
-import { copyToClipboard, isFn } from '../../utils/utils'
+import { copyToClipboard, isFn, objClean } from '../../utils/utils'
 // components
 import FormBuilder, {
 	fillValues,
@@ -16,6 +16,7 @@ import { confirm } from '../../services/modal'
 import Balance from './Balance'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
+import IdentityIcon from './IdentityIcon'
 
 const textsCap = translated({
 	advanced: 'advanced',
@@ -61,10 +62,16 @@ class IdentityDetailsForm extends Component {
 		super(props)
 
 		this.identity = get((props.values || {}).address) || {}
-		const { address, tags } = this.identity
+		const { address, usageType } = this.identity
 		this.showSeed = false
 		this.state = {
 			// closeText: { content: textsCap.close, negative: false },
+			headerIcon: (
+				<IdentityIcon {...{
+					size: 'large',
+					usageType,
+				}} />
+			),
 			subheader: <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>,
 			submitText: null, // hide submit button
 			success: false, // sets true  when identity removed and modal will be auto closed
@@ -72,9 +79,14 @@ class IdentityDetailsForm extends Component {
 				{
 					content: (
 						<IdentityForm {...{
-							El: 'div',
+							...objClean(props, [
+								'onChange',
+								'onClose',
+								'onSubmit',
+							]),
 							// auto save changes
 							autoSave: true,
+							El: 'div',
 							submitText: null,
 							values: this.identity,
 						}} />
@@ -251,8 +263,7 @@ class IdentityDetailsForm extends Component {
 				</p>,
 				<p key='0'>
 					<b>
-						{textsCap.removeWarningPart2}
-						{textsCap.removeWarningPart3}
+						{textsCap.removeWarningPart2 + ' ' + textsCap.removeWarningPart3}
 					</b>
 				</p>,
 			],
@@ -262,7 +273,7 @@ class IdentityDetailsForm extends Component {
 				this.setState({ success: true })
 				isFn(onSubmit) && onSubmit(true, this.identity)
 			},
-			size: 'tiny',
+			size: 'mini',
 		})
 	}
 

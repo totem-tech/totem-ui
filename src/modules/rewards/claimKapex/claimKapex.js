@@ -20,14 +20,14 @@ export const generateTweet = () => {
     return `https://twitter.com/intent/tweet?button_hashtag=share&text=${tweet}`
 }
 
-export const getRewardIdentity = () => {
-    const {
-        user: {
-            address
-        } = {},
-    } = storage.settings.module('messaging') || {}
-    return address
-}
+// export const getRewardIdentity = () => {
+//     const {
+//         user: {
+//             address
+//         } = {},
+//     } = storage.settings.module('messaging') || {}
+//     return address
+// }
 
 // invoke with status object to save to storage
 export const statusCached = status => storage.cache(

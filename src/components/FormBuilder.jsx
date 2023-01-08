@@ -1,24 +1,33 @@
-import React, { Component } from 'react'
+import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
-import { Button, Form, Header, Icon, Modal } from 'semantic-ui-react'
-import { BehaviorSubject } from 'rxjs'
 import {
-	isDefined,
+	Form,
+	Header,
+	Icon,
+	Modal,
+} from 'semantic-ui-react'
+import { BehaviorSubject } from 'rxjs'
+import uuid from 'uuid'
+import { Button } from './buttons'
+import Message, { statuses } from '../components/Message'
+import { translated } from '../services/language'
+import { closeModal, newId } from '../services/modal'
+import { MOBILE, rxLayout } from '../services/window'
+import {
+	generateHash,
+	hasValue,
 	isArr,
 	isBool,
+	isDefined,
 	isFn,
 	isObj,
 	isStr,
-	hasValue,
 	isSubjectLike,
+	toArray,
 } from '../utils/utils'
-import Message, { statuses } from '../components/Message'
 import FormInput from './FormInput'
-import IModal from './Modal'
-import { translated } from '../services/language'
 import { Invertible } from './Invertible'
-import { closeModal } from '../services/modal'
-import { MOBILE, rxLayout } from '../services/window'
+import IModal from './Modal'
 
 const textsCap = translated({
 	cancel: 'cancel',
@@ -31,25 +40,36 @@ class FormBuilder extends Component {
 	constructor(props) {
 		super(props)
 
-		const { inputs, open } = props
-		this.state = {
+		const {
+			modalId,
+			id = modalId || newId('form__'), // Form ID
+			inputs,
 			open,
-			values: this.getValues(inputs),
+			rxValues = new BehaviorSubject(),
+		} = props
+		const values = getValues(inputs)
+		rxValues.next(values)
+		this.state = {
+			id,
+			open,
+			rxValues,
+			values,
 		}
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
 
-	componentWillMount = () => (this._mounted = true)
-	componentWillUnmount = () => (this._mounted = false)
+	componentWillMount = () => this._mounted = true
+	componentWillUnmount = () => this._mounted = false
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (values, parentIndex) => (input, index) => {
 		parentIndex = isDefined(parentIndex)
 			? parentIndex
 			: null
-		const {
-			inputNamePrefix = '',
+		const { id: formId } = this.state
+		let {
+			inputNamePrefix = formId,
 			inputsDisabled = [],
 			inputsHidden = [],
 			inputsReadOnly = [],
@@ -82,7 +102,7 @@ class FormBuilder extends Component {
 			event,
 			data,
 			{
-				...this.state.values,
+				...this.state.rxValues.value,
 					// this is required because onChange() is trigger after validate().
 				// otherwise, current input will have the old value or last character missing for text/number inputs
 				[name]: data.value,
@@ -94,12 +114,12 @@ class FormBuilder extends Component {
 			content: isFn(content)
 				? content(values, name)
 				: content,
-			disabled: inputsDisabled.includes(name) || (
+			disabled: toArray(inputsDisabled).includes(name) || (
 				isFn(disabled)
 					? disabled(values, name)
 					: disabled
 			),
-			hidden: inputsHidden.includes(name) || (
+			hidden: toArray(inputsHidden).includes(name) || (
 				!isFn(hidden)
 					? hidden
 					: !!hidden(values, name)
@@ -113,8 +133,7 @@ class FormBuilder extends Component {
 				  )
 				: undefined,
 			key: key || name,
-			name: `${inputNamePrefix}${name}`,
-			readOnly: inputsReadOnly.includes(name) || readOnly,
+			name: `${inputNamePrefix}_${name}`,
 			onChange: isGroup
 				? undefined
 				: (e, data) => this.handleChange(
@@ -124,6 +143,7 @@ class FormBuilder extends Component {
 					parentIndex || index,
 					parentIndex ? index : undefined
 				),
+			readOnly: toArray(inputsReadOnly).includes(name) || readOnly,
 			validate: isFn(validate)
 				? handleValidate
 				: undefined,
@@ -131,62 +151,49 @@ class FormBuilder extends Component {
 		return props
 	}
 
-	getValues = (inputs = [], values = {}, inputName, newValue) =>
-		inputs.reduce((values, input) => {
-			const {
-				inputs: childInputs,
-				groupValues,
-				multiple,
-				name,
-				type,
-			} = input
-			const typeLC = (type || '').toLowerCase()
-			const isGroup = typeLC === 'group'
-			if (!isStr(name)) return values
-			if (isGroup) {
-				const newValues = this.getValues(
-					childInputs,
-					groupValues ? {} : values,
-					inputName,
-					newValue
-				)
-				if (!groupValues) return newValues
-				values[name] = newValues
-				return values
-			}
-			if (inputName && name === inputName) {
-				// for value grouping
-				values[name] = newValue
-			}
-			if (!hasValue(values[name]) && isDefined(input.value)) {
-				values[name] = input.value
-			}
-			if (multiple && type === 'dropdown' && !isArr(values[name])) {
-				// dropdown field with `multiple` -> value must always be an array
-				values[name] = []
-			}
-			return values
-		}, values)
-
 	handleChange = async (event, data, input, index, childIndex) => {
 		try {
-			const { onChange: formOnChange } = this.props
-			const { name, onChange: onInputChange, onInvalid } = input
-			let { inputs } = this.props
-			let { values } = this.state
+			const {
+				onChange: formOnChange,
+				inputsHidden = [],
+			} = this.props
+			const {
+				name,
+				onChange: onInputChange,
+				onInvalid,
+			} = input
+			const { inputs } = this.props
+			const { rxValues } = this.state
 			const { invalid = false, value } = data
 			// for FormBuilder internal use
 			input._invalid = invalid
 			input.value = value
-			values = this.getValues(inputs, values, name, value)
-			this.setState({ message: null, values })
+			const values = getValues(
+				inputs,
+				rxValues.value,
+				name,
+				value,
+			)
+			rxValues.next(values)
+			this.setState({ message: null })
 
 			// trigger input `onchange` callback if valid, otherwise `onInvalid` callback
-			const fn = invalid ? onInvalid : onInputChange
-			isFn(fn) && (await fn(event, values, index, childIndex))
+			const fn = invalid
+				? onInvalid
+				: onInputChange
+			isFn(fn) && await fn(
+				event,
+				values,
+				index,
+				childIndex,
+			)
 			// trigger form's onchange callback
 			if (isFn(formOnChange)) {
-				const formInvalid = checkFormInvalid(inputs, values)
+				const formInvalid = checkFormInvalid(
+					inputs,
+					values,
+					toArray(inputsHidden),
+				)
 				await formOnChange(event, values, formInvalid)
 			}
 		} catch (err) {
@@ -216,8 +223,8 @@ class FormBuilder extends Component {
 			event.preventDefault()
 			event.stopPropagation()
 			const { onSubmit } = this.props
-			const { values } = this.state
-			isFn(onSubmit) && (await onSubmit(event, values))
+			const { rxValues } = this.state
+			isFn(onSubmit) && await onSubmit(event, rxValues.value)
 			this.setState({ message: null })
 		} catch (err) {
 			window.isDebug
@@ -275,13 +282,21 @@ class FormBuilder extends Component {
 			closeOnDimmerClick = true
 			closeOnEscape = true
 		}
-		let { message: sMsg, open: sOpen, values } = this.state
+		let {
+			id,
+			message: sMsg,
+			open: sOpen,
+			values,
+		} = this.state
 		// whether the 'open' status is controlled or uncontrolled
 		let modalOpen = isFn(onClose) ? open : sOpen
 		inputs = inputs.map(this.addInterceptor(values))
 		if (success && closeOnSubmit) {
 			modalOpen = false
-			if (modalId) return closeModal(modalId)
+			if (modalId) {
+				closeModal(modalId)
+				return ''
+			}
 			isFn(onClose) && onClose({}, {})
 		}
 		msg = sMsg || msg
@@ -420,7 +435,7 @@ class FormBuilder extends Component {
 				closeOnDimmerClick: !!closeOnDimmerClick,
 				defaultOpen: defaultOpen,
 				dimmer: true,
-				id: `form-${modalId}`,
+				id,
 				onClose: this.handleClose,
 				onOpen: onOpen,
 				onSubmit: handleSubmit,
@@ -442,7 +457,9 @@ class FormBuilder extends Component {
 					<Header as={Modal.Header}>
 						<Header.Content style={styles.header}>
 							{headerIcon && (
-								<Icon name={headerIcon} size='large' />
+								isValidElement(headerIcon)
+								? headerIcon
+								: <Icon name={headerIcon} size='large' />
 							)}
 							{header}
 						</Header.Content>
@@ -466,6 +483,10 @@ class FormBuilder extends Component {
 		)
 	}
 }
+const arrayOrString = PropTypes.oneOfType([
+	PropTypes.arrayOf(PropTypes.string),
+	PropTypes.string,
+])
 FormBuilder.propTypes = {
 	closeOnEscape: PropTypes.bool,
 	closeOnDimmerClick: PropTypes.bool,
@@ -484,13 +505,16 @@ FormBuilder.propTypes = {
 	// props to be passed on to the Form or `El` component
 	formProps: PropTypes.object,
 	// disable inputs on load
-	inputsDisabled: PropTypes.arrayOf(PropTypes.string),
+	inputsDisabled: arrayOrString,
 	// inputs to hide
-	inputsHidden: PropTypes.arrayOf(PropTypes.string),
+	inputsHidden: arrayOrString,
 	// read only inputs
-	inputsReadOnly: PropTypes.arrayOf(PropTypes.string),
+	inputsReadOnly: arrayOrString,
 	header: PropTypes.string,
-	headerIcon: PropTypes.string,
+	headerIcon: PropTypes.oneOfType([
+		PropTypes.element,
+		PropTypes.string,
+	]),
 	hideFooter: PropTypes.bool,
 	message: PropTypes.object,
 	// show loading spinner
@@ -535,12 +559,6 @@ FormBuilder.propTypes = {
 FormBuilder.defaultProps = {
 	closeOnEscape: false,
 	closeOnDimmerClick: false,
-	message: {
-		// Status controls visibility and style of the message
-		// Supported values: error, warning, success
-		status: '',
-		// see https://react.semantic-ui.com/collections/message/ for more options
-	},
 	submitText: textsCap.submit,
 	size: 'tiny',
 }
@@ -553,22 +571,30 @@ export default FormBuilder // Do not use React.memo()
  * @param   {Array}     inputs
  * @param   {Object}    values values to fill into the input. Property name/key is the name of the input.
  * @param   {Boolean}   forceFill whether to override existing, if any.
+ * @param	{Boolean}	createRxValue
  *
  * @returns {Array} inputs
  */
 export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 	if (!isObj(values)) return inputs
+	const createSubject = (inputs = []) => inputs.forEach(input => {
+		input.type = `${input.type || 'text'}`.toLowerCase()
+		if (input.type === 'group') return createSubject(input.inputs || [])
+
+		input.rxValue = input.rxValue || new BehaviorSubject()
+	})
+
+	createRxValue && createSubject(inputs)
 	Object.keys(values).forEach(name => {
 		const input = findInput(inputs, name)
 		if (!input) return
 
-		if (createRxValue && !isSubjectLike(input.rxValue)) {
-			input.rxValue = new BehaviorSubject()
-		}
-
-		let { rxValue, type } = input
+		let {
+			rxValue,
+			trueValue = true,
+			type,
+		} = input
 		const newValue = values[name]
-		type = (isStr(type) ? type : 'text').toLowerCase()
 
 		if (
 			type !== 'group'
@@ -579,10 +605,14 @@ export const fillValues = (inputs, values, forceFill, createRxValue = true) => {
 		switch (type) {
 			case 'checkbox':
 			case 'radio':
-				input.defaultChecked = newValue
+				input.checked = newValue === trueValue
 				break
 			case 'group':
-				fillValues(input.inputs, values, forceFill)
+				fillValues(
+					input.inputs,
+					values,
+					forceFill,
+				)
 				break
 			default:
 				input.value = newValue
@@ -615,6 +645,43 @@ export const resetInput = input => {
  */
 export const resetForm = inputs => inputsForEach(inputs, resetInput)
 
+export const getValues = (inputs = [], values = {}, inputName, newValue) =>
+	inputs.reduce((values, input) => {
+		const {
+			inputs: childInputs,
+			groupValues,
+			multiple,
+			name,
+			type,
+		} = input
+		const typeLC = (type || '').toLowerCase()
+		const isGroup = typeLC === 'group'
+		if (!isStr(name)) return values
+		if (isGroup) {
+			const newValues = getValues(
+				childInputs,
+				groupValues ? {} : values,
+				inputName,
+				newValue
+			)
+			if (!groupValues) return newValues
+			values[name] = newValues
+			return values
+		}
+		if (inputName && name === inputName) {
+			// for value grouping
+			values[name] = newValue
+		}
+		if (!hasValue(values[name]) && isDefined(input.value)) {
+			values[name] = input.value
+		}
+		if (multiple && type === 'dropdown' && !isArr(values[name])) {
+			// dropdown field with `multiple` -> value must always be an array
+			values[name] = []
+		}
+		return values
+	}, values)
+
 /**
  * @name	inputsForEach
  * @summary execute a callback for each input including group inputs
@@ -642,7 +709,7 @@ export const inputsForEach = (inputs = [], callback) => {
  *
  * @returns	{Boolean}
  */
-export const checkInputInvalid = (formValues = {}, input) => {
+export const checkInputInvalid = (formValues = {}, input, inputsHidden = []) => {
 	let {
 		_invalid,
 		groupValues,
@@ -659,10 +726,12 @@ export const checkInputInvalid = (formValues = {}, input) => {
 	type = (type || 'text').toLowerCase()
 
 	// ignore if hidden
-	const isHidden = isFn(hidden)
-		? !!hidden(formValues, name)
-		: !!hidden
-	if (isHidden || type === 'hidden') return false
+	const isHidden = inputsHidden.includes(name) || type === 'hidden'
+		? true
+		: isFn(hidden)
+			? !!hidden(formValues, name)
+			: !!hidden
+	if (isHidden) return false
 
 	// ignore if input is a button or html type and doesn't have rxValue
 	const gotSubject = isSubjectLike(rxValue)
@@ -678,7 +747,8 @@ export const checkInputInvalid = (formValues = {}, input) => {
 		inputs,
 		!groupValues
 			? formValues
-			: formValues[name] || {}
+			: formValues[name] || {},
+		inputsHidden,
 	)
 
 	// if input is set invalid externally or internally by FormInput
@@ -704,8 +774,16 @@ export const checkInputInvalid = (formValues = {}, input) => {
  *
  * @returns	{Boolean}
  */
-export const checkFormInvalid = (inputs = [], values = {}) =>
-	!!inputs.find(input => checkInputInvalid(values, input))
+export const checkFormInvalid = (inputs = [], values = {}, inputsHidden = []) => {
+	const input = inputs.find(input =>
+		checkInputInvalid(
+			values,
+			input,
+			inputsHidden,
+		)
+	)
+	return !!input
+}
 
 // findInput returns the first item matching supplied name.
 // If any input type is group it will recursively search in the child inputs as well

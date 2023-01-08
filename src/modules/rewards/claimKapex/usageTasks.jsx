@@ -16,7 +16,7 @@ import {
 	objToUrlParams,
 	objWithoutKeys,
 } from '../../../utils/utils'
-import Embolden from '../../../components/Embolden'
+import { Embolden } from '../../../components/StringReplace'
 import { setActiveExclusive, setContentProps } from '../../../services/sidebar'
 import { MOBILE, rxLayout } from '../../../services/window'
 import { getAll as getHistory, limit } from '../../history/history'
@@ -294,7 +294,7 @@ export const getUsageTasks = rewardIdentity => {
 					content: textsCap.goToTasks,
 					module: 'tasks',
 					moduleProps: {
-						activeType: listTypes.owner,
+						tab: listTypes.owner,
 					},
 				},
 				textsCap.clickCreate,

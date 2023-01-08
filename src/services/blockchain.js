@@ -5,7 +5,7 @@ import PromisE from '../utils/PromisE'
 import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
 import types from '../utils/totem-polkadot-js-types'
 import storage from '../utils/storageHelper'
-import { generateHash, isArr, isDefined, isFn } from '../utils/utils'
+import { generateHash, isArr, isFn } from '../utils/utils'
 // services
 import { translated } from './language'
 import { QUEUE_TYPES } from './queue'
@@ -198,7 +198,7 @@ export const queueables = {
     // un-/archive a record. See @hashTypes for a list of supported types.
     //
     // Props: 
-    // @ownerAddress    string
+    // @ownerAddress    string: record owner address
     // @type            int: type code. See @hashTypes
     // @recordId        string: hash of the record to be un-/archived
     // @archive         boolean: indicates archive or unarchive action
@@ -223,6 +223,7 @@ export const queueables = {
         address: ownerAddress,
         args: [recordTypeCode, recordId, token],
         func: 'api.tx.bonsai.updateRecord',
+        recordId,
         type: QUEUE_TYPES.TX_STORAGE,
     }),
     // add a key to the key registry

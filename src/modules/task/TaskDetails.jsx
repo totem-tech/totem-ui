@@ -1,21 +1,32 @@
-/*
- * Read-only form that displays task details
- */
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-import { getUser } from '../../utils/chatClient'
-import { blockNumberToTS, format } from '../../utils/time'
-import { getCurrentBlock } from '../../services/blockchain'
-import { translated } from '../../services/language'
-import { confirmAsPromise } from '../../services/modal'
-import { UserID } from '../../components/buttons'
+// components
+import { Button, UserID } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
 import { statuses } from '../../components/Message'
+// services
+import { rxBlockNumber } from '../../services/blockchain'
+import { translated } from '../../services/language'
+import {
+    closeModal,
+    newId,
+    showForm,
+    showInfo,
+} from '../../services/modal'
+// utils
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
+import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
+import { blockToDate, format } from '../../utils/time'
+import { generateHash, isObj } from '../../utils/utils'
+// modules
 import Currency from '../currency/Currency'
-import AddPartnerBtn from '../partner/AddPartnerBtn'
-import { approvalStatusNames, statusNames } from './task'
-import { useRxSubject } from '../../utils/reactHelper'
+import AddressName from '../partner/AddressName'
+import { approvalStatusNames, rxInProgressIds } from './task'
+import TaskForm from './TaskForm'
+import { getAssigneeView, getStatusView } from './TaskList'
+import useTask from './useTask'
+import { Linkify } from '../../components/StringReplace'
 
 let textsCap = {
     amount: 'bounty amount',
@@ -23,6 +34,7 @@ let textsCap = {
     approver: 'approver',
     created: 'created',
     deadline: 'deadline to accept task',
+    description: 'description',
     dueDate: 'due date',
     fulfiller: 'assignee',
     header: 'task details',
@@ -31,54 +43,47 @@ let textsCap = {
     orderStatus: 'order status',
     owner: 'creator by',
     title: 'title',
+    updateTask: 'update task',
     updated: 'updated',
 }
 textsCap = translated(textsCap, true)[1]
 
 export default function TaskDetails(props = {}) {
-    const {
-        getStatusView,
-        rxInProgressIds,
-        rxTasks,
-        taskId = '',
-    } = props
-    const [blockNum, setBlockNum] = useState()
-    const [inProgressIds] = useRxSubject(rxInProgressIds)
-    const [task] = useRxSubject(rxTasks, tasks => ({ ...tasks.get(taskId) }))
-    const [tableProps, setTableProps] = useState({ 
+    const { modalId, taskId } = props
+    const [blockNum] = useRxSubject(rxBlockNumber)
+    const [inProgressIds = new Set()] = useRxSubject(rxInProgressIds)
+    const [reload, setReload] = useState(0)
+    const [tableProps, setTableProps] = iUseReducer(null, { 
         emptyMessage: {
             content: textsCap.loading,
             icon: true,
             status: statuses.LOADING,
-        }
+        },
+        forceReload: () => setReload(generateHash()),
     })
+    const { error, task } = useTask(taskId, reload)
+    const [userId] = useRxSubject(rxIsRegistered, ok => ok && getUser().id)
 
     useEffect(() => {
-        getCurrentBlock().then(setBlockNum)
-    }, [])
-
-    useEffect(() => {
-        if (!Object.keys(task).length) return () => { }
-
-        // let { task = {} } = props
-        const _task = {...task, taskId}
-        const { deadline, dueDate } = _task
-        _task.amount = parseInt(_task.amountXTX)
-        _task.deadline = blockNumberToTS(deadline, blockNum, true)
-        _task.dueDate = blockNumberToTS(dueDate, blockNum, true)
-        _task.tsCreated = format(_task.tsCreated)
-        _task.tsUpdated = format(_task.tsUpdated)
+        if (!task || !Object.keys(task).length) return () => { }
+        
+        const _task = { ...task, taskId }
         const ownerIsApprover = _task.owner === _task.approver
-        const userIsOwner = (getUser() || {}).id === _task.createdBy
+        const userIsOwner = userId === _task.createdBy
+        const style = {
+            maxLength: 150,
+            minWidth: 110,
+        }
         const columns = [
             {
                 content: ({ taskId }) => (
                     <LabelCopy {...{
-                        maxLength: 18,
+                        maxLength: 25,
                         value: taskId,
                     }} />
                 ),
                 key: 'id',
+                style,
                 title: textsCap.id,
             },
             {
@@ -86,8 +91,22 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.title,
             },
             {
-                content: x => <Currency {...{ value: x.amount }} />,
-                key: 'amount',
+                content: x => (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>
+                        <Linkify>{x.description}</Linkify>
+                    </div>
+                ),
+                key: 'description',
+                headerProps: {
+                    style: {
+                        verticalAlign: 'top',
+                    },
+                },
+                title: textsCap.description,
+            },
+            {
+                content: x => <Currency {...{ value: parseInt(x.amountXTX) }} />,
+                key: 'amountXTX',
                 title: textsCap.amount,
             },
             {
@@ -101,73 +120,134 @@ export default function TaskDetails(props = {}) {
                 title: textsCap.approvalStatus,
             },
             {
-                content: x => <AddPartnerBtn {...{ address: x.fulfiller }} />,
+                content: getAssigneeView,
                 key: 'fulfiller',
                 title: textsCap.fulfiller,
             },
             {
-                content: x => [
-                    <AddPartnerBtn {...{ address: x.owner, key: 0 }} />,
-                    <span key='1'>
-                        {!userIsOwner && <UserID prefix=' (' suffix=')' userId={x.createdBy} />}
-                    </span>,
-                ],
+                content: x => (
+                    <span>
+                        <AddressName {...{
+                            address: x.owner,
+                            userId: x.createdBy,
+                        }} />
+                        {!userIsOwner && (
+                            <UserID {...{
+                                onChatOpen: () => closeModal(modalId),
+                                prefix: ' (',
+                                suffix: ')',
+                                userId: x.createdBy,
+                            }} />
+                        )}
+                    </span>
+                ),
                 key: 'owner',
                 title: textsCap.owner,
             },
             {
-                content: x => <AddPartnerBtn {...{ address: x.approver }} />,
+                content: x => <AddressName {...{ address: x.approver }} />,
                 hidden: ownerIsApprover,
                 key: 'approver',
                 title: textsCap.approver,
             },
             {
+                content: x => blockToDate(
+                    x.dueDate,
+                    x.blockNum,
+                    true,
+                ),
                 key: 'dueDate',
                 title: textsCap.dueDate,
             },
             {
+                content: x => blockToDate(
+                    x.deadline,
+                    x.blockNum,
+                    true,
+                ),
                 key: 'deadline',
                 title: textsCap.deadline,
             },
             {
+                content: ({ tsCreated }) => format(tsCreated),
                 key: 'tsCreated',
                 title: textsCap.created,
             },
             {
+                content: ({ tsUpdated }) => format(tsUpdated),
                 key: 'tsUpdated',
                 title: textsCap.updated,
             },
         ]
         const tableProps = {
             columns,
-            data: new Map([[taskId, _task]]),
+            data: new Map([[taskId, {..._task, blockNum}]]),
             emptyMessage: undefined,
-            inProgressIds,
         }
-        setTableProps(tableProps)   
-    }, [setTableProps, getStatusView, blockNum, inProgressIds, task])
+        setTableProps(tableProps)
+    }, [setTableProps, getStatusView, blockNum, task, userId])
 
-    return <DataTableVertical {...tableProps} />
+    tableProps.emptyMessage = !isObj(task) || !!error
+        ? {
+            content: `${error || ''}` || textsCap.loading,
+            icon: true,
+            status: !!error 
+                ? statuses.ERROR
+                : statuses.LOADING
+        }
+        : undefined
+    
+    return (
+        <div>
+            <DataTableVertical {...{
+                ...tableProps,
+                inProgressIds,
+                userId,
+
+            }} />
+            {!!task && task.allowEdit && (
+                <div style={{ 
+                    marginBottom: 14,
+                    marginTop: -14,
+                    padding: 1,
+                    textAlign: 'center',
+                }}>
+                    <Button {...{
+                        fluid: true,
+                        content: textsCap.updateTask,
+                        icon: 'pencil',
+                        onClick: () => {
+                            closeModal(props.modalId)
+                            showForm(TaskForm, {
+                                taskId,
+                                values: task,
+                            })
+                        },
+                    }} />
+                </div>
+            )}
+        </div>
+    )
 }
-TaskDetails.defaultProps = {
-    // Task ID
+TaskDetails.propTypes = {
     taskId: PropTypes.string,
-    // task
-    task: PropTypes.object,
 }
 /**
  * @name    TaskDetails.asModal
  * 
- * @param   {Object} task 
- * @param   {String} id 
+ * @param   {Object}            props       props for TaskDetails
+ * @param   {String}            props.taskId
+ * @param   {Object}            modalProps (optional)
  * 
  * @returns {Promise}
  */
-TaskDetails.asModal = props => confirmAsPromise({
-    className: 'collapsing',
-    cancelButton: null,
-    confirmButton: null,
-    content: <TaskDetails {...props} />,
-    header: textsCap.header,
-    size: 'mini',
-}, props.modalId)
+TaskDetails.asModal = (props = {}, modalProps, modalId) => {
+    modalId = newId('task_', props.taskId)
+    return showInfo({
+        collapsing: true,
+        header: textsCap.header,
+        size: 'tiny',
+        ...modalProps,
+        content: <TaskDetails {...{ ...props, modalId }} />,
+    }, modalId)
+}

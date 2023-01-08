@@ -30,19 +30,18 @@ const ClaimKapexView = props => {
 	}
 	const message = !isRegistered
 		? { ...err, content: textsCap.errNotRegistered }
-		:!!endDate && now > new Date(endDate)
-			? { ...err, content: textsCap.errEnded }
-			: eligible === false
-				? { ...err, content: `${textsCap.errIneligible1} ${textsCap.errIneligible2}` }
-				: submitted
-					? {
-						content: textsCap.errSubmittedDetails,
-						header: textsCap.errSubmitted,
-						icon: true,
-						status: statuses.SUCCESS,
-					}
+		: submitted
+			? {
+				content: textsCap.errSubmittedDetails,
+				header: textsCap.errSubmitted,
+				icon: true,
+				status: statuses.SUCCESS,
+			}
+			: !!endDate && now > new Date(endDate)
+				? { ...err, content: textsCap.errEnded }
+				: eligible === false
+					? { ...err, content: `${textsCap.errIneligible1} ${textsCap.errIneligible2}` }
 					: null
-
 	return message
 		? <Message {...message} />
 		: <ClaimKAPEXForm {...props} />
