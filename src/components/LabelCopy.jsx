@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react'
+import React, { isValidElement, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { Popup } from 'semantic-ui-react'
-import { copyToClipboard, deferred, isFn, isStr, isValidNumber, objWithoutKeys, textEllipsis } from '../utils/utils'
+import { className, copyToClipboard, deferred, isDefined, isFn, isObj, isStr, isValidNumber, objWithoutKeys, textEllipsis } from '../utils/utils'
 import { translated } from '../services/language'
 import { iUseReducer, useRxSubject } from '../services/react'
 import { MOBILE, rxLayout } from '../services/window'
@@ -25,6 +25,7 @@ function LabelCopy(props) {
     let {
         content,
         El,
+        icon,
         ignoreAttributes,
         maxLength,
         numDots,
@@ -49,17 +50,34 @@ function LabelCopy(props) {
                 : useRxSubject(rxLayout, l => l !== MOBILE ? 20 : 13)[0]
     }
 
-    const icon = props.icon || {
-        className: 'no-margin',
-        name: state.copied
-            ? 'check'
-            : 'copy outline',
-        style: {
-            paddingRight: content === null
-                ? 0
-                : 5
+    const isEl = isValidElement(icon)
+    let iconObj = isObj(icon) && !isEl
+        ? icon
+        : {}
+    iconObj = isEl
+        ? icon
+        : {
+            ...iconObj,
+            className: className([
+                'no-margin',
+                iconObj.className,
+            ]),
+            name: state.copied
+                ? 'check'
+                : isStr(icon)
+                    ? icon
+                    : 'copy outline',
+            style: {
+                paddingRight: content === null
+                    ? 0
+                    : 5,
+                ...iconObj.style,
+            },
+            // overrides any parent title
+            title: isDefined(iconObj.title) 
+                ? iconObj.title
+                : '',
         }
-    }
 
     const trigger = (
         <El {...{
@@ -76,7 +94,7 @@ function LabelCopy(props) {
                             )}
                 </span>
             ),
-            icon,
+            icon: iconObj,
             key: 'El',
             draggable: true,
             onDragStart: e => {
@@ -85,6 +103,7 @@ function LabelCopy(props) {
             },
             onClick: e => {
                 e.preventDefault()
+                e.stopPropagation()
                 isFn(onClick) && onClick(e, value)
                 copyToClipboard(value)
                 setState({ copied: true, open: true })

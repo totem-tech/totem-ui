@@ -107,6 +107,8 @@ const NON_ATTRIBUTES = Object.freeze([
 	'unique', // for array validation
 	'showCount',
 	'rxFocused',
+	'inputs',
+	'accordion',
 ])
 
 const NON_COUNT_TYPES = [
@@ -451,6 +453,7 @@ export class FormInput extends Component {
 			ignoreAttributes,
 			inline,
 			inlineLabel,
+			inputs = [],
 			invalid: invalidP,
 			label,
 			labelDetails,
@@ -579,7 +582,7 @@ export class FormInput extends Component {
 				// 	// 		: `${100 / numChild}%`,
 				// }
 				// attrs.widths !== 'equal' ? {} : { width: `${100 / numChild}%` }
-				inputEl = attrs.inputs.map(childInput => (
+				inputEl = inputs.map(childInput => (
 					<FormInput {...{
 						...childInput,
 						key: childInput.name,

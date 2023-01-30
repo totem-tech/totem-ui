@@ -118,6 +118,7 @@ const getTableProps = isMobile => {
 		<Balance {...{
 			address,
 			EL: 'div',
+			key: address,
 			lockSeparator: <br />,
 			style: isMobile
 				? undefined

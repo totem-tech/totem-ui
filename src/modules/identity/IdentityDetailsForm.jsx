@@ -17,13 +17,13 @@ import Balance from './Balance'
 import { get, getSelected, remove } from './identity'
 import IdentityForm from './IdentityForm'
 import IdentityIcon from './IdentityIcon'
+import LabelCopy from '../../components/LabelCopy'
 
 const textsCap = translated({
 	advanced: 'advanced',
 	availableBalance: 'available balance',
 	autoSaved: 'changes will be auto-saved',
 	close: 'close',
-	copyAddress: 'copy address',
 	copySeed: 'copy seed',
 	cryptoType: 'identity type',
 	hideSeed: 'hide seed',
@@ -106,13 +106,23 @@ class IdentityDetailsForm extends Component {
 					widths: 16,
 					inputs: [
 						{
-							action: {
-								icon: 'copy',
-								onClick: e => e.preventDefault()
-									| copyToClipboard(this.identity.address),
-								style: { cursor: 'pointer' },
-								title: textsCap.copyAddress,
-							},
+							action: (
+								<LabelCopy {...{
+									content: null,
+									icon: {
+										style: {
+											fontSize: 14,
+											paddingTop: 5,
+										},
+									},
+									style: {
+    									borderBottomLeftRadius: 0,
+    									borderTopLeftRadius: 0,
+										marginLeft: 1,
+									},
+									value: this.identity.address,
+								}} />
+							),
 							label: textsCap.identity,
 							name: inputNames.address,
 							readOnly: true,
@@ -130,18 +140,29 @@ class IdentityDetailsForm extends Component {
 										const uriIn = findInput(inputs, 'uri')
 										uriIn.action = !this.showSeed
 											? undefined
-											: {
-												icon: 'copy',
-												onClick: e => e.preventDefault()
-													| copyToClipboard(this.identity.uri),
-												title: textsCap.copySeed,
-											  }
-										uriIn.inlineLabel.icon.name = `eye${this.showSeed ? ' slash' : ''}`
-										uriIn.inlineLabel.title = `${
-											this.showSeed
-												? textsCap.hideSeed
-												: textsCap.showSeed
-										}`
+											: (
+												<LabelCopy {...{
+													content: null,
+													icon: {
+														style: {
+															fontSize: 14,
+															// paddingTop: 2,
+														},
+													},
+													style: {
+														borderBottomLeftRadius: 0,
+														borderTopLeftRadius: 0,
+														marginLeft: 1
+													},
+													value: this.identity.uri,
+												}} />
+											)
+										uriIn.inlineLabel.icon.name = this.showSeed
+											? 'eye slash'
+											: 'eye'
+										uriIn.inlineLabel.title = this.showSeed
+											? textsCap.hideSeed
+											: textsCap.showSeed
 										uriIn.value = this.getUri(this.identity.uri)
 										this.setState({ inputs })
 									}
@@ -173,7 +194,7 @@ class IdentityDetailsForm extends Component {
 							name: inputNames.uri,
 							readOnly: true,
 							type: 'text',
-							useInput: true,
+							// useInput: true,
 						},
 						{
 							label: textsCap.cryptoType,
