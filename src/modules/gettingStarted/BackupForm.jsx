@@ -731,18 +731,8 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, c
 			</ul>
 		</div>
 	)
-	const backupAsPromise = proceed => proceed
-		&& new Promise(resolve => {
-			showForm(BackupForm, {
-				closeOnSubmit,
-				onClose: () => resolve(false),
-				onSubmit: ok => resolve(!!ok),
-				// prevent reloading page?
-				reload: allowPageReload,
-				values: { confirmed: 'yes' },
-			})
-		})
-	return await confirmAsPromise({
+
+	const confirmed = await confirmAsPromise({
 		cancelButton: textsCap.backupLater,
 		confirmButton: {
 			content: textsCap.proceed,
@@ -750,9 +740,18 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, c
 		},
 		content,
 		header: textsCap.warnBackupHeader,
-		onConfirm: backupAsPromise,
 		size: 'tiny',
 	})
+	return confirmed && new Promise(resolve => {
+				showForm(BackupForm, {
+					closeOnSubmit,
+					onClose: () => resolve(false),
+					onSubmit: ok => resolve(!!ok),
+					// prevent reloading page?
+					reload: allowPageReload,
+					values: { confirmed: 'yes' },
+				})
+			})
 }
 
 setTimeout(() => { 

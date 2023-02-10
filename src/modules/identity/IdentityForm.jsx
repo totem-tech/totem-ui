@@ -68,7 +68,7 @@ const textsCap = translated(
 		seedPlaceholder: 'enter existing seed or generate one',
 		tagsInputEmptyMessage: 'type a tag and press enter to add, to tags list',
 		tagsPlaceholder: 'enter tags',
-		uniqueNameRequired: 'please enter an unique name',
+		uniqueNameRequired: 'an identity already exists with this name',
 		usageType: 'usage type',
 		validSeedRequired: 'please enter a valid seed',
 		vatNumberLabel: 'VAT number',

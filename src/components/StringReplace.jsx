@@ -161,11 +161,15 @@ export const Linkify = props => {
                     ? componentProps(url)
                     : componentProps
                 const urlProps = {
-                    href: url,
+                    href: url.match(EMAIL_REGEX)
+                        ? `mailto:${url}`
+                        : !/^[a-zA-z]+\:/.test(url) // add protocol if missing
+                            ? `https://${url}`
+                            : url,
                     target: '_blank',
                     ...cProps,
                 }
-                if (url.match(EMAIL_REGEX)) urlProps.href = `mailto:${url}`
+
                 return urlProps
             },
             replacer: !shorten
