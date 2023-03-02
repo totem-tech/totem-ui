@@ -17,8 +17,6 @@ const [texts, textsCap] = translated({
     step1: 'follow founder',
     step1Desc: 'follow Chris D\'Costa on Twitter',
     step1Confirm: 'You will be taken to Twitter.com. Click on the follow button and then return to this page.',
-    step2: 'follow co-founder',
-    step2Desc: 'follow Toufiqur R Chowdhury on Twitter',
     step3: 'vote for Polkadot Decoded talk',
     step3Desc: 'vote for Totem\'s Polkadot Decoded tech talk (under workshop category) by the founder',
     step4: 'post a Tweet',
@@ -60,12 +58,6 @@ export default function Decoded2206Wizard(props) {
             content: textsCap.step1Confirm,
             size: 'mini',
             onConfirm: setStepCb(1, 'https://twitter.com/intent/follow?screen_name=cjdcosta'),
-        }),
-        () => confirm({
-            header: textsCap.step2,
-            content: textsCap.step1Confirm,
-            size: 'mini',
-            onConfirm: setStepCb(null, 'https://twitter.com/intent/follow?screen_name=toufiq_dev')
         }),
         () => {
             // let modalId = 'confirm-vote'
@@ -159,11 +151,6 @@ export default function Decoded2206Wizard(props) {
             completed,
             description: textsCap.step1Desc,
             title: textsCap.step1,
-        },
-        {
-            completed,
-            description: textsCap.step2Desc,
-            title: textsCap.step2,
         },
         {
             completed,
