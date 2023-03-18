@@ -138,7 +138,7 @@ module.exports = {
 		static: path.join(__dirname, 'dist'),
 		hot: true,
 	},
-	// devtool: 'eval-source-map',
+	devtool: 'eval-source-map',
 	// // solves "Can't resolve 'fs'" error
 	// node: {
 	// 	fs: 'empty',

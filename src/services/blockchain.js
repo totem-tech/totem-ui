@@ -7,7 +7,7 @@ import types from '../utils/totem-polkadot-js-types'
 import storage from '../utils/storageHelper'
 import { generateHash, isArr, isFn } from '../utils/utils'
 // services
-import { translated } from './language'
+import { translated } from '../utils/languageHelper'
 import { QUEUE_TYPES } from './queue'
 import { setToast } from './toast'
 import { rxOnline } from './window'

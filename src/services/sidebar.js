@@ -30,7 +30,7 @@ import {
     objWithoutKeys,
 } from '../utils/utils'
 // services
-import { translated } from './language'
+import { translated } from '../utils/languageHelper'
 import {
     getUrlParam,
     MOBILE,

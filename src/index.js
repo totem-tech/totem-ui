@@ -2,22 +2,19 @@ import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import '../public/styles.css'
+import { rxIsRegistered } from './utils/chatClient'
 import PromisE from './utils/PromisE'
 import storage from './utils/storageHelper'
+import { subjectAsPromise } from './utils/reactHelper'
 import { generateHash, isArrLike, isError } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
 // services
 import { getConnection } from './services/blockchain'
 import client from './utils/chatClient'
+import './services/language'
 import { fetchNSaveTexts } from './utils/languageHelper'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
-import { subjectAsPromise } from './utils/reactHelper'
-import { rxIsRegistered } from './utils/chatClient'
-
-
-// // allow 
-// if (process.env.NODE_ENV === 'development') debugger;
 
 const urlParams = getUrlParam()
 const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')

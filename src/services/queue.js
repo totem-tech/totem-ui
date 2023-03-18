@@ -28,7 +28,7 @@ import {
     query,
     rxBlockNumber,
 } from './blockchain'
-import { translated } from './language'
+import { translated } from '../utils/languageHelper'
 import { setToast } from './toast'
 import { rxOnline } from './window'
 import { subjectAsPromise } from '../utils/reactHelper'

@@ -1,13 +1,11 @@
-// import * as languageHelper from '../utils/languageHelper'
+import { BUILD_MODE } from '../utils/languageHelper'
 
-const languageHelper = require('../utils/languageHelper')
-module.exports = languageHelper
-
-if (languageHelper.BUILD_MODE) {
+if (BUILD_MODE) {
 	require('./languageFiles').default.forEach(path =>
 		require(`../${path.split('./src/')[0]}`)
 	)
 	console.log(
-		'Language texts ready to be downloaded for translation.\nGo to the "Utilities > Admin Tools"'
+		'%cEnglish texts are ready to be downloaded for translation.\nGo to the "Utilities > Admin Tools"',
+		'background: orange; color: white; font-weight:bold; font-size: 150%; padding: 5px 10px'
 	)
 }

@@ -23,7 +23,7 @@ import {
     isStr,
     objWithoutKeys,
 } from '../utils/utils'
-import { translated } from './language'
+import { translated } from '../utils/languageHelper'
 import {
     getUrlParam,
     toggleFullscreen,
