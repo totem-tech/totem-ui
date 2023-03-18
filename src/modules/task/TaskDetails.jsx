@@ -7,7 +7,7 @@ import LabelCopy from '../../components/LabelCopy'
 import { statuses } from '../../components/Message'
 // services
 import { rxBlockNumber } from '../../services/blockchain'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import {
     closeModal,
     newId,

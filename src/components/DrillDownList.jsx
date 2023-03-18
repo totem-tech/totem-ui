@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Accordion, Icon } from 'semantic-ui-react'
 import { className, hasValue, isFn } from '../utils/utils'
 import { MOBILE, rxLayout, useInverted } from '../services/window'
-import { RecursiveShapeType, useRxSubject } from '../services/react'
+import { RecursiveShapeType, useRxSubject } from '../utils/reactHelper'
 import Text from './Text'
 
 const DrillDownList = props => {

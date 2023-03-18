@@ -17,8 +17,8 @@ import FormBuilder, {
 	findInput,
 } from '../../components/FormBuilder'
 import { showForm } from '../../services/modal'
-import { translated } from '../../services/language'
-import client from '../chat/ChatClient'
+import { translated } from '../../utils/languageHelper'
+import client from '../../utils/chatClient'
 import {
 	contacts as contactStorage,
 	newId as newContactId,

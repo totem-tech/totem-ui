@@ -1,7 +1,7 @@
 import storage from '../../utils/storageHelper'
 import { isDefined } from '../../utils/utils'
 import { query as queryHelper } from '../../services/blockchain'
-import client from '../chat/ChatClient'
+import client from '../../utils/chatClient'
 import _query from './query'
 
 const MODULE_KEY = 'financial-statement'

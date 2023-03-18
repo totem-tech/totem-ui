@@ -1,9 +1,20 @@
 import React, { isValidElement, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { Popup } from 'semantic-ui-react'
-import { className, copyToClipboard, deferred, isDefined, isFn, isObj, isStr, isValidNumber, objWithoutKeys, textEllipsis } from '../utils/utils'
-import { translated } from '../services/language'
-import { iUseReducer, useRxSubject } from '../services/react'
+import {
+    className,
+    copyToClipboard,
+    deferred,
+    isDefined,
+    isFn,
+    isObj,
+    isStr,
+    isValidNumber,
+    objWithoutKeys,
+    textEllipsis,
+} from '../utils/utils'
+import { translated } from '../utils/languageHelper'
+import { iUseReducer, useRxSubject } from '../utils/reactHelper'
 import { MOBILE, rxLayout } from '../services/window'
 import Invertible from './Invertible'
 import Label from './Label'

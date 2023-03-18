@@ -1,6 +1,6 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { iUseReducer } from '../../services/react'
+import { iUseReducer } from '../../utils/reactHelper'
 import CurrencyList from "../currency/CurrencyList"
 import AssetsForm, { inputNames } from './AssetsForm'
 import './style.css'

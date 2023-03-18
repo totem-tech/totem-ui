@@ -18,7 +18,7 @@ import DataTable from '../../components/DataTable'
 import FormInput from '../../components/FormInput'
 import Tags from '../../components/Tags'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import {
     showForm,
     confirmAsPromise,
@@ -26,7 +26,7 @@ import {
     newId,
 } from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
-import { useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../utils/reactHelper'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import Currency from '../currency/Currency'

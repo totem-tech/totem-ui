@@ -20,7 +20,7 @@ import {
 } from '../utils/utils'
 // services
 // keep the `client` variable as it will be used the `handleChatClient` function
-import _client, { rxIsConnected, rxIsInMaintenanceMode } from '../modules/chat/ChatClient'
+import _client, { rxIsConnected, rxIsInMaintenanceMode } from '../utils/chatClient'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
 import {

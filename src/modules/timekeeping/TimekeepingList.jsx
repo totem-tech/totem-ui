@@ -12,10 +12,10 @@ import {
     queueables as bcQueueables,
     rxBlockNumber,
 } from '../../services/blockchain'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../services/react'
+import { unsubscribe } from '../../utils/reactHelper'
 import { MOBILE, rxLayout } from '../../services/window'
 import identities, {
     get as getIdentity,

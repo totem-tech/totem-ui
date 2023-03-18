@@ -9,7 +9,7 @@ import {
 	isFn,
 } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { closeModal, confirm } from '../../services/modal'
 import identities from '../identity/identity'
 import partners from '../partner/partner'

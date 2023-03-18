@@ -1,7 +1,7 @@
 import React, { isValidElement, useState } from 'react'
 import PropTypes from 'prop-types'
 import { isFn, objWithoutKeys } from '../../utils/utils'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { useInverted } from '../../services/window'
 import Button from './Button'
 import { iUseState } from '../../utils/reactHelper'

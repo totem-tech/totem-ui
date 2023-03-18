@@ -7,7 +7,7 @@ import { Button } from '../../components/buttons'
 import DrillDownList from '../../components/DrillDownList'
 import Message from '../../components/Message'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 // components
 import Currency from '../currency/Currency'
 import useLedgerAcBalances from './useLedgerAcBalances'

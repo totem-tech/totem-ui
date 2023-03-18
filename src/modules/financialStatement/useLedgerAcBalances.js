@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { translated } from '../../services/language'
-import { useRxSubject } from '../../services/react'
+import { translated } from '../../utils/languageHelper'
+import { useRxSubject } from '../../utils/reactHelper'
 import { isAddress, isFn } from '../../utils/utils'
-import client from '../chat/ChatClient'
+import client from '../../utils/chatClient'
 import { rxSelected } from '../identity/identity'
 import query from './query'
 

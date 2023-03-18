@@ -5,8 +5,8 @@ import { ss58Decode } from '../../utils/convert'
 import storage from '../../utils/storageHelper'
 import { deferred, isFn, generateHash } from '../../utils/utils'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
-import { translated } from '../../services/language'
-import client from '../chat/ChatClient'
+import { translated } from '../../utils/languageHelper'
+import client from '../../utils/chatClient'
 import { setPublic } from './partner'
 
 const textsCap = translated({

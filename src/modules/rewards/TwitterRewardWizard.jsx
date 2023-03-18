@@ -4,9 +4,9 @@ import { Step } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import { TYPES, validate } from '../../utils/validator'
 import FormBuilder from '../../components/FormBuilder'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { closeModal, confirm, showForm } from '../../services/modal'
-import client from '../chat/ChatClient'
+import client from '../../utils/chatClient'
 import { generateCrowdloanTweet } from './rewards'
 
 const textsCap = translated({

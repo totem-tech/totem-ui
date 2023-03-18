@@ -3,7 +3,7 @@ import { translated } from '../../utils/languageHelper'
 import { arrReverse } from '../../utils/utils'
 import { ButtonGroup } from '../../components/buttons'
 import { confirm } from '../../services/modal'
-import { useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../utils/reactHelper'
 import { MOBILE, rxLayout } from '../../services/window'
 import {
 	remove,

@@ -1,6 +1,6 @@
 import React from 'react'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
 import { hasValue, isObj } from '../../utils/utils'
 import {

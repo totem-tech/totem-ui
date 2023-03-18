@@ -5,7 +5,7 @@ import React, {
 } from 'react'
 import PropTypes from 'prop-types'
 import { format } from '../utils/time'
-import { translated } from '../services/language'
+import { translated } from '../utils/languageHelper'
 import {
     arrReverse,
     isValidNumber,

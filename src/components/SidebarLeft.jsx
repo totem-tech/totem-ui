@@ -1,12 +1,25 @@
-import React, { Component, isValidElement, useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
-import { Icon, Label, Menu, Sidebar } from 'semantic-ui-react'
-import { deferred, isFn, isStr } from '../utils/utils'
-import { translated } from '../services/language'
-import { useRxSubject } from '../services/react'
 import {
-	rxAllInactive, getItem, setActive, setSidebarState,
-	sidebarItems, rxSidebarState, scrollTo, toggleActive, toggleSidebarState, setActiveExclusive
+	Icon,
+	Label,
+	Menu,
+	Sidebar,
+} from 'semantic-ui-react'
+import { deferred, isFn } from '../utils/utils'
+import { translated } from '../utils/languageHelper'
+import { useRxSubject } from '../utils/reactHelper'
+import {
+	rxAllInactive,
+	getItem,
+	setActive,
+	setSidebarState,
+	sidebarItems,
+	rxSidebarState,
+	scrollTo,
+	toggleActive,
+	toggleSidebarState,
+	setActiveExclusive,
 } from '../services/sidebar'
 import { rxLayout, MOBILE } from '../services/window'
 import ContentSegment from './ContentSegment'

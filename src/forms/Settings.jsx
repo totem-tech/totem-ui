@@ -6,7 +6,7 @@ import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // modules
 import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
-import client from '../modules/chat/ChatClient'
+import client from '../utils/chatClient'
 import {
     rxSelected as rxSelectedCurrency,
     setSelected as setSelectedCurrency
@@ -21,9 +21,9 @@ import {
     languages,
     setSelected as setSelectedLang,
     translated,
-} from '../services/language'
+} from '../utils/languageHelper'
 import { confirm, confirmAsPromise } from '../services/modal'
-import { copyRxSubject } from '../services/react'
+import { copyRxSubject } from '../utils/reactHelper'
 import { gridColumns } from '../services/window'
 
 let textsCap = {

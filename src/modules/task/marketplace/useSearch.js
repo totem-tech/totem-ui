@@ -70,6 +70,8 @@ const useSearch = (filter = {}) => {
                     result: new Map(detailsMap),
                 })
             }
+            window.taskIds = taskIds
+            window.detailsMap = detailsMap
             setQueryArgs([
                 getConnection(),
                 'api.query.orders.orders',

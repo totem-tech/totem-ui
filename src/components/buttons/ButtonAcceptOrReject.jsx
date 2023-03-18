@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import ButtonGroup from './ButtonGroup'
 
 let textsCap = {

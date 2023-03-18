@@ -1,6 +1,6 @@
 import React from 'react'
 import { ButtonGroupOr } from '../../components/buttons'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
 import { createInbox } from '../chat/chat'
 import IdentityShareForm, { inputNames } from '../identity/IdentityShareForm'

@@ -15,7 +15,7 @@ import { setToast } from '../../services/toast'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import { createInbox, SUPPORT, TROLLBOX } from '../chat/chat'
-import { getUser, rxIsRegistered } from '../chat/ChatClient'
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import RegistrationForm from '../chat/RegistrationForm'
 import { getSelected } from '../identity/identity'
 import IdentityForm from '../identity/IdentityForm'

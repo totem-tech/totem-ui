@@ -10,7 +10,7 @@ import FormBuilder, {
 	findInput,
 } from '../../components/FormBuilder'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { confirm } from '../../services/modal'
 // modules
 import Balance from './Balance'

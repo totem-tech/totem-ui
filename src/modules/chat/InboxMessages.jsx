@@ -4,8 +4,8 @@ import { UserID } from '../../components/buttons'
 import { Linkify } from '../../components/StringReplace'
 import Message from '../../components/Message'
 import TimeSince from '../../components/TimeSince'
-import { translated } from '../../services/language'
-import { getUser } from './ChatClient'
+import { translated } from '../../utils/languageHelper'
+import { getUser } from '../../utils/chatClient'
 
 const [texts, textsCap] = translated({
     changedGroupName: 'changed group name to',

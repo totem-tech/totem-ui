@@ -17,12 +17,12 @@ import {
     SUPPORT,
     TROLLBOX,
 } from './chat'
-import client, { getUser, rxIsLoggedIn } from './ChatClient'
-import { translated } from '../../services/language'
+import client, { getUser, rxIsLoggedIn } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
 import Message from '../../components/Message'
 import { getInboxName } from './InboxList'
 import { getLayout, MOBILE, rxLayout, setClass } from '../../services/window'
-import { unsubscribe } from '../../services/react'
+import { unsubscribe } from '../../utils/reactHelper'
 import { useRxSubject } from '../../utils/reactHelper'
 import { BehaviorSubject } from 'rxjs'
 import { rxIsRegistered } from '../../utils/chatClient'

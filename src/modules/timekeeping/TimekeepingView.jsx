@@ -12,11 +12,11 @@ import TimeKeepingForm from './TimekeepingForm'
 import TimekeepingList from './TimekeepingList'
 import TimekeepingSummaryList from './TimekeepingSummaryList'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
 import { MOBILE, rxLayout } from '../../services/window'
 import { MODULE_KEY } from './timekeeping'
-import { unsubscribe } from '../../services/react'
+import { unsubscribe } from '../../utils/reactHelper'
 
 const textsCap = translated({
     archive: 'archive',

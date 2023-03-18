@@ -4,9 +4,9 @@ module.exports = chatClient
 // import ioClient from 'socket.io-client'
 // import { BehaviorSubject } from 'rxjs'
 // import { isFn, isObj, isStr, objWithoutKeys } from '../../utils/utils'
-// import { translated } from '../../services/language'
+// import { translated } from '../../utils/languageHelper'
 // import storage from '../../services/storage'
-// import { subjectAsPromise } from '../../services/react'
+// import { subjectAsPromise } from '../../utils/reactHelper'
 
 // let textsCap = {}
 // setTimeout(() => {

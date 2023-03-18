@@ -4,7 +4,7 @@ import { Button } from 'semantic-ui-react'
 import { unsubscribe } from '../../utils/reactHelper'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
 import {
     get as getIdentity,

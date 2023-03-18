@@ -13,7 +13,7 @@ import {
 	rxUnreadCount as rxUnreadMsgCount,
 	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
-import { getUser, rxIsInMaintenanceMode, rxIsLoggedIn } from '../modules/chat/ChatClient'
+import { getUser, rxIsInMaintenanceMode, rxIsLoggedIn } from '../utils/chatClient'
 import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
 import IdentityShareForm from '../modules/identity/IdentityShareForm'
 import {
@@ -23,10 +23,10 @@ import {
 } from '../modules/notification/notification'
 import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 // services
-import { getSelected as getSelectedLang, translated } from '../services/language'
+import { getSelected as getSelectedLang, translated } from '../utils/languageHelper'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { unsubscribe, useRxSubject } from '../services/react'
+import { unsubscribe, useRxSubject } from '../utils/reactHelper'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
 import {

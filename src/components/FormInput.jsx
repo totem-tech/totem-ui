@@ -34,8 +34,8 @@ import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
 import DateInput from './DateInput'
 //
-import { translated } from '../services/language'
-import { unsubscribe } from '../services/react'
+import { translated } from '../utils/languageHelper'
+import { unsubscribe } from '../utils/reactHelper'
 import { randomHex } from '../services/blockchain'
 import Text from './Text'
 import CharacterCount from './CharacterCount'
@@ -423,7 +423,7 @@ export class FormInput extends Component {
 
 		// forces any unexpected error to be handled gracefully
 		// and add loading spinner if `validate()` returns a promise
-		const validatePromise = PromisE(async () => {
+		const validatePromise = async () => {
 			let result = validate(event, data)
 			if (!isPromise(result)) return result
 
@@ -431,12 +431,12 @@ export class FormInput extends Component {
 			result = await result
 			this.setState({ loading: false })
 			return result
-		})
+		}
 
 		// this makes sure there is no race condition
 		this.validateDeferred = this.validateDeferred || PromisE.deferred()
 		return this
-			.validateDeferred(validatePromise)
+			.validateDeferred(validatePromise())
 			.then(handleValidate, handleValidate)
 	}
 

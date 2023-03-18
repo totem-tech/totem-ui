@@ -8,7 +8,7 @@ import { deferred, isObj, isStr } from '../utils/utils'
 import Message from '../components/Message'
 import { rxModals } from './modal'
 import { rxSidebarState } from './sidebar'
-import { unsubscribe, useRxSubject } from './react'
+import { unsubscribe, useRxSubject } from '../utils/reactHelper'
 import { MOBILE, rxLayout } from './window'
 import DataStorage from '../utils/DataStorage'
 

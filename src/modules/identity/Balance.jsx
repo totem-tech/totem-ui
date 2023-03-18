@@ -7,8 +7,8 @@ import { isArr, isMap, isValidNumber } from '../../utils/utils'
 import { Reveal } from '../../components/buttons'
 // services
 import { query } from '../../services/blockchain'
-import { translated } from '../../services/language'
-import { unsubscribe } from '../../services/react'
+import { translated } from '../../utils/languageHelper'
+import { unsubscribe } from '../../utils/reactHelper'
 // modules
 import Currency from '../currency/Currency'
 import { rxIdentities } from './identity'

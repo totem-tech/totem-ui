@@ -9,7 +9,7 @@ import {
 } from '../../utils/utils'
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import {
     confirm,
     confirmAsPromise,

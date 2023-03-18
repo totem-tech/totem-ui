@@ -8,7 +8,7 @@ import RuntimeUpgradeForm from '../forms/RuntimeUpgrade'
 // services
 import { query } from '../services/blockchain'
 import { find as findIdentity } from '../modules/identity/identity'
-import { BUILD_MODE, translated } from '../services/language'
+import { BUILD_MODE, translated } from '../utils/languageHelper'
 import EventList from '../modules/event/EventList'
 
 // import TransactionsView from './TransactionsView'

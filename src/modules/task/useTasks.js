@@ -9,7 +9,7 @@ import {
     isStr,
 } from '../../utils/utils'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { get as getIdentity } from '../identity/identity'
 import { rxNewNotification } from '../notification/notification'
 import {

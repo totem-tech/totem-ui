@@ -3,8 +3,8 @@ import { Button, Label } from 'semantic-ui-react'
 import { arrSort, textEllipsis } from '../../utils/utils'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
-import { getUser } from './ChatClient'
-import { translated } from '../../services/language'
+import { getUser } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
 import { MOBILE, getLayout, rxLayout } from '../../services/window'
 import {
@@ -23,7 +23,7 @@ import {
     jumpToMessage,
 } from './chat'
 import NewInboxForm, { showEditNameForm } from './NewInboxForm'
-import { unsubscribe, useRxSubject } from '../../services/react'
+import { unsubscribe, useRxSubject } from '../../utils/reactHelper'
 import { contentPlaceholder } from '../../components/ContentSegment'
 
 const ALL_ONLINE = 'green'

@@ -9,7 +9,7 @@ import {
     isStr,
 } from '../../utils/utils'
 import { query as queryHelper, randomHex } from '../../services/blockchain'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { rxSelected } from '../identity/identity'
 import { processOrder } from './useTasks'
 
@@ -172,7 +172,8 @@ export const query = {
             .filter(Boolean)
         return new Map(tasks)
     },
-    searchMarketplace: (filter = {}) => client.taskMarketSearch.promise(filter),
+    searchMarketplace: async (filter = {}) => await client
+        .taskMarketSearch(filter),
 }
 
 // list of PolkadotJS APIs used in the `queueables`

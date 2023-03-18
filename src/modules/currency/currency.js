@@ -9,9 +9,9 @@ import {
     isValidDate,
     isValidNumber,
 } from '../../utils/utils'
-import client, { rxIsConnected, rxIsInMaintenanceMode } from '../chat/ChatClient'
-import { translated } from '../../services/language'
-import { subjectAsPromise } from '../../services/react'
+import client, { rxIsConnected, rxIsInMaintenanceMode } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
+import { subjectAsPromise } from '../../utils/reactHelper'
 
 const [texts, textsCap] = translated({
     invalidCurency: 'invalid or unsupported currency supplied',

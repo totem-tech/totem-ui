@@ -13,7 +13,7 @@ import {
 import client, {
     getUser,
     rxIsLoggedIn,
-} from './ChatClient'
+} from '../../utils/chatClient'
 import {
     addToQueue,
     QUEUE_TYPES,

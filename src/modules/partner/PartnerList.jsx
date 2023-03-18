@@ -5,9 +5,9 @@ import DataTable from '../../components/DataTable'
 import { ButtonGroup, UserID } from '../../components/buttons'
 import Tags from '../../components/Tags'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
-import { useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../utils/reactHelper'
 import { MOBILE, rxLayout } from '../../services/window'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
 import {

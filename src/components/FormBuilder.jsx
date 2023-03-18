@@ -7,10 +7,9 @@ import {
 	Modal,
 } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
-import uuid from 'uuid'
 import { Button } from './buttons'
 import Message, { statuses } from '../components/Message'
-import { translated } from '../services/language'
+import { translated } from '../utils/languageHelper'
 import { closeModal, newId } from '../services/modal'
 import { MOBILE, rxLayout } from '../services/window'
 import {

@@ -4,11 +4,11 @@ import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { fillValues, findInput,  } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis, isArr, isStr, arrUnique, escapeStringRegexp } from '../../utils/utils'
 // services
-import { getUser, rxIsRegistered } from './ChatClient'
-import { translated } from '../../services/language'
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../utils/reactHelper'
 import {
     createInbox,
     getInboxKey,

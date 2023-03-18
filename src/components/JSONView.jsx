@@ -4,7 +4,7 @@ import {
     isAddress, isArr, isArrLike, isBool, isHex, isObj, isStr, isValidNumber, strFill, textEllipsis
 } from '../utils/utils'
 import LabelCopy from './LabelCopy'
-import { useRxSubject } from '../services/react'
+import { useRxSubject } from '../utils/reactHelper'
 import { MOBILE, rxLayout } from '../services/window'
 
 export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {

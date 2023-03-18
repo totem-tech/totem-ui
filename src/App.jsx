@@ -10,10 +10,10 @@ import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import blockchain from './services/blockchain'
-import chatClient from './modules/chat/ChatClient'
+import chatClient from './utils/chatClient'
 import currency from './modules/currency/currency'
 import identity from './modules/identity/identity'
-import language, { translated } from './services/language'
+import language, { translated } from './utils/languageHelper'
 import filePaths from './services/languageFiles'
 import modal from './services/modal'
 import activity from './modules/activity/activity'
@@ -75,19 +75,17 @@ export default function App() {
 			}
 		}
 
-		window.queryBlockchain = async (func, args, multi) => await blockchain
-			.query(func, args, multi, true)
-		
-		queryBlockchain().then(api =>
-			window.api = api
-		)
+		window.queryBlockchain = async (func, args, multi) =>
+			await blockchain.query(func, args, multi, true)
+
+		queryBlockchain().then(api => (window.api = api))
 
 		if (!queueResumed) {
 			// resume any incomplete queued tasks
 			queueResumed = true
 			setTimeout(() => resumeQueue(), 1000)
 		}
-		
+
 		// make sure all notification handlers are imported
 		filePaths
 			.filter(path => path.includes('/notificationHandlers.js'))
@@ -121,11 +119,13 @@ export default function App() {
 					id='main-content'
 				>
 					{sidebarItems.map(({ name, rxTrigger }, i) => (
-						<MainContentItem {...{
-							key: i + name,
-							name,
-							rxTrigger,
-						}} />
+						<MainContentItem
+							{...{
+								key: i + name,
+								name,
+								rxTrigger,
+							}}
+						/>
 					))}
 					<div className='empty-message'>
 						{/* <Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} /> */}

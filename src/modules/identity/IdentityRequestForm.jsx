@@ -4,7 +4,7 @@ import { iUseReducer } from '../../utils/reactHelper'
 import { isFn, } from '../../utils/utils'
 import { statuses } from '../../components/Message'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 
 const notificationType = 'identity'

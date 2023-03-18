@@ -3,10 +3,10 @@ import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
 import { isFn, objCreate } from '../utils/utils'
 import FormInput from '../components/FormInput'
 import { getConnection, query } from '../services/blockchain'
-import { translated } from '../services/language'
+import { translated } from '../utils/languageHelper'
 import { confirm } from '../services/modal'
-import { iUseReducer, useRxSubject } from '../services/react'
-import client, { getUser, rxIsConnected, rxIsInMaintenanceMode } from '../modules/chat/ChatClient'
+import { iUseReducer, useRxSubject } from '../utils/reactHelper'
+import client, { getUser, rxIsConnected, rxIsInMaintenanceMode } from '../utils/chatClient'
 
 const [texts, textsCap] = translated({
 	activateMaintenanceMode: 'activate maintenance mode',

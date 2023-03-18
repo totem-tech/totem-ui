@@ -14,7 +14,7 @@ import FormBuilder, {
 	findInput,
 	fillValues,
 } from '../../components/FormBuilder'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { getAllTags } from '../partner/partner'
 import {
 	addFromUri,

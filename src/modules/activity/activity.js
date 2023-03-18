@@ -9,7 +9,7 @@ import storage from '../../utils/storageHelper'
 import { arrUnique, isFn, isStr } from '../../utils/utils'
 // services
 import { hashTypes, query as queryBlockchain, getConnection } from '../../services/blockchain'
-import client from '../chat/ChatClient'
+import client from '../../utils/chatClient'
 import identities, { getSelected, rxSelected } from '../identity/identity'
 import partners from '../partner/partner'
 import { query as tkQuery } from '../timekeeping/timekeeping'

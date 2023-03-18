@@ -3,8 +3,8 @@ import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
 import { isArr } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { statuses } from '../../components/Message'
-import { translated } from '../../services/language'
-import { unsubscribe } from '../../services/react'
+import { translated } from '../../utils/languageHelper'
+import { unsubscribe } from '../../utils/reactHelper'
 import { rxSelected } from '../identity/identity'
 import {
     blocksToDuration,

@@ -1,6 +1,6 @@
 import React from 'react'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
 import IdentityShareForm from '../identity/IdentityShareForm'
 import { remove, setItemViewHandler } from '../notification/notification'

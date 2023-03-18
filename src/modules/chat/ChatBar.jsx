@@ -3,7 +3,7 @@ import Inbox from './Inbox'
 import InboxList from './InboxList'
 import { rxOpenInboxKey, rxVisible } from './chat'
 import './style.css'
-import { useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../utils/reactHelper'
 
 export default function ChatBar() {
     const [visible] = useRxSubject(rxVisible)

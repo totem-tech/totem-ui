@@ -39,7 +39,7 @@ import {
     queueables as bcQueueables,
     rxBlockNumber,
 } from '../../services/blockchain'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 import { confirmAsPromise, showForm } from '../../services/modal'
 // modules

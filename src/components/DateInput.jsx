@@ -11,9 +11,9 @@ import {
     objWithoutKeys,
     strFill,
 } from '../utils/utils'
-import { useRxSubject } from '../services/react'
+import { useRxSubject } from '../utils/reactHelper'
 import { MOBILE, rxLayout, useInverted } from '../services/window'
-import { translated } from '../services/language'
+import { translated } from '../utils/languageHelper'
 
 const textsCap = translated({
     day: 'day',

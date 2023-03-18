@@ -7,9 +7,9 @@ import { Button, ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import Tags from '../../components/Tags'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
-import { useRxSubject } from '../../services/react'
+import { useRxSubject } from '../../utils/reactHelper'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import UserContactList from '../contact/UserContactList'

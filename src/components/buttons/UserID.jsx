@@ -4,7 +4,7 @@ import { Button as _Button } from 'semantic-ui-react'
 import { isFn, objWithoutKeys } from '../../utils/utils'
 import { getRawUserID } from '../UserIdInput'
 // services
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import {
     showForm,
 	closeModal,
@@ -12,7 +12,7 @@ import {
 } from '../../services/modal'
 // modules
 import { createInbox } from '../../modules/chat/chat'
-import { getUser } from '../../modules/chat/ChatClient'
+import { getUser } from '../../utils/chatClient'
 import IdentityRequestForm from '../../modules/identity/IdentityRequestForm'
 import IdentityShareForm from '../../modules/identity/IdentityShareForm'
 import IntroduceUserForm from '../../modules/identity/IntroduceUserForm'

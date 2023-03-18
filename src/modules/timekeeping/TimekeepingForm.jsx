@@ -20,10 +20,10 @@ import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder
 import DataTableVertical from '../../components/DataTableVertical'
 // services
 import { rxBlockNumber } from '../../services/blockchain'
-import { translated } from '../../services/language'
+import { translated } from '../../utils/languageHelper'
 import { confirm, confirmAsPromise } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../services/react'
+import { unsubscribe } from '../../utils/reactHelper'
 import { openStatuses, query as queryProject } from '../activity/activity'
 import { getSelected } from '../identity/identity'
 import AddressName from '../partner/AddressName'

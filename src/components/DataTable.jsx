@@ -25,9 +25,9 @@ import { Button } from './buttons'
 import { Invertible } from './Invertible'
 import Message, { statuses } from './Message'
 import Paginator from './Paginator'
-import { translated } from '../services/language'
+import { translated } from '../utils/languageHelper'
 import { MOBILE, rxLayout } from '../services/window'
-import { unsubscribe } from '../services/react'
+import { unsubscribe } from '../utils/reactHelper'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
 	const start = pageNo * perPage - perPage

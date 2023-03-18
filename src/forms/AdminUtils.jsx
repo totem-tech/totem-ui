@@ -5,8 +5,8 @@ import storage from '../utils/storageHelper'
 import { downloadFile } from '../utils/utils'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 // services
-import client from '../modules/chat/ChatClient'
-import { downloadTextListCSV, translated } from '../services/language'
+import client from '../utils/chatClient'
+import { downloadTextListCSV, translated } from '../utils/languageHelper'
 
 export default class AdminUtils extends Component {
 	constructor() {

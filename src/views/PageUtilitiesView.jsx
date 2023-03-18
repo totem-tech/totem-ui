@@ -1,6 +1,6 @@
 import React from 'react'
 import storage from '../utils/storageHelper'
-import { translated } from '../services/language'
+import { translated } from '../utils/languageHelper'
 import { confirm } from '../services/modal'
 import { Button } from '../components/buttons'
 
