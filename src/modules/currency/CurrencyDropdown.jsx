@@ -13,7 +13,6 @@ const CurrencyDropdown = React.memo(props => {
     props = objWithoutKeys(props, ['autoHideName', 'onCurrencies'])
     const [options = [], error] = usePromise(async () => {
         const currencies = await getCurrencies()
-        console.log({ currencies })
 
         // loading 700+ currencies on startup causes performance issues on form load.
         // delay loading currencies to improve performance.
@@ -65,8 +64,6 @@ const CurrencyDropdown = React.memo(props => {
         },
         ...props.style,
     }
-
-    console.log({ options, error })
 
     return (
         <FormInput {...{
