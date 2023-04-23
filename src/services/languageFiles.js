@@ -20,7 +20,7 @@ export default [
     "./src/components/Modal.jsx",
     "./src/components/PageHeader.jsx",
     "./src/components/Paginator.jsx",
-    "./src/components/RxSubject.jsx",
+    "./src/components/RxSubjectView.jsx",
     "./src/components/SidebarLeft.jsx",
     "./src/components/StringReplace.jsx",
     "./src/components/Tags.jsx",

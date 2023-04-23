@@ -3,7 +3,21 @@ import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { useRxSubject } from '../utils/reactHelper'
 
-const RxSubject = props => {
+/**
+ * @name    RxSubjectView
+ * @summary a functional component to display & auto-update the value of an RxJs subject.
+ * PS: if value is defined, make sure it is acceptable in the React DOM.
+ * 
+ * @param   {Object}            props
+ * @param   {Boolean}           props.allowMerge         (optional)
+ * @param   {Boolean}           props.allowSubjectUpdate (optional)
+ * @param   {*}                 props.initialValue       (optional)
+ * @param   {BehaviorSubject}   props.subject
+ * @param   {Function}          props.valueModifier      (optional)
+ * 
+ * @returns {Element}
+ */
+const RxSubjectView = props => {
     const {
         allowMerge,
         allowSubjectUpdate,
@@ -18,10 +32,10 @@ const RxSubject = props => {
         allowMerge,
         allowSubjectUpdate,
     )
-    
+
     return value
 }
-RxSubject.propTypes = {
+RxSubjectView.propTypes = {
     allowMerge: PropTypes.bool,
     allowSubjectUpdate: PropTypes.bool,
     initialValue: PropTypes.any,
@@ -31,4 +45,4 @@ RxSubject.propTypes = {
     ]).isRequired,
     valueModifier: PropTypes.func,
 }
-export default React.memo(RxSubject)
+export default React.memo(RxSubjectView)

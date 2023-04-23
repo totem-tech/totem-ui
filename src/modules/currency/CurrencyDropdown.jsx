@@ -11,9 +11,10 @@ import PromisE from '../../utils/PromisE'
 const CurrencyDropdown = React.memo(props => {
     const { autoHideName, onCurrencies } = props
     props = objWithoutKeys(props, ['autoHideName', 'onCurrencies'])
-    const [options = []] = usePromise(async () => {
+    const [options = [], error] = usePromise(async () => {
         const currencies = await getCurrencies()
-        
+        console.log({ currencies })
+
         // loading 700+ currencies on startup causes performance issues on form load.
         // delay loading currencies to improve performance.
         await PromisE.delay(100)
@@ -65,6 +66,8 @@ const CurrencyDropdown = React.memo(props => {
         ...props.style,
     }
 
+    console.log({ options, error })
+
     return (
         <FormInput {...{
             lazyLoad: true,
@@ -82,7 +85,7 @@ const CurrencyDropdown = React.memo(props => {
                 <Icon {...{
                     className: 'no-margin',
                     name: 'dropdown',
-                    style: { 
+                    style: {
                         position: 'absolute',
                         right: 15,
                         top: 0,
@@ -94,7 +97,7 @@ const CurrencyDropdown = React.memo(props => {
                 'secondaryPosition',
             ],
             // fixes search keyword not showing up
-            searchInput: { style: { width: '100%' }},
+            searchInput: { style: { width: '100%' } },
             name: props.name || 'CurrencyDropdown',
             options,
             style,

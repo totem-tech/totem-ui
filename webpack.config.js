@@ -131,9 +131,6 @@ module.exports = {
 		publicPath: '/',
 		filename: `bundle.js`, //`bundle-${uuid.v1()}.js`
 	},
-	// devServer: {
-	// 	contentBase: './dist',
-	// },
 	devServer: {
 		static: path.join(__dirname, 'dist'),
 		hot: true,

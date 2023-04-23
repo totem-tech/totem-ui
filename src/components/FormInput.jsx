@@ -10,7 +10,9 @@ import {
 	Input as S_Input,
 	TextArea as S_Textarea,
 } from 'semantic-ui-react'
+import { translated } from '../utils/languageHelper'
 import PromisE from '../utils/PromisE'
+import { unsubscribe } from '../utils/reactHelper'
 import {
 	deferred,
 	hasValue,
@@ -26,6 +28,9 @@ import {
 	isDefined,
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
+// services
+import { randomHex } from '../services/blockchain'
+import { rxInverted } from '../services/window'
 import { Button } from './buttons'
 import Message, { statuses } from './Message'
 import { Invertible } from './Invertible'
@@ -33,13 +38,8 @@ import { Invertible } from './Invertible'
 import CheckboxGroup from './CheckboxGroup'
 import UserIdInput from './UserIdInput'
 import DateInput from './DateInput'
-//
-import { translated } from '../utils/languageHelper'
-import { unsubscribe } from '../utils/reactHelper'
-import { randomHex } from '../services/blockchain'
 import Text from './Text'
 import CharacterCount from './CharacterCount'
-import { rxInverted } from '../services/window'
 
 // Memo-ify everything
 const Accordion = React.memo(S_Accordion)
@@ -177,10 +177,10 @@ export class FormInput extends Component {
 					: await rxOptionsModifier(options)
 				if (!isArr(options)) return
 				this.setState({ options })
-				
+
 				if (!isSubjectLike(rxValue) || !hasValue(this.value) || multiple) return
-				
-				const isOption = !!options.find(o => o.value === this.value)				
+
+				const isOption = !!options.find(o => o.value === this.value)
 				// value no longer exists in the options list
 				// force clear selection
 				!isOption && rxValue.next(undefined)
@@ -215,7 +215,7 @@ export class FormInput extends Component {
 		)
 
 		const {
-			persist, 
+			persist,
 			target: {
 				selectionEnd,
 				selectionStart,
@@ -246,7 +246,7 @@ export class FormInput extends Component {
 
 		if (hasVal && !err) {
 			switch (typeLower) {
-				case 'array': 
+				case 'array':
 					validatorConfig = { type: TYPES.array }
 					break
 				case 'checkbox':
@@ -263,10 +263,10 @@ export class FormInput extends Component {
 				case 'date':
 					validatorConfig = { type: TYPES.date }
 					break
-				case 'email': 
+				case 'email':
 					validatorConfig = { type: TYPES.email }
 					break
-				case 'identity': 
+				case 'identity':
 					validatorConfig = { type: TYPES.identity }
 					break
 				case 'number':
@@ -281,7 +281,7 @@ export class FormInput extends Component {
 						: parseFloat(data.value)
 					value = data.value
 					break
-				case 'url': 
+				case 'url':
 					validatorConfig = { type: TYPES.url }
 					break
 				case 'hex':
@@ -371,7 +371,7 @@ export class FormInput extends Component {
 				}
 			})
 				.filter(Boolean)
-		
+
 		if (cList.length > 0) {
 			err = !!cList.find(x => x.invalid)
 			message = {
@@ -406,7 +406,7 @@ export class FormInput extends Component {
 			const isEl = React.isValidElement(msg)
 			message = isBool(msg) || !msg
 				? !!message
-					? message 
+					? message
 					: null // no need to display a message
 				: {
 					content: isEl
@@ -646,8 +646,8 @@ export class FormInput extends Component {
 				error: ['dateinput', 'date'].includes(typeLC)
 					? false
 					: (message && message.status === statuses.ERROR)
-						|| !!error
-						|| !!invalid,
+					|| !!error
+					|| !!invalid,
 				key: this.key,
 				required,
 				style: {
@@ -672,7 +672,7 @@ export class FormInput extends Component {
 							minLength,
 							name,
 							subject: rxValue,
-							show: this.rxFocused,
+							show: this.rxFocused && maxLength > 0,
 						}} />
 					),
 					!!labelDetails && (

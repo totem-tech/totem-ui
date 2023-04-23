@@ -533,7 +533,7 @@ export default class PartnerForm extends Component {
 			}} />
 		)
 	}
-	
+
 	handleAddressAddItem = (_, { value }) => {
 		if (this.customAddresses.includes(value)) return
 
@@ -559,7 +559,7 @@ export default class PartnerForm extends Component {
 		const visibilityIn = findInput(inputs, inputNames.visibility)
 		const { options = [] } = findInput(inputs, inputNames.address)
 		const { company: com } = options.find(x => x.value === address) || {}
-		
+
 		visibilityIn.disabled = isPublic || !!com
 		// stuff to do only when creating an entry
 		if (!this.doUpdate) {
@@ -586,7 +586,7 @@ export default class PartnerForm extends Component {
 					submitText: null,
 				},
 			)
-			
+
 			nameIn.rxValue.next(cName || name)
 			typeIn.rxValue.next(
 				com ? types.BUSINESS : types.PERSONAL
@@ -604,7 +604,7 @@ export default class PartnerForm extends Component {
 		const { values = {} } = this.props
 		const addressIn = findInput(inputs, inputNames.address)
 		const isValidAddress = !!addressToStr(searchQuery)
-		const promise = client.companySearch.promise(searchQuery, false)
+		const promise = client.companySearch(searchQuery, false)
 		addressIn.allowAdditions = false
 		addressIn.loading = true
 		this.setState({ inputs })
@@ -623,9 +623,7 @@ export default class PartnerForm extends Component {
 			const err = !success
 				? result
 				: null
-			const companies = success
-				? result
-				: new Map()
+			const companies = new Map(result)
 			addressIn.loading = false
 			addressIn.allowAdditions = !err
 				&& companies.size === 0
@@ -646,7 +644,7 @@ export default class PartnerForm extends Component {
 							county,
 							postCode,
 							postTown,
-						} = regAddress 
+						} = regAddress
 						const key = identity
 						const ar = [
 							addressLine1,
@@ -759,27 +757,27 @@ export default class PartnerForm extends Component {
 			visibilityIn.rxValue.next(visibilityTypes.PRIVATE)
 		}
 
-		
+
 		const success = set(values) && (!this.doUpdate || !autoSave)
 		const message = closeOnSubmit || this.doUpdate
 			? null
 			: {
 				content: !success
-				? textsCap.submitFailedMsg
-				: this.doUpdate
-				? textsCap.submitSuccessMsg2
-				: textsCap.submitSuccessMsg1,
+					? textsCap.submitFailedMsg
+					: this.doUpdate
+						? textsCap.submitSuccessMsg2
+						: textsCap.submitSuccessMsg1,
 				icon: true,
 				status: success
-				? 'success'
-				: 'error',
+					? 'success'
+					: 'error',
 			}
 		this.setState({ message, success })
-		
+
 		// check & save contact & location if necessary
 		this.saveContact()
 		this.saveLocation()
-		
+
 		// Open add partner form
 		isFn(onSubmit) && onSubmit(true, values)
 		addCompany && showForm(CompanyForm, {
@@ -794,7 +792,7 @@ export default class PartnerForm extends Component {
 			onSubmit: (e, v, ok) => {
 				doBackup && BackupForm.checkAndWarn(false)
 				if (!ok) return
-				
+
 				visibilityIn.rxValue.next(
 					visibilityTypes.PUBLIC
 				)
