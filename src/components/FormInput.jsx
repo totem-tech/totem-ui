@@ -40,6 +40,7 @@ import UserIdInput from './UserIdInput'
 import DateInput from './DateInput'
 import Text from './Text'
 import CharacterCount from './CharacterCount'
+import RxSubjectView from './RxSubjectView'
 
 // Memo-ify everything
 const Accordion = React.memo(S_Accordion)
@@ -666,14 +667,19 @@ export class FormInput extends Component {
 						{label}
 					</label>,
 					!!showCount && !NON_COUNT_TYPES.includes(type) && (
+						// <RxSubjectView {...{
+						// 	subject: this.rxFocused,
+						// 	valueModifier: focused && (
 						<CharacterCount {...{
 							key: 'CharacterCount',
 							maxLength,
 							minLength,
 							name,
 							subject: rxValue,
-							show: this.rxFocused && maxLength > 0,
+							show: this.rxFocused,
 						}} />
+						// 	)
+						// }} />
 					),
 					!!labelDetails && (
 						<div

@@ -1,9 +1,14 @@
 import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
+import { translated } from '../utils/languageHelper'
 import { useRxSubject } from '../utils/reactHelper'
 import { hasValue, isFn, isSubjectLike } from '../utils/utils'
 import RxSubjectView from './RxSubjectView'
+
+const textsCap = translated({
+    title: 'character count'
+}, true)[1]
 
 /**
  * @name    CharacterCount
@@ -38,6 +43,7 @@ const CharacterCount = props => {
         colorError,
         colorWarn,
         hideOnEmpty,
+        inline,
         maxLength,
         minLength,
         show: _show,
@@ -62,7 +68,7 @@ const CharacterCount = props => {
         const isWarn = len >= warnLength
         const isMin = len < minLength
         const isMax = len > maxLength
-        const color = len && (isMax || isMin)
+        color = len && (isMax || isMin)
             ? colorError
             : isWarn
                 ? colorWarn
@@ -70,15 +76,27 @@ const CharacterCount = props => {
         let content = len
         if (maxLength) content = `${len}/${maxLength}`
 
+        if (inline) content = <span>&nbsp;( {content} ) </span>
+
         return (
-            <div style={{ position: 'relative' }}>
-                <div style={{
-                    bottom: 0,
-                    color,
-                    fontWeight: 'bold',
-                    position: 'absolute',
-                    right: 18,
-                    ...style,
+            <div style={{
+                display: inline
+                    ? 'inline-block'
+                    : 'block',
+                position: 'relative',
+            }}>
+                <div {...{
+                    style: {
+                        ...!inline && {
+                            bottom: 0,
+                            color,
+                            fontWeight: 'bold',
+                            position: 'absolute',
+                            right: 18,
+                        },
+                        ...style,
+                    },
+                    title: textsCap.title,
                 }}>
                     {content}
                 </div>
@@ -86,13 +104,17 @@ const CharacterCount = props => {
         )
     })
 
-    return !!show && (
-        <RxSubjectView {...{
-            ...props,
-            subject,
-            valueModifier: modifier,
-        }} />
-    )
+    if (!show) return ''
+
+    return !isSubjectLike(subject)
+        ? modifier(subject)
+        : (
+            <RxSubjectView {...{
+                ...props,
+                subject,
+                valueModifier: modifier,
+            }} />
+        )
 }
 CharacterCount.propTypes = {
     color: PropTypes.string,
@@ -100,9 +122,14 @@ CharacterCount.propTypes = {
     colorWarn: PropTypes.string,
     hideOnEmpty: PropTypes.bool,
     initialValue: PropTypes.any,
+    // whether to display the counter inline or on the right side
+    inline: PropTypes.bool,
     maxLength: PropTypes.number,
     minLength: PropTypes.number,
-    show: PropTypes.bool,
+    show: PropTypes.oneOfType([
+        PropTypes.instanceOf(BehaviorSubject),
+        PropTypes.bool,
+    ]),
     style: PropTypes.object,
     subject: PropTypes.oneOfType([
         PropTypes.instanceOf(BehaviorSubject),

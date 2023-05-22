@@ -1,5 +1,5 @@
 import { generateHash, isStr, isValidNumber, randomInt } from '../../utils/utils'
-import { secretBoxDecrypt, secretBoxEncrypt, secretBoxKeyFromPW } from '../../utils/naclHelper'
+import { secretBox } from '../../utils/naclHelper'
 import { addFromUri, generateUri } from '../identity/identity'
 
 /**
@@ -12,10 +12,10 @@ import { addFromUri, generateUri } from '../identity/identity'
  * @returns {*} decrypted data
  */
 export const decryptBackup = (backup, password) => {
-    const decrytped = secretBoxDecrypt(
+    const decrytped = secretBox.decrypt(
         `0x${backup.slice(26, -24)}`,
         `0x${backup.slice(2, 26)}${backup.slice(-24)}`,
-        secretBoxKeyFromPW(password),
+        secretBox.keyFromPW(password),
     )
     return decrytped
 }
@@ -30,8 +30,8 @@ export const decryptBackup = (backup, password) => {
  * @returns {String}    encrypted hex string
  */
 export const encryptBackup = (data, password) => {
-    const secretkey = secretBoxKeyFromPW(password)
-    let { encrypted, nonce } = secretBoxEncrypt(
+    const secretkey = secretBox.keyFromPW(password)
+    let { encrypted, nonce } = secretBox.encrypt(
         isStr(data)
             ? data
             : JSON.stringify(data),
