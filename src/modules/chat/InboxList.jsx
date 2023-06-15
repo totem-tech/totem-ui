@@ -187,7 +187,6 @@ const filterInboxes = (query = '', showAll = false) => {
 
     const allMessages = getMessages()
     const showArchived = !showAllDisabled && showAll
-    console.log({ showAll, showArchived })
     if (!showArchived) {
         // ignore archived or deleted
         filteredKeys = filteredKeys.filter(key => {
