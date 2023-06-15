@@ -4,7 +4,7 @@ import { isFn, objWithoutKeys } from '../../utils/utils'
 import { translated } from '../../utils/languageHelper'
 import { useInverted } from '../../services/window'
 import Button from './Button'
-import { iUseState } from '../../utils/reactHelper'
+import { useRxState } from '../../utils/reactjs'
 
 let textsCap = {
 	or: 'or',
@@ -32,7 +32,7 @@ const ButtonGroup = (props) => {
 		orText,
 		values = [],
 	} = props
-	const [{ loading, index }, setLoading] = iUseState({})
+	const [{ loading, index }, setLoading] = useRxState({})
 	const buttonsEl = buttons.map((button, i) => {
 		button = (isValidElement(button)
 			? button.props

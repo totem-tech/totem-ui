@@ -23,7 +23,7 @@ import { decryptBackup } from '.'
 import { statuses } from '../../components/Message'
 import ButtonDelayed from '../../components/buttons/ButtonDelayed'
 import { setToast } from '../../services/toast'
-import { subjectAsPromise } from '../../utils/reactHelper'
+import { subjectAsPromise } from '../../utils/reactjs'
 
 let textsCap = {
 	addFromBackup: 'add from backup',
@@ -155,8 +155,8 @@ export default class RestoreBackupForm extends Component {
 							]
 								.sort()
 								.map((str, i) =>
-								<li key={i}>{str}</li>
-							)}
+									<li key={i}>{str}</li>
+								)}
 						</ul>
 					</div>
 				)
@@ -187,13 +187,13 @@ export default class RestoreBackupForm extends Component {
 		this.state = {
 			inputs,
 			onClose: (...args) => {
-				let { values: { redirectTo } = {}} = props
-                isFn(props.onClose) && props.onClose(...args)
-                try { 
+				let { values: { redirectTo } = {} } = props
+				isFn(props.onClose) && props.onClose(...args)
+				try {
 					redirectTo = new URL(redirectTo)
-                    window.location.href = redirectTo.href
-                } catch (err) {}
-            },
+					window.location.href = redirectTo.href
+				} catch (err) { }
+			},
 			onSubmit: this.handleSubmit,
 			submitDisabled: { file: false },
 		}
@@ -344,7 +344,7 @@ export default class RestoreBackupForm extends Component {
 			margin,
 			padding,
 		}
-		const ILabel = props => <span {...{ ...props, style: { fontSize: '110%' } } } />
+		const ILabel = props => <span {...{ ...props, style: { fontSize: '110%' } }} />
 		const dataInputs = current
 			.map(([keyC, valueC = {}]) => {
 				const valueB = backupMap.get(keyC)
@@ -375,7 +375,7 @@ export default class RestoreBackupForm extends Component {
 				].filter(Boolean)
 				processed[keyC] = true
 				const label = valueC.name || valueB.name || keyC
-				
+
 				return {
 					inline: !isMobile,
 					label: <ILabel>{label}</ILabel>,
@@ -384,7 +384,7 @@ export default class RestoreBackupForm extends Component {
 					radio: true,
 					required: doMerge,
 					rxValue: new BehaviorSubject(value),
-					styleContainer: conflict 
+					styleContainer: conflict
 						? styleConflict
 						: styleExisting,
 					title: conflict
@@ -450,7 +450,7 @@ export default class RestoreBackupForm extends Component {
 
 		return [
 			// place conflicts on top
-			...conflicts, 
+			...conflicts,
 			// new entries from backup
 			...dataInputs.filter(x => x.value !== null && x.options.length === 2),
 			// existing entries not in backup
@@ -526,7 +526,7 @@ export default class RestoreBackupForm extends Component {
 				}, modalId)
 				_promptForPassword()
 			}
-			
+
 			reader.readAsText(file)
 			fileIn.message = null
 
@@ -583,8 +583,8 @@ export default class RestoreBackupForm extends Component {
 			valueInputs.length,
 			textsCap.entries,
 		].join(' ')
-		
-		
+
+
 		optionGroupIn.name = optionGroupName
 		optionGroupIn.type = 'group'
 		restoreOptionsIn.inputs = exists
@@ -615,7 +615,7 @@ export default class RestoreBackupForm extends Component {
 			.keys(this.backupData)
 			.filter(key =>
 				hasValue(values[key])
-					&& values[key] !== IGNORE
+				&& values[key] !== IGNORE
 			)
 		const user = values[inputNames.userId]
 		const noAction = !user && dataKeys.every(key => values[key] === IGNORE)

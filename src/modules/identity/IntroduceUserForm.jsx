@@ -5,7 +5,7 @@ import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { isFn, isStr } from '../../utils/utils'
 import { translated } from '../../utils/languageHelper'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import { statuses } from '../../components/Message'
 
 let textsCap = {
@@ -93,7 +93,7 @@ IntroduceUserForm.defaultProps = {
 const handleSubmit = (props, rxSetState) => (_, values) => {
     const { onSubmit } = props
     const recipients = values[inputNames.recipients]
-    const userId = values[inputNames.userId ]
+    const userId = values[inputNames.userId]
     // notificaiton types for user introduction
     const TYPE = 'identity'
     const CHILD_TYPE = 'introduce'

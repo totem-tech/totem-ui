@@ -23,7 +23,7 @@ import {
     translated,
 } from '../utils/languageHelper'
 import { confirm, confirmAsPromise } from '../services/modal'
-import { copyRxSubject } from '../utils/reactHelper'
+import { copyRxSubject } from '../utils/reactjs'
 import { gridColumns } from '../services/window'
 
 let textsCap = {
@@ -99,7 +99,7 @@ export const showKeyboardShortcuts = () => confirm(
                     { key: 'SHIFT + T', action: textsCap._shiftT },
                     { key: 'C', action: textsCap._c },
                     { key: 'D', action: textsCap._d },
-                    { key: 'K', action:  textsCap._k },
+                    { key: 'K', action: textsCap._k },
                     { key: 'I', action: textsCap._i },
                     { key: 'N', action: textsCap._n },
                     { key: 'S', action: textsCap._s },
@@ -224,7 +224,7 @@ export default class SettingsForm extends Component {
                 {
                     label: textsCap.nodeUrlLabel,
                     name: inputNames.nodeUrl,
-                    onChange: deferred((_, values) => this.setState({ values: {...values} }), 100),
+                    onChange: deferred((_, values) => this.setState({ values: { ...values } }), 100),
                     type: 'url',
                     value: this.connectedNodeUrl || this.defaultNodeUrl,
                 },
@@ -281,7 +281,7 @@ export default class SettingsForm extends Component {
         const updated = await setSelectedLang(languageCode, client)
         const reloadRequired = changed || updated
         if (!reloadRequired) return
-        
+
         this.setInputMessage('languageCode', savedMsg, 2000)
         confirmAsPromise({
             cancelButton: textsCap.langConfirmCancelBtn,

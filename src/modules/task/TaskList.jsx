@@ -26,7 +26,7 @@ import {
     newId,
 } from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import Currency from '../currency/Currency'
@@ -139,7 +139,7 @@ export default function TaskList(props) {
             ? textsCap.emptyMsgMarketPlace
             : undefined
     )
-    
+
     useEffect(() => {
         setTableProps(
             getTableProps({
@@ -150,7 +150,7 @@ export default function TaskList(props) {
                 isOwnedList,
             })
         )
-    }, [ isMobile, listType ])
+    }, [isMobile, listType])
 
     const forceReload = () => {
         const { keywords } = filter
@@ -214,10 +214,10 @@ export default function TaskList(props) {
                 // this ensures the search occur on load
                 rxValue: new BehaviorSubject(keywords),
                 type: 'search',
-                value: keywords, 
+                value: keywords,
             }} />
         )
-    
+
     return (
         <DataTable {...{
             ...props,
@@ -306,15 +306,15 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
             content: isOwner || !userId
                 ? `${textsCap.applications}: ${applications.length}`
                 : rejected
-                ? textsCap.rejected  
+                    ? textsCap.rejected
                     : applied
                         ? textsCap.applied
                         : isClosed
                             ? textsCap.closed
                             : textsCap.apply,
             disabled: !userId
-            || (!isOwner && isClosed)
-            || (isOwner && !applications.length),
+                || (!isOwner && isClosed)
+                || (isOwner && !applications.length),
             // || !!applied
             fluid: true,
             icon: isOwner || !userId
@@ -714,5 +714,5 @@ setTimeout(() => {
         // add/remove from list
         inProgressIds[isDone ? 'delete' : 'add'](taskId)
         rxInProgressIds.next(new Set(inProgressIds))
-    })  
+    })
 })

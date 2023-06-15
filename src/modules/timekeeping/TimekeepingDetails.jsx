@@ -6,7 +6,7 @@ import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
 import { showInfo } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { isFn, objWithoutKeys } from '../../utils/utils'
 import AddressName from '../partner/AddressName'
 
@@ -64,7 +64,7 @@ const TimekeepingDetails = props => {
             },
             {
                 content: x => <AddressName address={x.workerAddress} />,
-                
+
                 title: textsCap.worker,
             },
             {

@@ -7,7 +7,7 @@ import Tags from '../../components/Tags'
 // services
 import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { MOBILE, rxLayout } from '../../services/window'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
 import {
@@ -62,7 +62,7 @@ export default function PartnerList(props = {}) {
 					<div {...{
 						draggable: true,
 						onDragStart: (e) => e.dataTransfer.setData('Text', name),
-						style: { display: 'block'}
+						style: { display: 'block' }
 					}}>
 						{textEllipsis(name, 25, 3, false)}
 					</div>

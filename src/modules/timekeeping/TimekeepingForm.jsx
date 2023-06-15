@@ -23,7 +23,7 @@ import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
 import { confirm, confirmAsPromise } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 import { openStatuses, query as queryProject } from '../activity/activity'
 import { getSelected } from '../identity/identity'
 import AddressName from '../partner/AddressName'
@@ -37,7 +37,7 @@ import {
 } from './timekeeping'
 import { handleInvitation } from './notificationHandlers'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
-import { subjectAsPromise } from '../../utils/reactHelper'
+import { subjectAsPromise } from '../../utils/reactjs'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -118,7 +118,7 @@ const handleValidateDuration = (_1, _2, values) => {
     const invalid = !manualEntry
         ? !valid
         : duration === DURATION_ZERO || !valid
-    
+
     return invalid && {
         content: (
             <span>
@@ -205,12 +205,12 @@ async function handleSubmitTime(hash, projectName, values, status, reason, check
         <DataTableVertical {...{
             columns: [
                 { title: textsCap.identity, key: 'identity' },
-                { title: textsCap.activity, key: 'activity'},
-                { title: textsCap.duration, key: 'duration'},
-                { title: textsCap.numberOfBlocks, key: 'numberOfBlocks'},
-                { title: textsCap.numberOfBreaks, key: 'numberOfBreaks'},
-                { title: textsCap.startedAt, key: 'startedAt'},
-                { title: textsCap.finishedAt, key: 'finishedAt'},
+                { title: textsCap.activity, key: 'activity' },
+                { title: textsCap.duration, key: 'duration' },
+                { title: textsCap.numberOfBlocks, key: 'numberOfBlocks' },
+                { title: textsCap.numberOfBreaks, key: 'numberOfBreaks' },
+                { title: textsCap.startedAt, key: 'startedAt' },
+                { title: textsCap.finishedAt, key: 'finishedAt' },
             ],
             data: [{
                 identity: <AddressName {...{ address: workerAddress }} />,
@@ -340,7 +340,7 @@ export default class TimekeepingForm extends Component {
             const options = Array
                 .from(projects)
                 .map(([hash, project]) => {
-                    const { name, ownerAddress, userId } = project 
+                    const { name, ownerAddress, userId } = project
                     return {
                         description: (
                             <AddressName {...{

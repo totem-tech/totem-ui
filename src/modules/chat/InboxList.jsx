@@ -1,12 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { Button, Label } from 'semantic-ui-react'
-import { arrSort, textEllipsis } from '../../utils/utils'
+import { contentPlaceholder } from '../../components/ContentSegment'
 import FormInput from '../../components/FormInput'
 import Message from '../../components/Message'
+import { confirm, showForm } from '../../services/modal'
+import { MOBILE, getLayout } from '../../services/window'
 import { getUser } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { confirm, showForm } from '../../services/modal'
-import { MOBILE, getLayout, rxLayout } from '../../services/window'
+import { useMount, useRxState, useRxSubject, useRxStateDeferred } from '../../utils/reactjs'
+import {
+    arrSort,
+    className,
+    isObj,
+    strFill,
+    textEllipsis,
+} from '../../utils/utils'
 import {
     createInbox,
     rxExpanded,
@@ -23,17 +31,17 @@ import {
     jumpToMessage,
 } from './chat'
 import NewInboxForm, { showEditNameForm } from './NewInboxForm'
-import { unsubscribe, useRxSubject } from '../../utils/reactHelper'
-import { contentPlaceholder } from '../../components/ContentSegment'
 
 const ALL_ONLINE = 'green'
 const SOME_ONLINE = 'yellow'
 const OFFLINE = 'grey'
-const [texts, textsCap] = translated({
+const textsCap = {
     actionsHide: 'hide actions',
     actionsShow: 'show actions',
-    archived: 'archived - reopen?',
     archiveConversation: 'archive conversation',
+    archived: 'archived - reopen?',
+    archivedShow: 'show archived',
+    archivedHide: 'hide archived',
     changeGroupName: 'change group name',
     deleted: 'deleted - restart?',
     detailed: 'detailed',
@@ -47,112 +55,37 @@ const [texts, textsCap] = translated({
     removeMessages: 'clear all messages',
     removeConversation: 'trash conversation',
     searchPlaceholder: 'search conversations',
-    showHidden: 'show archived',
     support: 'Totem Support',
     trash: 'trash',
     trollbox: 'Totem Global Conversation',
     you: 'you',
-}, true)
-
-export const getInboxName = (inboxKey, settings = inboxSettings(inboxKey), userId) => {
-    const receiverIds = inboxKey.split(',')
-    let name = receiverIds.includes(TROLLBOX) ? textsCap.trollbox : settings.name
-    if (receiverIds.includes(SUPPORT)) {
-        const otherUsers = receiverIds.filter(id => ![SUPPORT, userId].includes(id))
-        // for support member display name as follows: "Totem Support: UserID", otherwise only "Totem Support"
-        if (receiverIds.length <= 2 || otherUsers.length === 0) return textsCap.support
-        return `${textsCap.support}: ${otherUsers[0]}`
-    }
-    return name
 }
+translated(textsCap, true)
 
-const filterInboxes = (query = '', showAll = false) => {
-    query = query.trim().toLowerCase()
-    const allSettings = inboxesSettings() || {}
-    let filteredKeys = Object.keys(allSettings)
-    if (!filteredKeys.length) return []
-
-    const allMessages = getMessages()
-    if (!showAll) {
-        // ignore archived or deleted
-        filteredKeys = filteredKeys.filter(key => {
-            const { hide, deleted } = allSettings[key] || {}
-            return !hide && !deleted
-        })
-    }
-
-    const { id: userId } = getUser() || {}
-    const result = filteredKeys.map(inboxKey => {
-        const settings = allSettings[inboxKey] || {}
-        const { createdTS, deleted, hide, lastMessageTS, unread = 0 } = settings
-        // exclude action messages (eg: group name change)
-        const messages = (allMessages.get(inboxKey) || [])
-            .filter(m => !!m.message)
-            .reverse()
-        const lastMsg = messages[0]
-        const name = getInboxName(inboxKey, settings, userId) || ''
-        const label = deleted ? texts.deleted : hide && texts.archived
-        const item = {
-            archived: !!hide,
-            deleted: !!deleted,
-            inboxKey,
-            isEmpty: messages.length === 0,
-            label,
-            message: lastMsg,
-            name: name || inboxKey,
-            ts: lastMessageTS || createdTS,
-            unreadCount: unread,
-            userId,
-        }
-        if (!query) return item
-        let matchIndex = name.toLowerCase().indexOf(query)
-        let matchType = 1000
-        if (matchIndex === -1) {
-            matchIndex = inboxKey.indexOf(query)
-            matchType = 2000
-        }
-        // find the latest message matching query
-        const queriedMsg = messages.find(m => {
-            let index = m.message.toLowerCase().indexOf(query)
-            if (matchIndex === -1) {
-                matchIndex = index
-                matchType = 3000
-            }
-            return index >= 0
-        })
-
-        // did not match name, key or any of the messages => filter out
-        if (matchIndex === -1) return
-
-        item.matchIndex = `${matchType}${matchIndex}`
-        item.message = queriedMsg || lastMsg
-        return item
-    }).filter(Boolean)
-
-    // sort by timestamp if query is empty, otherwise sort by match index
-    return arrSort(result, query ? 'matchIndex' : 'ts', true)
-}
-
-export default function InboxList() {
-    const [query, setQuery] = useState('')
-    // whether to include archived and deleted items
-    const [showAll, setShowAllOrg] = useState(false)
+const InboxList = React.memo(({ inboxKey }) => {
     const [loaded, setLoaded] = useState(false)
-    const _filterInboxes = useCallback(
-        (_query = query) => filterInboxes(_query, showAll),
-        [query, showAll],
-    )
-    const [items, setItems] = useRxSubject(rxInboxListChanged, () => _filterInboxes())
+    useMount(() => setTimeout(() => setLoaded(true), 300))
+    const [state, setState] = useRxState({}, s => ({
+        // merge with previous state
+        ...isObj(s) && s,
+        ...filterInboxes(
+            s?.query,
+            s?.showAll,
+        ),
+    }))
+    // every time rxInboxList changes trigger an update of inbox list items
+    useRxSubject(rxInboxListChanged, changed => !!changed && setState({}))
     const [showActions, setShowActions] = useState(null)
-    const setShowAll = showAll => {
-        rxExpanded.next(false)
-        _filterInboxes()
-        setShowAllOrg(showAll)
-    }
+    const {
+        items = [],
+        query = '',
+        showAll = false,
+        showAllDisabled = false,
+    } = state
 
-    useEffect(() => {
-        setTimeout(() => setLoaded(true), 300)
-    }, [])
+    const queryTrimmed = query
+        .trim()
+        .toLowerCase()
 
     return !loaded
         ? (
@@ -172,44 +105,215 @@ export default function InboxList() {
                 className: 'inbox-list',
                 style: {
                     // full height if no inbox is selected
-                    height: rxOpenInboxKey.value ? undefined : '100%'
+                    height: inboxKey
+                        ? undefined
+                        : '100%'
                 },
             }}>
                 <ToolsBar {...{
                     query,
                     onSeachChange: (_, { value }) => {
                         rxExpanded.value && rxExpanded.next(false)
-                        setQuery(value)
-                        // setItems(filterInboxes(value, showAll))
-                        setItems(_filterInboxes(value))
+                        setState({ query: value })
                     },
                     showAll,
-                    toggleShowAll: () => setShowAll(!showAll),
+                    showAllDisabled,
+                    toggleShowAll: () => {
+                        rxExpanded.next(false)
+                        setState({ showAll: !showAll })
+                    },
                 }} />
                 <div className='list'>
                     {items.map(item => (
                         <InboxListItem {...{
                             ...item,
-                            active: rxOpenInboxKey.value === item.inboxKey,
+                            active: inboxKey === item.inboxKey,
                             key: JSON.stringify(item),
-                            query,
+                            openInboxKey: inboxKey,
+                            query: queryTrimmed,
                             setShowActions,
                             showActions,
                         }} />
                     ))}
 
-                    {query && <Message className='empty-message' content={textsCap.noResultMsg} />}
+                    {queryTrimmed && (
+                        <Message {...{
+                            className: 'empty-message',
+                            content: textsCap.noResultMsg,
+                        }} />
+                    )}
                 </div>
             </div >
         )
+})
+export default InboxList
+
+export const getInboxName = (inboxKey, settings, userId) => {
+    if (!inboxKey) return null
+
+    settings ??= inboxSettings(inboxKey)
+    const receiverIds = inboxKey.split(',')
+    let name = receiverIds.includes(TROLLBOX)
+        ? textsCap.trollbox
+        : settings.name
+    if (receiverIds.includes(SUPPORT)) {
+        const otherUsers = receiverIds.filter(id =>
+            ![SUPPORT, userId].includes(id)
+        )
+        // for support member display name as follows: "Totem Support: UserID", otherwise only "Totem Support"
+        if (receiverIds.length <= 2 || otherUsers.length === 0) return textsCap.support
+
+        return `${textsCap.support}: ${otherUsers[0]}`
+    }
+    return name
 }
 
+const filterInboxes = (query = '', showAll = false) => {
+    query = query
+        .toLowerCase()
+        .trim()
+    const allSettings = inboxesSettings() || {}
+    let filteredKeys = Object
+        .keys(allSettings)
+    // check if any hidden or archived inbox available
+    const showAllDisabled = !filteredKeys.length
+        || !filteredKeys.find(key => {
+            const { deleted, hide } = allSettings[key] || {}
+            return deleted || hide
+        })
+    const result = { items: [], showAllDisabled }
+
+    if (!filteredKeys.length) return result
+
+    const allMessages = getMessages()
+    const showArchived = !showAllDisabled && showAll
+    console.log({ showAll, showArchived })
+    if (!showArchived) {
+        // ignore archived or deleted
+        filteredKeys = filteredKeys.filter(key => {
+            const { deleted, hide } = allSettings[key] || {}
+            return !hide && !deleted
+        })
+    }
+
+    if (query) filteredKeys = filteredKeys.sort()
+
+    const { id: userId } = getUser() || {}
+    const items = filteredKeys.map(inboxKey => {
+        const settings = allSettings[inboxKey] || {}
+        const {
+            createdTS,
+            deleted,
+            hide,
+            lastMessageTS,
+            unread = 0,
+        } = settings
+        const isArchived = hide || deleted
+        const typePrefix = !query
+            ? isArchived
+                ? 1
+                : 0
+            : showArchived && isArchived
+                ? 0
+                : 1
+        // exclude action messages (eg: group name change)
+        const messages = (allMessages.get(inboxKey) || [])
+            .filter(m => !!m.message)
+            .reverse() // latest first
+        const lastMsg = messages[0]
+        const name = getInboxName(
+            inboxKey,
+            settings,
+            userId,
+        ) || inboxKey
+        const label = deleted
+            ? textsCap.deleted
+            : hide && textsCap.archived
+        const item = {
+            archived: !!hide,
+            deleted: !!deleted,
+            inboxKey,
+            isEmpty: messages.length === 0,
+            label,
+            message: lastMsg,
+            name: name,
+            sort: `${typePrefix}>${lastMessageTS || createdTS}`,
+            unreadCount: unread,
+            userId,
+        }
+        // no filtering required
+        if (!query) return item
+
+        // highest priority if it matches the inbox name
+        let matchType = `${typePrefix}1`
+        let matchIndex = name
+            .toLowerCase()
+            .indexOf(query)
+        let matchedStr = name
+        let msgFound
+        if (matchIndex === -1) {
+            // find the latest message matching query
+            const {
+                index = -1,
+                message: msgFound, // message that matched the query
+            } = arrSort(
+                messages
+                    .map(item => {
+                        const { message = '' } = item || {}
+                        let index = message
+                            .toLowerCase()
+                            .indexOf(query)
+                        return { index, message: item }
+                    })
+                    .filter(({ index }) => index >= 0),
+                'index',
+            )[0] || {}
+            matchedStr = msgFound?.message
+            matchIndex = index
+            // medium priority if it matches any message
+            matchType = `${typePrefix}2`
+        }
+
+        // check group user IDs
+        if (matchIndex === -1 && name !== inboxKey) {
+            matchedStr = inboxKey
+            matchIndex = inboxKey.indexOf(query)
+            // lowest priority if it matches the user IDs
+            matchType = `${typePrefix}3`
+        }
+
+        // did not match name, key or any of the messages => filter out
+        if (matchIndex === -1) return
+
+        item.sort = [
+            matchType,
+            strFill(matchIndex, 6, 0, false),
+            matchedStr
+        ].join('')
+        item.message = msgFound || lastMsg
+        return item
+    }).filter(Boolean)
+
+    // sort by timestamp if query is empty, otherwise sort by match index
+    result.items = arrSort(
+        items,
+        'sort',
+        !query
+    )
+
+    return result
+}
 const getStatusColor = (online = {}, userIds = []) => {
     if (!online || !userIds.length) return OFFLINE
-    const numOnline = userIds.filter(id => online[id]).length
-    return !numOnline ? OFFLINE : (
-        numOnline === userIds.length ? ALL_ONLINE : SOME_ONLINE
-    )
+
+    const numOnline = userIds
+        .filter(id => online[id])
+        .length
+    return !numOnline
+        ? OFFLINE
+        : numOnline === userIds.length
+            ? ALL_ONLINE
+            : SOME_ONLINE
 }
 const InboxListItem = React.memo(({
     active,
@@ -220,15 +324,15 @@ const InboxListItem = React.memo(({
     label,
     message, // last or queried message
     name,
+    openInboxKey,
     query = '',
     unreadCount,
     userId,
     setShowActions,
     showActions,
 }) => {
-    query = query.trim().toLowerCase()
     const [userIds] = useState(
-        inboxKey
+        (inboxKey || '')
             .split(',')
             .filter(id =>
                 ![userId, TROLLBOX].includes(id)
@@ -253,31 +357,37 @@ const InboxListItem = React.memo(({
                 : 'user'
     const {
         id: msgId,
-        message: msgText,
+        message: msgText = '',
         senderId,
     } = message || {}
-    const qIndex = !msgText
-        ? -1
-        : msgText
-            .toLowerCase()
-            .indexOf(query)
+    const scrollToMsg = useCallback(e => {
+        e.stopPropagation()
+        jumpToMessage(inboxKey, msgId)
+    })
 
     return (
         <div {...{
-            className: 'list-item' + (active ? ' active' : ''),
+            className: className({
+                'list-item': true,
+                active,
+            }),
+            onMouseLeave: () => showActions && setShowActions(false),
             onClick: () => {
                 const isMobile = getLayout() === MOBILE
-                const isOpen = rxOpenInboxKey.value === inboxKey
+                const isOpen = openInboxKey === inboxKey
 
                 // inbox already open => toggle expanded
                 if (isMobile && isOpen) return rxExpanded.next(!rxExpanded.value)
-                const key = rxOpenInboxKey.value === inboxKey
-                    ? null
+
+                const key = openInboxKey === inboxKey
+                    ? null // close inbox
                     : inboxKey
+                // just makes sure an inbox storage is properly initiated
+                // needed for global chat and support
                 key && createInbox(key.split(','))
                 rxOpenInboxKey.next(key)
                 isMobile && rxExpanded.next(true)
-            }
+            },
         }}>
             <div className='left'>
                 <Label {...{
@@ -292,34 +402,48 @@ const InboxListItem = React.memo(({
                 }} />
             </div>
             <div className='content'>
-                <b>{textEllipsis(name, 30, 3, false) + ' '}</b>
+                {/* Header */}
+                <Highlight {...{
+                    query,
+                    style: { fontWeight: 'bold' },
+                    text: textEllipsis(
+                        name,
+                        30,
+                        3,
+                        false,
+                    ),
+                }} />
+
+                {/* Body */}
                 <i>
                     {label && (
                         <Label {...{
-                            color: archived ? 'grey' : 'red',
+                            color: archived
+                                ? 'grey'
+                                : 'red',
                             content: label,
                             key: label,
                             size: 'mini',
+                            style: { textTransform: 'lowercase' }
                         }} />
                     )}
                 </i>
-                {!senderId ? '' : (
+                {senderId && (
                     <div className='preview'>
-                        <b>{senderId === userId ? textsCap.you : senderId}</b>
-                        : {!query || qIndex === -1 ? msgText : (
-                            <span>
-                                {msgText.slice(0, qIndex)}
-                                <b {...{
-                                    onClick: e => e.stopPropagation() | jumpToMessage(inboxKey, msgId),
-                                    //e.preventDefault()
-                                    style: { background: 'yellow' },
-                                    title: textsCap.jumpToMsg,
-                                }}>
-                                    {msgText.slice(qIndex, qIndex + query.length)}
-                                </b>
-                                {msgText.slice(qIndex + query.length)}
-                            </span>
-                        )}
+                        <Highlight {...{
+                            Component: 'b',
+                            onClick: scrollToMsg,
+                            query,
+                            text: senderId === userId
+                                ? textsCap.you
+                                : senderId,
+                        }} />
+                        {': '}
+                        <Highlight {...{
+                            onClick: scrollToMsg,
+                            query,
+                            text: msgText,
+                        }} />
                     </div>
                 )}
             </div>
@@ -338,7 +462,48 @@ const InboxListItem = React.memo(({
     )
 })
 
-const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) => (
+const Highlight = ({
+    Component = 'span',
+    highlightStyle,
+    onClick,
+    query,
+    text,
+    ...props
+}) => {
+    const index = `${text || ''}`
+        .toLowerCase()
+        .indexOf(query)
+
+    return !query || index === -1
+        ? <Component {...props}>{text}</Component>
+        : (
+            <Component {...props}>
+                {/* <span> */}
+                {text.slice(0, index)}
+                <b {...{
+                    onClick,
+                    style: {
+                        background: 'yellow',
+                        color: 'grey',
+                        ...highlightStyle,
+                    },
+                    title: textsCap.jumpToMsg,
+                }}>
+                    {text.slice(index, index + query.length)}
+                </b>
+                {text.slice(index + query.length)}
+                {/* </span> */}
+            </Component>
+        )
+}
+
+const ToolsBar = React.memo(({
+    query,
+    onSeachChange,
+    showAll,
+    showAllDisabled,
+    toggleShowAll,
+}) => (
     <div className='tools'>
         <div className='actions'>
             <Button.Group {...{
@@ -348,7 +513,10 @@ const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) =
                         active: showAll,
                         basic: true,
                         compact: true,
-                        content: textsCap.showHidden,
+                        content: showAllDisabled || !showAll
+                            ? textsCap.archivedShow
+                            : textsCap.archivedHide,
+                        disabled: showAllDisabled,
                         icon: 'find',
                         key: 'all',
                         onClick: toggleShowAll,
@@ -369,12 +537,16 @@ const ToolsBar = React.memo(({ query, onSeachChange, showAll, toggleShowAll }) =
         </div>
         <div className='search'>
             <FormInput {...{
-                action: !query ? undefined : {
-                    // basic: true,
-                    icon: 'close',
-                    onClick: () => onSeachChange({}, { value: '' }),
-                },
-                icon: query ? undefined : 'search',
+                action: !query
+                    ? undefined
+                    : {
+                        // basic: true,
+                        icon: 'close',
+                        onClick: () => onSeachChange({}, { value: '' }),
+                    },
+                icon: query
+                    ? undefined
+                    : 'search',
                 name: 'keywords',
                 onChange: onSeachChange,
                 placeholder: textsCap.searchPlaceholder,
@@ -401,7 +573,10 @@ const InboxActions = React.memo(props => {
     const actions = [
         isGroup && !isTrollbox && !isSupport && {
             icon: 'pencil',
-            onClick: e => e.stopPropagation() | showEditNameForm(inboxKey, () => setShowActions(false)),
+            onClick: e => {
+                e.stopPropagation()
+                showEditNameForm(inboxKey, () => setShowActions(false))
+            },
             title: textsCap.changeGroupName,
         },
         !deleted && !archived && {
@@ -410,7 +585,7 @@ const InboxActions = React.memo(props => {
                 content: textsCap.archiveConversation,
                 onConfirm: () => {
                     inboxSettings(inboxKey, { hide: true })
-                    rxOpenInboxKey.next(null)
+                    rxOpenInboxKey.next()
                 },
                 size: 'mini'
             }),
@@ -433,17 +608,17 @@ const InboxActions = React.memo(props => {
                 isEmpty ? removeInbox(inboxKey) : confirm({
                     confirmButton: <Button negative content={textsCap.trash} />,
                     header: textsCap.removeConversation,
-                    onConfirm: () => removeInbox(inboxKey) | rxOpenInboxKey.next(null),
+                    onConfirm: () => removeInbox(inboxKey) | rxOpenInboxKey.next(),
                     size: 'mini',
                 })
             },
             title: textsCap.removeConversation
         },
     ].filter(Boolean)
-    return !actions.length ? '' : (
+    return !!actions.length && (
         <span className='actions'>
             {[
-                ...(active ? actions : []),
+                ...active && actions || [],
                 {
                     active,
                     icon: 'cog',

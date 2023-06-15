@@ -11,7 +11,7 @@ import {
 } from '../../utils/utils'
 import client, { rxIsConnected, rxIsInMaintenanceMode } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { subjectAsPromise } from '../../utils/reactHelper'
+import { subjectAsPromise } from '../../utils/reactjs'
 
 const [texts, textsCap] = translated({
     invalidCurency: 'invalid or unsupported currency supplied',

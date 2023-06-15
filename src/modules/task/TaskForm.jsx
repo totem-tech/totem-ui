@@ -7,10 +7,10 @@ import { BehaviorSubject } from 'rxjs'
 import PromisE from '../../utils/PromisE'
 import {
     copyRxSubject,
-    iUseState,
+    useRxState,
     subjectAsPromise,
     useRxSubject,
-} from '../../utils/reactHelper'
+} from '../../utils/reactjs'
 import {
     blockToDate,
     format,
@@ -184,8 +184,8 @@ export default function TaskForm(props) {
         taskId,
         values = {},
     } = props
-    const { allowEdit = true, deadline } =  values
-    const [state] = iUseState(getInitialState(props))
+    const { allowEdit = true, deadline } = values
+    const [state] = useRxState(getInitialState(props))
     const [deadlinePassed] = !taskId
         ? [false]
         : useRxSubject(
@@ -326,7 +326,7 @@ const getInitialState = props => rxState => {
         {
             hidden: true,
             name: inputNames.currency,
-            onChange: async (...args) => { 
+            onChange: async (...args) => {
                 const [_, values] = args
                 const { inputs } = rxState.value
                 const currency = values[inputNames.currency]
@@ -337,7 +337,7 @@ const getInitialState = props => rxState => {
                 bountyIn.decimals = parseInt(decimals || '') || 0
                 bountyIn.message = null
                 rxState.next({ inputs })
-                
+
                 // trigger re-validation
                 bountyIn.rxValue.next('')
                 bountyIn.rxValue.next(bounty)
@@ -411,7 +411,7 @@ const getInitialState = props => rxState => {
                 },
                 {
                     disabled: true,
-                    hidden: values => !values[inputNames.isMarket], 
+                    hidden: values => !values[inputNames.isMarket],
                     inline: true,
                     label: textsCap.orderTypeLabel,
                     name: inputNames.orderType,
@@ -477,7 +477,7 @@ const getInitialState = props => rxState => {
                 ? textsCap.formHeaderUpdate
                 : values[inputNames.isMarket]
                     ? textsCap.publishOrder
-                : textsCap.formHeader
+                    : textsCap.formHeader
         ),
         isUpdate,
         loading: {
@@ -583,9 +583,9 @@ const getInitialState = props => rxState => {
             Object.values(inputNames),
         )
         loading.onMount = false
-        rxState.next({...state})
+        rxState.next({ ...state })
     }
-    
+
     setTimeout(() => init().catch(console.error))
     return state
 }
@@ -599,7 +599,7 @@ const handleAssigneeValidate = (_, { value: assignee }) => {
     const partner = getPartner(assignee)
     const { userId } = partner || {}
     const userIdMissing = !!partner && !userId
-    
+
     return (!partner || !userId) && (
         <div>
             {userIdMissing
@@ -670,7 +670,7 @@ const handleBountyChangeCb = (props, rxState) => deferred((_, values) => {
     const { taskId, values: valuesOrg } = props
     const { amountXTX: bountyOriginal } = valuesOrg || {}
     const isMarket = values[inputNames.isMarket]
-    const bounty = values[inputNames.bounty]     
+    const bounty = values[inputNames.bounty]
     const currency = values[inputNames.currency]
     const valid = isValidNumber(bounty)
     bountyIn.loading = valid
@@ -812,12 +812,12 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
             message: {
                 content: !success && `${err} `, // error can be string or Error object.
                 header: success
-                    ? isUpdate 
+                    ? isUpdate
                         ? textsCap.updateSuccess
                         : textsCap.createSuccess
-                    : isUpdate 
+                    : isUpdate
                         ? textsCap.updateFailed
-                        :textsCap.createFailed,
+                        : textsCap.createFailed,
                 icon: true,
                 status: success
                     ? 'success'
@@ -961,7 +961,7 @@ const handleTagsAddCb = (rxValue, rxOptions) => (_, { value = '' }) => {
         .filter(Boolean)
         .join('')
         .toLowerCase()
-    
+
     newTag !== value && rxValue.next(
         rxValue
             .value

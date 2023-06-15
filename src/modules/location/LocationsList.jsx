@@ -4,7 +4,7 @@ import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { getAll, rxLocations } from './location'
 import LocationForm, { inputNames } from './LocationForm'
 

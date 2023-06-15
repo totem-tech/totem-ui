@@ -16,7 +16,7 @@ import {
 } from '../../services/modal'
 // utils
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
-import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
+import { iUseReducer, useRxSubject } from '../../utils/reactjs'
 import { blockToDate, format } from '../../utils/time'
 import { generateHash, isObj } from '../../utils/utils'
 // modules
@@ -54,7 +54,7 @@ export default function TaskDetails(props = {}) {
     const [blockNum] = useRxSubject(rxBlockNumber)
     const [inProgressIds = new Set()] = useRxSubject(rxInProgressIds)
     const [reload, setReload] = useState(0)
-    const [tableProps, setTableProps] = iUseReducer(null, { 
+    const [tableProps, setTableProps] = iUseReducer(null, {
         emptyMessage: {
             content: textsCap.loading,
             icon: true,
@@ -67,7 +67,7 @@ export default function TaskDetails(props = {}) {
 
     useEffect(() => {
         if (!task || !Object.keys(task).length) return () => { }
-        
+
         const _task = { ...task, taskId }
         const {
             approver,
@@ -196,7 +196,7 @@ export default function TaskDetails(props = {}) {
         ]
         const tableProps = {
             columns,
-            data: new Map([[taskId, {..._task, blockNum}]]),
+            data: new Map([[taskId, { ..._task, blockNum }]]),
             emptyMessage: undefined,
         }
         setTableProps(tableProps)
@@ -206,12 +206,12 @@ export default function TaskDetails(props = {}) {
         ? {
             content: `${error || ''}` || textsCap.loading,
             icon: true,
-            status: !!error 
+            status: !!error
                 ? statuses.ERROR
                 : statuses.LOADING
         }
         : undefined
-    
+
     return (
         <div>
             <DataTableVertical {...{
@@ -221,7 +221,7 @@ export default function TaskDetails(props = {}) {
 
             }} />
             {!!task && task.allowEdit && (
-                <div style={{ 
+                <div style={{
                     marginBottom: 14,
                     marginTop: -14,
                     padding: 1,

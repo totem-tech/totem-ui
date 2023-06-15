@@ -16,10 +16,10 @@ import { translated } from '../../../utils/languageHelper'
 import { keyring } from '../../../utils/polkadotHelper'
 import PromisE from '../../../utils/PromisE'
 import {
-    iUseReducer,
+	iUseReducer,
 	subjectAsPromise,
 	useRxSubject,
-} from '../../../utils/reactHelper'
+} from '../../../utils/reactjs'
 import {
 	deferred,
 	isFn,
@@ -40,10 +40,10 @@ import { rxPartners } from '../../partner/partner'
 import { generateTweet, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'
 
-let textsCap = {	    
-	continue: 'continue',    
+let textsCap = {
+	continue: 'continue',
 	errSubmitted: 'your claim has been received!',
-	errSubmittedDetails: 'make sure to remind your friends to submit their claim.', 
+	errSubmittedDetails: 'make sure to remind your friends to submit their claim.',
 	errEnded: 'Claim period has ended!',
 	errIneligible1: 'You are not eligible to claim KAPEX.',
 	errIneligible2: 'Only users who previously participated in the rewards campaign are eligible.',
@@ -51,21 +51,21 @@ let textsCap = {
 	errRewardId404: 'reason: missing reward identity',
 	errWarnBackup: 'please download a backup of your account to make sure you do not loose access to your rewards',
 	feedbackLabel: 'enter your feedback',
-	feedbackPlaceholder: 'please enter your feedback about the Totem.Live testnet application including any bug report (between 50 and 1000 characters)',  
-    header: 'claim KAPEX',
+	feedbackPlaceholder: 'please enter your feedback about the Totem.Live testnet application including any bug report (between 50 and 1000 characters)',
+	header: 'claim KAPEX',
 	// historyWarning: 'DO NOT remove history items before submitting your claim!',    
-    loading: 'loading...',
+	loading: 'loading...',
 	rewardIdLabel: 'your reward identity',
-	rewardIdLabelDetails: 'this is the identity you need to complete the tasks with',    
+	rewardIdLabelDetails: 'this is the identity you need to complete the tasks with',
 	successMsg0: 'claim submitted successfully',
 	successMsg1: 'we have received your claim and will go through them in due time.',
 	successMsg2: 'read terms and condition for KAPEX migration',
 	taskCompleted: 'Well done! You have completed this task.',
-    tasksListTitle: 'in order claim KAPEX you must complete the following tasks using your reward identity:',
+	tasksListTitle: 'in order claim KAPEX you must complete the following tasks using your reward identity:',
 	tweetedBtn: 'post a tweet',
 	tweetBtnDesc1: 'post a tweet to spread the word about the Totem KAPEX migration.',
 	tweetBtnDesc2: 'in order for you to be eligible for referral rewards users you have referred MUST also submit their claim and be accepted.',
-    tweetUrlLabel: 'Tweet ID',
+	tweetUrlLabel: 'Tweet ID',
 	tweetUrlPlaceholder: 'paste the URL of the Tweet',
 }
 textsCap = translated(textsCap, true)[1]
@@ -88,21 +88,21 @@ const steps = {
 }
 
 function ClaimKAPEXForm(props) {
-    const [status, setStatusOrg] = useState(() => ({ ...statusCached(), loading: false }))
-    const [initialState] = useState(() => getFormProps())
+	const [status, setStatusOrg] = useState(() => ({ ...statusCached(), loading: false }))
+	const [initialState] = useState(() => getFormProps())
 	const [state, setState] = iUseReducer(null, initialState)
 	// automatically update inputs after partners list changes.
 	// this is required to make sure 2nd task is automatically updated after adding a partner.
 	// otherwise, a manual reload of the component will be needed by the user.
 	useRxSubject(rxPartners, deferred(() => setState({
 		inputs: updateInputs(state.inputs)
-    }), 300))
-    // automatically update inputs after history list changes.
+	}), 300))
+	// automatically update inputs after history list changes.
 	useRxSubject(rxHistory, deferred(() => setState({
 		inputs: updateInputs(state.inputs)
-    }), 300))
-    const { values = {} } = state
-    let { eligible, loading, message, submitted } = status
+	}), 300))
+	const { values = {} } = state
+	let { eligible, loading, message, submitted } = status
 
 	const setStatus = useCallback((status) => {
 		const now = new Date()
@@ -114,9 +114,9 @@ function ClaimKAPEXForm(props) {
 				: !eligible
 					? `${textsCap.errIneligible1} ${textsCap.errIneligible2}`
 					: endDate && new Date(endDate) < now
-                        ? textsCap.errEnded
-                        : null
-		
+						? textsCap.errEnded
+						: null
+
 		return setStatusOrg({
 			...status,
 			message: !content
@@ -126,7 +126,7 @@ function ClaimKAPEXForm(props) {
 						? (
 							<div>
 								{textsCap.errSubmittedDetails + ' '}
-								
+
 								<a href='https://docs.totemaccounting.com/#/crowdloan/contribution-terms?id=totem-meccano-testnet-account-migration-amp-allocations'>
 									{textsCap.successMsg2}
 								</a>
@@ -141,7 +141,7 @@ function ClaimKAPEXForm(props) {
 				},
 		})
 	}, [])
-	
+
 	useEffect(() => {
 		let mounted = true
 		const init = async () => {
@@ -153,7 +153,7 @@ function ClaimKAPEXForm(props) {
 
 			// makes sure reward identity is saved to storage
 			await PromisE.delay(100)
-			
+
 			const rewardId = !!identities.get(rxUserIdentity.value)
 			// check if the reward identity exists in the identities module
 			if (!rewardId) throw `${textsCap.errIneligible1} ${textsCap.errRewardId404}`
@@ -182,9 +182,9 @@ function ClaimKAPEXForm(props) {
 			.catch(err => status.error = `${err}`)
 			.finally(() => {
 				status.loading = false
-				mounted && setStatus({...status})
+				mounted && setStatus({ ...status })
 			})
-		
+
 		return () => mounted = false
 	}, [setStatus])
 
@@ -197,9 +197,9 @@ function ClaimKAPEXForm(props) {
 
 	let submitText, handleSubmit
 	switch (values[inputNames.step]) {
-        case steps.tasks:
-            submitText = null
-            handleSubmit = null
+		case steps.tasks:
+			submitText = null
+			handleSubmit = null
 			// submitText = textsCap.continue
 			// onSubmit = () => {
 			// 	// continue to feedback step
@@ -261,7 +261,7 @@ function ClaimKAPEXForm(props) {
 			}
 			break
 	}
-	
+
 	return (
 		<FormBuilder {...{
 			...props,
@@ -332,30 +332,30 @@ const getFormProps = () => {
 			hidden: checkTweetStep,
 			placeholder: textsCap.tweetUrlPlaceholder,
 			icon: 'twitter',
-            iconPosition: 'left',
-            maxLength: 81,
-            minLength: 51,
+			iconPosition: 'left',
+			maxLength: 81,
+			minLength: 51,
 			name: inputNames.tweetUrl,
 			label: textsCap.tweetUrlLabel,
 			placeholder: textsCap.tweetUrlPlaceholder,
-            required: true,
-            rxValue: new BehaviorSubject(''),
+			required: true,
+			rxValue: new BehaviorSubject(''),
 			type: 'url',
-            validate: (_, { value }) => {
-                if (!value) return
+			validate: (_, { value }) => {
+				if (!value) return
 
 				const url = new URL(value)
 				const pathArr = url.pathname.split('/')
-                const userId = pathArr[1]
-                const tweetId = pathArr[3]
+				const userId = pathArr[1]
+				const tweetId = pathArr[3]
 				const invalid = url.hostname !== 'twitter.com'
 					|| pathArr[2] !== 'status'
-                    || !new RegExp(/^[0-9]{19}$/).test(tweetId)
-                if (!invalid && value.length > 51) {
-                    const { rxValue } = findInput(inputs, inputNames.tweetUrl) || {}
-                    const urlStr = `https://twitter.com/${userId}/status/${tweetId}`
-                    rxValue && setTimeout(() => rxValue.next(urlStr))
-                }
+					|| !new RegExp(/^[0-9]{19}$/).test(tweetId)
+				if (!invalid && value.length > 51) {
+					const { rxValue } = findInput(inputs, inputNames.tweetUrl) || {}
+					const urlStr = `https://twitter.com/${userId}/status/${tweetId}`
+					rxValue && setTimeout(() => rxValue.next(urlStr))
+				}
 				return invalid && textsCap.errInvalidTweetUrl
 			}
 		},
@@ -368,8 +368,8 @@ const getFormProps = () => {
 			placeholder: textsCap.feedbackPlaceholder,
 			required: true,
 			type: 'textarea',
-            validate: (_, { value }, values) => value.replaceAll(' ', '').includes(values[inputNames.tweetUrl])
-                || value.split(' ').length < 5, // require minimum 5 words
+			validate: (_, { value }, values) => value.replaceAll(' ', '').includes(values[inputNames.tweetUrl])
+				|| value.split(' ').length < 5, // require minimum 5 words
 		},
 		{
 			hidden: true,
@@ -388,8 +388,8 @@ const getFormProps = () => {
 	return {
 		inputs: updateInputs(inputs),
 		submitInProgress: false,
-        success: false,
-        values: {},
+		success: false,
+		values: {},
 	}
 }
 
@@ -432,10 +432,10 @@ const updateInputs = inputs => {
 		: curStep && curStep !== steps.tasks
 			? curStep
 			: steps.tweet
-    stepIn.rxValue.next(step)
+	stepIn.rxValue.next(step)
 
 	// Tweet button
-    const href = generateTweet()
+	const href = generateTweet()
 	tweetBtn.content = (
 		<div>
 			<div>

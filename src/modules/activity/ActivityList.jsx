@@ -11,7 +11,7 @@ import Text from '../../components/Text'
 import { translated } from '../../utils/languageHelper'
 import { confirm, showForm, showInfo } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 import { rxLayout, MOBILE } from '../../services/window'
 import { getSelected } from '../identity/identity'
 import { blocksToDuration } from '../timekeeping/timekeeping'
@@ -101,7 +101,7 @@ export default class ActivityList extends Component {
             columns: [
                 {
                     content: ({ description, name = textsCap.unnamed }) => !this.state.isMobile
-                        ? name 
+                        ? name
                         : (
                             <div>
                                 {name}
@@ -224,7 +224,7 @@ export default class ActivityList extends Component {
             projects: null,
             status: null,
         }
-        this.subscriptions.layout = rxLayout.subscribe(l => 
+        this.subscriptions.layout = rxLayout.subscribe(l =>
             this.setState({
                 isMobile: l === MOBILE,
             })

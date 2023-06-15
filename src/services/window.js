@@ -1,7 +1,7 @@
 import { BehaviorSubject } from 'rxjs'
 import { getUrlParam as _getUrlParam, isBool, isDefined, isFn } from '../utils/utils'
 import storage from '../utils/storageHelper'
-import { useRxSubject } from '../utils/reactHelper'
+import { useRxSubject } from '../utils/reactjs'
 
 const MODULE_KEY = 'window'
 let _forcedLayout = ''

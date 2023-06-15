@@ -31,7 +31,7 @@ import {
 import { translated } from '../utils/languageHelper'
 import { setToast } from './toast'
 import { rxOnline } from './window'
-import { subjectAsPromise } from '../utils/reactHelper'
+import { subjectAsPromise } from '../utils/reactjs'
 
 const textsCap = translated({
     amount: 'amount',

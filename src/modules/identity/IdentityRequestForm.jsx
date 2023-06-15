@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import { isFn, } from '../../utils/utils'
 import { statuses } from '../../components/Message'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
@@ -68,7 +68,7 @@ export default function IdentityRequestForm(props) {
                         text: textsCap.reason1,
                         value: reasons[1],
                     },
-                    { 
+                    {
                         text: textsCap.reason2,
                         value: reasons[2],
                     },

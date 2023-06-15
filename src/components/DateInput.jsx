@@ -11,7 +11,7 @@ import {
     objWithoutKeys,
     strFill,
 } from '../utils/utils'
-import { useRxSubject } from '../utils/reactHelper'
+import { useRxSubject } from '../utils/reactjs'
 import { MOBILE, rxLayout, useInverted } from '../services/window'
 import { translated } from '../utils/languageHelper'
 
@@ -63,7 +63,7 @@ const triggerChange = (e, props, valueArr, setValue) => {
     setValue(valueArr)
     if (!isFn(onChange) || valueArr.filter(Boolean).length < 3) return
 
-    onChange(e, {...props, value: dateStr, invalid})
+    onChange(e, { ...props, value: dateStr, invalid })
 }
 
 function DateInput(props) {
@@ -102,7 +102,7 @@ function DateInput(props) {
                 value = `${i === 0
                     ? value
                     : strFill(value, 2, '0')}`
-                return { text: value, value}
+                return { text: value, value }
             })
         ])
     )
@@ -127,7 +127,7 @@ function DateInput(props) {
             subscribed && subscribed.unsubscribe
         }
     }, [setValue])
-    const dayOptions1 = !yyyy || !mm 
+    const dayOptions1 = !yyyy || !mm
         ? dayOptions
         : dayOptions
             .map(option => {

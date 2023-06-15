@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect } from 'react'
-import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
+import { iUseReducer, useRxSubject } from '../../utils/reactjs'
 import { isArr } from '../../utils/utils'
 import DataTable from '../../components/DataTable'
 import { statuses } from '../../components/Message'
 import { translated } from '../../utils/languageHelper'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 import { rxSelected } from '../identity/identity'
 import {
     blocksToDuration,
@@ -57,7 +57,7 @@ const TimekeepingSummaryList = () => {
         searchable: false,
     })
     const [address] = useRxSubject(rxSelected)
-    const [preference] = useRxSubject(rxDurtionPreference, p => 
+    const [preference] = useRxSubject(rxDurtionPreference, p =>
         durationPreferences.blocks === p
             ? durationPreferences.hhmmss
             : p
@@ -77,7 +77,7 @@ const TimekeepingSummaryList = () => {
                 activityIds.map(() => address),
                 activityIds, // for multi query needs to be a 2D array of arguments
                 arrTotalBlocks => {
-                    setState({arrTotalBlocks})
+                    setState({ arrTotalBlocks })
                 },
                 true,
             )
@@ -87,7 +87,7 @@ const TimekeepingSummaryList = () => {
         return () => {
             mounted = false
             unsubscribe(subs)
-        } 
+        }
     }, [address])
 
     useEffect(() => {
@@ -122,7 +122,7 @@ const TimekeepingSummaryList = () => {
                     },
                 })
             })
-        
+
     }, [arrTotalBlocks, preference])
 
     return <DataTable {...state} />

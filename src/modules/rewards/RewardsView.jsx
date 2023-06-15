@@ -1,7 +1,7 @@
 import React from 'react'
 import Message, { statuses } from '../../components/Message'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { rxIsLoggedIn } from '../../utils/chatClient'
 import { rxIsRegistered } from '../../utils/chatClient'
 import ReferralCard from './ReferralCard'

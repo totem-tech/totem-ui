@@ -1,6 +1,6 @@
 import React from 'react'
 import { MOBILE, rxLayout } from '../services/window'
-import { useRxSubject } from '../utils/reactHelper'
+import { useRxSubject } from '../utils/reactjs'
 import {
     className,
     isFn,
@@ -25,7 +25,7 @@ const DataTableVertical = (props) => {
         && !x.hidden
         && !columnsHidden.includes(x.name || x.key)
     )
-    
+
     const vData = columns.map(column => {
         const { content, key, title } = column
         const isAMap = isMap(items)
@@ -56,7 +56,7 @@ const DataTableVertical = (props) => {
             : max,
         0,
     )
-    
+
     const padding = isMobile
         ? 15
         : 25
@@ -86,7 +86,7 @@ const DataTableVertical = (props) => {
                 ...columns[0].style,
             },
         }))
-        
+
     return (
         <DataTable {...{
             perPage: columns.length,

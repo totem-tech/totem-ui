@@ -1,13 +1,22 @@
 import React, { isValidElement } from 'react'
 import PropTypes from 'prop-types'
+import { useRxSubject } from '../utils/reactjs'
 import {
-    isAddress, isArr, isArrLike, isBool, isHex, isObj, isStr, isValidNumber, strFill, textEllipsis
+    isAddress,
+    isArr,
+    isArrLike,
+    isBool,
+    isHex,
+    isObj,
+    isStr,
+    isValidNumber,
+    strFill,
+    textEllipsis,
 } from '../utils/utils'
-import LabelCopy from './LabelCopy'
-import { useRxSubject } from '../utils/reactHelper'
 import { MOBILE, rxLayout } from '../services/window'
+import LabelCopy from './LabelCopy'
 
-export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {
+export function toJSONView({ asEl, data, isMobile = rxLayout === MOBILE }) {
     const [spaces, maxLength, size] = isMobile
         ? [2, 11, 'mini']
         : [4, 17, 'tiny']
@@ -29,7 +38,7 @@ export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {
                 const id = `${elementKeyPrefix}${strFill(elements.size + 1, 6, '_')}`
                 elements.set(id, value)
                 dataX[key] = id
-                return 
+                return
             }
             if (isArr(value) || isArrLike(value) || isObj(value)) {
                 const res = toJSONView({
@@ -55,9 +64,9 @@ export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {
             }
             dataX[key] = value
         })
-    
+
     if (!asEl) return [dataX, ellipsed, elements]
-    
+
     const str = !isStr(dataX)
         ? JSON.stringify(dataX, null, spaces)
         : dataX
@@ -112,8 +121,8 @@ export function toJSONView({asEl, data, isMobile = rxLayout === MOBILE}) {
 
 const JSONView = React.memo(({ asEl, data }) => {
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    
-    return toJSONView({asEl, data, isMobile})
+
+    return toJSONView({ asEl, data, isMobile })
 })
 JSONView.propTypes = {
     // @asEl whether to return as a plain text or element

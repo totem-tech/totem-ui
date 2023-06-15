@@ -8,7 +8,7 @@ import DataTable from '../../components/DataTable'
 import { Invertible } from '../../components/Invertible'
 import TimeSince from '../../components/TimeSince'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import client from '../../utils/chatClient'
 import Converter from './Converter'
 import Currency from './Currency'
@@ -105,20 +105,20 @@ export default function CurrencyList(props) {
                         'currencyPricesByDate',
                     )
                 }
-                    
+
                 arrSort(prices || [], 'marketCapUSD', true)
                     .map((p, rank) => {
                         const { currencyId, marketCapUSD, ratioOfExchange, source } = p
                         const currency = allCurrencies.get(currencyId)
                         if (!currency) return
-                        
+
                         currency.source = source || ''
                         currency.rank = marketCapUSD === -1 ? '' : ++rank
                         currency._rankSort = rank
                         currency.ratioOfExchange = ratioOfExchange
                         currency.priceUpdatedAt = date
                         currencies.set(currencyId, { ...currency })
-                        
+
                         if (currency.currency !== unitDisplayed) return
                         unitDisplayedROE = ratioOfExchange
                     })
@@ -132,8 +132,8 @@ export default function CurrencyList(props) {
             }
 
             const data = Array.from(currencies)
-            .map(getRowData( unitDisplayed, unitDisplayedROE ))
-            
+                .map(getRowData(unitDisplayed, unitDisplayedROE))
+
             mounted && setTableData(data)
         }
         fetchData()
@@ -209,14 +209,14 @@ const getRowData = (unitDisplayed, unitDisplayedROE) => ([_, currency]) => {
                 trigger: icon,
             }} />
         )
-    
+
     // display the price of one unit
     const _priceEl = (
         <Currency {...{
             title: null,
             unit,
             unitROE: ratioOfExchange,
-            unitDisplayed, 
+            unitDisplayed,
             unitDisplayedROE,
             value: 1,
         }} />

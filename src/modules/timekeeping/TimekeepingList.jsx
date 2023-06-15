@@ -15,7 +15,7 @@ import {
 import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 import { MOBILE, rxLayout } from '../../services/window'
 import identities, {
     get as getIdentity,
@@ -37,7 +37,7 @@ import {
 } from './timekeeping'
 import TimekeepingDetailsForm from './TimekeepingDetails'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
-import { subjectAsPromise } from '../../utils/reactHelper'
+import { subjectAsPromise } from '../../utils/reactjs'
 
 const toBeImplemented = () => alert('To be implemented')
 
@@ -69,7 +69,7 @@ let textsCap = {
     unarchive: 'unarchive',
     unknown: 'unknown',
     worker: 'worker',
-    
+
     approveRecord: 'approve record',
     archiveRecord: 'archive record',
     banUser: 'ban user',
@@ -368,7 +368,7 @@ class TimeKeepingList extends Component {
         const isSubmitted = submit_status === statuses.submit
         const inProgress = inProgressIds.includes(hash)
         // const isOwner = projectOwnerAddress === getSelected().address
-        const isBtnInprogress = title =>  this.inProgressBtns.get(hash) === title
+        const isBtnInprogress = title => this.inProgressBtns.get(hash) === title
         const buttons = [
             {
                 icon: 'eye',
@@ -484,7 +484,7 @@ class TimeKeepingList extends Component {
 
         records = records.map((record, i) => {
             if (!record) return
-            
+
             const {
                 end_block,
                 project_hash: projectHash,
@@ -494,7 +494,7 @@ class TimeKeepingList extends Component {
             } = record
             const recordId = recordIds[i]
             const { name, ownerAddress } = projects.get(projectHash) || {}
-            
+
             return [
                 recordId,
                 {
@@ -603,7 +603,7 @@ class TimeKeepingList extends Component {
     }
 
     handleBan = (selectedHashes) => {
-        
+
     }
 
     handleEdit = (record, recordId, title) => {
@@ -687,7 +687,7 @@ class TimeKeepingList extends Component {
 
     setBtnInprogress = (recordId, title) => {
         const ids = rxInProgressIds.value
-        if (title) { 
+        if (title) {
             // add entry
             this.inProgressBtns.set(recordId, title)
             rxInProgressIds.next(ids.concat(recordId))
@@ -709,7 +709,7 @@ class TimeKeepingList extends Component {
             rxInProgressIds,
         })
     }
-    
+
     updateTrigger = deferred(() => rxTrigger.next(uuid.v1()), 150)
 
     render() {

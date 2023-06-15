@@ -15,7 +15,7 @@ import {
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import storage, { backup } from '../../utils/storageHelper'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import {
 	copyToClipboard,
 	deferred,
@@ -162,7 +162,7 @@ export default function BackupForm(props) {
 			const isDownload = step === steps.download
 			let downloadData = isDownload && backup.download(
 				filename,
-				data => skipPassword 
+				data => skipPassword
 					? data
 					: encryptBackup(data, values[inputNames.password]),
 			)
@@ -212,10 +212,10 @@ export default function BackupForm(props) {
 						findInput(inputs, inputNames.step)
 							.rxValue
 							.next(steps.verified)
-						
+
 						// update getting started active step if necessary
 						!!rxIsRegistered.value && saveActiveStep(stepIndexes.backup + 1)
-						
+
 						const message = {
 							content: (
 								<div>
@@ -240,7 +240,7 @@ export default function BackupForm(props) {
 						// additionally show toast in case form message is out of sight (ie: on mobile)
 						setToast(message, 5000, 'BackupForm')
 						isFn(onSubmit) && onSubmit(true, values)
-						
+
 						if (redirectTo) {
 							window.location.href = redirectTo
 						} else if (reload) {
@@ -278,7 +278,7 @@ export default function BackupForm(props) {
 						const pwIn = findInput(inputs, inputNames.password)
 						const show = pwIn.action.icon === 'eye'
 						pwIn.action.icon = `eye${show ? ' slash' : ''}`
-						pwIn.type = show 
+						pwIn.type = show
 							? 'text'
 							: 'password'
 						rxState.next({ inputs })
@@ -344,7 +344,7 @@ export default function BackupForm(props) {
 				onChange: (_, values) => {
 					const pwConfirm = values[inputNames.passwordConfirm]
 					if (!pwConfirm) return
-					
+
 					const pwConfirmIn = findInput(inputs, inputNames.passwordConfirm)
 					// first set a placeholder password, otherwise, RxJS won't register it as a change
 					pwConfirmIn.rxValue.next('-'.repeat(pwConfirm.length))
@@ -363,7 +363,7 @@ export default function BackupForm(props) {
 				hidden: values => values[inputNames.step] !== steps.confirmed
 					|| values[inputNames.skipPassword] === true
 					|| (rxPassword.value && rxPassword.value === rxPasswordGen.value),
-					// || `${values[inputNames.password] || ''}`.length < 8
+				// || `${values[inputNames.password] || ''}`.length < 8
 				label: textsCap.passwordConfirmLabel,
 				name: inputNames.passwordConfirm,
 				// onPaste: (e, d) => {
@@ -379,7 +379,7 @@ export default function BackupForm(props) {
 					const isConfirmed = values[inputNames.step] === steps.confirmed
 					const pw = `${values[inputNames.password] || ''}`
 					const pwConf = values[inputNames.passwordConfirm]
-					
+
 					return isConfirmed
 						&& !!pwConf
 						&& pw !== pwConf
@@ -499,7 +499,7 @@ export default function BackupForm(props) {
 				try {
 					redirectTo = new URL(redirectTo)
 					window.location.href = redirectTo.href
-				} catch (err) {}
+				} catch (err) { }
 			},
 			onSubmit: null, // trigger onSubmit locally
 			values: { ...props.values },
@@ -549,7 +549,7 @@ export default function BackupForm(props) {
 									</ButtonDelayed>
 								),
 								content: (
-									<div style={{whiteSpace: 'pre-line'}}>
+									<div style={{ whiteSpace: 'pre-line' }}>
 										<Text {...{
 											color: 'red',
 											invertedColor: 'orange',
@@ -577,7 +577,7 @@ export default function BackupForm(props) {
 										className: 'header',
 										style: {
 											// overrides the background color defined in the <Text /> component
-											background: undefined, 
+											background: undefined,
 											// overrides the text capitalization on modal header
 											textTransform: 'initial',
 										},
@@ -592,7 +592,7 @@ export default function BackupForm(props) {
 							})
 						}
 						break
-					case steps.download: 
+					case steps.download:
 						// download and verify
 						btn.content = textsCap.downloadAgain
 						btn.icon = 'download'
@@ -639,14 +639,14 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, c
 	const warnIdentities = identity.search(query)
 	const warnLocations = location.search(query)
 	const warnPartners = partner.search(query)
-	const warnUserCreds =  new Map(!!id && !fileBackupTS ? [[]]: [])
+	const warnUserCreds = new Map(!!id && !fileBackupTS ? [[]] : [])
 	const total = warnContacts.size
 		+ warnIdentities.size
 		+ warnLocations.size
 		+ warnPartners.size
 		+ warnUserCreds.size
 	// all backed up
-	if (total === 0) return 
+	if (total === 0) return
 
 	// set getting started step to backup
 	saveActiveStep(stepIndexes.backup)
@@ -664,7 +664,7 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, c
 		{
 			critical: true,
 			hideCount: true,
-			map: warnUserCreds, 
+			map: warnUserCreds,
 			style: styleCritical,
 			subtitle: textsCap.warnCriticalA,
 			title: textsCap.userCredentials,
@@ -677,15 +677,15 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, c
 			title: textsCap.identities,
 		},
 		{
-			map: warnPartners, 
+			map: warnPartners,
 			title: textsCap.partners,
 		},
 		{
-			map: warnContacts, 
+			map: warnContacts,
 			title: textsCap.contacts,
 		},
 		{
-			map: warnLocations, 
+			map: warnLocations,
 			title: textsCap.locations,
 		},
 	]
@@ -706,7 +706,7 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, c
 			<p>
 				{textsCap.warnBackupContent2}
 			</p>
-			<ul style={{fontSize: 15}}>
+			<ul style={{ fontSize: 15 }}>
 				{items.map((item, i) => {
 					const {
 						critical,
@@ -743,18 +743,18 @@ BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, c
 		size: 'tiny',
 	})
 	return confirmed && new Promise(resolve => {
-				showForm(BackupForm, {
-					closeOnSubmit,
-					onClose: () => resolve(false),
-					onSubmit: ok => resolve(!!ok),
-					// prevent reloading page?
-					reload: allowPageReload,
-					values: { confirmed: 'yes' },
-				})
-			})
+		showForm(BackupForm, {
+			closeOnSubmit,
+			onClose: () => resolve(false),
+			onSubmit: ok => resolve(!!ok),
+			// prevent reloading page?
+			reload: allowPageReload,
+			values: { confirmed: 'yes' },
+		})
+	})
 }
 
-setTimeout(() => { 
+setTimeout(() => {
 	// prevent check if user is not registered
 	if (!(getUser() || {}).id) return
 

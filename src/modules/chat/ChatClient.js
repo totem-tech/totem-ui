@@ -1,3 +1,4 @@
+// Deprecated
 import * as chatClient from '../../utils/chatClient'
 
 module.exports = chatClient
@@ -6,7 +7,7 @@ module.exports = chatClient
 // import { isFn, isObj, isStr, objWithoutKeys } from '../../utils/utils'
 // import { translated } from '../../utils/languageHelper'
 // import storage from '../../services/storage'
-// import { subjectAsPromise } from '../../utils/reactHelper'
+// import { subjectAsPromise } from '../../utils/reactjs'
 
 // let textsCap = {}
 // setTimeout(() => {

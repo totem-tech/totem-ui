@@ -1,6 +1,6 @@
 import React from 'react'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { confirm } from '../../services/modal'
 import { rxContacts } from './contact'
 import { ContactList } from './ContactList'

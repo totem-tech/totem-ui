@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { useRxSubject } from '../utils/reactHelper'
+import { useRxSubject } from '../utils/reactjs'
 
 /**
  * @name    RxSubjectView

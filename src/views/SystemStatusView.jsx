@@ -5,8 +5,12 @@ import FormInput from '../components/FormInput'
 import { getConnection, query } from '../services/blockchain'
 import { translated } from '../utils/languageHelper'
 import { confirm } from '../services/modal'
-import { iUseReducer, useRxSubject } from '../utils/reactHelper'
-import client, { getUser, rxIsConnected, rxIsInMaintenanceMode } from '../utils/chatClient'
+import { iUseReducer, useRxSubject } from '../utils/reactjs'
+import client, {
+	getUser,
+	rxIsConnected,
+	rxIsInMaintenanceMode,
+} from '../utils/chatClient'
 
 const [texts, textsCap] = translated({
 	activateMaintenanceMode: 'activate maintenance mode',
@@ -75,7 +79,10 @@ export default function SystemStatus() {
 			}, () => setState({ isConnected: false, nodeUrl: '' }))
 
 		Object.keys(x).forEach(async (key) =>
-			unsubFnArr[key] = await query(x[key], value => mounted && setState(objCreate(key, value)))
+			unsubFnArr[key] = await query(
+				x[key],
+				value => mounted && setState(objCreate([key], [value]))
+			)
 		)
 
 		return () => {

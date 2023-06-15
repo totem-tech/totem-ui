@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Icon } from 'semantic-ui-react'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { format } from '../../utils/time'
 import {
     clearClutter,
@@ -226,7 +226,7 @@ export default function HistoryList(props) {
     // Set initial table data.
     // This is required because rxHistory is a Subject instance (due to cache being disabled)
     useEffect(() => setData(getAll()), [])
-        
+
     const { topLeftMenu } = state
     const btnClearAll = topLeftMenu.find(x => x.name === 'clear-all')
     btnClearAll.disabled = data.size === 0

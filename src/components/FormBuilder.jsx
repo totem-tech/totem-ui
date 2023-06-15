@@ -102,7 +102,7 @@ class FormBuilder extends Component {
 			data,
 			{
 				...this.state.rxValues.value,
-					// this is required because onChange() is trigger after validate().
+				// this is required because onChange() is trigger after validate().
 				// otherwise, current input will have the old value or last character missing for text/number inputs
 				[name]: data.value,
 			},
@@ -129,7 +129,7 @@ class FormBuilder extends Component {
 						values,
 						parentIndex || index,
 					)
-				  )
+				)
 				: undefined,
 			key: key || name,
 			name: `${inputNamePrefix}_${name}`,
@@ -388,7 +388,7 @@ class FormBuilder extends Component {
 					: submitInProgress || success || submitText === null
 						? textsCap.close
 						: textsCap.cancel
-			)					
+			)
 			closeProps.negative = isDefined(closeProps.negative)
 				? closeProps.negative
 				: true
@@ -457,8 +457,8 @@ class FormBuilder extends Component {
 						<Header.Content style={styles.header}>
 							{headerIcon && (
 								isValidElement(headerIcon)
-								? headerIcon
-								: <Icon name={headerIcon} size='large' />
+									? headerIcon
+									: <Icon name={headerIcon} size='large' />
 							)}
 							{header}
 						</Header.Content>
@@ -794,7 +794,7 @@ export const findInput = (inputs, name) => {
 
 		const isGroup = `${type}`.toLowerCase() === 'group'
 		if (!isGroup) continue
-		
+
 		input = findInput(childInputs, name)
 		if (input) return input
 	}

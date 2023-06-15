@@ -7,7 +7,7 @@ import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { Invertible } from '../../components/Invertible'
 import { randomHex } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
-import { unsubscribe, useRxSubject } from '../../utils/reactHelper'
+import { unsubscribe, useRxSubject } from '../../utils/reactjs'
 import { setToast } from '../../services/toast'
 import { convertTo, rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
@@ -56,7 +56,7 @@ const lineIdPrefix = 'lineId-'
 
 export default function AssetsForm(props) {
     const [portfolioInputs] = useRxSubject(rxPortfolioInputs)
-    
+
     const [state] = useState(() => {
         let formValues = {}
         const isMobile = rxLayout.value === MOBILE
@@ -90,7 +90,7 @@ export default function AssetsForm(props) {
             type: 'button',
         }
         const getEmptyField = () => ({
-            name: 'empty-'+ randomHex(),
+            name: 'empty-' + randomHex(),
             type: 'hidden',
             width: 4,
         })
@@ -162,7 +162,7 @@ export default function AssetsForm(props) {
                             type: 'html',
                         },
                         {
-                        content: (
+                            content: (
                                 <AssetConverterForm {...{
                                     El: 'div',
                                     formProps: { className: 'total-form', test: 'test' },
@@ -293,7 +293,7 @@ const processLines = (portFolioInuts, removeLineId) => {
         ? portFolioInuts
         : portFolioInuts.filter(({ name }) =>
             name !== getGroupName(removeLineId)
-        )    
+        )
     return inputs
 }
 function newPortfolioGroup() {

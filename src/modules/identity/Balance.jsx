@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { isArr, isMap, isValidNumber } from '../../utils/utils'
 import { Reveal } from '../../components/buttons'
 // services
 import { query } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 // modules
 import Currency from '../currency/Currency'
 import { rxIdentities } from './identity'
@@ -91,18 +91,18 @@ export const Balance = props => {
 			),
 			style,
 			suffix: (
-					<Currency {...{
-						prefix: (
-							<span>
-								{lockSeparator}
-								<b>{textsCap.locked}: </b>
-							</span>
-						),
-						suffix: detailsSuffix,
-						value: totalLocked,
-						unitDisplayed,
-					}} />
-				),
+				<Currency {...{
+					prefix: (
+						<span>
+							{lockSeparator}
+							<b>{textsCap.locked}: </b>
+						</span>
+					),
+					suffix: detailsSuffix,
+					value: totalLocked,
+					unitDisplayed,
+				}} />
+			),
 			value: balance + totalLocked,
 		}} />
 	)
@@ -152,7 +152,7 @@ export const useBalance = address => {
 	const [balance, setBalance] = useState()
 
 	useEffect(() => {
-		if (!address) return () => {}
+		if (!address) return () => { }
 		let mounted = true
 		let subscriptions = {}
 		// subscribe to address balance change
@@ -165,7 +165,7 @@ export const useBalance = address => {
 		}
 
 		// ignore errors
-		subscribe().catch(() => {})
+		subscribe().catch(() => { })
 		return () => {
 			mounted = false
 			unsubscribe(subscriptions)
@@ -193,7 +193,7 @@ export const userLocks = address => {
 	const [locks, setLocks] = useState([])
 
 	useEffect(() => {
-		if (!address) return () => {}
+		if (!address) return () => { }
 		let mounted = true
 		let subscriptions = {}
 		const subscribe = async () => {
@@ -205,7 +205,7 @@ export const userLocks = address => {
 		}
 
 		// ignore error
-		subscribe().catch(() => {})
+		subscribe().catch(() => { })
 
 		return () => {
 			mounted = false
@@ -232,7 +232,7 @@ setTimeout(() => {
 		if (unchanged) return
 
 		unsubscribe(sub)
-		
+
 		const updateCache = subject => (result = []) => {
 			const map = new Map(
 				result.map((value, i) => [

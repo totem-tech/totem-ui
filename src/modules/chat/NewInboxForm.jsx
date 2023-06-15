@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import FormBuilder, { fillValues, findInput,  } from '../../components/FormBuilder'
+import FormBuilder, { fillValues, findInput, } from '../../components/FormBuilder'
 import { isFn, arrSort, textEllipsis, isArr, isStr, arrUnique, escapeStringRegexp } from '../../utils/utils'
 // services
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import {
     createInbox,
     getInboxKey,
@@ -46,10 +46,10 @@ export default function NewInboxForm(props) {
         const params = [
             'form=chat',
             ...Object.keys(values)
-            .map(key => `${key}=${escapeStringRegexp(values[key])}`)
+                .map(key => `${key}=${escapeStringRegexp(values[key])}`)
         ].join('&')
         const redirectTo = `${location.protocol}//${location.host}?${params}`
-        
+
         showForm(RegistrationForm, { values: { redirectTo, silent: true } })
         return ''
     }
@@ -83,12 +83,12 @@ const getRxInputs = props => {
     let { userids, userIds } = values
     userIds = userIds || userids
     values.userIds = isArr(userIds)
-        ? userIds 
+        ? userIds
         : `${userIds || ''}`
-            .split(',') 
+            .split(',')
             .map(x => x.trim())
             .filter(Boolean)
-    
+
     const allInboxKeys = arrUnique([...Object.keys(inboxesSettings()), ...values.userIds])
     const userIdOptions = allInboxKeys.map(key => {
         const userIds = key.split(',')
@@ -158,14 +158,17 @@ const handleSubmit = (setSuccess, onSubmit) => async (_, values) => {
             SUPPORT,
             !roles.includes(SUPPORT)
                 ? null
-                : userIds.filter(id =>
-                    ![SUPPORT, ownId].includes(id)
-                )[0]
+                : userIds
+                    .filter(id =>
+                        ![SUPPORT, ownId].includes(id)
+                    )[0]
         ].filter(Boolean)
     }
-    const name = userIds.length > 1 ? values[inputNames.name] : null
+    const name = userIds.length > 1
+        ? values[inputNames.name]
+        : null
     const inboxKey = createInbox(userIds, name, true)
-    rxOpenInboxKey.next(inboxKey)
+    inboxKey && rxOpenInboxKey.next(inboxKey)
     setSuccess(true)
     isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
 }

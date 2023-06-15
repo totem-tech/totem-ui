@@ -3,7 +3,7 @@ import { translated } from '../../utils/languageHelper'
 import { arrReverse } from '../../utils/utils'
 import { ButtonGroup } from '../../components/buttons'
 import { confirm } from '../../services/modal'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { MOBILE, rxLayout } from '../../services/window'
 import {
 	remove,
@@ -27,7 +27,7 @@ export default function NotificationView() {
 		// on mobile view scroll to bottom (first item) of the list
 		const shouldScroll = visible
 			&& rxLayout.value === MOBILE
-			// && !window._notification_scroll_done
+		// && !window._notification_scroll_done
 		if (shouldScroll) {
 			setTimeout(() => {
 				const containerEl = document.querySelector('.notification-list')

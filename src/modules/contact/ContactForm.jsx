@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { translated } from '../../utils/languageHelper'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import storage from '../../utils/storageHelper'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import FormInput from '../../components/FormInput'
@@ -95,7 +95,7 @@ export default function ContactForm(props) {
 				title: c.name,
 			}))
 			.filter(x => !!x.value)
-		const getSubmitText = () => submitText || submitText === null 
+		const getSubmitText = () => submitText || submitText === null
 			? submitText
 			: !!rxIsUpdate.value
 				? textsCap.update
@@ -194,7 +194,7 @@ export default function ContactForm(props) {
 				name: inputNames.email,
 				placeholder: textsCap.emailPlaceholder,
 				required: true,
-				rxValue: new BehaviorSubject(),				
+				rxValue: new BehaviorSubject(),
 			},
 			{
 				name: inputNames.phoneGroup,
@@ -271,10 +271,10 @@ export default function ContactForm(props) {
 			onChange: deferred((...args) => {
 				const [e, values, invalid] = args
 				if (invalid) return
-				
+
 				isFn(onChange) && onChange(...args)
 				if (!rxAutoSave.value) return
-				
+
 				const id = values[inputNames.id]
 				const saved = !!save(values, false, true)
 				if (!saved) return
@@ -293,7 +293,7 @@ export default function ContactForm(props) {
 					header: textsCap.headerUpdate,
 					message: !rxAutoSave.value
 						? undefined
-						: { 
+						: {
 							header: textsCap.saved,
 							status: statuses.SUCCESS,
 						},

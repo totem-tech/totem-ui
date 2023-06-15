@@ -4,7 +4,7 @@ import { Icon } from 'semantic-ui-react'
 import { deferred } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import { convertTo, rxSelected } from './currency'
 import { MOBILE, rxLayout } from '../../services/window'
 import CurrencyDropDown from './CurrencyDropdown'
@@ -112,28 +112,28 @@ const Converter = props => {
         // pre-fill values if supplied in the props
         fillValues(state.inputs, props.values)
 
-        
-            const fromIn = findInput(state.inputs, inputNames.from)
-            const toIn = findInput(state.inputs, inputNames.to)
-            fromIn.inlineLabel = (
-                <CurrencyDropDown {...{ 
-                    autoHideName: true,
-                    onChange: updateToAmount,
-                    rxValue: rxFrom,
-                    secondary: true,
-                }} />
-            )
-            toIn.inlineLabel = (
-                <CurrencyDropDown {...{ 
-                    autoHideName: true,
-                    onChange: updateToAmount,
-                    rxValue: rxTo,
-                    secondary: true,
-                }} />
-            )
+
+        const fromIn = findInput(state.inputs, inputNames.from)
+        const toIn = findInput(state.inputs, inputNames.to)
+        fromIn.inlineLabel = (
+            <CurrencyDropDown {...{
+                autoHideName: true,
+                onChange: updateToAmount,
+                rxValue: rxFrom,
+                secondary: true,
+            }} />
+        )
+        toIn.inlineLabel = (
+            <CurrencyDropDown {...{
+                autoHideName: true,
+                onChange: updateToAmount,
+                rxValue: rxTo,
+                secondary: true,
+            }} />
+        )
         return state
     })
-    
+
 
     return <FormBuilder {...{ ...props, ...state }} />
 }

@@ -13,7 +13,7 @@ import {
     isObj,
     objWithoutKeys,
 } from '../utils/utils'
-import { useRxSubject } from '../utils/reactHelper'
+import { useRxSubject } from '../utils/reactjs'
 
 function CheckboxGroup(props) {
     const {
@@ -107,9 +107,9 @@ const getCheckboxes = (props, value, setValue) => {
                         children: option.label,
                         className: className({
                             'checkbox-group-item': true,
-                            checked, 
+                            checked,
                         }),
-                        htmlFor:  option.id
+                        htmlFor: option.id
                     }} />
                 ),
                 name: name + (allowMultiple ? i : ''),
@@ -126,7 +126,7 @@ const getCheckboxes = (props, value, setValue) => {
                             : hasValue(value)
                                 ? [value]
                                 : []
-                        
+
                         // add/remove from values
                         checked
                             ? value.push(val)

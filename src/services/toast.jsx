@@ -8,7 +8,7 @@ import { deferred, isObj, isStr } from '../utils/utils'
 import Message from '../components/Message'
 import { rxModals } from './modal'
 import { rxSidebarState } from './sidebar'
-import { unsubscribe, useRxSubject } from '../utils/reactHelper'
+import { unsubscribe, useRxSubject } from '../utils/reactjs'
 import { MOBILE, rxLayout } from './window'
 import DataStorage from '../utils/DataStorage'
 
@@ -98,6 +98,7 @@ export const setToast = (message, duration, id) => {
 const styles = {
     message: {
         margin: '5px 0',
+        opacity: 1,
         paddingRight: 35,// prevents close button overlapping text content
         transition: 'all 0.5s ease',
         WebkitTransition: 'all 0.5s ease',

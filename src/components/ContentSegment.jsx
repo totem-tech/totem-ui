@@ -12,7 +12,7 @@ import {
 	isMemo,
 	iUseReducer,
 	useRxSubject,
-} from '../utils/reactHelper'
+} from '../utils/reactjs'
 import { isSubjectLike, isFn } from '../utils/utils'
 import { toggleFullscreen } from '../services/window'
 import ErrorBoundary from './CatchReactErrors'

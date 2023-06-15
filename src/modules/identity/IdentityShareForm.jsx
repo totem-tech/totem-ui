@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import { deferred, isBool, isFn, isStr } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
@@ -64,7 +64,7 @@ export const inputNames = {
 
 export const IdentityShareForm = props => {
 	const [state = {}] = iUseReducer(null, getInitialState(props))
-	
+
 	return <FormBuilder {...{ ...props, ...state }} />
 }
 IdentityShareForm.propTypes = {
@@ -300,7 +300,7 @@ const handleSubmit = (rxSetState, props = {}) => (_, values) => {
 	})
 
 	rxSetState.next({ loading: true })
-	
+
 	const handleResult = (success, err) => {
 		const message = {
 			content: textsCap.successMsgContent,
@@ -313,11 +313,11 @@ const handleSubmit = (rxSetState, props = {}) => (_, values) => {
 			message: success
 				? message
 				: {
-						header: textsCap.failedMsgHeader,
-						content: err,
-						icon: true,
-						status: 'error',
-					},
+					header: textsCap.failedMsgHeader,
+					content: err,
+					icon: true,
+					status: 'error',
+				},
 			success,
 		})
 		isFn(onSubmit) && onSubmit(success, values)
@@ -343,11 +343,11 @@ const handleSubmit = (rxSetState, props = {}) => (_, values) => {
 	})
 
 	if (!requestPartner) return sendIdentity()
-	
+
 	// send partner request first, then share own identity
 	handleSubmitCb({ onSubmit: sendIdentity }, rxSetState)(_, {
 		[reqInputNames.userIds]: userIds,
 		[reqInputNames.reason]: reasons[1],
 	})
-	
+
 }

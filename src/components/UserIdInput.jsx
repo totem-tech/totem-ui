@@ -8,13 +8,14 @@ import client, { getUser } from '../utils/chatClient'
 import { translated } from '../utils/languageHelper'
 import partners from '../modules/partner/partner'
 import PromisE from '../utils/PromisE'
-import { copyRxSubject } from '../utils/reactHelper'
+import { copyRxSubject } from '../utils/reactjs'
 
-const textsCap = translated({
+const textsCap = {
     add: 'add',
     enterUserId: 'enter user ID',
     enterUserIds: 'enter user IDs',
     fromChatHistory: 'from recent chats',
+    idCheckError: 'failed to check if user ID exists!',
     idCrAlphaNum: 'contains only letters and numbers',
     idCrHeader: 'Enter an username matching the following criteria:',
     idCrLength: 'between 3 and 16 characters',
@@ -24,7 +25,8 @@ const textsCap = translated({
     partner: 'partner',
     validatingUserId: 'checking if user ID exists...',
     ownIdEntered: 'please enter an ID other than your own',
-}, true)[1]
+}
+translated(textsCap, true)
 const noAttrs = [
     'excludeOwnId',
     'includeFromChat',
@@ -237,7 +239,7 @@ class UserIdInput extends Component {
         this._mounted = false
     }
 
-    handleAddUser = (e, data) => {
+    handleAddUser = async (e, data) => {
         data.value = getRawUserID(data.value)
         const { value: userId } = data
         const { excludeOwnId, multiple, onChange } = this.props
@@ -251,59 +253,74 @@ class UserIdInput extends Component {
         isOwnId && removeNewValue()
         this.setState({
             loading: !isOwnId,
-            message: !isOwnId ? undefined : {
+            message: isOwnId && {
                 content: textsCap.ownIdEntered,
                 icon: true,
                 status: 'warning'
             },
-            noResultsMessage: isOwnId ? textsCap.noResultsMessage : textsCap.validatingUserId,
+            noResultsMessage: isOwnId
+                ? textsCap.noResultsMessage
+                : textsCap.validatingUserId,
             open: !isOwnId,
             searchQuery: '',
             value,
         })
-        isFn(onChange) && onChange(e, { ...data, invalid: true, value })
+        isFn(onChange) && onChange(e, {
+            ...data,
+            invalid: true,
+            value,
+        })
         // trigger a value change
         if (isOwnId) return
 
         // check if User ID is valid
-        client.idExists(userId, (err, exists) => {
-            const input = this.state
-            input.loading = false
-            input.message = !exists && {
-                content: `${textsCap.invalidUserId}: ${userId}`,
-                icon: true,
-                status: 'warning',
-            }
-
-            if (!exists) {
-                // not valid => remove from values
-                removeNewValue()
-            } else {
-                // required to prevent Semantic's unexpected behaviour!!
-                value = !multiple
-                    ? value
-                    : arrUnique([...value, userId])
-                const optionExists = input
-                    .options
-                    .find(x => x.value === userId)
-                // add newly added user id as an option
-                !optionExists && input
-                    .options
-                    .push({
-                        key: userId,
-                        text: '@' + userId,
-                        value: userId
-                    })
-            }
-            // trigger a value change
-            isFn(onChange) && onChange(e, { ...data, invalid: false, value })
-            this.setState({
-                ...input,
-                noResultsMessage: textsCap.noResultsMessage,
-                open: exists && multiple,
-                value,
-                searchQuery: '',
+        let error
+        const exists = await client
+            .idExists(userId)
+            .catch(err => {
+                error = err
+                return false
             })
+        const input = this.state
+        input.loading = false
+        input.message = !exists && {
+            content: error || `${textsCap.invalidUserId}: ${userId}`,
+            header: error && textsCap.idCheckError,
+            icon: true,
+            status: !!error
+                ? 'error'
+                : 'warning',
+        }
+
+        console.log({ exists })
+        if (exists !== true) {
+            // not valid => remove from values
+            removeNewValue()
+        } else {
+            // required to prevent Semantic's unexpected behaviour!!
+            value = !multiple
+                ? value
+                : arrUnique([...value, userId])
+            const optionExists = input
+                .options
+                .find(x => x.value === userId)
+            // add newly added user id as an option
+            !optionExists && input
+                .options
+                .push({
+                    key: userId,
+                    text: '@' + userId,
+                    value: userId
+                })
+        }
+        // trigger a value change
+        isFn(onChange) && onChange(e, { ...data, invalid: false, value })
+        this.setState({
+            ...input,
+            noResultsMessage: textsCap.noResultsMessage,
+            open: exists && multiple,
+            value,
+            searchQuery: '',
         })
     }
 
@@ -343,7 +360,7 @@ class UserIdInput extends Component {
         if (this.validateCount > 0) return
 
         const { newUser } = this.props
-        const exists = await client.idExists.promise(getRawUserID(value))
+        const exists = await client.idExists(getRawUserID(value))
         const invalid = newUser ? exists : !exists
         this.setState({
             icon: invalid
@@ -361,15 +378,15 @@ class UserIdInput extends Component {
         const props = {
             ...objWithoutKeys(
                 this.props,
-                !multiple ? noAttrsTextField : noAttrs
+                !multiple
+                    ? noAttrsTextField
+                    : noAttrs
             ),
             ...this.state,
             loading,
             options,
         }
-        return (
-            <FormInput {...props} />
-        )
+        return <FormInput {...props} />
     }
 }
 UserIdInput.propTypes = {

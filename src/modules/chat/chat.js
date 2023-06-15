@@ -1,19 +1,5 @@
-import DataStorage from '../../utils/DataStorage'
 import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
-import storage from '../../utils/storageHelper'
-import {
-    arrUnique,
-    isArr,
-    isDefined,
-    isObj,
-    isValidNumber,
-    objClean,
-} from '../../utils/utils'
-import client, {
-    getUser,
-    rxIsLoggedIn,
-} from '../../utils/chatClient'
 import {
     addToQueue,
     QUEUE_TYPES,
@@ -25,8 +11,22 @@ import {
     MOBILE,
     setClass,
 } from '../../services/window'
-import { subjectAsPromise } from '../../utils/reactHelper'
-import { rxIsRegistered } from '../../utils/chatClient'
+import DataStorage from '../../utils/DataStorage'
+import storage from '../../utils/storageHelper'
+import client, {
+    getUser,
+    rxIsLoggedIn,
+    rxIsRegistered,
+} from '../../utils/chatClient'
+import { subjectAsPromise } from '../../utils/reactjs'
+import {
+    arrUnique,
+    deferred,
+    isArr,
+    isDefined,
+    isObj,
+    isValidNumber,
+} from '../../utils/utils'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'
@@ -36,7 +36,7 @@ export const TROLLBOX = 'everyone'
 export const TROLLBOX_ALT = 'trollbox' // alternative ID for trollbox
 export const SUPPORT = 'support'
 // messages storage
-const chatHistory = new DataStorage(PREFIX + MODULE_KEY) //, true
+const chatHistory = new DataStorage(PREFIX + MODULE_KEY)
 export const rxChatHistory = chatHistory.rxData
 // read/write to module settings
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -44,7 +44,14 @@ const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // notifies when new conversation is created, hidden or unhidden
 const initialSettings = rw()
 export const rxInboxListChanged = new Subject()
+// update inbox list with slight delay
+rxInboxListChanged.deferred = deferred(() => {
+    rxInboxListChanged.next(uuid.v1())
+    const count = getUnreadCount()
+    count !== rxUnreadCount.value && rxUnreadCount.next(count)
+}, 100)
 export const rxPendingMsgIds = new BehaviorSubject([])
+// Triggered whenever new message is added/updated/deleted
 export const rxMsg = new Subject() // value : [inboxkey: string, msg: object]
 export const rxUnreadCount = new BehaviorSubject(getUnreadCount())
 export const rxOpenInboxKey = new BehaviorSubject(initialSettings.openInboxKey)
@@ -80,9 +87,13 @@ export const checkOnlineStatus = () => {
 
 // create/get inbox key
 export const createInbox = (receiverIds = [], name, setOpen = false) => {
-    if (!rxIsRegistered.value) return
+    if (!rxIsRegistered.value || !isArr(receiverIds)) return
+
+    receiverIds = receiverIds.filter(Boolean)
+    if (!receiverIds.length) return
 
     const inboxKey = getInboxKey(receiverIds)
+
     let settings = inboxSettings(inboxKey)
     settings = {
         ...settings,
@@ -114,10 +125,10 @@ export const getChatUserIds = (includeTrollbox = true) => arrUnique(
 export const getInboxKey = receiverIds => {
     receiverIds = isArr(receiverIds)
         ? receiverIds
-        : [receiverIds].filter(Boolean)
+        : [receiverIds]
     const { id: userId } = getUser() || {}
     receiverIds = arrUnique(receiverIds)
-        .filter(id => id !== userId)
+        .filter(id => id && id !== userId)
 
     // Trollbox
     if (receiverIds.includes(TROLLBOX) || !receiverIds.length) return TROLLBOX
@@ -154,27 +165,29 @@ export function getUnreadCount() {
 // get/set limit per inbox
 export const historyLimit = limit => {
     limit = rw(
-        !isValidNumber(limit) ? undefined : { historyLimit: limit }
+        !isValidNumber(limit)
+            ? undefined
+            : { historyLimit: limit }
     ).historyLimit
-    return isDefined(limit) ? limit : DEFAULT_LIMIT
+    return isDefined(limit)
+        ? limit
+        : DEFAULT_LIMIT
 }
 
 // get/set inbox specific settings
 export function inboxSettings(inboxKey, value) {
+    if (!inboxKey) return {}
     let settings = rw().inbox || {}
     let oldSettings = settings[inboxKey] || {}
     if (value === null) delete settings[inboxKey]
     if (!isObj(value)) return oldSettings || {}
+
     const newSettings = { ...oldSettings, ...value }
     settings[inboxKey] = newSettings
     // save settings
     rw({ inbox: settings })
 
-    // update unread count
-    newSettings.unread !== oldSettings.unread && rxUnreadCount.next(getUnreadCount())
-    const keys = ['deleted', 'hide', 'name', 'unread', 'lastMessageTS']
-    const changed = JSON.stringify(objClean(oldSettings, keys)) !== JSON.stringify(objClean(newSettings, keys))
-    changed && rxInboxListChanged.next(uuid.v1())
+    rxInboxListChanged.deferred()
 
     return oldSettings || {}
 }
@@ -197,24 +210,33 @@ export const jumpToMessage = (inboxKey, msgId) => {
         const msgEl = document.getElementById(msgId)
         const msgsEl = document.querySelector('.chat-container .messages')
         if (!msgEl || !msgsEl) return
-        msgEl.classList.add('blink')
-        msgsEl.classList.add('animate-scroll')
-        msgsEl.scrollTo(0, msgEl.offsetTop)
+        msgEl?.classList.add('blink')
+        msgsEl?.classList.add('animate-scroll')
+        msgsEl?.scrollTo(0, msgEl.offsetTop)
         setTimeout(() => {
-            msgEl.classList.remove('blink')
-            msgsEl.classList.remove('animate-scroll')
+            msgEl?.classList.remove('blink')
+            msgsEl?.classList.remove('animate-scroll')
         }, 5000)
     }, 500)
 }
 
-export const removeInbox = inboxKey => {
+export const removeInbox = (inboxKey, permanent = false, removeMessages = permanent) => {
     chatHistory.delete(inboxKey)
-    inboxSettings(inboxKey, { deleted: true, unread: 0 })
-    rxInboxListChanged.next(uuid.v1())
-    rxOpenInboxKey.next(null)
+    inboxSettings(
+        inboxKey,
+        permanent
+            ? null
+            : { deleted: true, unread: 0 }
+    )
+    rxInboxListChanged.deferred()
+    rxOpenInboxKey.next()
+    removeMessages && removeInboxMessages(inboxKey)
 }
 
-export const removeInboxMessages = inboxKey => chatHistory.set(inboxKey, []) | rxInboxListChanged.next(uuid.v1())
+export const removeInboxMessages = inboxKey => {
+    chatHistory.set(inboxKey, [])
+    rxInboxListChanged.deferred()
+}
 
 export const removeMessage = (inboxKey, id) => {
     const messages = chatHistory.get(inboxKey)
@@ -222,11 +244,21 @@ export const removeMessage = (inboxKey, id) => {
     if (index === -1) return
     messages.splice(index, 1)
     chatHistory.set(inboxKey, messages)
-    rxInboxListChanged.next(uuid.v1())
+    rxInboxListChanged.deferred()
 }
 
 const saveMessage = (msg, trigger = false) => {
-    let { action, message, senderId, receiverIds, encrypted, timestamp, status = 'success', id, errorMessage } = msg
+    let {
+        action,
+        message,
+        senderId,
+        receiverIds,
+        encrypted,
+        timestamp,
+        status = 'success',
+        id,
+        errorMessage,
+    } = msg
     receiverIds = receiverIds.sort()
     const inboxKey = getInboxKey(receiverIds)
     const messages = chatHistory.get(inboxKey) || []
@@ -340,15 +372,18 @@ rxIsLoggedIn.subscribe(loggedIn => {
 // handle message received
 client.onMessage((m, s, r, e, t, id, action) => {
     const inboxKey = getInboxKey(r)
-    const userIds = inboxKey
-        .split(',')
-        .filter(id =>
-            ![SUPPORT, TROLLBOX].includes(id)
-        )
+    // const userIds = inboxKey
+    //     .split(',')
+    //     .filter(id =>
+    //         ![SUPPORT, TROLLBOX]
+    //             .includes(id)
+    // )
+    // userIds.forEach(id => online[id] = true)
     const online = { ...rxUsersOnline.value }
-    userIds.forEach(id => online[id] = true)
     // set sender status as online
-    if (JSON.stringify(online) !== JSON.stringify(rxUsersOnline.value)) rxUsersOnline.next(online)
+    online[s] = true
+    const onlineChanged = JSON.stringify(online) !== JSON.stringify(rxUsersOnline.value)
+    onlineChanged && rxUsersOnline.next(online)
 
     // prevent saving trollbox messages if hidden
     if (inboxKey === TROLLBOX && inboxSettings(inboxKey).hide) return
@@ -364,14 +399,19 @@ client.onMessage((m, s, r, e, t, id, action) => {
         timestamp: t,
     }
     saveMessage(msg, true)
+    rxInboxListChanged.deferred()
 })
 
 // initialize
 setTimeout(() => {
+    // remove unwanted inbox created due to previous bug where an inbox would be created even though
+    // `null` supplied to `createInbox` function
+    removeInbox('null', true, true)
+
     const allSettings = rw().inbox || {}
     const { id: userId } = getUser() || {}
-
-    const createSupportInbox = () => !allSettings[getInboxKey([SUPPORT])] && createInbox([SUPPORT])
+    const createSupportInbox = () => !allSettings[getInboxKey([SUPPORT])]
+        && createInbox([SUPPORT])
     if (userId) {
         createSupportInbox()
     } else {
@@ -390,13 +430,14 @@ setTimeout(() => {
         const visible = rxVisible.value
         const inboxKey = rxOpenInboxKey.value
         const expanded = rxExpanded.value
-        const doUpdate = visible
-            && inboxKey
-            && (getLayout() !== MOBILE || expanded)
-            && inboxSettings(inboxKey).unread
-        doUpdate && inboxSettings(inboxKey, { unread: 0 })
+        if (!visible || !inboxKey) return
+
+        if (getLayout() == MOBILE && !expanded) return
+        inboxSettings(inboxKey).unread > 0
+            && inboxSettings(inboxKey, { unread: 0 })
     }
     rxOpenInboxKey.subscribe(key => {
+        setClass('body', { 'inbox-open': !!key })
         handleChange()
         if (!rxOpenInboxKey.ignoredFirst) {
             rxOpenInboxKey.ignoredFirst = true
@@ -423,15 +464,26 @@ setTimeout(() => {
     // remove if successful, otherwise, update status of queued chat message
     rxOnSave.subscribe(data => {
         if (!data) return
-        const { task: { args, errorMessage, func, status, recordId: msgId, type } } = data
+        const {
+            task: {
+                args,
+                errorMessage,
+                func,
+                status,
+                recordId: msgId,
+                type,
+            } = {}
+        } = data
         const [receiverIds] = args || []
         // only handle outgoing chat messages
         if (func !== 'message' || type !== QUEUE_TYPES.CHATCLIENT) return
+
         const inboxKey = getInboxKey(receiverIds)
         let inboxMsgs = chatHistory.get(inboxKey) || []
         const msg = inboxMsgs.find(msg => msg.id === msgId)
         // not found |OR| already removed by user
         if (!msg) return
+
         // failed to send message
         switch (status) {
             case statuses.ERROR:
@@ -442,7 +494,7 @@ setTimeout(() => {
             case statuses.SUCCESS:
                 // message sent successfully, remove temporary message
                 inboxMsgs = inboxMsgs.filter(msg => msg.id !== msgId)
-                rxInboxListChanged.next(uuid.v1())
+                rxInboxListChanged.deferred()
                 break
             default: return // no change required
         }

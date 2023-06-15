@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { isObj } from '../../utils/utils'
 import { UserID } from '../../components/buttons'
 import { Linkify } from '../../components/StringReplace'
@@ -6,6 +6,9 @@ import Message from '../../components/Message'
 import TimeSince from '../../components/TimeSince'
 import { translated } from '../../utils/languageHelper'
 import { getUser } from '../../utils/chatClient'
+import { useRxSubject } from '../../utils/reactjs'
+import { getMessages, rxMsg } from './chat'
+import useIsMobile from '../../utils/reactjs/hooks/useIsMobile'
 
 const [texts, textsCap] = translated({
     changedGroupName: 'changed group name to',
@@ -39,12 +42,16 @@ const icons = {
         loading: true,
     }
 }
-
 export default function InboxMessages(props) {
-    const { className, isPrivate, messages, onScroll } = props
+    const {
+        className,
+        isPrivate,
+        messages,
+        onScroll,
+    } = props
     const userId = (getUser() || {}).id
-    
-    return (
+
+    return !!messages && (
         <div {...{ className, onScroll, }}>
             {messages.map((message, i) => (
                 <InboxMessage {...{
@@ -59,7 +66,18 @@ export default function InboxMessages(props) {
 }
 
 const InboxMessage = props => {
-    const { action, errorMessage, id, message, senderId, status, timestamp, isPrivate, userId } = props
+    const isMobile = useIsMobile()
+    const {
+        action,
+        errorMessage,
+        id,
+        message,
+        senderId,
+        status,
+        timestamp,
+        isPrivate,
+        userId,
+    } = props
     const isSender = senderId === userId
 
     if (isObj(action)) {
@@ -87,10 +105,12 @@ const InboxMessage = props => {
         bgColor = colors[randomize(colors.length)]
         userColor[senderId] = bgColor
     }
-    const color = bgColor === 'black' ? 'white' : 'black'
+    const color = bgColor === 'black'
+        ? 'white'
+        : 'black'
     const [showDetails, setShowDetails] = useState(false)
 
-    return !message ? '' : (
+    return !!message && (
         <div {...{
             className: 'message-wrap' + (isSender ? ' user' : ''),
             id,
@@ -102,14 +122,28 @@ const InboxMessage = props => {
                 compact: true,
                 content: (
                     <span>
-                        {isPrivate || isSender || !senderId ? '' : (
-                            <UserID {...{
-                                suffix: ': ',
-                                userId: senderId,
-                            }} />
-                        )}
-                        <Linkify>{message}</Linkify>
-                        {errorMessage && showDetails && <div className='error'><i>{errorMessage}</i></div>}
+                        {!isPrivate
+                            && !isSender
+                            && !!senderId
+                            && (
+                                <UserID {...{
+                                    suffix: ': ',
+                                    userId: senderId,
+                                }} />
+                            )}
+                        <Linkify {...{
+                            children: message,
+                            shorten: isMobile
+                                ? 30
+                                : 40,
+                        }} />
+                        {errorMessage
+                            && showDetails
+                            && (
+                                <div className='error'>
+                                    <i>{errorMessage}</i>
+                                </div>
+                            )}
                         {showDetails && (
                             <TimeSince {...{
                                 style: {

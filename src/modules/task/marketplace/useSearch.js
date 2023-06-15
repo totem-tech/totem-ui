@@ -9,7 +9,7 @@ import {
     unsubscribe,
     useQueryBlockchain,
     useRxSubject,
-} from '../../../utils/reactHelper'
+} from '../../../utils/reactjs'
 import { deferred } from '../../../utils/utils'
 import { query } from '../task'
 import { addDetailsToTask, processOrder } from '../useTasks'

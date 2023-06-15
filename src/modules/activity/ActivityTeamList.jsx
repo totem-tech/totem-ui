@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../utils/languageHelper'
@@ -9,34 +9,35 @@ import { showForm } from '../../services/modal'
 import {
     get as getIdentity,
     getSelected as getSelectedIdentity,
- } from '../identity/identity'
- import AddressName from '../partner/AddressName'
- import {
-     handleInvitation as handleTkInvitation,
- } from '../timekeeping/notificationHandlers'
+} from '../identity/identity'
+import AddressName from '../partner/AddressName'
+import {
+    handleInvitation as handleTkInvitation,
+} from '../timekeeping/notificationHandlers'
 import { query } from '../timekeeping/timekeeping'
-import TimekeepingInviteForm, { 
-    inputNames as tkInputNames} from '../timekeeping/TimekeepingInviteForm'
+import TimekeepingInviteForm, {
+    inputNames as tkInputNames
+} from '../timekeeping/TimekeepingInviteForm'
 
 let textsCap = {
     accepted: 'accepted',
     invite: 'invite',
     invited: 'invited',
     status: 'status',
-    
+
     addMyself: 'add myself',
     addPartner: 'add partner',
     emptyMessage: 'No team member available. Click on the invite button to invite parters.',
     teamMember: 'team member',
 }
-textsCap= translated(textsCap, true)[1]
+textsCap = translated(textsCap, true)[1]
 
 export default function ActivityTeamList(props) {
     const [tableProps] = useState(() => getTableProps(props))
     const [workers, setWorkers] = useState([])
     const [invitees, setInvitees] = useState([])
     const { projectHash: projectId } = props
-    
+
     useEffect(() => {
         let mounted = true
         const postProcess = (accepted, setState) => addresses => {
@@ -69,7 +70,7 @@ export default function ActivityTeamList(props) {
                 postProcess(true, setInvitees),
             ),
         }
-        
+
         return () => {
             mounted = false
             unsubscribe(subs)

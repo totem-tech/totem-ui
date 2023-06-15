@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { isAddress, isFn } from '../../utils/utils'
 import client from '../../utils/chatClient'
 import { rxSelected } from '../identity/identity'

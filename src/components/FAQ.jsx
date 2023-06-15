@@ -5,7 +5,7 @@ import { Accordion, Button } from 'semantic-ui-react'
 import { isFn, objWithoutKeys } from '../utils/utils'
 import { translated } from '../utils/languageHelper'
 import { closeModal, confirm } from '../services/modal'
-import { RecursiveShapeType } from '../utils/reactHelper'
+import { RecursiveShapeType } from '../utils/reactjs'
 import Text from './Text'
 import { useInverted } from '../services/window'
 
@@ -140,7 +140,7 @@ FAQ.asModal = (faqProps, confirmProps = {}) => {
         },
         modalId,
         // remove spacing from confirm content
-        { className: 'no-padding'}
+        { className: 'no-padding' }
         // { style: { padding: 0 } },
     )
 }

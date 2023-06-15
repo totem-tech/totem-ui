@@ -5,11 +5,11 @@ import uuid from 'uuid'
 import { isBool, isFn, isObj } from '../../utils/utils'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { stepIndexes, setActiveStep } from '../gettingStarted/GettingStarted'
 import { rxSelected } from '../identity/identity'
 import client, { referralCode, rxIsRegistered } from '../../utils/chatClient'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 
 const textsCap = translated(
 	{
@@ -47,10 +47,10 @@ export default function RegistrationForm(props) {
 			isObj(isRegistered)
 				? isRegistered // state update using setState
 				: {
-						// value of isRegistered changed
-						inputs: getInputs(props, isRegistered),
-						submitDisabled: { isRegistered },
-				  },
+					// value of isRegistered changed
+					inputs: getInputs(props, isRegistered),
+					submitDisabled: { isRegistered },
+				},
 		{},
 		true
 	)
@@ -66,7 +66,7 @@ export default function RegistrationForm(props) {
 				try {
 					redirectTo = new URL(redirectTo)
 					window.location.href = redirectTo.href
-				} catch (err) {}
+				} catch (err) { }
 			},
 		}} />
 	)

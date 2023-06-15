@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { Button } from '../../components/buttons'
 import { MOBILE, rxLayout } from '../../services/window'
 import { blocksToDuration, statuses } from './timekeeping'
@@ -18,7 +18,7 @@ const SumDuration = props => {
     const [data = new Map()] = useRxSubject(props.data)
     const [ids = []] = useRxSubject(props.ids)
     const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    
+
     if (!data.size) return ''
 
     const sum = (sum, item) => sum + item.total_blocks
@@ -29,7 +29,7 @@ const SumDuration = props => {
         : ids
             .map(id => data.get(id))
             .filter(Boolean)
-    
+
     const approved = blocksToDuration(
         selectedItems
             .filter(item => item.approved)
@@ -42,7 +42,7 @@ const SumDuration = props => {
     )
     const overall = blocksToDuration(
         selectedItems.reduce(sum, 0)
-    )    
+    )
 
     const getBtn = (content, title) => (
         <div style={{ display: 'inline-block', position: 'relative' }}>

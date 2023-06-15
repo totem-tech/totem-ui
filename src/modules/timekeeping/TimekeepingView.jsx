@@ -16,7 +16,7 @@ import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
 import { MOBILE, rxLayout } from '../../services/window'
 import { MODULE_KEY } from './timekeeping'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 
 const textsCap = translated({
     archive: 'archive',
@@ -43,8 +43,8 @@ export default class TimekeepingView extends Component {
         viewOptions = isArr(viewOptions)
             && viewOptions.length !== 0
             && viewOptions.every(x => isStr(x))
-                ? viewOptions
-                : ['records']
+            ? viewOptions
+            : ['records']
         this.state = {
             optionsInput: {
                 rxValue: new BehaviorSubject(viewOptions),

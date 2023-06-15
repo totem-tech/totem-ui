@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { rxIsRegistered } from '../../../utils/chatClient'
-import { useRxSubject }  from '../../../utils/reactHelper'
+import { useRxSubject } from '../../../utils/reactjs'
 import Message, { statuses } from '../../../components/Message'
 import ClaimKAPEXForm from './ClaimKapexForm'
 import { statusCached } from './claimKapex'
@@ -8,7 +8,7 @@ import { translated } from '../../../utils/languageHelper'
 
 let textsCap = {
 	errSubmitted: 'your claim has been received!',
-	errSubmittedDetails: 'make sure to remind your friends to submit their claim.', 
+	errSubmittedDetails: 'make sure to remind your friends to submit their claim.',
 	errEnded: 'Claim period has ended!',
 	errIneligible1: 'You are not eligible to claim KAPEX.',
 	errIneligible2: 'Only users who previously participated in the rewards campaign are eligible.',

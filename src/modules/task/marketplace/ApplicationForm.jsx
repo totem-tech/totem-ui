@@ -5,7 +5,7 @@ import FormBuilder, { fillValues } from '../../../components/FormBuilder'
 import { statuses } from '../../../components/Message'
 import { addToQueue, QUEUE_TYPES } from '../../../services/queue'
 import { translated } from '../../../utils/languageHelper'
-import { iUseReducer } from '../../../utils/reactHelper'
+import { iUseReducer } from '../../../utils/reactjs'
 import { generateHash, isFn } from '../../../utils/utils'
 import { TYPES, validate } from '../../../utils/validator'
 import { getIdentityOptions } from '../../identity/getIdentityOptions'
@@ -51,11 +51,11 @@ export default function ApplicationForm(props) {
     state.subheader = subheader
         || title
         && `${textsCap.title}: ${title}`
-    return <FormBuilder {...{...props, ...state }} />
+    return <FormBuilder {...{ ...props, ...state }} />
 }
 ApplicationForm.propTypes = {
     proposalRequired: PropTypes.bool,
-    title: PropTypes.string, 
+    title: PropTypes.string,
     values: PropTypes.shape({
         taskId: PropTypes.string.isRequired,
     }),
@@ -171,7 +171,7 @@ const handleSubmit = (rxSetState, props) => (_, values) => {
         .filter(Boolean)
     const pName = inputNames.proposal
     values[pName] = values[pName].trim()
-    
+
     rxSetState.next({
         message: {
             content: textsCap.loading,

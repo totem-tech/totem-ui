@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { unsubscribe } from '../../utils/reactHelper'
+import { unsubscribe } from '../../utils/reactjs'
 import { isFn } from '../../utils/utils'
 import query from './query'
 

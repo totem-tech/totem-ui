@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 import { arrReverse, deferred, isDefined, isFn } from '../../utils/utils'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
-import { iUseReducer, useRxSubject } from '../../utils/reactHelper'
+import { iUseReducer, useRxSubject } from '../../utils/reactjs'
 import { setToast } from '../../services/toast'
 import { MOBILE, rxLayout } from '../../services/window'
 import { convertTo } from '../currency/currency'
@@ -62,7 +62,7 @@ export default function AssetConverterForm(props) {
                     null,
                     date,
                 )
-                rxAmountTo.value !== amountConverted &&  rxAmountTo.next(amountConverted)
+                rxAmountTo.value !== amountConverted && rxAmountTo.next(amountConverted)
             } catch (err) {
                 rxAmountTo.next('')
                 setToast({
@@ -144,7 +144,7 @@ export default function AssetConverterForm(props) {
                 },
             ],
         }
- 
+
         const groupIn = findInput(state.inputs, inputNames.group)
         groupIn.inputs = arrReverse(
             groupIn.inputs,
@@ -153,7 +153,7 @@ export default function AssetConverterForm(props) {
 
         return state
     })
-    
+
     return <FormBuilder {...{ ...props, ...state }} />
 }
 AssetConverterForm.propTypes = {

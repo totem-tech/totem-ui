@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import {
     isAddress,
     objWithoutKeys,
@@ -37,7 +37,7 @@ function AddressName(props) {
         userId,
     } = props
     if (!isAddress(address)) return ''
-    
+
     const [identity] = useRxSubject(rxIdentities, map => map.get(address))
     const [partner] = useRxSubject(rxPartners, map => map.get(address))
     const {
@@ -64,7 +64,7 @@ function AddressName(props) {
             title: textsCap.addPartner,
         }} />
     )
-    
+
     return (
         <Component {...{
             ...objWithoutKeys(props, ignoreAttributes),
@@ -118,8 +118,8 @@ AddressName.prototype = {
     ]).isRequired,
     ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
     maxLength: PropTypes.number,
-	// @name (optional): a name to be prefilled when adding as partner
-	name: PropTypes.string,
+    // @name (optional): a name to be prefilled when adding as partner
+    name: PropTypes.string,
     // @userId: (optional) userId to be prefilled when adding as partner
     userId: PropTypes.string,
 }

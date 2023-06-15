@@ -4,7 +4,7 @@ import { Menu, Tab } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
 import Text from '../../components/Text'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { useInverted } from '../../services/window'
 import { rxSelected } from '../identity/identity'
 import { rwSettings } from './task'
@@ -98,31 +98,31 @@ export default function TaskView({ address, tab: _activeType }) {
     )
 
     return (
-            <div>
-                <Tab {...{
-                    activeIndex,
-                    menu: {
-                        inverted,
-                        secondary: true,
-                        pointing: true,
-                    },
-                    panes,
-                    key: activeIndex + activeType, // forces active pane to re-render on each change
-                }} />
-                <TaskList {...{
-                    address,
-                    asTabPane: true,
-                    // data,
-                    emptyMessage: message
-                        ? message
-                        : undefined,
-                    key: activeType,
-                    rxTasks,
-                    style: { marginTop: 15 },
-                    type: activeType,
-                }} />
-            </div>
-        )
+        <div>
+            <Tab {...{
+                activeIndex,
+                menu: {
+                    inverted,
+                    secondary: true,
+                    pointing: true,
+                },
+                panes,
+                key: activeIndex + activeType, // forces active pane to re-render on each change
+            }} />
+            <TaskList {...{
+                address,
+                asTabPane: true,
+                // data,
+                emptyMessage: message
+                    ? message
+                    : undefined,
+                key: activeType,
+                rxTasks,
+                style: { marginTop: 15 },
+                type: activeType,
+            }} />
+        </div>
+    )
 }
 TaskView.propTypes = {
     address: PropTypes.string,

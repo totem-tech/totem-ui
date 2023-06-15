@@ -4,7 +4,7 @@ import { BehaviorSubject } from 'rxjs'
 // utils
 import { translated } from '../../../utils/languageHelper'
 import PromisE from '../../../utils/PromisE'
-import { useRxSubject } from '../../../utils/reactHelper'
+import { useRxSubject } from '../../../utils/reactjs'
 import { format } from '../../../utils/time'
 import {
     deferred,
@@ -75,7 +75,7 @@ const ApplicationList = props => {
     const [updateTrigger, setUpdateTrigger] = useState()
     const { error, task } = useTask(taskId, updateTrigger)
     const { proposalRequired = true } = task || {}
-    
+
     if (!task) return (
         <Message {...{
             content: !!error
@@ -105,7 +105,7 @@ const ApplicationList = props => {
             searchable: applications.length > 10,
             sortAsc: false,
             sortBy: 'tsCreated',
-            
+
             // extra info used by cells
             isMobile,
             modalId,
@@ -194,7 +194,7 @@ export const getColumns = (showStatusButtons = true) => {
 const getStatusContent = (application = {}, _1, _arr, props = {}) => {
     const {
         isMobile,
-        task: { 
+        task: {
             owner,
         } = {},
     } = props
@@ -215,7 +215,7 @@ const getStatusContent = (application = {}, _1, _arr, props = {}) => {
                 acceptProps: { icon: 'check' },
                 acceptText: isMobile
                     ? '' // hide text on mobile
-                    : undefined ,
+                    : undefined,
                 rejectProps: {
                     disabled: rejected,
                     icon: 'close',
@@ -243,12 +243,12 @@ const getUserIdBtn = ({ name, userId, workerAddress }, modalId, taskId) => (
         userId
     }} />
 )
-        
+
 const handleActionCb = (props, application) => async (_, accept) => {
     const {
         forceReload,
         modalId,
-        task = { },
+        task = {},
         taskId,
     } = props
     const { owner } = task
@@ -262,7 +262,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         if (!success) return err && showInfo({
             collapsing: true,
             content: (
-                <Message {...{ 
+                <Message {...{
                     content: `${err || ''}`,
                     icon: true,
                     status: 'error',
@@ -271,7 +271,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         })
 
         await PromisE.delay(300)
-        
+
         isFn(forceReload) && forceReload()
         closeModal(modalId)
     }
@@ -336,7 +336,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         )
         // prompt to add worker as a partner
         if (!!getPartner(workerAddress)) return openTaskForm()
-        
+
         showForm(PartnerForm, {
             subheader: textsCap.addPartner,
             onSubmit: done => done && openTaskForm(),
@@ -365,7 +365,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         content: (
             <div>
                 <div style={{ marginBottom: 15 }}>
-                    <b>{textsCap.applicant}: </b><br/>
+                    <b>{textsCap.applicant}: </b><br />
                     {addressBtn}
                     {userId && (
                         <span>

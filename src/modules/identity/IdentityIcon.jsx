@@ -8,7 +8,7 @@ import { showForm } from '../../services/modal'
 import { MOBILE, rxLayout } from '../../services/window'
 import { USAGE_TYPES } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 
 let textsCap = {
     business: 'business',
@@ -44,13 +44,13 @@ const IdentityIcon = props => {
             title = textsCap.personal
             break
         case USAGE_TYPES.REWARD:
-            color =  'orange'
-            name =  'gift'
-            title =  textsCap.rewardsIdentity
+            color = 'orange'
+            name = 'gift'
+            title = textsCap.rewardsIdentity
             break
     }
 
-    const handleClick =!address
+    const handleClick = !address
         ? undefined
         : e => {
             e.preventDefault()
@@ -70,8 +70,8 @@ const IdentityIcon = props => {
             onDragStart: e => {
                 setHovered(false)
                 e.stopPropagation()
-				e.dataTransfer.setData('Text', ut)
-			},
+                e.dataTransfer.setData('Text', ut)
+            },
             onClick: handleClick,
             onMouseEnter: isMobile || !address
                 ? undefined

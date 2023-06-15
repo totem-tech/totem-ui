@@ -1,6 +1,6 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import CurrencyList from "../currency/CurrencyList"
 import AssetsForm, { inputNames } from './AssetsForm'
 import './style.css'
@@ -28,7 +28,7 @@ export default function AssetFormView() {
         rxCurrencyId,
         showList,
     } = state
-    
+
     return (
         <div>
             <AssetsForm {...{ onChange: handleChange }} />

@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import {
-    iUseState,
+    useRxState,
     subjectAsPromise,
     unsubscribe,
-} from '../../utils/reactHelper'
+} from '../../utils/reactjs'
 import { isObj } from '../../utils/utils'
 import { query } from './task'
 import { addDetailsToTask, processOrder } from './useTasks'
@@ -16,7 +16,7 @@ let textsCap = {
 textsCap = translated(textsCap, true)[1]
 
 export default function useTask(taskId, updateTrigger) {
-    const [state, setState] = iUseState({
+    const [state, setState] = useRxState({
         children: null,
         error: null,
         task: null,

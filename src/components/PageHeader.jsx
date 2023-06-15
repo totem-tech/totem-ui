@@ -26,7 +26,7 @@ import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 import { getSelected as getSelectedLang, translated } from '../utils/languageHelper'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { unsubscribe, useRxSubject } from '../utils/reactHelper'
+import { unsubscribe, useRxSubject } from '../utils/reactjs'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
 import {
@@ -93,7 +93,7 @@ function PageHeader(props) {
 			args: [getSelected().address]
 		}),
 		onSelection: (_, { value: address }) => setSelected(address),
-		onShare: () => showForm(IdentityShareForm, { values: getSelected()})
+		onShare: () => showForm(IdentityShareForm, { values: getSelected() })
 	}
 
 	return <PageHeaderView {...viewProps} />
@@ -200,7 +200,7 @@ const PageHeaderView = React.memo(props => {
 							{
 								icon: !inverted ? 'moon outline' : 'moon',
 								content: (
-									<div style={{display: 'inline-block'}}>
+									<div style={{ display: 'inline-block' }}>
 										{textsCap.darkMode}: {inverted ? texts.off : texts.on}
 										&nbsp;
 										({invBrowser
@@ -221,7 +221,7 @@ const PageHeaderView = React.memo(props => {
 									</div>
 								),
 								onClick: () => {
-									rxInverted.next(!inverted) 
+									rxInverted.next(!inverted)
 									setInvBrowser(false)
 								}
 							},
@@ -251,7 +251,7 @@ const PageHeaderView = React.memo(props => {
 								onClick: () => showForm(SettingsForm, {
 									header: null,// 'Change language',
 									inputsHidden: Object.values(settingsInputNames)
-										.filter(x =>x !== settingsInputNames.languageCode),
+										.filter(x => x !== settingsInputNames.languageCode),
 									size: 'mini',
 								}),
 							},

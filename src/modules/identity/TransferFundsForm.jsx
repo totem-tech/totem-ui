@@ -14,7 +14,7 @@ import {
     copyRxSubject,
     subjectAsPromise,
     useRxSubject,
-} from '../../utils/reactHelper'
+} from '../../utils/reactjs'
 // components
 import FormBuilder, {
     findInput,
@@ -246,7 +246,7 @@ export default class TransferFundsForm extends Component {
             loading: {
                 // wait until currencies list is loaded
                 currencies: true,
-            }, 
+            },
             message: undefined,
             onChange: (_, values) => this.setState({ values }),
             onSubmit: this.handleSubmit,
@@ -347,7 +347,7 @@ export default class TransferFundsForm extends Component {
                 content,
                 status: statuses.ERROR,
             }
-            return this.setState({inputs})
+            return this.setState({ inputs })
         }
         txFeeIn.content = this.getTxFeeEl(this.fee)
         const total = this.fee + this.amountRounded

@@ -12,7 +12,7 @@ import {
 } from 'semantic-ui-react'
 import { translated } from '../utils/languageHelper'
 import PromisE from '../utils/PromisE'
-import { unsubscribe } from '../utils/reactHelper'
+import { unsubscribe } from '../utils/reactjs'
 import {
 	deferred,
 	hasValue,

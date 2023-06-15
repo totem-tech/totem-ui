@@ -55,7 +55,7 @@ export const ModalsConainer = React.memo(() => {
         })
         return () => {
             mounted = false
-            subscribed.unsubscribe
+            subscribed.unsubscribe()
         }
     }, [])
 
@@ -261,11 +261,11 @@ export const confirmAsPromise = (confirmProps, modalId, ...args) => new PromisE(
         const { onCancel, onConfirm } = confirmProps
         const resolver = (defaultValue = false, func) => async () => {
             let value = isFn(func)
-            ? await func()
-            : undefined
+                ? await func()
+                : undefined
             value = isBool(value)
-            ? value
-            : defaultValue
+                ? value
+                : defaultValue
             resolve(value)
         }
         confirmProps.onCancel = resolver(false, onCancel)

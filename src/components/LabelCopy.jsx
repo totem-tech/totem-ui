@@ -14,7 +14,7 @@ import {
     textEllipsis,
 } from '../utils/utils'
 import { translated } from '../utils/languageHelper'
-import { iUseReducer, useRxSubject } from '../utils/reactHelper'
+import { iUseReducer, useRxSubject } from '../utils/reactjs'
 import { MOBILE, rxLayout } from '../services/window'
 import Invertible from './Invertible'
 import Label from './Label'
@@ -85,7 +85,7 @@ function LabelCopy(props) {
                 ...iconObj.style,
             },
             // overrides any parent title
-            title: isDefined(iconObj.title) 
+            title: isDefined(iconObj.title)
                 ? iconObj.title
                 : '',
         }
@@ -102,7 +102,7 @@ function LabelCopy(props) {
                             maxLength,
                             numDots,
                             split,
-                            )}
+                        )}
                 </span>
             ),
             icon: iconObj,
@@ -128,7 +128,7 @@ function LabelCopy(props) {
             }
         }} />
     )
-    
+
     return (
         <Invertible {...{
             content: state.copied

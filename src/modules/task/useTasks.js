@@ -23,7 +23,7 @@ import {
 } from './task'
 import PromisE from '../../utils/PromisE'
 import { rxBlockNumber } from '../../services/blockchain'
-import { subjectAsPromise } from '../../utils/reactHelper'
+import { subjectAsPromise } from '../../utils/reactjs'
 import { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
 const textsCap = translated({
     errorHeader: 'failed to load tasks',

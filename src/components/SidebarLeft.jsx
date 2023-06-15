@@ -8,7 +8,7 @@ import {
 } from 'semantic-ui-react'
 import { deferred, isFn } from '../utils/utils'
 import { translated } from '../utils/languageHelper'
-import { useRxSubject } from '../utils/reactHelper'
+import { useRxSubject } from '../utils/reactjs'
 import {
 	rxAllInactive,
 	getItem,
@@ -43,10 +43,10 @@ function SidebarLeft() {
 		deferred(hovered => sidebarState.collapsed && setHovered(hovered), 100),
 		[setHovered, sidebarState.collapsed],
 	)
-	const icon = hovered 
+	const icon = hovered
 		? 'pin'
 		: `arrow alternate circle ${collapsed ? 'right' : 'left'} outline`
-	
+
 	// use an alternative dimmer to prevent unnecessary state updates on App.jsx and the entire application
 	const mobileDimmer = isMobile && visible && (
 		<div {...{
@@ -172,7 +172,7 @@ const _SidebarMenuItem = props => {
 				href,
 				onClick: e => {
 					if (isFn(onClick)) onClick(e, item)
-					
+
 					if (href) return
 
 					e.stopPropagation()

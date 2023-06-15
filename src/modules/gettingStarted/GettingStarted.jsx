@@ -3,7 +3,7 @@ import { BehaviorSubject } from 'rxjs'
 import { Icon, Step } from 'semantic-ui-react'
 // utils
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import storage from '../../utils/storageHelper'
 import { className, isFn, isValidNumber } from '../../utils/utils'
 // components
@@ -112,7 +112,7 @@ export default function GetingStarted() {
 		const steps = [
 			{
 				description: texts.step2Description,
-				onClick: ()=> handleRegister(),
+				onClick: () => handleRegister(),
 				title: isRegistered
 					? `${texts.step2Title2}: @${getUser().id}`
 					: texts.step2Title,
@@ -126,7 +126,7 @@ export default function GetingStarted() {
 				// allow the user to backup even after step is completed
 				disabled: activeStep => activeStep <= stepIndexes.register,
 				description: texts.backupDescription,
-				onClick: ()=> handleBackup(),
+				onClick: () => handleBackup(),
 				title: texts.backupTitle,
 			},
 		]
@@ -137,7 +137,7 @@ export default function GetingStarted() {
 
 	const socialLinks = [ // [anchor, icon]
 		[
-			{ href: 'https://twitter.com/intent/follow?screen_name=Totem_Live_'  },
+			{ href: 'https://twitter.com/intent/follow?screen_name=Totem_Live_' },
 			{ name: 'twitter' },
 		],
 		[
@@ -316,8 +316,8 @@ const handleUpdateIdentity = (redirectTo) => {
 	// forces user to enter a new name for the identity
 	if (values.name === 'Default') values.name = ''
 	showForm(IdentityForm, {
-		onClose: ()=> incrementStep(redirectTo),
-		onSubmit: ()=> incrementStep(redirectTo),
+		onClose: () => incrementStep(redirectTo),
+		onSubmit: () => incrementStep(redirectTo),
 		values: {
 			...values,
 			redirectTo: values.redirectTo || redirectTo,
@@ -341,7 +341,7 @@ const handleRegister = (redirectTo) => showForm(
 
 const incrementStep = (redirectTo) => setActiveStep(
 	(rxActiveStep.value || 0) + 1,
-	false, 
+	false,
 	redirectTo,
 )
 

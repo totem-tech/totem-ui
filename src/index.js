@@ -2,10 +2,11 @@ import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import '../public/styles.css'
+import './utils/log'
 import { rxIsRegistered } from './utils/chatClient'
 import PromisE from './utils/PromisE'
 import storage from './utils/storageHelper'
-import { subjectAsPromise } from './utils/reactHelper'
+import { subjectAsPromise } from './utils/reactjs'
 import { generateHash, isArrLike, isError } from './utils/utils'
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
@@ -15,6 +16,7 @@ import client from './utils/chatClient'
 import './services/language'
 import { fetchNSaveTexts } from './utils/languageHelper'
 import { getUrlParam, MOBILE, rxLayout } from './services/window'
+import { setupDefaults } from './components/Message'
 
 const urlParams = getUrlParam()
 const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')
@@ -47,10 +49,10 @@ if (!window.isInIFrame && window.isDebug) {
 						str = isError(x)
 							? x.stack
 							: JSON.stringify(
-									isArrLike(x) ? Array.from(x) : x,
-									null,
-									4
-							  )
+								isArrLike(x) ? Array.from(x) : x,
+								null,
+								4
+							)
 					} catch (e) {
 						// in case of Object circular dependency
 						str = `${x}`
@@ -66,6 +68,8 @@ if (!window.isInIFrame && window.isDebug) {
 }
 
 const initPromise = PromisE.timeout((resolve, reject) => {
+	// setup Message component
+	setupDefaults('semantic-ui-react', require('semantic-ui-react'))
 	// initiate connection to blockchain
 	getConnection()
 	let countriesHash = generateHash(

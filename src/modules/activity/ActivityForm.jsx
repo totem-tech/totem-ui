@@ -5,7 +5,7 @@ import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
 import { closeModal, confirm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import {
 	generateHash,
 	isFn,

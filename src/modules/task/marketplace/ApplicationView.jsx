@@ -6,7 +6,7 @@ import { Linkify } from '../../../components/StringReplace'
 import { newId, showInfo } from '../../../services/modal'
 import { MOBILE, rxLayout } from '../../../services/window'
 import { translated } from '../../../utils/languageHelper'
-import { useRxSubject } from '../../../utils/reactHelper'
+import { useRxSubject } from '../../../utils/reactjs'
 import { fallbackIfFails, isObj, URL_REGEX } from '../../../utils/utils'
 import { getColumns } from './ApplicationList'
 
@@ -65,7 +65,7 @@ const ApplicationView = props => {
     )
 }
 ApplicationView.asModal = (props, modalProps) => {
-    let { 
+    let {
         application,
         modalId,
         task = {},

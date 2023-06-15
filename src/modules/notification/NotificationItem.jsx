@@ -2,7 +2,8 @@ import React from 'react'
 import { isFn } from '../../utils/utils'
 // components
 import { UserID } from '../../components/buttons'
-import { Message } from '../../components/Message'
+// import { Message } from '../../components/Message'
+import Message from '../../components/Message'
 import TimeSince from '../../components/TimeSince'
 // services
 import { itemViewHandlers, remove, toggleRead } from './notification'

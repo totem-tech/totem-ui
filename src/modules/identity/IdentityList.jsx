@@ -9,7 +9,7 @@ import Tags from '../../components/Tags'
 // services
 import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
-import { useRxSubject } from '../../utils/reactHelper'
+import { useRxSubject } from '../../utils/reactjs'
 import { MOBILE, rxLayout } from '../../services/window'
 // modules
 import UserContactList from '../contact/UserContactList'
@@ -106,7 +106,7 @@ const getActions = ({ address, name }) =>
 const getTableProps = isMobile => {
 	const BtnText = (props) => {
 		const El = isMobile && window.outerWidth <= 400 ? 'div' : 'span'
-		return <El {...{ ...props, style: {paddingTop: 5 }}} />
+		return <El {...{ ...props, style: { paddingTop: 5 } }} />
 	}
 	const getIcon = name => (
 		<Icon {...{
@@ -154,7 +154,7 @@ const getTableProps = isMobile => {
 				title: '',
 			},
 			{
-				content: !isMobile 
+				content: !isMobile
 					? undefined
 					: identity => (
 						<div>
@@ -164,7 +164,7 @@ const getTableProps = isMobile => {
 					),
 				headerProps: { style: { borderLeft: 'none' } },
 				key: 'name',
-				style: { 
+				style: {
 					// maxWidth: isMobile ? 120 : undefined,
 					minWidth: 150, //isMobile ? 150 : 120,
 					overflowX: 'hidden'

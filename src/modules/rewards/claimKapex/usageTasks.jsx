@@ -3,7 +3,7 @@ import { Button, Icon, Step } from 'semantic-ui-react'
 
 import { getUser } from '../../../utils/chatClient'
 import { translated } from '../../../utils/languageHelper'
-import { useRxSubject } from '../../../utils/reactHelper'
+import { useRxSubject } from '../../../utils/reactjs'
 import {
 	BLOCK_DURATION_SECONDS,
 	durationToSeconds,
@@ -35,8 +35,8 @@ let textsCap = {
 	clickProceed: 'click on the "Proceed" button',
 	clickRequest: 'click on the "Request" button.',
 	clickSubmit: 'click on the "Submit" button',
-    clickTimer: 'click on the "Timer" button.',    
-    clickViewTeam: 'click on the "Add/view team members" button. Or click on the view team icon under the "Actions" column.',    
+	clickTimer: 'click on the "Timer" button.',
+	clickViewTeam: 'click on the "Add/view team members" button. Or click on the view team icon under the "Actions" column.',
 	createActivity: 'create an Activity',
 	createTask: 'create a task',
 	createTkRecord: 'create a timekeeping record',
@@ -45,8 +45,8 @@ let textsCap = {
 	enterDuration2: '03:00:00',
 	enterFriendUserId: `Enter your friend's Totem User ID in the "User" field`,
 	enterNameDesc: 'enter any name and description for the activity.',
-	enterReason: 'select or enter a custom reason',    
-    fillTaskForm: 'fill up all the required fields',    
+	enterReason: 'select or enter a custom reason',
+	fillTaskForm: 'fill up all the required fields',
 	followInstructions: 'follow instruction below to complete the task:',
 	goToActivity: 'go to Activities module',
 	goToPartners: 'go to Partners module',
@@ -60,11 +60,11 @@ let textsCap = {
 	step1Title: 'test the DApp',
 	step2Title: 'post a Tweet',
 	step3Title: 'claim KAPEX',
-    submit: 'submit',    
+	submit: 'submit',
 	submitActivity: 'submit and wait until Activity is successfully created.',
-    taskCompleted: 'Well done! You have completed this task.',
+	taskCompleted: 'Well done! You have completed this task.',
 	taskIncomplete: 'you have not completed this task',
-    transferToFriend: 'transfer any amount to one of your friends',
+	transferToFriend: 'transfer any amount to one of your friends',
 }
 textsCap = translated(textsCap, true)[1]
 
@@ -93,7 +93,7 @@ export const getUsageTasks = rewardIdentity => {
 				const entryEligible = startDate < timestamp
 					&& timestamp < endDate
 					&& userId === currentUserId
-				
+
 				return entryEligible
 					&& action === 'client.notify'
 					&& type === 'identity'
@@ -151,7 +151,7 @@ export const getUsageTasks = rewardIdentity => {
 					|| !!partnersAdded.find(x => x.address === recipient)
 					|| !!allPartners.get(recipient)
 				break
-			case 'api.tx.timekeeping.notifyProjectWorker': 
+			case 'api.tx.timekeeping.notifyProjectWorker':
 				// add members to activity
 				activityDone[1] = true
 				break
@@ -343,7 +343,7 @@ const getUsageInstructions = (items = [], prefix = textsCap.followInstructions, 
 						`?${objToUrlParams(params)}`
 					].join('')
 				}
-				
+
 				const iconBtn = isStr(module) && (
 					<Button {...{
 						as: 'a',
@@ -379,7 +379,7 @@ const getUsageInstructions = (items = [], prefix = textsCap.followInstructions, 
 )
 export const StepGroup = React.memo(({ rxStep, steps }) => {
 	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-    const [stepArr] = useRxSubject(rxStep, activeStep => [
+	const [stepArr] = useRxSubject(rxStep, activeStep => [
 		{
 			active: activeStep === steps.tasks,
 			icon: 'play',
@@ -399,14 +399,14 @@ export const StepGroup = React.memo(({ rxStep, steps }) => {
 			key: steps.feedback,
 			title: textsCap.step3Title,
 		},
-    ])
+	])
 
 	const getStep = step => (
 		<Step {...{
 			...step,
 			icon: (
 				<Icon {...{
-					className: isMobile && !step.active 
+					className: isMobile && !step.active
 						? 'no-margin'
 						: '',
 					name: step.icon,
@@ -423,11 +423,11 @@ export const StepGroup = React.memo(({ rxStep, steps }) => {
 			title: isMobile && !step.active
 				? ''
 				: (
-					<span style={{color: step.active ? 'deeppink' : undefined}}>
+					<span style={{ color: step.active ? 'deeppink' : undefined }}>
 						{step.title}
 					</span>
 				),
-		}} /> 
+		}} />
 	)
 	return (
 		<Step.Group fluid={true} unstackable>

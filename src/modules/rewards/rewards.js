@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import storage from '../../utils/storageHelper'
 import { generateHash, isArr, isDefined } from '../../utils/utils'
-import { subjectAsPromise, unsubscribe, useRxSubject } from '../../utils/reactHelper'
+import { subjectAsPromise, unsubscribe, useRxSubject } from '../../utils/reactjs'
 import client, { getUser, rxIsLoggedIn } from '../../utils/chatClient'
 import { rxNewNotification } from '../notification/notification'
 

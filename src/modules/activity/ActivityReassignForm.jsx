@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { iUseReducer } from '../../utils/reactHelper'
+import { iUseReducer } from '../../utils/reactjs'
 import { generateHash, isFn, objClean } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 // services
@@ -37,14 +37,14 @@ let textsCap = {
     proceed: 'proceed',
     queueDescription: 'activity Name',
     queueTitle: 're-assign activity owner',
-	saveBONSAIToken: 'save BONSAI auth token',
+    saveBONSAIToken: 'save BONSAI auth token',
 }
 textsCap = translated(textsCap, true)[1]
 
 export default function ActivityReassignForm(props) {
     const [state] = iUseReducer(null, rxSetState => {
         const { hash, values } = props
-        const inputs =[
+        const inputs = [
             {
                 label: textsCap.nameLabel,
                 name: 'name',
@@ -122,7 +122,7 @@ export default function ActivityReassignForm(props) {
 
         return state
     })
-        
+
 
     return <FormBuilder {...{ ...props, ...state }} />
 }
@@ -209,7 +209,7 @@ const handleSubmit = (props, rxSetState) => (_, values) => {
     )
     rxSetState.next({ loading: true })
     if (!doConfirm) return addToQueue(upateBonsaiToken)
-    
+
     confirm({
         cancelButton: { content: textsCap.cancel, color: 'green' },
         confirmButton: { content: textsCap.proceed, negative: true },

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { translated } from '../utils/languageHelper'
-import { useRxSubject } from '../utils/reactHelper'
+import { useRxSubject } from '../utils/reactjs'
 import { hasValue, isFn, isSubjectLike } from '../utils/utils'
 import RxSubjectView from './RxSubjectView'
 
@@ -39,10 +39,11 @@ const textsCap = translated({
  */
 const CharacterCount = props => {
     let {
-        color,
+        color: colorOk,
         colorError,
         colorWarn,
         hideOnEmpty,
+        hideOnOk,
         inline,
         maxLength,
         minLength,
@@ -50,7 +51,7 @@ const CharacterCount = props => {
         style,
         subject,
         valueModifier,
-        warnLength = maxLength * 0.9,
+        warnLength = parseInt(maxLength * 0.9) || 0,
     } = props
     const [show] = !isSubjectLike(_show)
         ? [_show]
@@ -64,17 +65,20 @@ const CharacterCount = props => {
         const len = text.length
         if (!len && hideOnEmpty) return ''
 
-        // warnLength = warnLength || maxLength * 0.9
-        const isWarn = len >= warnLength
         const isMin = len < minLength
         const isMax = len > maxLength
-        color = len && (isMax || isMin)
+        const isWarn = warnLength && len >= warnLength
+
+        const color = (isMax || isMin)
             ? colorError
             : isWarn
                 ? colorWarn
-                : color
+                : colorOk
+        if (hideOnOk && color === colorOk) return ''
+
         let content = len
         if (maxLength) content = `${len}/${maxLength}`
+        const key = content + color + inline
 
         if (inline) content = <span>&nbsp;( {content} ) </span>
 
@@ -83,9 +87,11 @@ const CharacterCount = props => {
                 display: inline
                     ? 'inline-block'
                     : 'block',
+                key,
                 position: 'relative',
             }}>
                 <div {...{
+                    key,
                     style: {
                         ...!inline && {
                             bottom: 0,

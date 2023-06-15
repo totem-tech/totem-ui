@@ -27,7 +27,7 @@ import Message, { statuses } from './Message'
 import Paginator from './Paginator'
 import { translated } from '../utils/languageHelper'
 import { MOBILE, rxLayout } from '../services/window'
-import { unsubscribe } from '../utils/reactHelper'
+import { unsubscribe } from '../utils/reactjs'
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
 	const start = pageNo * perPage - perPage
@@ -36,13 +36,13 @@ const mapItemsByPage = (data, pageNo, perPage, callback) => {
 }
 
 const textsCap = translated({
-		actions: 'actions',
-		deselectAll: 'deselect all',
-		noDataAvailable: 'no data available',
-		noResultsMsg: 'your search yielded no results',
-		search: 'search',
-		selectAll: 'select all',
-	},
+	actions: 'actions',
+	deselectAll: 'deselect all',
+	noDataAvailable: 'no data available',
+	noResultsMsg: 'your search yielded no results',
+	search: 'search',
+	selectAll: 'select all',
+},
 	true
 )[1]
 
@@ -377,7 +377,7 @@ export default class DataTable extends Component {
 			|| !searchHideOnEmpty
 		)
 		const numItems = actionButtons.length + menuOnSelect.length
-		if ( numItems === 0 && !showSearch) return
+		if (numItems === 0 && !showSearch) return
 
 		const hasSearchOnChange = isFn(searchOnChange)
 		const showActions = selectable
@@ -418,7 +418,7 @@ export default class DataTable extends Component {
 								...item,
 								key: i,
 								onClick: () => isFn(item.onClick)
-									&& item.onClick(selectedIndexes) 
+									&& item.onClick(selectedIndexes)
 							}} />
 						)
 					)}
@@ -429,41 +429,41 @@ export default class DataTable extends Component {
 		// if searchable is a valid element search is assumed to be externally handled
 		const searchEl = showSearch &&
 			(React.isValidElement(searchable)
-			&& searchable || (
-			<Input {...{
-				action: !keywords
-					? undefined
-					: {
-						basic: true,
-						icon: {
-							className: 'no-margin',
-							name: 'close',
+				&& searchable || (
+					<Input {...{
+						action: !keywords
+							? undefined
+							: {
+								basic: true,
+								icon: {
+									className: 'no-margin',
+									name: 'close',
+								},
+								onClick: () => triggerSearchChange(''),
+							},
+						fluid: isMobile,
+						icon: 'search',
+						iconPosition: 'left',
+						onChange: (_, d) => triggerSearchChange(d.value),
+						onDragOver: e => e.preventDefault(),
+						onDrop: e => {
+							const keywords = e.dataTransfer.getData('Text')
+							if (!keywords.trim()) return
+							triggerSearchChange(keywords)
 						},
-						onClick: () => triggerSearchChange(''),
-					},
-				fluid: isMobile,
-				icon: 'search',
-				iconPosition: 'left',
-				onChange: (_, d) => triggerSearchChange(d.value),
-				onDragOver: e => e.preventDefault(),
-				onDrop: e => {
-					const keywords = e.dataTransfer.getData('Text')
-					if (!keywords.trim()) return
-					triggerSearchChange(keywords)
-				},
-				placeholder: textsCap.search,
-				style: { maxWidth: '100%' },
-				type: 'search', // enables escape to clear
-				value: keywords || '',
-			}} />
-		))
-		
+						placeholder: textsCap.search,
+						style: { maxWidth: '100%' },
+						type: 'search', // enables escape to clear
+						value: keywords || '',
+					}} />
+				))
+
 		const { topGrid = {} } = this.props
 		const {
 			left: {
-				computer:  computerL = showSearch ? 9 : 16,
+				computer: computerL = showSearch ? 9 : 16,
 				tablet: tabletL = 16,
-			} = { },
+			} = {},
 			right: {
 				computer = 7,
 				tablet = 16,
@@ -633,7 +633,7 @@ export default class DataTable extends Component {
 		}
 		const isEmpty = totalRows === 0
 		const isLoading = isEmpty && (emptyMessage || {}).status === statuses.LOADING
-		
+
 		return (
 			<Invertible {...{
 				El: Segment,
