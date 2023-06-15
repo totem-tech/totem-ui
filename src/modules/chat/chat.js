@@ -87,7 +87,7 @@ export const checkOnlineStatus = () => {
 
 // create/get inbox key
 export const createInbox = (receiverIds = [], name, setOpen = false) => {
-    if (!rxIsRegistered.value || !isArr(receiverIds)) return
+    if (!isArr(receiverIds)) return
 
     receiverIds = receiverIds.filter(Boolean)
     if (!receiverIds.length) return
@@ -104,7 +104,7 @@ export const createInbox = (receiverIds = [], name, setOpen = false) => {
     settings.name = name || settings.name
     !chatHistory.get(inboxKey) && chatHistory.set(inboxKey, [])
     inboxSettings(inboxKey, settings)
-    if (setOpen) {
+    if (rxIsRegistered.value && setOpen) {
         rxOpenInboxKey.next(inboxKey)
         rxVisible.next(true)
         getLayout() === MOBILE && rxExpanded.next(true)

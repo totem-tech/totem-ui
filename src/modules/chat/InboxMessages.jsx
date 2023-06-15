@@ -46,12 +46,12 @@ export default function InboxMessages(props) {
     const {
         className,
         isPrivate,
-        messages,
+        messages = [],
         onScroll,
     } = props
     const userId = (getUser() || {}).id
 
-    return !!messages && (
+    return (
         <div {...{ className, onScroll, }}>
             {messages.map((message, i) => (
                 <InboxMessage {...{
