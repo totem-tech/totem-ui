@@ -2,36 +2,34 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
-// utils
-import { ss58Decode } from '../../utils/convert'
-import { getTxFee } from '../../utils/polkadotHelper'
-import {
-    deferred,
-    isArr,
-    isValidNumber,
-} from '../../utils/utils'
-import {
-    copyRxSubject,
-    subjectAsPromise,
-    useRxSubject,
-} from '../../utils/reactjs'
-// components
 import FormBuilder, {
     findInput,
     fillValues,
 } from '../../components/FormBuilder'
-import { statuses } from '../../components/Message'
 import Text from '../../components/Text'
-// services
+
 import {
     getConnection,
     queueables,
     randomHex,
 } from '../../services/blockchain'
-import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-// modules
+
+import { ss58Decode } from '../../utils/convert'
+import { translated } from '../../utils/languageHelper'
+import { getTxFee } from '../../utils/polkadotHelper'
+import {
+    copyRxSubject,
+    statuses,
+    subjectAsPromise,
+    useRxSubject,
+} from '../../utils/reactjs'
+import {
+    deferred,
+    isArr,
+    isValidNumber,
+} from '../../utils/utils'
 import Currency from '../currency/Currency'
 import {
     convertTo,
@@ -39,10 +37,7 @@ import {
     rxSelected as rxSelectedCurrency,
 } from '../currency/currency'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
-import {
-    remove as removeNotif,
-    setItemViewHandler,
-} from '../notification/notification'
+import { remove as removeNotif, setItemViewHandler } from '../notification/notification'
 import AddressName from '../partner/AddressName'
 import getPartnerOptions from '../partner/getPartnerOptions'
 import {
@@ -60,7 +55,7 @@ import {
 } from './identity'
 import IdentityIcon from './IdentityIcon'
 
-const textsCap = translated({
+const textsCap = {
     amount: 'amount',
     amountReceivedLabel: 'payment amount',
     amountReceivedPlaceholder: 'enter amount',
@@ -93,7 +88,8 @@ const textsCap = translated({
     transferedFunds: 'transfered funds to you',
     txFee: 'transaction fee',
     yourIdentity: 'your identity',
-}, true)[1]
+}
+translated(textsCap, true)
 // notification type
 const TRANSFER_TYPE = 'transfer'
 

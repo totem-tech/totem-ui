@@ -1,12 +1,13 @@
 import React from 'react'
-import { isFn } from '../../utils/utils'
-// components
 import { UserID } from '../../components/buttons'
-// import { Message } from '../../components/Message'
-import Message from '../../components/Message'
 import TimeSince from '../../components/TimeSince'
-// services
-import { itemViewHandlers, remove, toggleRead } from './notification'
+import { Message } from '../../utils/reactjs'
+import { isFn } from '../../utils/utils'
+import {
+    itemViewHandlers,
+    remove,
+    toggleRead,
+} from './notification'
 
 export default function NotificationItem({ id, notification }) {
     const {
@@ -30,12 +31,21 @@ export default function NotificationItem({ id, notification }) {
     const isCustom = isFn(handler)
     let msg = {
         ...(isCustom
-            ? handler(id, notification, { senderId, senderIdBtn })
+            ? handler(
+                id,
+                notification,
+                {
+                    senderId,
+                    senderIdBtn,
+                }
+            )
             : {
                 content: <span>{senderIdBtn} {message}</span>,
                 header: !message && (
                     <div className='header'>
-                        {`${type || ''}`.replace(/-|_/g, ' ')} {`${childType || ''}`.replace(/-|_/g, ' ')}
+                        {/* Remove underscores and dashes from type & childTypes for display purposes */}
+                        {`${type || ''}`.replace(/-|_/g, ' ')}
+                        {` ${childType || ''}`.replace(/-|_/g, ' ')}
                     </div>
                 ),
             }

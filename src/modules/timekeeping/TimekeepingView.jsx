@@ -1,22 +1,19 @@
-import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import storage from '../../utils/storageHelper'
-import { isArr, isStr } from '../../utils/utils'
 import { Button } from '../../components/buttons'
 import ContentSegment from '../../components/ContentSegment'
 import CheckboxGroup from '../../components/CheckboxGroup'
-// forms
+import { showForm } from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
+import { unsubscribe } from '../../utils/reactjs'
+import storage from '../../utils/storageHelper'
+import { isArr, isStr } from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
+import { MODULE_KEY } from './timekeeping'
 import TimeKeepingForm from './TimekeepingForm'
-// lists
 import TimekeepingList from './TimekeepingList'
 import TimekeepingSummaryList from './TimekeepingSummaryList'
-// services
-import { translated } from '../../utils/languageHelper'
-import { showForm } from '../../services/modal'
-import { MOBILE, rxLayout } from '../../services/window'
-import { MODULE_KEY } from './timekeeping'
-import { unsubscribe } from '../../utils/reactjs'
 
 const textsCap = translated({
     archive: 'archive',

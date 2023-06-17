@@ -1,13 +1,12 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { translated } from '../../utils/languageHelper'
-import { iUseReducer } from '../../utils/reactjs'
-import storage from '../../utils/storageHelper'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import FormInput from '../../components/FormInput'
-import { statuses } from '../../components/Message'
 import { closeModal, confirm } from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
+import { iUseReducer, statuses } from '../../utils/reactjs'
+import storage from '../../utils/storageHelper'
 import {
 	arrSort,
 	deferred,
@@ -15,8 +14,8 @@ import {
 	objSetPropUndefined,
 } from '../../utils/utils'
 import identities from '../identity/identity'
-import partners, { rxPartners } from '../partner/partner'
-import PartnerIcon from '../partner/PartnerIcon'
+import getPartnerOptions from '../partner/getPartnerOptions'
+import { rxPartners } from '../partner/partner'
 import {
 	get,
 	newId,
@@ -24,7 +23,6 @@ import {
 	set as save,
 	validationConf,
 } from './contact'
-import getPartnerOptions from '../partner/getPartnerOptions'
 
 const textsCap = translated(
 	{

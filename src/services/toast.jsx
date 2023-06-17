@@ -4,13 +4,20 @@
 import React, { useEffect, useState } from 'react'
 import { render } from 'react-dom'
 import uuid from 'uuid'
-import { deferred, isObj, isStr } from '../utils/utils'
-import Message from '../components/Message'
+import DataStorage from '../utils/DataStorage'
+import {
+    Message,
+    unsubscribe,
+    useRxSubject,
+} from '../utils/reactjs'
+import {
+    deferred,
+    isObj,
+    isStr,
+} from '../utils/utils'
 import { rxModals } from './modal'
 import { rxSidebarState } from './sidebar'
-import { unsubscribe, useRxSubject } from '../utils/reactjs'
-import { MOBILE, rxLayout } from './window'
-import DataStorage from '../utils/DataStorage'
+import { MOBILE, rxLayout } from '../utils/window'
 
 const DURATION = 5000
 const toasts = new DataStorage()

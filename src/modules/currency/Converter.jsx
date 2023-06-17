@@ -1,12 +1,12 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
-import { deferred } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { convertTo, rxSelected } from './currency'
 import { translated } from '../../utils/languageHelper'
 import { iUseReducer } from '../../utils/reactjs'
-import { convertTo, rxSelected } from './currency'
-import { MOBILE, rxLayout } from '../../services/window'
+import { deferred } from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import CurrencyDropDown from './CurrencyDropdown'
 
 const textsCap = translated({

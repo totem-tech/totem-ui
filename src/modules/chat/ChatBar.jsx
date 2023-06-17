@@ -1,25 +1,36 @@
-import React from 'react'
-import { useRxSubject } from '../../utils/reactjs'
+import React, { useCallback } from 'react'
+import { rxIsRegistered } from '../../utils/chatClient'
+import { RxSubjectView } from '../../utils/reactjs'
 import { rxOpenInboxKey, rxVisible } from './chat'
 import Inbox from './Inbox'
 import InboxList from './InboxList'
 import './style.css'
 
-export default function ChatBar() {
-    const [visible] = useRxSubject(rxVisible)
-    const [inboxKey] = useRxSubject(rxOpenInboxKey)
-
-    return (
+const ChatBar = () => {
+    const valueModifier = useCallback(([
+        registered,
+        inboxKey,
+        visible,
+    ]) => !!registered && (
         <div className='chat-container'>
             {visible && (
                 <div className='chat-contents'>
                     <InboxList {...{ inboxKey }} />
-                    {inboxKey && <Inbox {...{
-                        inboxKey,
-                        key: inboxKey,
-                    }} />}
+                    {inboxKey && <Inbox {...{ inboxKey, key: inboxKey }} />}
                 </div>
             )}
         </div>
+    ))
+    return (
+        <RxSubjectView {...{
+            subject: [
+                rxIsRegistered,
+                rxOpenInboxKey,
+                rxVisible,
+            ],
+            valueModifier,
+        }} />
     )
 }
+
+export default ChatBar

@@ -4,7 +4,7 @@ import { arrReverse } from '../../utils/utils'
 import { ButtonGroup } from '../../components/buttons'
 import { confirm } from '../../services/modal'
 import { useRxSubject } from '../../utils/reactjs'
-import { MOBILE, rxLayout } from '../../services/window'
+import { MOBILE, rxLayout } from '../../utils/window'
 import {
 	remove,
 	rxNotifications,
@@ -14,10 +14,11 @@ import {
 import ListItem from './NotificationItem'
 import './style.css'
 
-const textsCap = translated({
+const textsCap = {
 	btnDelete: 'delete all',
 	btnRead: 'mark all as read',
-}, true)[1]
+}
+translated(textsCap, true)
 
 export default function NotificationView() {
 	const [visible] = useRxSubject(rxVisible, visible => {

@@ -1,26 +1,23 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Button as _Button } from 'semantic-ui-react'
-import { isFn, objWithoutKeys } from '../../utils/utils'
-import { getRawUserID } from '../UserIdInput'
-// services
-import { translated } from '../../utils/languageHelper'
-import {
-    showForm,
-	closeModal,
-	showInfo,
-} from '../../services/modal'
-// modules
 import { createInbox } from '../../modules/chat/chat'
-import { getUser } from '../../utils/chatClient'
 import IdentityRequestForm from '../../modules/identity/IdentityRequestForm'
 import IdentityShareForm from '../../modules/identity/IdentityShareForm'
 import IntroduceUserForm from '../../modules/identity/IntroduceUserForm'
 import { get as getPartner, getByUserId } from '../../modules/partner/partner'
 import PartnerForm, { inputNames as pInputNames } from '../../modules/partner/PartnerForm'
 import PartnerIcon from '../../modules/partner/PartnerIcon'
+import {
+	showForm,
+	closeModal,
+	showInfo,
+} from '../../services/modal'
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
+import { isFn, objWithoutKeys } from '../../utils/utils'
+import { getRawUserID } from '../UserIdInput'
 import { ButtonGroup, ButtonGroupOr } from '.'
-import { rxIsRegistered } from '../../utils/chatClient'
 
 let textsCap = {
 	clickToChat: 'click to chat',
@@ -35,7 +32,7 @@ let textsCap = {
 }
 textsCap = translated(textsCap, true)[1]
 
-const UserID = React.memo(props => {
+export const UserID = React.memo(function UserId(props) {
 	const {
 		address,
 		name,
@@ -43,6 +40,7 @@ const UserID = React.memo(props => {
 		ignoreAttributes,
 		onClick,
 		onChatOpen,
+		onDragStart,
 		prefix,
 		style,
 		suffix,
@@ -67,6 +65,7 @@ const UserID = React.memo(props => {
 			onClick: !allowClick
 				? undefined
 				: e => {
+					isFn(onClick) && onClick(e)
 					e.stopPropagation()
 					UserID.showModal(
 						userId,
@@ -78,6 +77,7 @@ const UserID = React.memo(props => {
 			onDragStart: e => {
 				e.stopPropagation()
 				e.dataTransfer.setData('Text', rawId)
+				isFn(onDragStart) && onDragStart(e)
 			},
 			style: {
 				cursor: allowClick && 'pointer',

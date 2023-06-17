@@ -1,11 +1,10 @@
-import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
+import React from 'react'
 import FormBuilder, { fillValues } from '../../../components/FormBuilder'
-import { statuses } from '../../../components/Message'
 import { addToQueue, QUEUE_TYPES } from '../../../services/queue'
 import { translated } from '../../../utils/languageHelper'
-import { iUseReducer } from '../../../utils/reactjs'
+import { iUseReducer, statuses } from '../../../utils/reactjs'
 import { generateHash, isFn } from '../../../utils/utils'
 import { TYPES, validate } from '../../../utils/validator'
 import { getIdentityOptions } from '../../identity/getIdentityOptions'
@@ -136,7 +135,7 @@ const getInitialState = props => rxSetState => {
 
                 if (links.length > 5) return textsCap.linksErrMax
 
-                for (let i = 0; i < links.length; i++) {
+                for (let i = 0;i < links.length;i++) {
                     const link = links[i]
                     if (link.length > 100) return textsCap.linksErrLength
 

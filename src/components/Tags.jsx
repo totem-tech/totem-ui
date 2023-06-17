@@ -1,8 +1,12 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Label } from 'semantic-ui-react'
-import { className, isFn, toArray } from '../utils/utils'
-import { useInverted } from '../services/window'
+import {
+    className,
+    isFn,
+    toArray
+} from '../utils/utils'
+import { useInverted } from '../utils/window'
 
 const Tags = (props) => {
     const {
@@ -18,7 +22,7 @@ const Tags = (props) => {
                 ...props,
                 className: className({
                     [cls]: true,
-                    inverted,                    
+                    inverted,
                 }),
                 content: tag,
                 draggable: true,

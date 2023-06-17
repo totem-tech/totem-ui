@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { useInverted } from '../services/window'
 import { objWithoutKeys } from '../utils/utils'
+import { useInverted } from '../utils/window'
 
 function Text(props) {
     let {

@@ -1,19 +1,18 @@
-import React, { useCallback, useState } from 'react'
-import { isObj } from '../../utils/utils'
+import React, { useState } from 'react'
 import { UserID } from '../../components/buttons'
 import { Linkify } from '../../components/StringReplace'
-import Message from '../../components/Message'
 import TimeSince from '../../components/TimeSince'
-import { translated } from '../../utils/languageHelper'
 import { getUser } from '../../utils/chatClient'
-import { useRxSubject } from '../../utils/reactjs'
-import { getMessages, rxMsg } from './chat'
-import useIsMobile from '../../utils/reactjs/hooks/useIsMobile'
+import { translated } from '../../utils/languageHelper'
+// import { Message, useIsMobile } from '../../utils/reactjs'
+import { isObj } from '../../utils/utils'
+import { Message, useIsMobile } from '../../utils/reactjs'
 
-const [texts, textsCap] = translated({
+const textsCap = {
     changedGroupName: 'changed group name to',
     you: 'you',
-}, true)
+}
+const texts = translated(textsCap, true)[0]
 const userColor = {}
 const randomize = (limit = 10) => parseInt(Math.random(limit) * limit)
 const colors = [
@@ -40,7 +39,7 @@ const icons = {
         color: 'yellow',
         name: 'spinner',
         loading: true,
-    }
+    },
 }
 export default function InboxMessages(props) {
     const {
@@ -66,16 +65,16 @@ export default function InboxMessages(props) {
 }
 
 const InboxMessage = props => {
-    const isMobile = useIsMobile()
     const {
         action,
         errorMessage,
         id,
+        isMobile = useIsMobile(),
+        isPrivate,
         message,
         senderId,
         status,
         timestamp,
-        isPrivate,
         userId,
     } = props
     const isSender = senderId === userId
@@ -88,7 +87,11 @@ const InboxMessage = props => {
                     <i>
                         {isSender
                             ? textsCap.you + ' '
-                            : <UserID {...{ suffix: ' ', userId: senderId }} />}
+                            : <UserID {...{
+                                suffix: ' ',
+                                userId: senderId
+                            }} />
+                        }
                         {texts.changedGroupName} <b>{data[0]}</b>
                     </i>
                 </div>

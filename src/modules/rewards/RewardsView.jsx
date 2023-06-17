@@ -1,9 +1,11 @@
 import React from 'react'
-import Message, { statuses } from '../../components/Message'
+import { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactjs'
-import { rxIsLoggedIn } from '../../utils/chatClient'
-import { rxIsRegistered } from '../../utils/chatClient'
+import {
+	Message,
+	statuses,
+	useRxSubject
+} from '../../utils/reactjs'
 import ReferralCard from './ReferralCard'
 import { useRewards } from './rewards'
 import RewardsProgress from './RewardsProgress'

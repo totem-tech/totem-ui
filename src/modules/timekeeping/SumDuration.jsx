@@ -1,10 +1,10 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
+import { Button } from '../../components/buttons'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
-import { Button } from '../../components/buttons'
-import { MOBILE, rxLayout } from '../../services/window'
+import { MOBILE, rxLayout } from '../../utils/window'
 import { blocksToDuration, statuses } from './timekeeping'
 
 let textsCap = {

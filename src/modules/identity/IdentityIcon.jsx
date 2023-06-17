@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useState } from 'react'
 import { Icon } from 'semantic-ui-react'
+import { showForm } from '../../services/modal'
 import { rxUserIdentity } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import { objWithoutKeys } from '../../utils/utils'
-import { showForm } from '../../services/modal'
-import { MOBILE, rxLayout } from '../../services/window'
+import { useRxSubject } from '../../utils/reactjs'
+import { MOBILE, rxLayout } from '../../utils/window'
 import { USAGE_TYPES } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
-import { useRxSubject } from '../../utils/reactjs'
 
 let textsCap = {
     business: 'business',
@@ -16,7 +16,7 @@ let textsCap = {
     personal: 'personal',
     rewardsIdentity: 'this is your rewards identity',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 const IdentityIcon = props => {
     const {

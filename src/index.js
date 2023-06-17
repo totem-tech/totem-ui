@@ -1,22 +1,31 @@
 import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
-import '../public/styles.css'
-import './utils/log'
-import { rxIsRegistered } from './utils/chatClient'
-import PromisE from './utils/PromisE'
-import storage from './utils/storageHelper'
-import { subjectAsPromise } from './utils/reactjs'
-import { generateHash, isArrLike, isError } from './utils/utils'
-import App from './App'
+import '../public/styles.css' // global styles
+import './utils/log' // setup debug logger // keep it above all non-NPM imports
 import NewsletterSignup from './forms/NewsletterSignup'
-// services
+import './services/language' // setup language for build mode 
 import { getConnection } from './services/blockchain'
-import client from './utils/chatClient'
-import './services/language'
+import client, { rxIsInMaintenanceMode, rxIsRegistered } from './utils/chatClient'
+import PromisE from './utils/PromisE'
+import { subjectAsPromise } from './utils/reactjs'
+import storage from './utils/storageHelper'
+import {
+	generateHash,
+	isArrLike,
+	isError,
+} from './utils/utils'
 import { fetchNSaveTexts } from './utils/languageHelper'
-import { getUrlParam, MOBILE, rxLayout } from './services/window'
-import { setupDefaults } from './components/Message'
+import { setupDefaults } from './utils/reactjs'
+import {
+	getUrlParam,
+	MOBILE,
+	rxLayout,
+} from './utils/window'
+import App from './App'
+
+// setup common components to use Semantic UI (where applicable)
+setupDefaults('semantic-ui-react', require('semantic-ui-react'))
 
 const urlParams = getUrlParam()
 const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')
@@ -68,8 +77,6 @@ if (!window.isInIFrame && window.isDebug) {
 }
 
 const initPromise = PromisE.timeout((resolve, reject) => {
-	// setup Message component
-	setupDefaults('semantic-ui-react', require('semantic-ui-react'))
 	// initiate connection to blockchain
 	getConnection()
 	let countriesHash = generateHash(
@@ -79,6 +86,8 @@ const initPromise = PromisE.timeout((resolve, reject) => {
 	)
 	let translationChecked, countriesChecked
 	client.onConnect(async () => {
+		await PromisE.delay(100)
+		await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
 		// Retrieve a list of countries and store in the browser local storage
 		client.countries(countriesHash, (err, countries) => {
 			countriesChecked = true

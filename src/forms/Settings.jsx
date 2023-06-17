@@ -1,6 +1,4 @@
 import React, { Component } from 'react'
-// utils
-import { arrSort, deferred, isObj } from '../utils/utils'
 // components
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
@@ -23,8 +21,14 @@ import {
     translated,
 } from '../utils/languageHelper'
 import { confirm, confirmAsPromise } from '../services/modal'
+// utils
 import { copyRxSubject } from '../utils/reactjs'
-import { gridColumns } from '../services/window'
+import {
+    arrSort,
+    deferred,
+    isObj
+} from '../utils/utils'
+import { gridColumns } from '../utils/window'
 
 let textsCap = {
     chatLimitLabel: 'messages per chat',

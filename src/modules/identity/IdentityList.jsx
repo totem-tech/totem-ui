@@ -1,26 +1,27 @@
 import React from 'react'
 import { Icon } from 'semantic-ui-react'
-import storage from '../../utils/storageHelper'
-import { format } from '../../utils/time'
 // components
 import { Button, ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import Tags from '../../components/Tags'
 // services
-import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
+// utils
+import storage from '../../utils/storageHelper'
+import { format } from '../../utils/time'
 import { useRxSubject } from '../../utils/reactjs'
-import { MOBILE, rxLayout } from '../../services/window'
+import { translated } from '../../utils/languageHelper'
+import { textEllipsis } from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 // modules
 import UserContactList from '../contact/UserContactList'
 import { showLocations } from '../location/LocationsList'
+import Balance from './Balance'
 import { rxIdentities, USAGE_TYPES } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
 import IdentityForm from './IdentityForm'
-import IdentityShareForm from './IdentityShareForm'
-import Balance from './Balance'
 import IdentityIcon from './IdentityIcon'
-import { textEllipsis } from '../../utils/utils'
+import IdentityShareForm from './IdentityShareForm'
 
 let textsCap = {
 	actions: 'actions',

@@ -1,12 +1,15 @@
 import React, { isValidElement } from 'react'
 import { Button, Icon, Step } from 'semantic-ui-react'
 
+import { Embolden } from '../../../components/StringReplace'
+import { confirm } from '../../../services/modal'
+import { setActiveExclusive, setContentProps } from '../../../services/sidebar'
 import { getUser } from '../../../utils/chatClient'
 import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactjs'
 import {
 	BLOCK_DURATION_SECONDS,
-	durationToSeconds,
+	durationToSeconds
 } from '../../../utils/time'
 import {
 	arrUnique,
@@ -16,14 +19,11 @@ import {
 	objToUrlParams,
 	objWithoutKeys,
 } from '../../../utils/utils'
-import { Embolden } from '../../../components/StringReplace'
-import { setActiveExclusive, setContentProps } from '../../../services/sidebar'
-import { MOBILE, rxLayout } from '../../../services/window'
+import { MOBILE, rxLayout } from '../../../utils/window'
 import { getAll as getHistory, limit } from '../../history/history'
 import partners from '../../partner/partner'
 import { listTypes } from '../../task/TaskList'
 import { statusCached } from './claimKapex'
-import { confirm } from '../../../services/modal'
 
 let textsCap = {
 	addIdentity: 'add identity shared by a friend',

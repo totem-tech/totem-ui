@@ -4,7 +4,7 @@
 // import { translated } from '../../services/language'
 // import { showForm } from '../../services/modal'
 // import { iUseReducer, reducer, subjectAsPromise, usePromise, useRxSubject } from '../../services/react'
-// import { MOBILE, rxLayout } from '../../services/window'
+// import { MOBILE, rxLayout } from '../../utils/window'
 // import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 // import RegistrationForm from '../chat/RegistrationForm'
 // import { getDeposits } from './crowdsale'

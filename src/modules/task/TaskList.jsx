@@ -1,13 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { getUser, rxIsRegistered } from '../../utils/chatClient'
-import { format } from '../../utils/time'
-import {
-    isFn,
-    isObj,
-    textEllipsis,
-} from '../../utils/utils'
+import { Icon } from 'semantic-ui-react'
 // components
 import {
     Button,
@@ -18,7 +12,6 @@ import DataTable from '../../components/DataTable'
 import FormInput from '../../components/FormInput'
 import Tags from '../../components/Tags'
 // services
-import { translated } from '../../utils/languageHelper'
 import {
     showForm,
     confirmAsPromise,
@@ -26,14 +19,28 @@ import {
     newId,
 } from '../../services/modal'
 import { rxOnSave, statuses as queueStatuses } from '../../services/queue'
+// utils
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
-import { MOBILE, rxLayout } from '../../services/window'
+import { format } from '../../utils/time'
+import {
+    isFn,
+    isObj,
+    textEllipsis,
+} from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 // modules
 import Currency from '../currency/Currency'
-import { get as getIdentity, getSelected, rxSelected } from '../identity/identity'
+import {
+    get as getIdentity,
+    getSelected,
+    rxSelected
+} from '../identity/identity'
 import AddressName from '../partner/AddressName'
 import ApplicationForm from './marketplace/ApplicationForm'
 import ApplicationList from './marketplace/ApplicationList'
+import ApplicationView from './marketplace/ApplicationView'
 import useSearch from './marketplace/useSearch'
 import {
     handleAssignmentResponse,
@@ -50,8 +57,6 @@ import {
 } from './task'
 import TaskDetails from './TaskDetails'
 import TaskForm, { inputNames } from './TaskForm'
-import { Icon } from 'semantic-ui-react'
-import ApplicationView from './marketplace/ApplicationView'
 
 let textsCap = {
     acceptInvoice: 'accept invoice',

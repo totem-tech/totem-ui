@@ -1,15 +1,7 @@
 import React, { useEffect } from 'react'
 import { Icon } from 'semantic-ui-react'
-import { useRxSubject } from '../../utils/reactjs'
-import { format } from '../../utils/time'
-import {
-    clearClutter,
-    isFn,
-    textEllipsis,
-} from '../../utils/utils'
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
-import { translated } from '../../utils/languageHelper'
 import {
     confirm,
     confirmAsPromise,
@@ -20,7 +12,15 @@ import {
     remove as removeQueueItem,
     statuses,
 } from '../../services/queue'
-import { MOBILE, rxLayout } from '../../services/window'
+import { translated } from '../../utils/languageHelper'
+import { useRxSubject } from '../../utils/reactjs'
+import { format } from '../../utils/time'
+import {
+    clearClutter,
+    isFn,
+    textEllipsis,
+} from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import AddressName from '../partner/AddressName'
 import {
     clearAll,

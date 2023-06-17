@@ -1,8 +1,15 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
 import { validateMnemonic } from 'bip39'
+import PropTypes from 'prop-types'
+import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
+
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import { showForm } from '../../services/modal'
+
+import { translated } from '../../utils/languageHelper'
+import PromisE from '../../utils/PromisE'
+import { statuses } from '../../utils/reactjs'
 import {
 	isFn,
 	arrUnique,
@@ -10,11 +17,12 @@ import {
 	objHasKeys,
 	isBool,
 } from '../../utils/utils'
-import FormBuilder, {
-	findInput,
-	fillValues,
-} from '../../components/FormBuilder'
-import { translated } from '../../utils/languageHelper'
+
+import { getAll as getContacts, rxContacts } from '../contact/contact'
+import ContactForm from '../contact/ContactForm'
+import BackupForm from '../gettingStarted/BackupForm'
+import { getAll as getLocations, rxLocations } from '../location/location'
+import LocationForm from '../location/LocationForm'
 import { getAllTags } from '../partner/partner'
 import {
 	addFromUri,
@@ -25,57 +33,47 @@ import {
 	set,
 	USAGE_TYPES,
 } from './identity'
-import { getAll as getLocations, rxLocations } from '../location/location'
-import { showForm } from '../../services/modal'
-import LocationForm from '../location/LocationForm'
-import ContactForm from '../contact/ContactForm'
-import { getAll as getContacts, rxContacts } from '../contact/contact'
-import BackupForm from '../gettingStarted/BackupForm'
-import { statuses } from '../../components/Message'
-import PromisE from '../../utils/PromisE'
 import IdentityIcon from './IdentityIcon'
 
-const textsCap = translated(
-	{
-		address: 'address',
-		autoSaved: 'changes will be auto-saved',
-		bip39Warning: 'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
-		businessInfoLabel: 'business information',
-		contactIdCreateTitle: 'create a new contact',
-		contactIdLabel: 'contact details',
-		contactIdPlaceholder: 'select contact details',
-		create: 'create',
-		business: 'business',
-		generate: 'generate',
-		identity: 'identity',
-		name: 'name',
-		personal: 'personal',
-		restore: 'restore',
-		seed: 'seed',
-		tags: 'tags',
-		update: 'update',
-		headerCreate: 'create identity',
-		headerRestore: 'restore identity',
-		headerUpdate: 'update identity',
-		identityNamePlaceholder: 'enter a name for your Blockchain identity',
-		locationIdCreateTitle: 'create a new location',
-		locationIdLabel: 'location',
-		locationIdPlaceholder: 'select a location',
-		regNumberLabel: 'registered number',
-		regNumberPlaceholder: 'company registration number',
-		restoreInputLabel: 'restore my existing identity',
-		seedExists: 'seed already exists in the identity list with name:',
-		seedPlaceholder: 'enter existing seed or generate one',
-		tagsInputEmptyMessage: 'type a tag and press enter to add, to tags list',
-		tagsPlaceholder: 'enter tags',
-		uniqueNameRequired: 'an identity already exists with this name',
-		usageType: 'usage type',
-		validSeedRequired: 'please enter a valid seed',
-		vatNumberLabel: 'VAT number',
-		vatNumberPlaceholder: 'VAT registration number',
-	},
-	true,
-)[1]
+const textsCap = {
+	address: 'address',
+	autoSaved: 'changes will be auto-saved',
+	bip39Warning: 'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
+	businessInfoLabel: 'business information',
+	contactIdCreateTitle: 'create a new contact',
+	contactIdLabel: 'contact details',
+	contactIdPlaceholder: 'select contact details',
+	create: 'create',
+	business: 'business',
+	generate: 'generate',
+	identity: 'identity',
+	name: 'name',
+	personal: 'personal',
+	restore: 'restore',
+	seed: 'seed',
+	tags: 'tags',
+	update: 'update',
+	headerCreate: 'create identity',
+	headerRestore: 'restore identity',
+	headerUpdate: 'update identity',
+	identityNamePlaceholder: 'enter a name for your Blockchain identity',
+	locationIdCreateTitle: 'create a new location',
+	locationIdLabel: 'location',
+	locationIdPlaceholder: 'select a location',
+	regNumberLabel: 'registered number',
+	regNumberPlaceholder: 'company registration number',
+	restoreInputLabel: 'restore my existing identity',
+	seedExists: 'seed already exists in the identity list with name:',
+	seedPlaceholder: 'enter existing seed or generate one',
+	tagsInputEmptyMessage: 'type a tag and press enter to add, to tags list',
+	tagsPlaceholder: 'enter tags',
+	uniqueNameRequired: 'an identity already exists with this name',
+	usageType: 'usage type',
+	validSeedRequired: 'please enter a valid seed',
+	vatNumberLabel: 'VAT number',
+	vatNumberPlaceholder: 'VAT registration number',
+}
+translated(textsCap, true)
 
 export const requiredFields = Object.freeze({
 	address: 'address',
@@ -534,9 +532,9 @@ export default class IdentityForm extends Component {
 		uriInput.message = valid
 			? null
 			: {
-					content: textsCap.bip39Warning,
-					status: 'warning',
-			  }
+				content: textsCap.bip39Warning,
+				status: 'warning',
+			}
 		this.setState({ inputs })
 	}, 500)
 
@@ -554,7 +552,7 @@ export default class IdentityForm extends Component {
 				? 0
 				: 1
 			const seedWithoutPath = seed.split(DERIVATION_PATH_PREFIX)[0]
-			seed =  `${seedWithoutPath}${DERIVATION_PATH_PREFIX}${usageTypeCode}/0`
+			seed = `${seedWithoutPath}${DERIVATION_PATH_PREFIX}${usageTypeCode}/0`
 		}
 		const { address = '' } = (seed && addFromUri(seed)) || {}
 		const uriInput = findInput(inputs, inputNames.uri)
@@ -565,7 +563,7 @@ export default class IdentityForm extends Component {
 
 	validateName = (_, { value: name }) => {
 		const { address } = find(name) || {}
-		
+
 		return !!address
 			&& address !== this.values.address
 			&& textsCap.uniqueNameRequired

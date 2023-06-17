@@ -13,7 +13,7 @@ import {
     strFill,
 } from '../utils/utils'
 import { Statistic } from 'semantic-ui-react'
-import { useInverted } from '../services/window'
+import { useInverted } from '../utils/window'
 
 let texts = {
     ago: 'ago',
@@ -68,7 +68,7 @@ const TimeSince = props => {
         let autoUpdate = !dateTo && updateFrequency !== null
         const update = () => {
             if (!mounted) return
-            
+
             const [formatted, frequencyMS] = doFormat()
             autoUpdate = frequencyMS !== null
             const delay = updateFrequency || frequencyMS
@@ -131,7 +131,7 @@ TimeSince.propTypes = {
 }
 TimeSince.defaultProps = {
     asDuration: false,
-    durationConfig: { 
+    durationConfig: {
         fill: true,
         statisticProps: {},
         titleBelow: true,
@@ -163,7 +163,7 @@ export default React.memo(TimeSince)
  *                      1: update frequency: milliseconds representing 1 unit of the formatted string
  *                          Eg: if formatted string is in seconds update frequency will be 1 second.
  *                  ]
- */  
+ */
 const _format = (dateFrom, dateTo = new Date()) => {
     dateFrom = new Date(dateFrom)
     let diffMS = dateTo - dateFrom
@@ -172,11 +172,11 @@ const _format = (dateFrom, dateTo = new Date()) => {
     const seconds = diffMS / secondMS
     // update every second
     if (seconds < 60) return [_fmtSince(seconds, 'second', isPast), secondMS]
-    
+
     const minutes = seconds / 60
     // update every minute
     if (minutes < 60) return [_fmtSince(minutes, 'minute', isPast), minuteMS]
-    
+
     const hours = minutes / 60
     // update every hour
     if (hours < 24) return [_fmtSince(hours, 'hour', isPast), hourMS]
@@ -184,10 +184,10 @@ const _format = (dateFrom, dateTo = new Date()) => {
     const days = hours / 24
     // no need to auto update after 24 hours!!!
     if (days < 30) return [_fmtSince(days, 'day', isPast), null] //dayMS
-    
+
     const months = days / 30
     if (months < 12) return [_fmtSince(months, 'month', isPast), null] // monthMS
-    
+
     const years = months / 12
     return [_fmtSince(years, 'year', isPast), null] //yearMS
 }
@@ -264,7 +264,7 @@ const _calcDurationUnits = (durationConfig = {}) => {
     ]
 }
 const _formatDuration = (durationConfig = {}) => {
-    let { 
+    let {
         // dateFrom,
         // dateTo,
         fill = true,
@@ -299,5 +299,5 @@ const _formatDuration = (durationConfig = {}) => {
         )),
         frequencyMS,
     ]
- }
+}
 

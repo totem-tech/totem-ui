@@ -1,23 +1,18 @@
-import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
+import uuid from 'uuid'
 import {
     addToQueue,
     QUEUE_TYPES,
     rxOnSave,
     statuses,
 } from '../../services/queue'
-import {
-    getLayout,
-    MOBILE,
-    setClass,
-} from '../../services/window'
-import DataStorage from '../../utils/DataStorage'
-import storage from '../../utils/storageHelper'
 import client, {
     getUser,
     rxIsLoggedIn,
     rxIsRegistered,
 } from '../../utils/chatClient'
+import DataStorage from '../../utils/DataStorage'
+import storage from '../../utils/storageHelper'
 import { subjectAsPromise } from '../../utils/reactjs'
 import {
     arrUnique,
@@ -27,6 +22,11 @@ import {
     isObj,
     isValidNumber,
 } from '../../utils/utils'
+import {
+    getLayout,
+    MOBILE,
+    setClass,
+} from '../../utils/window'
 
 const PREFIX = 'totem_'
 const MODULE_KEY = 'chat-history'

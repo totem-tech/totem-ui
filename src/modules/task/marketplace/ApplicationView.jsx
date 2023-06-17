@@ -4,20 +4,24 @@ import TotemButtonLogo from '../../../assets/logos/button-288-colour.png'
 import DataTableVertical from '../../../components/DataTableVertical'
 import { Linkify } from '../../../components/StringReplace'
 import { newId, showInfo } from '../../../services/modal'
-import { MOBILE, rxLayout } from '../../../services/window'
 import { translated } from '../../../utils/languageHelper'
 import { useRxSubject } from '../../../utils/reactjs'
-import { fallbackIfFails, isObj, URL_REGEX } from '../../../utils/utils'
+import {
+    fallbackIfFails,
+    isObj,
+    URL_REGEX
+} from '../../../utils/utils'
+import { MOBILE, rxLayout } from '../../../utils/window'
 import { getColumns } from './ApplicationList'
 
-let textsCap = {
+const textsCap = {
     links: 'links',
     proposal: 'proposal',
     reviewApp: 'review appliation',
     title: 'title',
     viewApp: 'view appliation',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 const ApplicationView = props => {
     let {

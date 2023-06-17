@@ -1,19 +1,16 @@
-import React, { Component, isValidElement } from 'react'
 import PropTypes from 'prop-types'
+import React, { Component, isValidElement } from 'react'
+import { BehaviorSubject } from 'rxjs'
 import {
 	Form,
 	Header,
 	Icon,
 	Modal,
 } from 'semantic-ui-react'
-import { BehaviorSubject } from 'rxjs'
-import { Button } from './buttons'
-import Message, { statuses } from '../components/Message'
-import { translated } from '../utils/languageHelper'
 import { closeModal, newId } from '../services/modal'
-import { MOBILE, rxLayout } from '../services/window'
+import { translated } from '../utils/languageHelper'
+import { Message, statuses } from '../utils/reactjs'
 import {
-	generateHash,
 	hasValue,
 	isArr,
 	isBool,
@@ -24,6 +21,8 @@ import {
 	isSubjectLike,
 	toArray,
 } from '../utils/utils'
+import { MOBILE, rxLayout } from '../utils/window'
+import { Button } from './buttons'
 import FormInput from './FormInput'
 import { Invertible } from './Invertible'
 import IModal from './Modal'
@@ -690,7 +689,7 @@ export const getValues = (inputs = [], values = {}, inputName, newValue) =>
  */
 export const inputsForEach = (inputs = [], callback) => {
 	if (!isArr(inputs)) return
-	for (let i = 0; i < inputs.length; i++) {
+	for (let i = 0;i < inputs.length;i++) {
 		const input = inputs[i] || {}
 		const { inputs: childInputs, type } = input
 		const isGroup = `${type}`.toLowerCase() === 'group'
@@ -788,7 +787,7 @@ export const checkFormInvalid = (inputs = [], values = {}, inputsHidden = []) =>
 // If any input type is group it will recursively search in the child inputs as well
 export const findInput = (inputs, name) => {
 	let input
-	for (let i = 0; i < inputs.length; i++) {
+	for (let i = 0;i < inputs.length;i++) {
 		const { inputs: childInputs, name: iName, type } = inputs[i]
 		if (name === iName) return inputs[i]
 

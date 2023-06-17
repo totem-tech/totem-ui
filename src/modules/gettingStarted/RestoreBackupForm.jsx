@@ -1,31 +1,35 @@
 import React, { Component } from 'react'
-import uuid from 'uuid'
 import { BehaviorSubject, Subject } from 'rxjs'
 import { Table, Button } from 'semantic-ui-react'
+import uuid from 'uuid'
+import { ButtonDelayed } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import { closeModal, confirm, showForm } from '../../services/modal'
-import { MOBILE, rxLayout } from '../../services/window'
+import {
+	closeModal,
+	confirm,
+	showForm,
+} from '../../services/modal'
+import { setToast } from '../../services/toast'
+
 import { getUser, setUser } from '../../utils/chatClient'
 import { rxForceUpdateCache } from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
+import { statuses, subjectAsPromise } from '../../utils/reactjs'
 import storage, { backup, essentialKeys } from '../../utils/storageHelper'
 import {
 	objClean,
 	textCapitalize,
 	isFn,
+	isHex,
 	objWithoutKeys,
 	hasValue,
 	textEllipsis,
 } from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import BackupForm from './BackupForm'
-import { isHex } from 'web3-utils'
 import { decryptBackup } from '.'
-import { statuses } from '../../components/Message'
-import ButtonDelayed from '../../components/buttons/ButtonDelayed'
-import { setToast } from '../../services/toast'
-import { subjectAsPromise } from '../../utils/reactjs'
 
-let textsCap = {
+const textsCap = {
 	addFromBackup: 'add from backup',
 	backupNow: 'backup now',
 	backupValue: 'backup value',
@@ -74,7 +78,7 @@ let textsCap = {
 	titleNew: 'from backup',
 	userCredentials: 'user credentials',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 // data that can be merged (must be 2D array that represents a Map)
 const MERGEABLES = [
 	'totem_contacts',

@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react'
-import { Divider } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
-import { isFn, objWithoutKeys } from '../../utils/utils'
+import { Divider } from 'semantic-ui-react'
 import { Button } from '../../components/buttons'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 import { Invertible } from '../../components/Invertible'
 import { randomHex } from '../../services/blockchain'
+import { setToast } from '../../services/toast'
 import { translated } from '../../utils/languageHelper'
 import { unsubscribe, useRxSubject } from '../../utils/reactjs'
-import { setToast } from '../../services/toast'
+import { isFn, objWithoutKeys } from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import { convertTo, rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
-import { MOBILE, rxLayout } from '../../services/window'
 
 const textsCap = translated({
     addAsset: 'add',

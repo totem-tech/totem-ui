@@ -6,13 +6,12 @@ import React, {
 import PropTypes from 'prop-types'
 import {
     EMAIL_REGEX,
-    isBool,
     isFn,
     isStr,
     textEllipsis,
     URL_REGEX,
 } from '../utils/utils'
-import { useInverted } from '../services/window'
+import { useInverted } from '../utils/window'
 
 /**
  * @name	StringReplace
@@ -46,7 +45,7 @@ const StringReplace = props => {
     } = props
     if (!(regex instanceof RegExp) || isValidElement(content)) return content
     const [elements, setElements] = useState([])
-    
+
     content = isStr(content)
         ? content
         : JSON.stringify(content, null, 4)
@@ -96,7 +95,7 @@ const StringReplace = props => {
         }
     }, [content])
 
-	return elements
+    return elements
 }
 export default StringReplace
 

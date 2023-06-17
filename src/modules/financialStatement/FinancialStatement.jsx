@@ -1,19 +1,19 @@
 import React, { useState } from 'react'
-// utils
-import storage from '../../utils/storageHelper'
-import { isArr, objClean, textEllipsis } from '../../utils/utils'
-// components
 import { Button } from '../../components/buttons'
 import DrillDownList from '../../components/DrillDownList'
-import Message from '../../components/Message'
-// services
-import { translated } from '../../utils/languageHelper'
-// components
-import Currency from '../currency/Currency'
-import useLedgerAcBalances from './useLedgerAcBalances'
-import { MOBILE, rxLayout } from '../../services/window'
 import LabelCopy from '../../components/LabelCopy'
+import Currency from '../currency/Currency'
+import { translated } from '../../utils/languageHelper'
+import { Message } from '../../utils/reactjs'
+import storage from '../../utils/storageHelper'
+import {
+    isArr,
+    objClean,
+    textEllipsis,
+} from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import PostingList from './PostingList'
+import useLedgerAcBalances from './useLedgerAcBalances'
 
 const MODULE_KEY = 'financialStatement'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}

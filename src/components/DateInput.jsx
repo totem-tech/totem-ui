@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Dropdown as DD, Icon } from 'semantic-ui-react'
+import { translated } from '../utils/languageHelper'
+import { useRxSubject } from '../utils/reactjs'
 import {
     className,
     isDate,
@@ -11,9 +13,7 @@ import {
     objWithoutKeys,
     strFill,
 } from '../utils/utils'
-import { useRxSubject } from '../utils/reactjs'
-import { MOBILE, rxLayout, useInverted } from '../services/window'
-import { translated } from '../utils/languageHelper'
+import { MOBILE, rxLayout, useInverted } from '../utils/window'
 
 const textsCap = translated({
     day: 'day',

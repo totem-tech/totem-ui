@@ -1,19 +1,8 @@
 import PropTypes from 'prop-types'
 import React, { useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
-// utils
-import { translated } from '../../../utils/languageHelper'
-import PromisE from '../../../utils/PromisE'
-import { useRxSubject } from '../../../utils/reactjs'
-import { format } from '../../../utils/time'
-import {
-    deferred,
-    generateHash,
-    isFn,
-} from '../../../utils/utils'
 // components
 import DataTable from '../../../components/DataTable'
-import Message, { statuses } from '../../../components/Message'
 import {
     Button,
     ButtonAcceptOrReject,
@@ -33,19 +22,30 @@ import {
     checkComplete,
     QUEUE_TYPES,
 } from '../../../services/queue'
-import { MOBILE, rxLayout } from '../../../services/window'
+// utils
+import { translated } from '../../../utils/languageHelper'
+import PromisE from '../../../utils/PromisE'
+import {
+    Message,
+    statuses,
+    useRxSubject,
+} from '../../../utils/reactjs'
+import { format } from '../../../utils/time'
+import {
+    deferred,
+    generateHash,
+    isFn,
+} from '../../../utils/utils'
+import { MOBILE, rxLayout } from '../../../utils/window'
 // modules
+import { get as getIdentity } from '../../identity/identity'
 import AddressName from '../../partner/AddressName'
 import { get as getPartner } from '../../partner/partner'
 import PartnerForm, { inputNames as pInputNames } from '../../partner/PartnerForm'
-import {
-    applicationStatus,
-    queueableApis,
-} from '../task'
+import { applicationStatus, queueableApis } from '../task'
 import TaskForm, { inputNames as taskInputNames } from '../TaskForm'
 import useTask from '../useTask'
 import ApplicationView from './ApplicationView'
-import { get as getIdentity } from '../../identity/identity'
 
 let textsCap = {
     accept: 'accept',

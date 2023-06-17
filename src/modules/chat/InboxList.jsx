@@ -1,13 +1,16 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Button, Label } from 'semantic-ui-react'
 import { contentPlaceholder } from '../../components/ContentSegment'
 import FormInput from '../../components/FormInput'
-import Message from '../../components/Message'
 import { confirm, showForm } from '../../services/modal'
-import { MOBILE, getLayout } from '../../services/window'
 import { getUser } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { useMount, useRxState, useRxSubject, useRxStateDeferred } from '../../utils/reactjs'
+import {
+    Message,
+    useMount,
+    useRxState,
+    useRxSubject,
+} from '../../utils/reactjs'
 import {
     arrSort,
     className,
@@ -15,6 +18,7 @@ import {
     strFill,
     textEllipsis,
 } from '../../utils/utils'
+import { MOBILE, getLayout } from '../../utils/window'
 import {
     createInbox,
     rxExpanded,

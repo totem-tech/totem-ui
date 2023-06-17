@@ -18,20 +18,22 @@ import {
     isValidNumber,
     objClean,
 } from '../utils/utils'
-// services
-// keep the `client` variable as it will be used the `handleChatClient` function
-import _client, { rxIsConnected, rxIsInMaintenanceMode } from '../utils/chatClient'
+import {
+    getClient,
+    rxIsConnected,
+    rxIsInMaintenanceMode,
+} from '../utils/chatClient'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
+import { translated } from '../utils/languageHelper'
+import { subjectAsPromise } from '../utils/reactjs'
+import { rxOnline } from '../utils/window'
 import {
     getConnection,
     query,
     rxBlockNumber,
 } from './blockchain'
-import { translated } from '../utils/languageHelper'
 import { setToast } from './toast'
-import { rxOnline } from './window'
-import { subjectAsPromise } from '../utils/reactjs'
 
 const textsCap = translated({
     amount: 'amount',
@@ -435,7 +437,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
             return
         }
         // to make sure `client` variable isn't renamed when compiled
-        const client = _client
+        const client = getClient()
         eval(client)
         let func = task.func
         func = (func.startsWith('client.') ? '' : 'client.') + func
@@ -580,7 +582,7 @@ const processArgs = (rootTask = {}, currentTask = {}) => {
                 ? undefined
                 : getTaskByName(task.next, name)
         }
-        for (let i = 0; i < args.length; i++) {
+        for (let i = 0;i < args.length;i++) {
             const arg = args[i]
             const { __taskName, __resultSelector } = isObj(arg) ? arg : {}
             const isStatic = !__taskName || !__resultSelector
@@ -778,7 +780,7 @@ window.addEventListener('beforeunload', function (e) {
     e.returnValue = ''
 })
 const resumeSuspended = deferred(async () => {
-    for (let i = 0; i < suspendedIds.length; i++) {
+    for (let i = 0;i < suspendedIds.length;i++) {
         const id = suspendedIds[i]
         const task = queue.get(id)
         const { type } = task

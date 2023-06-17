@@ -1,6 +1,4 @@
 import React from 'react'
-import { MOBILE, rxLayout } from '../services/window'
-import { useRxSubject } from '../utils/reactjs'
 import {
     className,
     isFn,
@@ -8,6 +6,7 @@ import {
     isObj,
     objWithoutKeys
 } from '../utils/utils'
+import { MOBILE, rxLayout } from '../utils/window'
 import DataTable from './DataTable'
 
 const DataTableVertical = (props) => {

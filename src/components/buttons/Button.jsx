@@ -1,8 +1,8 @@
 import React from 'react'
 import { Button as _Button } from 'semantic-ui-react'
-import { useInverted } from '../../services/window'
 import { iUseReducer } from '../../utils/reactjs'
 import { isBool, isFn } from '../../utils/utils'
+import { useInverted } from '../../utils/window'
 
 /**
  * @name	Button
@@ -12,7 +12,7 @@ import { isBool, isFn } from '../../utils/utils'
  * 
  * @returns {Element}
  */
-const Button = React.memo(props => {
+export const Button = React.memo(function Button(props) {
 	const [state, setState] = iUseReducer(null, { loading: false })
 	let {
 		color,

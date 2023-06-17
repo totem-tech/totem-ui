@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
-import Message from './Message'
 import { translated } from '../utils/languageHelper'
-import { getUrlParam } from '../services/window'
+import { Message } from '../utils/reactjs'
+import { getUrlParam } from '../utils/window'
 
-const [texts] = translated({
+const texts = translated({
 	errorMsg: 'Something went wrong with this component',
-})
+})[0]
 
 export default class ErrorBoundary extends Component {
 	constructor(props) {
@@ -24,23 +24,25 @@ export default class ErrorBoundary extends Component {
 
 	componentDidCatch(error, info) {
 		// You can also log the error to an error reporting service
-		console.log({ error, info })
+		console.error('ErrorBoundary', { error, info })
 	}
 
 	render() {
 		const { debug, error, hasError } = this.state
 		const { children } = this.props
 
-		return !hasError ? (
-			children
-		) : (
-			<Message
-				{...{
-					content: debug ? error.stack : undefined,
-					header: !debug ? texts.errorMsg : error.message,
-					status: 'error',
-				}}
-			/>
-		)
+		return !hasError
+			? children
+			: (
+				<Message
+					{...{
+						content: !!debug && error.stack,
+						header: !debug
+							? texts.errorMsg
+							: error.message,
+						status: 'error',
+					}}
+				/>
+			)
 	}
 }

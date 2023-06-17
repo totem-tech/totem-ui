@@ -21,13 +21,17 @@ import {
 	isObj,
 	hasValue,
 } from '../utils/utils'
+import { translated } from '../utils/languageHelper'
+import {
+	Message,
+	statuses,
+	unsubscribe,
+} from '../utils/reactjs'
+import { MOBILE, rxLayout } from '../utils/window'
 import { Button } from './buttons'
 import { Invertible } from './Invertible'
-import Message, { statuses } from './Message'
 import Paginator from './Paginator'
-import { translated } from '../utils/languageHelper'
-import { MOBILE, rxLayout } from '../services/window'
-import { unsubscribe } from '../utils/reactjs'
+
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
 	const start = pageNo * perPage - perPage
@@ -648,9 +652,9 @@ export default class DataTable extends Component {
 				{!isLoading && this.getTopContent(totalRows, selectedIndexes)}
 
 				<div style={styles.tableContent}>
-					{isEmpty && emptyMessage && (
-						<Message {...emptyMessage} />
-					)}
+					{isEmpty
+						&& emptyMessage
+						&& <Message {...emptyMessage} />}
 					{totalRows > 0 && (
 						<Invertible {...{
 							...DataTable.defaultProps.tableProps, // merge when prop supplied

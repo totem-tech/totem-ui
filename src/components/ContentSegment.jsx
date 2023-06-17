@@ -14,7 +14,7 @@ import {
 	useRxSubject,
 } from '../utils/reactjs'
 import { isSubjectLike, isFn } from '../utils/utils'
-import { toggleFullscreen } from '../services/window'
+import { toggleFullscreen } from '../utils/window'
 import ErrorBoundary from './CatchReactErrors'
 import { Invertible } from './Invertible'
 import Text from './Text'

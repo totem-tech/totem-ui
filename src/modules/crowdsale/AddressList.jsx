@@ -8,7 +8,7 @@
 // import { addToQueue, QUEUE_TYPES } from '../../services/queue'
 // import { useRxSubject } from '../../services/react'
 // import { setToast } from '../../services/toast'
-// import { MOBILE, rxLayout } from '../../services/window'
+// import { MOBILE, rxLayout } from '../../utils/window'
 // import CalculatorForm from './CalculatorForm'
 // import { BLOCKCHAINS, crowdsaleData, rxCrowdsaleData } from './crowdsale'
 // import DAAForm from './DAAForm'

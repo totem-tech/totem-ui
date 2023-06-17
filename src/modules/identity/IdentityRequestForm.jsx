@@ -1,11 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { iUseReducer } from '../../utils/reactjs'
-import { isFn, } from '../../utils/utils'
-import { statuses } from '../../components/Message'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { iUseReducer, statuses } from '../../utils/reactjs'
+import { isFn } from '../../utils/utils'
 
 const notificationType = 'identity'
 const childType = 'request'

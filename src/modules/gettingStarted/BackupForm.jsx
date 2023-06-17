@@ -2,20 +2,22 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
+import { ButtonDelayed } from '../../components/buttons'
 import FormBuilder, {
 	fillValues,
 	findInput,
 } from '../../components/FormBuilder'
-import { MOBILE, rxLayout } from '../../services/window'
+import Text from '../../components/Text'
 import {
 	confirm,
 	confirmAsPromise,
 	showForm,
 } from '../../services/modal'
+import { setToast } from '../../services/toast'
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
+import { iUseReducer, statuses } from '../../utils/reactjs'
 import storage, { backup } from '../../utils/storageHelper'
-import { iUseReducer } from '../../utils/reactjs'
 import {
 	copyToClipboard,
 	deferred,
@@ -23,20 +25,17 @@ import {
 	isFn,
 	isHex,
 } from '../../utils/utils'
-import identity from '../identity/identity'
-import partner from '../partner/partner'
-import location from '../location/location'
+import { MOBILE, rxLayout } from '../../utils/window'
 import contact from '../contact/contact'
-import Text from '../../components/Text'
+import identity from '../identity/identity'
+import location from '../location/location'
+import partner from '../partner/partner'
 import {
 	MODULE_KEY,
 	saveActiveStep,
 	stepIndexes,
 } from './GettingStarted'
 import { encryptBackup, generatePassword } from '.'
-import { statuses } from '../../components/Message'
-import ButtonDelayed from '../../components/buttons/ButtonDelayed'
-import { setToast } from '../../services/toast'
 
 let textsCap = {
 	backupLater: 'backup later',

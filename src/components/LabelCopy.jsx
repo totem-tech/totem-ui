@@ -15,7 +15,7 @@ import {
 } from '../utils/utils'
 import { translated } from '../utils/languageHelper'
 import { iUseReducer, useRxSubject } from '../utils/reactjs'
-import { MOBILE, rxLayout } from '../services/window'
+import { MOBILE, rxLayout } from '../utils/window'
 import Invertible from './Invertible'
 import Label from './Label'
 

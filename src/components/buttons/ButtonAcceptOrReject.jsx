@@ -3,13 +3,13 @@ import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
 import ButtonGroup from './ButtonGroup'
 
-let textsCap = {
+const textsCap = {
 	accept: 'accept',
 	reject: 'reject',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
-const ButtonAcceptOrReject = (props) => {
+export const ButtonAcceptOrReject = React.memo(function ButtonAcceptOrReject(props) {
 	const {
 		acceptColor,
 		acceptProps = {},
@@ -46,7 +46,7 @@ const ButtonAcceptOrReject = (props) => {
 			values: [true, false],
 		}} />
 	)
-}
+})
 ButtonAcceptOrReject.propTypes = {
 	acceptColor: PropTypes.string, // colors supported by SemanticUI buttons
 	acceptText: PropTypes.string,
@@ -71,5 +71,4 @@ ButtonAcceptOrReject.defaultProps = {
 	rejectColor: 'red',
 	rejectText: textsCap.reject,
 }
-
-export default React.memo(ButtonAcceptOrReject)
+export default ButtonAcceptOrReject

@@ -2,9 +2,8 @@ import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import { translated } from '../utils/languageHelper'
-import { useRxSubject } from '../utils/reactjs'
+import { RxSubjectView, useRxSubject } from '../utils/reactjs'
 import { hasValue, isFn, isSubjectLike } from '../utils/utils'
-import RxSubjectView from './RxSubjectView'
 
 const textsCap = translated({
     title: 'character count'

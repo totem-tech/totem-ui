@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
 import { rxIsRegistered } from '../../../utils/chatClient'
-import { useRxSubject } from '../../../utils/reactjs'
-import Message, { statuses } from '../../../components/Message'
+import {
+	Message,
+	statuses,
+	useRxSubject,
+} from '../../../utils/reactjs'
 import ClaimKAPEXForm from './ClaimKapexForm'
 import { statusCached } from './claimKapex'
 import { translated } from '../../../utils/languageHelper'

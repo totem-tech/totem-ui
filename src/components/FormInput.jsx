@@ -12,7 +12,12 @@ import {
 } from 'semantic-ui-react'
 import { translated } from '../utils/languageHelper'
 import PromisE from '../utils/PromisE'
-import { unsubscribe } from '../utils/reactjs'
+import {
+	Message,
+	isMemo,
+	statuses,
+	unsubscribe,
+} from '../utils/reactjs'
 import {
 	deferred,
 	hasValue,
@@ -28,21 +33,17 @@ import {
 	isDefined,
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
-// services
+import { rxInverted } from '../utils/window'
 import { randomHex } from '../services/blockchain'
-import { rxInverted } from '../services/window'
 import { Button } from './buttons'
-import Message, { statuses } from './Message'
-import { Invertible } from './Invertible'
-// Custom Inputs
-import CheckboxGroup from './CheckboxGroup'
-import UserIdInput from './UserIdInput'
-import DateInput from './DateInput'
-import Text from './Text'
 import CharacterCount from './CharacterCount'
-import RxSubjectView from './RxSubjectView'
+import CheckboxGroup from './CheckboxGroup'
+import DateInput from './DateInput'
+import { Invertible } from './Invertible'
+import Text from './Text'
+import UserIdInput from './UserIdInput'
 
-// Memo-ify everything
+// Memo-ify everything???
 const Accordion = React.memo(S_Accordion)
 const Accordion_Content = React.memo(S_Accordion.Content)
 const Accordion_Title = React.memo(S_Accordion.Title)
@@ -666,10 +667,9 @@ export class FormInput extends Component {
 					<label htmlFor={attrs.id} key='label'>
 						{label}
 					</label>,
-					!!showCount && !NON_COUNT_TYPES.includes(type) && (
-						// <RxSubjectView {...{
-						// 	subject: this.rxFocused,
-						// 	valueModifier: focused && (
+					!!showCount
+					&& !NON_COUNT_TYPES.includes(type)
+					&& (
 						<CharacterCount {...{
 							key: 'CharacterCount',
 							maxLength,
@@ -678,8 +678,6 @@ export class FormInput extends Component {
 							subject: rxValue,
 							show: this.rxFocused,
 						}} />
-						// 	)
-						// }} />
 					),
 					!!labelDetails && (
 						<div

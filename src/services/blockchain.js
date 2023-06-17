@@ -1,17 +1,23 @@
 import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
-// utils
-import PromisE from '../utils/PromisE'
-import { connect, query as queryHelper, setDefaultConfig } from '../utils/polkadotHelper'
-import types from '../utils/totem-polkadot-js-types'
-import storage from '../utils/storageHelper'
-import { generateHash, isArr, isFn } from '../utils/utils'
-// services
+import { currencyDefault } from '../modules/currency/currency'
 import { translated } from '../utils/languageHelper'
+import PromisE from '../utils/PromisE'
+import {
+    connect,
+    query as queryHelper,
+    setDefaultConfig,
+} from '../utils/polkadotHelper'
+import storage from '../utils/storageHelper'
+import types from '../utils/totem-polkadot-js-types'
+import {
+    generateHash,
+    isArr,
+    isFn,
+} from '../utils/utils'
+import { rxOnline } from '../utils/window'
 import { QUEUE_TYPES } from './queue'
 import { setToast } from './toast'
-import { rxOnline } from './window'
-import { currencyDefault } from '../modules/currency/currency'
 
 export const rxBlockNumber = new BehaviorSubject()
 const MODULE_KEY = 'blockchain'

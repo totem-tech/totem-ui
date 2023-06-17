@@ -1,18 +1,14 @@
 import React, { Component } from 'react'
-import {
-    isFn,
-    textEllipsis,
-} from '../../utils/utils'
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { findInput } from '../../components/FormBuilder'
-import { statuses } from '../../components/Message'
 import Text from '../../components/Text'
-import { translated } from '../../utils/languageHelper'
 import { confirm, showForm, showInfo } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../utils/reactjs'
-import { rxLayout, MOBILE } from '../../services/window'
+import { translated } from '../../utils/languageHelper'
+import { statuses, unsubscribe } from '../../utils/reactjs'
+import { isFn, textEllipsis } from '../../utils/utils'
+import { rxLayout, MOBILE } from '../../utils/window'
 import { getSelected } from '../identity/identity'
 import { blocksToDuration } from '../timekeeping/timekeeping'
 import {

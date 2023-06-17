@@ -6,9 +6,6 @@ import {
 	Menu,
 	Sidebar,
 } from 'semantic-ui-react'
-import { deferred, isFn } from '../utils/utils'
-import { translated } from '../utils/languageHelper'
-import { useRxSubject } from '../utils/reactjs'
 import {
 	rxAllInactive,
 	getItem,
@@ -21,14 +18,18 @@ import {
 	toggleSidebarState,
 	setActiveExclusive,
 } from '../services/sidebar'
-import { rxLayout, MOBILE } from '../services/window'
+import { translated } from '../utils/languageHelper'
+import { useRxSubject } from '../utils/reactjs'
+import { deferred, isFn } from '../utils/utils'
+import { rxLayout, MOBILE } from '../utils/window'
 import ContentSegment from './ContentSegment'
 import Holdable from './Holdable'
 
-const [_, textsCap] = translated({
+const textsCap = {
 	closeSidebar: 'close sidebar',
 	keepOpen: 'keep open'
-}, true)
+}
+translated(textsCap, true)
 
 function SidebarLeft() {
 	const [allInactive] = useRxSubject(rxAllInactive)

@@ -1,12 +1,12 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 import { Card, Icon } from 'semantic-ui-react'
-import { className } from '../../utils/utils'
 import Text from '../../components/Text'
 import { translated } from '../../utils/languageHelper'
-import { useInverted } from '../../services/window'
-import Currency from '../currency/Currency'
+import { className } from '../../utils/utils'
+import { useInverted } from '../../utils/window'
 import { currencyDefault } from '../currency/currency'
+import Currency from '../currency/Currency'
 
 const textsCap = translated({
     header: 'signup rewards',
@@ -17,7 +17,7 @@ export default function SignupCard({ signupReward }) {
     const inverted = useInverted()
     const { amount } = signupReward || {}
     if (!amount) return ''
-    
+
     const header = (
         <Text className='header'>
             <Icon name={amount > 0 ? 'check' : 'play'} />

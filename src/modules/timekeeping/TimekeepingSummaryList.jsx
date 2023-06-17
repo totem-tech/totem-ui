@@ -1,10 +1,13 @@
-import React, { useCallback, useEffect } from 'react'
-import { iUseReducer, useRxSubject } from '../../utils/reactjs'
-import { isArr } from '../../utils/utils'
+import React, { useEffect } from 'react'
 import DataTable from '../../components/DataTable'
-import { statuses } from '../../components/Message'
 import { translated } from '../../utils/languageHelper'
-import { unsubscribe } from '../../utils/reactjs'
+import {
+    iUseReducer,
+    statuses,
+    unsubscribe,
+    useRxSubject,
+} from '../../utils/reactjs'
+import { isArr } from '../../utils/utils'
 import { rxSelected } from '../identity/identity'
 import {
     blocksToDuration,
@@ -14,7 +17,7 @@ import {
     rxDurtionPreference,
 } from './timekeeping'
 
-const textsCap = translated({
+const textsCap = {
     activity: 'activity',
     loading: 'loading...',
     percentage: 'percentage',
@@ -23,7 +26,8 @@ const textsCap = translated({
     totalHours: 'total time in hours',
     yourContribution: 'how your time is divided',
     unnamed: 'unnamed',
-}, true)[1]
+}
+translated(textsCap, true)
 
 const TimekeepingSummaryList = () => {
     const [state, setState] = iUseReducer(null, {

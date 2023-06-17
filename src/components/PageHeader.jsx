@@ -1,44 +1,60 @@
 import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-import { Dropdown, Icon, Image, Menu } from 'semantic-ui-react'
-// utils
-import { className, copyToClipboard, textEllipsis } from '../utils/utils'
-// forms
-import IdentityForm from '../modules/identity/IdentityForm'
-import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
+import {
+	Dropdown,
+	Icon,
+	Image,
+	Menu,
+} from 'semantic-ui-react'
 import SettingsForm, { inputNames as settingsInputNames } from '../forms/Settings'
 // modules
 import {
 	rxUnreadCount as rxUnreadMsgCount,
 	rxVisible as rxChatVisible,
 } from '../modules/chat/chat'
-import { getUser, rxIsInMaintenanceMode, rxIsLoggedIn } from '../utils/chatClient'
-import { getSelected, setSelected, rxIdentities } from '../modules/identity/identity'
+import { getIdentityOptions } from '../modules/identity/getIdentityOptions'
+import {
+	getSelected,
+	setSelected,
+	rxIdentities,
+} from '../modules/identity/identity'
+import IdentityForm from '../modules/identity/IdentityForm'
 import IdentityShareForm from '../modules/identity/IdentityShareForm'
+import { getSelected as getSelectedLang, translated } from '../utils/languageHelper'
 import {
 	rxNewNotification,
 	rxVisible as rxNotifVisible,
 	rxUnreadCount as rxUnreadNotifCount,
 } from '../modules/notification/notification'
 import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
+import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
 // services
-import { getSelected as getSelectedLang, translated } from '../utils/languageHelper'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
-import { unsubscribe, useRxSubject } from '../utils/reactjs'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
+// utils
+import {
+	getUser,
+	rxIsInMaintenanceMode,
+	rxIsLoggedIn,
+} from '../utils/chatClient'
+import { unsubscribe, useRxSubject } from '../utils/reactjs'
+import {
+	className,
+	copyToClipboard,
+	textEllipsis,
+} from '../utils/utils'
 import {
 	MOBILE,
 	rxInverted,
 	rxLayout,
 	setInvertedBrowser,
 	useInverted,
-} from '../services/window'
-import { getIdentityOptions } from '../modules/identity/getIdentityOptions'
+} from '../utils/window'
 
-const [texts, textsCap] = translated({
+const textsCap = {
 	addressCopied: 'your identity copied to clipboard',
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
@@ -53,7 +69,8 @@ const [texts, textsCap] = translated({
 	requestFunds: 'request funds',
 	shareIdentity: 'share my identity',
 	updateIdentity: 'update identity',
-}, true)
+}
+const texts = translated(textsCap, true)
 let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 

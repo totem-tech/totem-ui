@@ -1,7 +1,7 @@
 import React from 'react'
 import { Modal } from 'semantic-ui-react'
 import { className } from '../utils/utils'
-import { useInverted } from '../services/window'
+import { useInverted } from '../utils/window'
 
 // Invertible modal (since Semantic UI Modal doesn't have inverted property!!!)
 const ModalInvertible = props => {

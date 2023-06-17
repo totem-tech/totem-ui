@@ -1,15 +1,15 @@
-import React, { isValidElement, useState } from 'react'
 import PropTypes from 'prop-types'
-import { isFn, objWithoutKeys } from '../../utils/utils'
+import React, { isValidElement } from 'react'
 import { translated } from '../../utils/languageHelper'
-import { useInverted } from '../../services/window'
-import Button from './Button'
 import { useRxState } from '../../utils/reactjs'
+import { isFn, objWithoutKeys } from '../../utils/utils'
+import { useInverted } from '../../utils/window'
+import Button from './Button'
 
-let textsCap = {
+const textsCap = {
 	or: 'or',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 /**
  * @name    ButtonGroup
@@ -19,7 +19,7 @@ textsCap = translated(textsCap, true)[1]
  *
  * @returns {Element}
  */
-const ButtonGroup = (props) => {
+export const ButtonGroup = React.memo(function ButtonGroup(props) {
 	const inverted = useInverted()
 	const {
 		buttons,
@@ -83,7 +83,7 @@ const ButtonGroup = (props) => {
 			],
 		)} />
 	)
-}
+})
 ButtonGroup.propTypes = {
 	buttons: PropTypes.arrayOf(PropTypes.object).isRequired,
 	El: PropTypes.oneOfType([
@@ -117,4 +117,14 @@ ButtonGroup.defaultProps = {
 	],
 	orText: textsCap.or.toLowerCase(),
 }
-export default React.memo(ButtonGroup)
+export default ButtonGroup
+
+/**
+ * @name    ButtonGroupOr
+ * @summary shorthand for `ButtonGroup` with property `or = true`
+ *
+ * @param   {Object} props
+ *
+ * @returns {Element}
+ */
+export const ButtonGroupOr = (props) => <ButtonGroup {...props} or={true} />

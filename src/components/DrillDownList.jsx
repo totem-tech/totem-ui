@@ -1,9 +1,17 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Accordion, Icon } from 'semantic-ui-react'
-import { className, hasValue, isFn } from '../utils/utils'
-import { MOBILE, rxLayout, useInverted } from '../services/window'
 import { RecursiveShapeType, useRxSubject } from '../utils/reactjs'
+import {
+    className,
+    hasValue,
+    isFn,
+} from '../utils/utils'
+import {
+    MOBILE,
+    rxLayout,
+    useInverted
+} from '../utils/window'
 import Text from './Text'
 
 const DrillDownList = props => {

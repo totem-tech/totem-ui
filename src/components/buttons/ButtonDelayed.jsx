@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 import { objWithoutKeys } from '../../utils/utils'
 
-function ButtonDelayed (props) {
+export const ButtonDelayed = React.memo(function ButtonDelayed(props) {
     const {
         content,
         children,
@@ -23,7 +23,7 @@ function ButtonDelayed (props) {
             mounted = false
         }
     }, [seconds])
-    
+
     const _children = (
         <React.Fragment>
             {content || children}
@@ -39,7 +39,7 @@ function ButtonDelayed (props) {
     }
 
     return <El {...props} />
-}
+})
 ButtonDelayed.propTypes = {
     seconds: PropTypes.number,
     El: PropTypes.oneOfType([
@@ -57,5 +57,4 @@ ButtonDelayed.defaultProps = {
         'ignoreAttributes',
     ],
 }
-
-export default React.memo(ButtonDelayed)
+export default ButtonDelayed

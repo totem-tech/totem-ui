@@ -1,4 +1,9 @@
-import { generateHash, isStr, isValidNumber, randomInt } from '../../utils/utils'
+import {
+    generateHash,
+    isStr,
+    isValidNumber,
+    randomInt,
+} from '../../utils/utils'
 import { secretBox } from '../../utils/naclHelper'
 import { addFromUri, generateUri } from '../identity/identity'
 

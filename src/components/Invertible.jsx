@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isFn, objWithoutKeys } from '../utils/utils'
-import { useInverted } from '../services/window'
+import { useInverted } from '../utils/window'
 
 // Convert supported Semantic UI element into Invertible element
 export function Invertible(props) {

@@ -3,20 +3,21 @@ import React, {
 	useEffect,
 	useState,
 } from 'react'
-import { Button } from 'semantic-ui-react'
 import { BehaviorSubject } from 'rxjs'
+import { Button } from 'semantic-ui-react'
 import uuid from 'uuid'
-import chatClient, {
-	rxIsLoggedIn,
-	rxUserIdentity,
-} from '../../../utils/chatClient'
+import FAQ from '../../../components/FAQ'
+import FormBuilder, { findInput } from '../../../components/FormBuilder'
+import chatClient, { rxIsLoggedIn, rxUserIdentity } from '../../../utils/chatClient'
 import { bytesToHex } from '../../../utils/convert'
 import { rxForceUpdateCache } from '../../../utils/DataStorage'
 import { translated } from '../../../utils/languageHelper'
 import { keyring } from '../../../utils/polkadotHelper'
 import PromisE from '../../../utils/PromisE'
 import {
+	Message,
 	iUseReducer,
+	statuses,
 	subjectAsPromise,
 	useRxSubject,
 } from '../../../utils/reactjs'
@@ -26,16 +27,10 @@ import {
 	isHex,
 	isStr,
 } from '../../../utils/utils'
-import FAQ from '../../../components/FAQ'
-import FormBuilder, { findInput } from '../../../components/FormBuilder'
-import Message, { statuses } from '../../../components/Message'
 import BackupForm from '../../gettingStarted/BackupForm'
 import { rxHistory } from '../../history/history'
 import { getIdentityOptions } from '../../identity/getIdentityOptions'
-import identities, {
-	rxIdentities,
-	rxSelected,
-} from '../../identity/identity'
+import identities, { rxIdentities, rxSelected } from '../../identity/identity'
 import { rxPartners } from '../../partner/partner'
 import { generateTweet, statusCached } from './claimKapex'
 import { getUsageTasks, StepGroup } from './usageTasks'

@@ -1,13 +1,13 @@
-import React from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import React from 'react'
 import { Accordion, Button } from 'semantic-ui-react'
-import { isFn, objWithoutKeys } from '../utils/utils'
-import { translated } from '../utils/languageHelper'
+import uuid from 'uuid'
 import { closeModal, confirm } from '../services/modal'
+import { translated } from '../utils/languageHelper'
 import { RecursiveShapeType } from '../utils/reactjs'
+import { isFn, objWithoutKeys } from '../utils/utils'
+import { useInverted } from '../utils/window'
 import Text from './Text'
-import { useInverted } from '../services/window'
 
 const textsCap = translated({
     faqs: 'frequently asked questions',

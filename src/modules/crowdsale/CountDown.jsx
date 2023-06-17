@@ -3,7 +3,7 @@
 // import { rxBlockNumber } from '../../services/blockchain'
 // import { translated } from '../../services/language'
 // import { subjectAsPromise, usePromise } from '../../services/react'
-// import { MOBILE, rxLayout } from '../../services/window'
+// import { MOBILE, rxLayout } from '../../utils/window'
 // import { blockNumberToTS } from '../../utils/time'
 // import Progress from './Progress'
 

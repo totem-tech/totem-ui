@@ -1,24 +1,32 @@
-import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import uuid from 'uuid'
+import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import PromisE from '../../utils/PromisE'
-import { blockToDate } from '../../utils/time'
-import { isArr, deferred, isFn, isBool } from '../../utils/utils'
+import uuid from 'uuid'
+// components
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
+// services
 import {
     hashTypes,
     queueables as bcQueueables,
     rxBlockNumber,
 } from '../../services/blockchain'
-import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../utils/reactjs'
-import { MOBILE, rxLayout } from '../../services/window'
+// utils
+import { translated } from '../../utils/languageHelper'
+import PromisE from '../../utils/PromisE'
+import { subjectAsPromise, unsubscribe } from '../../utils/reactjs'
+import { blockToDate } from '../../utils/time'
+import {
+    isArr,
+    deferred,
+    isFn,
+    isBool
+} from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
+// modules
 import identities, {
-    get as getIdentity,
     getSelected,
     rxIdentities,
     rxSelected,
@@ -37,11 +45,10 @@ import {
 } from './timekeeping'
 import TimekeepingDetailsForm from './TimekeepingDetails'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
-import { subjectAsPromise } from '../../utils/reactjs'
 
 const toBeImplemented = () => alert('To be implemented')
 
-let textsCap = {
+const textsCap = {
     action: 'action',
     activity: 'activity',
     approve: 'approve',
@@ -92,7 +99,7 @@ let textsCap = {
     unarchiveRecord: 'restore from archive',
     workerIdentity: 'worker identity',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 const statusTexts = {}
 statusTexts[statuses.draft] = textsCap.draft
 statusTexts[statuses.submit] = textsCap.submitted

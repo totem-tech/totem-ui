@@ -2,11 +2,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
-import { isFn, isStr } from '../../utils/utils'
-import { translated } from '../../utils/languageHelper'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { iUseReducer } from '../../utils/reactjs'
-import { statuses } from '../../components/Message'
+import { translated } from '../../utils/languageHelper'
+import { iUseReducer, statuses } from '../../utils/reactjs'
+import { isFn, isStr } from '../../utils/utils'
 
 let textsCap = {
     introducingUserIdConflict: 'you cannot introduce a user to themselves!',

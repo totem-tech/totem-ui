@@ -21,7 +21,9 @@ import UtilitiesView from '../views/UtilitiesView'
 import RewardsView from '../modules/rewards/RewardsView'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
+import { rxIsRegistered } from '../utils/chatClient'
 import DataStorage from '../utils/DataStorage'
+import { translated } from '../utils/languageHelper'
 import storage from '../utils/storageHelper'
 import {
     isBool,
@@ -29,16 +31,13 @@ import {
     objToUrlParams,
     objWithoutKeys,
 } from '../utils/utils'
-// services
-import { translated } from '../utils/languageHelper'
 import {
     getUrlParam,
     MOBILE,
     rxLayout,
     setClass,
-} from './window'
+} from '../utils/window'
 import TaskList from '../modules/task/TaskList'
-import { rxIsRegistered } from '../utils/chatClient'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',

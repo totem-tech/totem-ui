@@ -1,5 +1,5 @@
-import React, { isValidElement } from 'react'
 import PropTypes from 'prop-types'
+import React, { isValidElement } from 'react'
 import { useRxSubject } from '../utils/reactjs'
 import {
     isAddress,
@@ -13,7 +13,7 @@ import {
     strFill,
     textEllipsis,
 } from '../utils/utils'
-import { MOBILE, rxLayout } from '../services/window'
+import { MOBILE, rxLayout } from '../utils/window'
 import LabelCopy from './LabelCopy'
 
 export function toJSONView({ asEl, data, isMobile = rxLayout === MOBILE }) {

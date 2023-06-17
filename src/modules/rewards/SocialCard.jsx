@@ -1,12 +1,20 @@
-import React, { useState } from 'react'
 import PropTypes from 'prop-types'
-import { Card, Icon, Step } from 'semantic-ui-react'
+import React, { useState } from 'react'
+import {
+    Card,
+    Icon,
+    Step
+} from 'semantic-ui-react'
 import Text from '../../components/Text'
-import { className, isDefined } from '../../utils/utils'
-import { translated } from '../../utils/languageHelper'
 import { confirm } from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
-import { MOBILE, rxLayout, useInverted } from '../../services/window'
+import { className, isDefined } from '../../utils/utils'
+import {
+    MOBILE,
+    rxLayout,
+    useInverted
+} from '../../utils/window'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
 import DiscordRewardWizard from './DiscordRewardWizard'

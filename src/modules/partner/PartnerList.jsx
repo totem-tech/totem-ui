@@ -1,15 +1,18 @@
 import React from 'react'
-import { Button } from '../../components/buttons'
-import { textEllipsis } from '../../utils/utils'
+import {
+	Button,
+	ButtonGroup,
+	UserID
+} from '../../components/buttons'
 import DataTable from '../../components/DataTable'
-import { ButtonGroup, UserID } from '../../components/buttons'
 import Tags from '../../components/Tags'
-// services
-import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
-import { MOBILE, rxLayout } from '../../services/window'
+import { textEllipsis } from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
+import CompanyForm from './CompanyForm'
 import {
 	getAddressName,
 	remove,
@@ -17,7 +20,6 @@ import {
 	setPublic,
 	visibilityTypes,
 } from './partner'
-import CompanyForm from './CompanyForm'
 import PartnerForm, { inputNames } from './PartnerForm'
 import PartnerIcon from './PartnerIcon'
 

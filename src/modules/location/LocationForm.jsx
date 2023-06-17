@@ -1,6 +1,11 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import FormInput from '../../components/FormInput'
+import { translated } from '../../utils/languageHelper'
+import { closeModal, confirm } from '../../services/modal'
+import { statuses } from '../../utils/reactjs'
 import storage from '../../utils/storageHelper'
 import {
 	arrSort,
@@ -8,14 +13,9 @@ import {
 	isBool,
 	isFn,
 } from '../../utils/utils'
-import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import { translated } from '../../utils/languageHelper'
-import { closeModal, confirm } from '../../services/modal'
 import identities from '../identity/identity'
 import partners from '../partner/partner'
 import { get, remove, set } from './location'
-import { statuses } from '../../components/Message'
-import FormInput from '../../components/FormInput'
 
 let textsCap = {
 	addressLine1Label: 'address line 1',
@@ -313,7 +313,7 @@ export default class LocationForm extends Component {
 		const { onChange, onSubmit } = this.props
 		isFn(onChange) && onChange(e, values)
 		if (!this.rxAutoSave.value) return
-		
+
 		const saved = !!set(values, this.id)
 		if (!saved) return
 
@@ -392,7 +392,7 @@ export default class LocationForm extends Component {
 
 			// close if on a modal
 			modalId && closeModal(modalId)
-			
+
 			// remove location from storage
 			remove(id)
 
@@ -434,7 +434,7 @@ export default class LocationForm extends Component {
 		!this.isUpdate && this.setState({
 			message: !this.rxAutoSave.value
 				? undefined
-				: { 
+				: {
 					header: textsCap.saved,
 					status: statuses.SUCCESS,
 				},

@@ -1,12 +1,17 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { arrReverse, deferred, isDefined, isFn } from '../../utils/utils'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
+import { setToast } from '../../services/toast'
 import { translated } from '../../utils/languageHelper'
 import { iUseReducer, useRxSubject } from '../../utils/reactjs'
-import { setToast } from '../../services/toast'
-import { MOBILE, rxLayout } from '../../services/window'
+import {
+    arrReverse,
+    deferred,
+    isDefined,
+    isFn
+} from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import { convertTo } from '../currency/currency'
 import { asInput } from '../currency/CurrencyDropdown'
 

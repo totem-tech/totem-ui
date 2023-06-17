@@ -1,33 +1,32 @@
-import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
-// components
+import React, { useEffect, useState } from 'react'
 import { Button, UserID } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
-import { statuses } from '../../components/Message'
-// services
+import { Linkify } from '../../components/StringReplace'
 import { rxBlockNumber } from '../../services/blockchain'
-import { translated } from '../../utils/languageHelper'
 import {
     closeModal,
     newId,
     showForm,
     showInfo,
 } from '../../services/modal'
-// utils
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
-import { iUseReducer, useRxSubject } from '../../utils/reactjs'
+import { translated } from '../../utils/languageHelper'
+import {
+    iUseReducer,
+    statuses,
+    useRxSubject
+} from '../../utils/reactjs'
 import { blockToDate, format } from '../../utils/time'
 import { generateHash, isObj } from '../../utils/utils'
-// modules
+import { MOBILE, rxLayout } from '../../utils/window'
 import Currency from '../currency/Currency'
 import AddressName from '../partner/AddressName'
 import { approvalStatusNames, rxInProgressIds } from './task'
 import TaskForm from './TaskForm'
 import { getAssigneeView, getStatusView } from './TaskList'
 import useTask from './useTask'
-import { Linkify } from '../../components/StringReplace'
-import { MOBILE, rxLayout } from '../../services/window'
 
 let textsCap = {
     amount: 'bounty amount',

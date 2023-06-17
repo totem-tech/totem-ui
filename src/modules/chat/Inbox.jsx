@@ -4,20 +4,19 @@ import { BehaviorSubject } from 'rxjs'
 import { Button, Icon } from 'semantic-ui-react'
 import { UserID } from '../../components/buttons'
 import FormInput from '../../components/FormInput'
-import Messagex from '../../components/Message'
 import client, {
     getUser,
     rxIsLoggedIn,
     rxIsRegistered,
 } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactjs'
+import { Message, useRxSubject } from '../../utils/reactjs'
+import { deferred, textEllipsis } from '../../utils/utils'
 import {
     getLayout,
     MOBILE,
     rxLayout,
-} from '../../services/window'
-import { deferred, textEllipsis } from '../../utils/utils'
+} from '../../utils/window'
 import {
     createInbox,
     getInboxUserIds,
@@ -33,7 +32,7 @@ import {
 import InboxMessages from './InboxMessages'
 import { getInboxName } from './InboxList'
 
-const [texts, textsCap] = translated({
+const textsCap = {
     close: 'close',
     inConvWith: 'in conversation with',
     inputPlaceholder: 'type something and press enter to send',
@@ -47,7 +46,8 @@ const [texts, textsCap] = translated({
     pmBtnTitle: 'open back-channel',
     trollbox: 'Totem Global Conversation',
     you: 'you',
-}, true)
+}
+const texts = translated(textsCap, true)[0]
 
 const msgsSelector = '.chat-container .inbox .messages'
 const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
@@ -165,7 +165,13 @@ Inbox.propTypes = {
     ])
 }
 
-const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers }) => (
+const InboxHeader = ({
+    inboxKey,
+    isGroup,
+    isMobile,
+    setShowMembers,
+    showMembers
+}) => (
     <div {...{
         className: 'header',
         onClick: () => {
@@ -180,26 +186,33 @@ const InboxHeader = ({ inboxKey, isGroup, isMobile, setShowMembers, showMembers 
         <div>
             <b>
                 {getInboxName(inboxKey) || (
-                    isGroup ? textEllipsis(`${inboxKey}`, 21, 3, false) : <UserID userId={inboxKey} />
+                    isGroup
+                        ? textEllipsis(`${inboxKey}`, 21, 3, false)
+                        : <UserID userId={inboxKey} />
                 )}
             </b>
 
             <div className='tools right'>
                 {isGroup && (
                     <Icon {...{
-                        name: showMembers ? 'undo' : 'group',
+                        name: showMembers
+                            ? 'undo'
+                            : 'group',
                         onClick: e => {
                             e.stopPropagation()
                             const doExpand = isMobile && !rxExpanded.value
                             setShowMembers(!showMembers)
                             doExpand && rxExpanded.next(true)
                         },
-                        title: showMembers ? textsCap.returnToInbox : textsCap.showMembers
+                        title: showMembers
+                            ? textsCap.returnToInbox
+                            : textsCap.showMembers
                     }} />
                 )}
                 <i {...{
                     className: 'expand icon',
-                    onClick: e => e.stopPropagation() | rxExpanded.next(!rxExpanded.value),
+                    onClick: e => e.stopPropagation()
+                        | rxExpanded.next(!rxExpanded.value),
                     title: textsCap.showConvList,
                 }} />
             </div>
@@ -217,9 +230,15 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
         const checkOnline = () => {
             if (!isMounted) return
             if (!rxIsLoggedIn.value) return setOnline(false)
-            const userIds = (!isTrollbox && !isSupport ? receiverIds : getInboxUserIds(inboxKey))
-                .filter(id => id !== ownId)
-            userIds.length && client.isUserOnline(userIds, (err, online) => !err && setOnline(online))
+            const userIds = (
+                !isTrollbox && !isSupport
+                    ? receiverIds
+                    : getInboxUserIds(inboxKey)
+            ).filter(id => id !== ownId)
+            userIds.length && client.isUserOnline(
+                userIds,
+                (err, online) => !err && setOnline(online)
+            )
         }
         const intervalId = setInterval(checkOnline, frequency)
         checkOnline()
@@ -229,19 +248,27 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
         }
     }, [])
 
+    const members = !isTrollbox && !isSupport
+        ? receiverIds
+        : getInboxUserIds(inboxKey)
     return (
         <div className='member-list'>
-            {(!isTrollbox && !isSupport ? receiverIds : getInboxUserIds(inboxKey))
+            {members
                 .sort()
                 .map(memberId => {
                     const isSelf = ownId === memberId
-                    const memberOnline = isSelf ? rxIsLoggedIn.value : online[memberId]
+                    const memberOnline = isSelf
+                        ? rxIsLoggedIn.value
+                        : online[memberId]
                     return (
-                        <Messagex {...{
+                        <Message {...{
                             className: 'member-list-item',
                             content: (
                                 <div>
-                                    <UserID userId={memberId} onClick={isSelf ? null : undefined} />
+                                    <UserID {...{
+                                        onClick: isSelf && null,
+                                        userId: memberId,
+                                    }} />
                                     {!isSelf && (
                                         <Button {...{
                                             className: 'button-action',

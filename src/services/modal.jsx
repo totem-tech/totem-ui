@@ -12,6 +12,7 @@ import {
 } from 'semantic-ui-react'
 import { rxIsRegistered } from '../utils/chatClient'
 import DataStorage from '../utils/DataStorage'
+import { translated } from '../utils/languageHelper'
 import PromisE from '../utils/PromisE'
 import {
     className,
@@ -23,22 +24,22 @@ import {
     isStr,
     objWithoutKeys,
 } from '../utils/utils'
-import { translated } from '../utils/languageHelper'
 import {
     getUrlParam,
     toggleFullscreen,
     useInverted,
-} from './window'
+} from '../utils/window'
 
 const modals = new DataStorage()
 export const rxModals = modals.rxData
 const onCloseHandlers = new Map()
-const textsCap = translated({
+const textsCap = {
     areYouSure: 'are you sure?',
     cancel: 'cancel',
     close: 'close',
     ok: 'ok',
-}, true)[1]
+}
+translated(textsCap, true)
 
 export const ModalsConainer = React.memo(() => {
     const [modalsArr, setModalsArr] = useState([])

@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import FormBuilder, { fillValues } from '../components/FormBuilder'
-import { translated } from '../utils/languageHelper'
 import client from '../utils/chatClient'
-import Message from '../components/Message'
+import { translated } from '../utils/languageHelper'
+import { Message } from '../utils/reactjs'
 import { isFn, isObj } from '../utils/utils'
 
 const prodUrl = 'https://totem.live'

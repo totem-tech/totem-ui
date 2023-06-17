@@ -1,15 +1,24 @@
-import React from 'react'
-import uuid from 'uuid'
-import { Button } from 'semantic-ui-react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
-// utils
+import React from 'react'
+import { Button } from 'semantic-ui-react'
+import uuid from 'uuid'
+import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
+import {
+    hashTypes,
+    queueables as bcQueueables,
+    rxBlockNumber,
+} from '../../services/blockchain'
+import { addToQueue, QUEUE_TYPES } from '../../services/queue'
+import { confirmAsPromise, showForm } from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
 import PromisE from '../../utils/PromisE'
 import {
     copyRxSubject,
     useRxState,
     subjectAsPromise,
     useRxSubject,
+    statuses,
 } from '../../utils/reactjs'
 import {
     blockToDate,
@@ -27,22 +36,6 @@ import {
     objClean,
     objWithoutKeys,
 } from '../../utils/utils'
-// components
-import FormBuilder, {
-    findInput,
-    fillValues,
-} from '../../components/FormBuilder'
-import { statuses } from '../../components/Message'
-// services
-import {
-    hashTypes,
-    queueables as bcQueueables,
-    rxBlockNumber,
-} from '../../services/blockchain'
-import { translated } from '../../utils/languageHelper'
-import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { confirmAsPromise, showForm } from '../../services/modal'
-// modules
 import {
     convertTo,
     currencyDefault,
@@ -63,7 +56,7 @@ import {
 } from './task'
 import { rxUpdater } from './useTasks'
 
-let textsCap = {
+const textsCap = {
     addPartner: 'add partner',
     advancedLabel: 'advanced options',
     assignee: 'select a partner to assign task',
@@ -123,7 +116,7 @@ let textsCap = {
     updatePartner: 'update partner',
     updateSuccess: 'task created successfully',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 const estimatedTxFee = 340
 const minBalanceAterTx = 1618
 // deadline must be minimum 48 hours from now

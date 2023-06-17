@@ -1,13 +1,22 @@
 import { BehaviorSubject, Subject } from 'rxjs'
-import DataStorage from '../../utils/DataStorage'
-import storage from '../../utils/storageHelper'
-import { arrSort, isArr, isBool, isFn, isObj } from '../../utils/utils'
-// services
-import client, { getUser, rxIsLoggedIn } from '../../utils/chatClient'
-import { translated } from '../../utils/languageHelper'
-import { addToQueue, QUEUE_TYPES, rxOnSave } from '../../services/queue'
 import TotemLogo from '../../assets/totem-button-grey.png'
-import { MOBILE, rxLayout, rxVisible as rxWindowVisbile } from '../../services/window'
+import { addToQueue, QUEUE_TYPES, rxOnSave } from '../../services/queue'
+import client, { getUser, rxIsLoggedIn } from '../../utils/chatClient'
+import DataStorage from '../../utils/DataStorage'
+import { translated } from '../../utils/languageHelper'
+import storage from '../../utils/storageHelper'
+import {
+    arrSort,
+    isArr,
+    isBool,
+    isFn,
+    isObj
+} from '../../utils/utils'
+import {
+    MOBILE,
+    rxLayout,
+    rxVisible as rxWindowVisbile
+} from '../../utils/window'
 
 export const MODULE_KEY = 'notifications'
 // remove legacy notifications data

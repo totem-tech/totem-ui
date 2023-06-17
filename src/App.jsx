@@ -1,37 +1,39 @@
 import React, { useEffect } from 'react'
 import { Segment, Sidebar } from 'semantic-ui-react'
-import storage from './utils/storageHelper'
-import { className } from './utils/utils'
-import { messages, setMessages } from './utils/validator'
+// Assets
+import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-colour.png'
+//'./assets/totem-button-grey.png'
+// import PlaceholderImage from './assets/totem-placeholder.png'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import { Invertible } from './components/Invertible'
 import PageHeader from './components/PageHeader'
 import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
-import blockchain from './services/blockchain'
-import chatClient from './utils/chatClient'
-import currency from './modules/currency/currency'
-import identity from './modules/identity/identity'
-import language, { translated } from './utils/languageHelper'
-import filePaths from './services/languageFiles'
-import modal from './services/modal'
 import activity from './modules/activity/activity'
-import './services/KeyboardShortcuts'
+import ChatBar from './modules/chat/ChatBar'
+import currency from './modules/currency/currency'
+import { generatePassword } from './modules/gettingStarted'
+import identity from './modules/identity/identity'
 import NotificationView from './modules/notification/NotificationView'
 import partner from './modules/partner/partner'
+import timeKeeping from './modules/timekeeping/timekeeping'
+//services
+import blockchain from './services/blockchain'
+import './services/KeyboardShortcuts'
+import filePaths from './services/languageFiles'
+import modal from './services/modal'
 import queue, { resumeQueue } from './services/queue'
 import sidebar, { sidebarItems } from './services/sidebar'
-import timeKeeping from './modules/timekeeping/timekeeping'
 import toast from './services/toast'
-import windowService, { rxGridColumns, gridClasses } from './services/window'
-// Images
-import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-colour.png'
+// utils
+import chatClient from './utils/chatClient'
+import language, { translated } from './utils/languageHelper'
+import storage from './utils/storageHelper'
+import { className } from './utils/utils'
+import { messages, setMessages } from './utils/validator'
+import windowService, { rxGridColumns, gridClasses } from './utils/window'
 
-//'./assets/totem-button-grey.png'
-// import PlaceholderImage from './assets/totem-placeholder.png'
-import ChatBar from './modules/chat/ChatBar'
-import { generatePassword } from './modules/gettingStarted'
 
 let queueResumed = false
 const logoSrc = TotemButtonLogo

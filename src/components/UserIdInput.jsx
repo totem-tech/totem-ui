@@ -1,7 +1,15 @@
-import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { arrUnique, isFn, objWithoutKeys, arrSort, isStr, deferred, isSubjectLike, isArr } from '../utils/utils'
+import {
+    arrSort,
+    arrUnique,
+    isArr,
+    isFn,
+    isStr,
+    isSubjectLike,
+    objWithoutKeys,
+} from '../utils/utils'
 import FormInput from './FormInput'
 import { getChatUserIds } from '../modules/chat/chat'
 import client, { getUser } from '../utils/chatClient'
@@ -44,8 +52,16 @@ const noAttrsTextField = [
 ]
 const MAX_LENGTH = 16
 const MIN_LENGTH = 3
-const invalidIcon = { color: 'red', name: 'warning circle', size: 'large' }
-const validIcon = { color: 'green', name: 'check circle', size: 'large' }
+const invalidIcon = {
+    color: 'red',
+    name: 'warning circle',
+    size: 'large'
+}
+const validIcon = {
+    color: 'green',
+    name: 'check circle',
+    size: 'large'
+}
 const userIdRegex = /^[a-z][a-z0-9]+$/
 // removes surrounding whitespaces, removes '@' at the beginning and transforms to lowercase
 export const getRawUserID = userId => !isStr(userId)
@@ -328,7 +344,9 @@ class UserIdInput extends Component {
         const { onChange } = this.props
         const { type } = this.state
         const isDD = type == 'dropdown'
-        data.value = isDD ? data.value : getRawUserID(data.value)
+        data.value = isDD
+            ? data.value
+            : getRawUserID(data.value)
         const { invalid, value } = data
         const s = { value }
         this.invalid = invalid
@@ -361,7 +379,9 @@ class UserIdInput extends Component {
 
         const { newUser } = this.props
         const exists = await client.idExists(getRawUserID(value))
-        const invalid = newUser ? exists : !exists
+        const invalid = newUser
+            ? exists
+            : !exists
         this.setState({
             icon: invalid
                 ? invalidIcon

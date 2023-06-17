@@ -2,36 +2,33 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import uuid from 'uuid'
-import { isBool, isFn, isObj } from '../../utils/utils'
+import client, { referralCode, rxIsRegistered } from '../../utils/chatClient'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
+import { isFn, isObj } from '../../utils/utils'
 import { stepIndexes, setActiveStep } from '../gettingStarted/GettingStarted'
 import { rxSelected } from '../identity/identity'
-import client, { referralCode, rxIsRegistered } from '../../utils/chatClient'
-import { iUseReducer } from '../../utils/reactjs'
 
-const textsCap = translated(
-	{
-		alreadyRegistered: 'you have already registered!',
-		createAccount: 'create account',
-		formHeader: 'register a memorable user name',
-		formSubheader:
-			'choose an unique alias for use with Totem messaging service.',
-		referredByLabel: 'referral code',
-		referredByPlaceholder: 'if you have a referral code enter it here',
-		registrationComplete: 'registration complete',
-		registrationFailed: 'registration failed',
-		userId: 'User ID',
-		userIdCriteria:
-			'please enter an User ID that meets the following criteria:',
-		userIdCriteria1: 'starts with a letter',
-		userIdCriteria2: 'contains minimum 3 characters',
-		userIdCriteria3: 'contains only alphanumeric characters',
-		userIdPlaceholder: 'enter your desired ID',
-	},
-	true
-)[1]
+const textsCap = {
+	alreadyRegistered: 'you have already registered!',
+	createAccount: 'create account',
+	formHeader: 'register a memorable user name',
+	formSubheader:
+		'choose an unique alias for use with Totem messaging service.',
+	referredByLabel: 'referral code',
+	referredByPlaceholder: 'if you have a referral code enter it here',
+	registrationComplete: 'registration complete',
+	registrationFailed: 'registration failed',
+	userId: 'User ID',
+	userIdCriteria:
+		'please enter an User ID that meets the following criteria:',
+	userIdCriteria1: 'starts with a letter',
+	userIdCriteria2: 'contains minimum 3 characters',
+	userIdCriteria3: 'contains only alphanumeric characters',
+	userIdPlaceholder: 'enter your desired ID',
+}
+translated(textsCap, true)
 
 export const inputNames = {
 	redirectTo: 'redirectTo',
@@ -141,7 +138,9 @@ const getInputs = (props, isRegistered) => {
 				name: inputNames.referredBy,
 				placeholder: textsCap.referredByPlaceholder,
 				rxValue: new BehaviorSubject(referredBy),
-				type: isSocialRefer ? 'text' : 'UserIdInput',
+				type: isSocialRefer
+					? 'text'
+					: 'UserIdInput',
 				// no need to validate UserID if referred from social platforms
 				validate: !isSocialRefer && validateRFC,
 			},

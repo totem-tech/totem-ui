@@ -1,13 +1,13 @@
-import { deferred } from '../utils/utils'
-import { closeModal, get, showForm } from './modal'
-import { toggleSidebarState } from './sidebar'
-import SettingsForm, { showKeyboardShortcuts } from '../forms/Settings'
 import { rxIdentityListVisible } from '../components/PageHeader'
-import NewInboxForm from '../modules/chat/NewInboxForm'
+import SettingsForm, { showKeyboardShortcuts } from '../forms/Settings'
 import { rxVisible as rxChatVisible } from '../modules/chat/chat'
+import NewInboxForm from '../modules/chat/NewInboxForm'
 import { rxVisible as rxNotifVisible } from '../modules/notification/notification'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
-import { rxInverted } from './window'
+import { deferred } from '../utils/utils'
+import { rxInverted } from '../utils/window'
+import { closeModal, get, showForm } from './modal'
+import { toggleSidebarState } from './sidebar'
 
 const keys = new Set()
 const handlers = {

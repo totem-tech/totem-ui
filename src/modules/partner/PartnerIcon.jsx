@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useState } from 'react'
 import { Icon } from 'semantic-ui-react'
-import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
-import { MOBILE, rxLayout } from '../../services/window'
+import { translated } from '../../utils/languageHelper'
+import { objWithoutKeys } from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
 import { types, visibilityTypes } from './partner'
 import PartnerForm from './PartnerForm'
-import { objWithoutKeys } from '../../utils/utils'
 
 let textsCap = {
     business: 'business',
@@ -71,8 +71,8 @@ const PartnerIcon = props => {
             onDragStart: e => {
                 setHovered(false)
                 e.stopPropagation()
-				e.dataTransfer.setData('Text', _type)
-			},
+                e.dataTransfer.setData('Text', _type)
+            },
             onClick: handleClick,
             onMouseEnter: isMobile || !address
                 ? undefined

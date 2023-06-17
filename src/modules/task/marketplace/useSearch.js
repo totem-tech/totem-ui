@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { statuses } from '../../../components/Message'
 import { getConnection } from '../../../services/blockchain'
 import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../../utils/chatClient'
 import { translated } from '../../../utils/languageHelper'
 import {
+    statuses,
     subjectAsPromise,
     unsubscribe,
     useQueryBlockchain,

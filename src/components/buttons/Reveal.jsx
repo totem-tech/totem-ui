@@ -8,7 +8,7 @@ import {
 } from '../../utils/utils'
 import Holdable from '../Holdable'
 
-const Reveal = React.memo(function Reveal(props){
+export const Reveal = React.memo(function Reveal(props) {
 	let {
 		children,
 		content = children,
@@ -33,7 +33,7 @@ const Reveal = React.memo(function Reveal(props){
 	const [visible, setVisible] = useState(defaultVisible)
 	const getContent = useCallback(c => isFn(c) ? c() : c)
 	const _setVisible = useCallback(
-		defer > 0 
+		defer > 0
 			? deferred(setVisible, defer)
 			: setVisible,
 		[setVisible]
@@ -45,7 +45,7 @@ const Reveal = React.memo(function Reveal(props){
 		isFn(func) && func(...args)
 		_setVisible(show)
 	}, [_setVisible, ready, visible])
-	
+
 	children = !visible
 		? getContent(content)
 		: exclusive
@@ -143,4 +143,4 @@ Reveal.defaultProps = {
 	toggleOnHold: false,
 	toggleOnHover: true,
 }
-export default React.memo(Reveal)
+export default Reveal

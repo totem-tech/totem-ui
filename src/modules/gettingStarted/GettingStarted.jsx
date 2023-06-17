@@ -1,21 +1,29 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Icon, Step } from 'semantic-ui-react'
-// utils
-import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactjs'
-import storage from '../../utils/storageHelper'
-import { className, isFn, isValidNumber } from '../../utils/utils'
 // components
 import { Button } from '../../components/buttons'
 import { Invertible } from '../../components/Invertible'
 // services
 import { showForm } from '../../services/modal'
 import { setToast } from '../../services/toast'
-import { MOBILE, rxLayout } from '../../services/window'
-// modules
-import { createInbox, SUPPORT, TROLLBOX } from '../chat/chat'
+// utils
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
+import { useRxSubject } from '../../utils/reactjs'
+import storage from '../../utils/storageHelper'
+import {
+	className,
+	isFn,
+	isValidNumber
+} from '../../utils/utils'
+import { MOBILE, rxLayout } from '../../utils/window'
+// modules
+import {
+	createInbox,
+	SUPPORT,
+	TROLLBOX
+} from '../chat/chat'
 import RegistrationForm from '../chat/RegistrationForm'
 import { getSelected } from '../identity/identity'
 import IdentityForm from '../identity/IdentityForm'
