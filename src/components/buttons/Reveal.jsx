@@ -8,7 +8,7 @@ import {
 } from '../../utils/utils'
 import Holdable from '../Holdable'
 
-export const Reveal = React.memo(function Reveal(props) {
+export const Reveal = React.memo(props => {
 	let {
 		children,
 		content = children,

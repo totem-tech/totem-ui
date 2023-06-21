@@ -482,10 +482,15 @@ export default class DataTable extends Component {
 				{!isMobile && actions}
 				{actionButtons.map((item, i) => {
 					if (React.isValidElement(item) || !isObj(item)) return item
-					let { El = Button, onClick, style } = item
+					let {
+						El,
+						onClick,
+						style,
+						...props
+					} = item
 					return (
 						<El {...{
-							...objWithoutKeys(item, ['El']),
+							...props,
 							fluid: isMobile,
 							key: i,
 							onClick: !isFn(onClick)

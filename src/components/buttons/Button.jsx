@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button as _Button } from 'semantic-ui-react'
+import { Button as SemanticButton } from 'semantic-ui-react'
 import { iUseReducer } from '../../utils/reactjs'
 import { isBool, isFn } from '../../utils/utils'
 import { useInverted } from '../../utils/window'
@@ -12,7 +12,7 @@ import { useInverted } from '../../utils/window'
  * 
  * @returns {Element}
  */
-export const Button = React.memo(function Button(props) {
+export const Button = React.memo(props => {
 	const [state, setState] = iUseReducer(null, { loading: false })
 	let {
 		color,
@@ -36,7 +36,7 @@ export const Button = React.memo(function Button(props) {
 		&& _inverted
 
 	return (
-		<_Button {...{
+		<SemanticButton {...{
 			...props,
 			icon: state.error
 				? 'warning sign'
@@ -60,6 +60,6 @@ export const Button = React.memo(function Button(props) {
 	)
 })
 Object
-	.keys(_Button)
-	.forEach(key => Button[key] = _Button[key])
+	.keys(SemanticButton)
+	.forEach(key => Button[key] = SemanticButton[key])
 export default Button

@@ -19,7 +19,7 @@ translated(textsCap, true)
  *
  * @returns {Element}
  */
-export const ButtonGroup = React.memo(function ButtonGroup(props) {
+export const ButtonGroup = React.memo(props => {
 	const inverted = useInverted()
 	const {
 		buttons,
@@ -53,14 +53,19 @@ export const ButtonGroup = React.memo(function ButtonGroup(props) {
 					|| loading,
 				loading: button.loading
 					|| loadingP
-					|| (loading && index === i),
+					|| loading && index === i,
 				onClick: async (event) => {
 					event.stopPropagation()
 					event.preventDefault()
-					setLoading({ loading: true, index: i })
+					setLoading({
+						loading: true,
+						index: i,
+					})
 					try {
-						isFn(button.onClick) && await button.onClick(event, values[i])
-						isFn(onAction) && await onAction(event, values[i])
+						isFn(button.onClick)
+							&& await button.onClick(event, values[i])
+						isFn(onAction)
+							&& await onAction(event, values[i])
 					} catch (err) {
 						console.warn('ButtonGroup: unexpected error occured while executing onAction.', err)
 					} finally {
@@ -70,6 +75,8 @@ export const ButtonGroup = React.memo(function ButtonGroup(props) {
 			}} />,
 		].filter(Boolean)
 	})
+
+	// console.log({ ButtonGroup })
 	return (
 		<El {...objWithoutKeys(
 			{
@@ -77,10 +84,11 @@ export const ButtonGroup = React.memo(function ButtonGroup(props) {
 				children: buttonsEl,
 				inverted,
 			},
-			[
-				...ignoreAttributes,
-				...ButtonGroup.defaultProps.ignoreAttributes,
-			],
+			ignoreAttributes
+			// [
+			// 	...ignoreAttributes,
+			// 	...ButtonGroup.defaultProps.ignoreAttributes,
+			// ],
 		)} />
 	)
 })
@@ -117,6 +125,7 @@ ButtonGroup.defaultProps = {
 	],
 	orText: textsCap.or.toLowerCase(),
 }
+console.log('Button.Group', Button.Group)
 export default ButtonGroup
 
 /**

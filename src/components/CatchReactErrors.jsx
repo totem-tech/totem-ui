@@ -28,21 +28,24 @@ export default class ErrorBoundary extends Component {
 	}
 
 	render() {
-		const { debug, error, hasError } = this.state
+		const {
+			debug,
+			error,
+			hasError
+		} = this.state
 		const { children } = this.props
 
 		return !hasError
 			? children
 			: (
-				<Message
-					{...{
-						content: !!debug && error.stack,
-						header: !debug
-							? texts.errorMsg
-							: error.message,
-						status: 'error',
-					}}
-				/>
+				<Message {...{
+					content: !!debug && error.stack,
+					header: !debug
+						? texts.errorMsg
+						: error.message,
+					status: 'error',
+					style: { whiteSpace: 'pre-wrap' },
+				}} />
 			)
 	}
 }

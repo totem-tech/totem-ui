@@ -9,7 +9,7 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-export const ButtonAcceptOrReject = React.memo(function ButtonAcceptOrReject(props) {
+export const ButtonAcceptOrReject = React.memo(props => {
 	const {
 		acceptColor,
 		acceptProps = {},

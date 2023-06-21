@@ -32,7 +32,7 @@ let textsCap = {
 }
 textsCap = translated(textsCap, true)[1]
 
-export const UserID = React.memo(function UserId(props) {
+export const UserID = React.memo(props => {
 	const {
 		address,
 		name,

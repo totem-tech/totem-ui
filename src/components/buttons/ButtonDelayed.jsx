@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useEffect, useState } from 'react'
 import { Button } from 'semantic-ui-react'
 import { objWithoutKeys } from '../../utils/utils'
 
-export const ButtonDelayed = React.memo(function ButtonDelayed(props) {
+export const ButtonDelayed = React.memo(props => {
     const {
         content,
         children,

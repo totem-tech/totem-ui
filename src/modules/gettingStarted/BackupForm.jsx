@@ -631,7 +631,12 @@ BackupForm.defaultProps = {
  * 
  * @returns	{Boolean}	indicates whether a backup was downloaded & confirmed. `Undefined` means backup not required.
  */
-BackupForm.checkAndWarn = async (criticalOnly = false, allowPageReload = true, closeOnSubmit = false) => {
+BackupForm.checkAndWarn = async (
+	criticalOnly = false,
+	allowPageReload = true,
+	closeOnSubmit = false
+) => {
+	return
 	const { id, fileBackupTS } = getUser() || {}
 	const query = { fileBackupTS: undefined }
 	const warnContacts = contact.search(query)
