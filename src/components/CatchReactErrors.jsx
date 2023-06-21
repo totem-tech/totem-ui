@@ -33,11 +33,14 @@ export default class ErrorBoundary extends Component {
 			error,
 			hasError
 		} = this.state
-		const { children } = this.props
+		const {
+			children,
+			Container = 'div',
+			...props
+		} = this.props
 
-		return !hasError
-			? children
-			: (
+		return !hasError && children || (
+			<Container {...props}>
 				<Message {...{
 					content: !!debug && error.stack,
 					header: !debug
@@ -46,6 +49,7 @@ export default class ErrorBoundary extends Component {
 					status: 'error',
 					style: { whiteSpace: 'pre-wrap' },
 				}} />
-			)
+			</Container>
+		)
 	}
 }

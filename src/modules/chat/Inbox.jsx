@@ -10,12 +10,17 @@ import client, {
     rxIsRegistered,
 } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { Message, useMount, useRxSubject } from '../../utils/reactjs'
+import {
+    Message,
+    useIsMobile,
+    useMount,
+    useRxSubject,
+    useRxSubjectOrValue
+} from '../../utils/reactjs'
 import { deferred, textEllipsis } from '../../utils/utils'
 import {
     getLayout,
     MOBILE,
-    rxLayout,
 } from '../../utils/window'
 import {
     createInbox,
@@ -35,13 +40,16 @@ import { getInboxName } from './InboxList'
 const textsCap = {
     close: 'close',
     inConvWith: 'in conversation with',
+    inboxCompact: 'compact view',
+    inboxExpand: 'expand view',
+    inboxHide: 'hide conversation',
+    inboxShow: 'show conversation',
     inputPlaceholder: 'type something and press enter to send',
     loginRequired: 'login/registration required',
     messageError: 'error',
     offline: 'offline',
     online: 'online',
     returnToInbox: 'return to conversation',
-    showConvList: 'show conversation list',
     showMembers: 'show members',
     pmBtnTitle: 'open back-channel',
     trollbox: 'Totem Global Conversation',
@@ -52,10 +60,9 @@ const texts = translated(textsCap, true)[0]
 const msgsSelector = '.chat-container .inbox .messages'
 const scrollBtnSelector = '.chat-container .inbox .scroll-to-bottom'
 // scroll to bottom of the message list
-const scrollToBottom = deferred((animate = false, markAsRead = false) => {
+const scrollToBottom = deferred((isMobile, animate = true, markAsRead = true) => {
     const msgsEl = document.querySelector(msgsSelector)
     const btnWrapEl = document.querySelector(scrollBtnSelector)
-    const isMobile = getLayout() === MOBILE
     // prevent scroll if scroll button is visible and not markAsRead
     if (btnWrapEl?.classList.value?.includes('visible') && !markAsRead) return
 
@@ -92,19 +99,19 @@ export default function Inbox({ inboxKey }) {
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = receiverIds.length > 1 || isTrollbox
     const [showMembers, setShowMembers] = useState(false)
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const isMobile = useIsMobile()
     const [loaded] = useRxSubject(rxLoaded)
     const [messages = []] = useRxSubject(rxMsg, ([key = inboxKey] = []) => {
         // ignore if not 
         if (!key || key !== inboxKey) return useRxSubject.IGNORE_UPDATE
 
         const msgs = getMessages(key)
-        setTimeout(() => scrollToBottom(true, true), 200)
+        setTimeout(() => scrollToBottom(isMobile), 200)
         return msgs
     })
 
     // focus and scoll down to latest msg
-    useMount(() => scrollToBottom(true, true))
+    useMount(() => scrollToBottom(isMobile))
 
     return loaded && !!messages && (
         <div className='inbox'>
@@ -140,7 +147,7 @@ export default function Inbox({ inboxKey }) {
                                     circular: true,
                                     color: 'black',
                                     icon: 'chevron down',
-                                    onClick: () => scrollToBottom(true, true),
+                                    onClick: () => scrollToBottom(isMobile),
                                 }} />
                             </div>
                         </React.Fragment>
@@ -151,7 +158,7 @@ export default function Inbox({ inboxKey }) {
                     className='input-wrap'
                     onSubmit={draft => {
                         send(receiverIds, draft, false)
-                        scrollToBottom()
+                        scrollToBottom(isMobile, false, false)
                     }}
                 />
             )}
@@ -166,17 +173,18 @@ Inbox.propTypes = {
 }
 
 const InboxHeader = ({
+    expanded = useRxSubjectOrValue(rxExpanded),
     inboxKey,
     isGroup,
     isMobile,
     setShowMembers,
-    showMembers
+    showMembers,
 }) => (
     <div {...{
         className: 'header',
         onClick: () => {
             if (!isMobile) return
-            rxExpanded.next(!rxExpanded.value)
+            rxExpanded.next(!expanded)
             setShowMembers(false)
         },
     }}>
@@ -200,7 +208,7 @@ const InboxHeader = ({
                             : 'group',
                         onClick: e => {
                             e.stopPropagation()
-                            const doExpand = isMobile && !rxExpanded.value
+                            const doExpand = isMobile && !expanded
                             setShowMembers(!showMembers)
                             doExpand && rxExpanded.next(true)
                         },
@@ -213,7 +221,13 @@ const InboxHeader = ({
                     className: 'expand icon',
                     onClick: e => e.stopPropagation()
                         | rxExpanded.next(!rxExpanded.value),
-                    title: textsCap.showConvList,
+                    title: isMobile
+                        ? expanded
+                            ? textsCap.inboxHide
+                            : textsCap.inboxShow
+                        : expanded
+                            ? textsCap.inboxCompact
+                            : textsCap.inboxExpand,
                 }} />
             </div>
         </div>

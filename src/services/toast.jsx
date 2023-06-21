@@ -8,6 +8,7 @@ import DataStorage from '../utils/DataStorage'
 import {
     Message,
     unsubscribe,
+    useIsMobile,
     useRxSubject,
 } from '../utils/reactjs'
 import {
@@ -24,8 +25,16 @@ const toasts = new DataStorage()
 const deferedCloseCbs = new Map()
 
 export const ToastsContainer = () => {
-    const [isMobile] = useRxSubject(rxLayout, layout => layout === MOBILE)
-    const [isModalOpen] = useRxSubject(rxModals, modals => modals.size > 0)
+    const [isModalOpen] = useRxSubject(
+        rxModals,
+        modals => modals?.size > 0,
+        undefined,
+        false,
+        false,
+        0,
+        'rxModals'
+    )
+    const isMobile = useIsMobile()
     const [toastEls] = useRxSubject(toasts.rxData, map => Array.from(map).map(([_, el]) => el))
     const [[animationInProgress, sidebarVisible], setSidebarState] = useState([])
     const mcEl = document.getElementById('main-content')
@@ -36,6 +45,7 @@ export const ToastsContainer = () => {
     useEffect(() => {
         let mounted = true
         const subscription = rxSidebarState.subscribe(({ visible }) => {
+            console.log('toast', { visible })
             if (!mounted) return
             const animationInProgress = toasts.size > 0 && rxLayout.value !== MOBILE
             setSidebarState([animationInProgress, visible])

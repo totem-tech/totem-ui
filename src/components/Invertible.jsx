@@ -5,13 +5,21 @@ import { useInverted } from '../utils/window'
 
 // Convert supported Semantic UI element into Invertible element
 export function Invertible(props) {
-    const { asMemo, dynamicProps, El, ignoreAttributes, reverseInverted } = props
+    const {
+        asMemo,
+        dynamicProps,
+        El,
+        ignoreAttributes,
+        reverseInverted,
+    } = props
     const inverted = useInverted(reverseInverted)
-    const ElMemo = asMemo ? React.memo(El) : El
+    const ElMemo = asMemo
+        ? React.memo(El)
+        : El
     return (
         <ElMemo {...{
             ...objWithoutKeys(props, ignoreAttributes),
-            ...(isFn(dynamicProps) ? dynamicProps(inverted) : {}),
+            ...isFn(dynamicProps) && dynamicProps(inverted) || {},
             inverted,
         }} />
     )

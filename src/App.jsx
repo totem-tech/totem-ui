@@ -34,7 +34,6 @@ import { className } from './utils/utils'
 import { messages, setMessages } from './utils/validator'
 import windowService, { rxGridColumns, gridClasses } from './utils/window'
 
-
 let queueResumed = false
 const logoSrc = TotemButtonLogo
 
@@ -77,8 +76,12 @@ export default function App() {
 			}
 		}
 
-		window.queryBlockchain = async (func, args, multi) =>
-			await blockchain.query(func, args, multi, true)
+		window.queryBlockchain = (func, args, multi) => blockchain.query(
+			func,
+			args,
+			multi,
+			true,
+		)
 
 		queryBlockchain().then(api => (window.api = api))
 
@@ -93,8 +96,8 @@ export default function App() {
 			.filter(path => path.includes('/notificationHandlers.js'))
 			.forEach(path => require(`./${path.replace('./src/', '')}`))
 	}, [])
-
 	const gridClass = gridClasses[rxGridColumns.value - 1]
+
 	return (
 		<div className='wrapper'>
 			<ErrorBoundary>
@@ -121,13 +124,11 @@ export default function App() {
 					id='main-content'
 				>
 					{sidebarItems.map(({ name, rxTrigger }, i) => (
-						<MainContentItem
-							{...{
-								key: i + name,
-								name,
-								rxTrigger,
-							}}
-						/>
+						<MainContentItem {...{
+							key: i + name,
+							name,
+							rxTrigger,
+						}} />
 					))}
 					<div className='empty-message'>
 						{/* <Image style={{ margin: '100px auto auto' }} src={PlaceholderImage} /> */}
