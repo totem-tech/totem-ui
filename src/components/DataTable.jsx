@@ -483,7 +483,7 @@ export default class DataTable extends Component {
 				{actionButtons.map((item, i) => {
 					if (React.isValidElement(item) || !isObj(item)) return item
 					let {
-						El,
+						El = Button,
 						onClick,
 						style,
 						...props
@@ -497,7 +497,7 @@ export default class DataTable extends Component {
 								? null
 								: e => onClick(selectedIndexes, data, e),
 							style: {
-								...(isMobile ? { marginBottom: 5 } : {}),
+								...isMobile && { marginBottom: 5 },
 								...style,
 							},
 						}} />

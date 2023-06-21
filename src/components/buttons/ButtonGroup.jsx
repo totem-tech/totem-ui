@@ -125,7 +125,6 @@ ButtonGroup.defaultProps = {
 	],
 	orText: textsCap.or.toLowerCase(),
 }
-console.log('Button.Group', Button.Group)
 export default ButtonGroup
 
 /**

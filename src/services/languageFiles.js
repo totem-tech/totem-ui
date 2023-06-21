@@ -16,7 +16,6 @@ export default [
     "./src/components/JSONView.jsx",
     "./src/components/Label.jsx",
     "./src/components/LabelCopy.jsx",
-    "./src/components/Message.jsx",
     "./src/components/Modal.jsx",
     "./src/components/PageHeader.jsx",
     "./src/components/Paginator.jsx",
@@ -26,7 +25,6 @@ export default [
     "./src/components/Tags.jsx",
     "./src/components/Text.jsx",
     "./src/components/TimeSince.jsx",
-    "./src/components/UserIdInput copy.jsx",
     "./src/components/UserIdInput.jsx",
     "./src/components/buttons/Button.jsx",
     "./src/components/buttons/ButtonAcceptOrReject.jsx",
@@ -169,7 +167,6 @@ export default [
     "./src/services/queue.js",
     "./src/services/sidebar.js",
     "./src/services/toast.jsx",
-    "./src/services/window.js",
     "./src/views/PageUtilitiesView.jsx",
     "./src/views/SystemStatusView.jsx",
     "./src/views/UtilitiesView.jsx"
