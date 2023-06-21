@@ -324,7 +324,6 @@ export const newId = (prefix = 'modal_', seed) => prefix
  * @returns {String}    @modalId      can be used with `closeModal` function to externally close the modal
  */
 export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
-    console.log({ FormComponent })
     // Invalid component supplied
     if (!isFn(FormComponent)) return
     const { onClose } = props
@@ -347,7 +346,6 @@ export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
         const firstInputEl = document.querySelector(selector)
         firstInputEl && firstInputEl.focus()
     }, 50)
-    console.log({ FormComponent, props, modalId, focusRef })
     return add(
         modalId,
         form,

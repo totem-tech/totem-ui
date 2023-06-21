@@ -178,7 +178,7 @@ export default function TaskForm(props) {
         values = {},
     } = props
     const { allowEdit = true, deadline } = values
-    const [state] = useRxState(getInitialState(props), {}, 'TaskForm useRxState')
+    const [state] = useRxState(getInitialState(props), {})
     const [deadlinePassed] = !taskId
         ? [false]
         : useRxSubject(
