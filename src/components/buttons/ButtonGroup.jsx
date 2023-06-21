@@ -76,7 +76,6 @@ export const ButtonGroup = React.memo(props => {
 		].filter(Boolean)
 	})
 
-	// console.log({ ButtonGroup })
 	return (
 		<El {...objWithoutKeys(
 			{
@@ -84,11 +83,10 @@ export const ButtonGroup = React.memo(props => {
 				children: buttonsEl,
 				inverted,
 			},
-			ignoreAttributes
-			// [
-			// 	...ignoreAttributes,
-			// 	...ButtonGroup.defaultProps.ignoreAttributes,
-			// ],
+			[
+				...ignoreAttributes,
+				...ButtonGroup.defaultProps.ignoreAttributes,
+			],
 		)} />
 	)
 })

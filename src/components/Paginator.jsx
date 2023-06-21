@@ -1,6 +1,10 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { Icon, Menu, Dropdown } from 'semantic-ui-react'
+import {
+    Icon,
+    Menu,
+    Dropdown
+} from 'semantic-ui-react'
 import { isFn } from '../utils/utils'
 import { useInverted } from '../utils/window'
 
@@ -35,6 +39,41 @@ const getNumberItems = props => {
     const addDropDown = total > navLimit
 
     const ar = new Array(end - start).fill(0)
+    const getDropdown = (num) => (
+        <Dropdown {...{
+            defaultUpward: pageListDirection === 'upward',
+            className: pageListDirection || '',
+            icon: {
+                className: 'no-margin',
+                name: 'triangle up',
+                style: {
+                    left: 0,
+                    position: 'absolute',
+                    top: 0,
+                    width: '100%',
+                }
+            },
+            item: true,
+            text: `${num}`,
+        }}>
+            <Dropdown.Menu style={{
+                borderRadius: '3px 3px 0px 0px',
+                marginLeft: -2,
+                overflowY: 'auto',
+                maxHeight: 300,
+            }}>
+                {new Array(total).fill(0).map((_, i) => (
+                    <Dropdown.Item {...{
+                        active: i + 1 === current,
+                        content: i + 1,
+                        key: i,
+                        onClick: () => i + 1 !== current
+                            && handleSelect(props, i + 1),
+                    }} />
+                ))}
+            </Dropdown.Menu>
+        </Dropdown>
+    )
     return ar.map((_, i) => {
         const num = start + i
         const isCurrent = num === current
@@ -42,42 +81,7 @@ const getNumberItems = props => {
             ? num
             : !addDropDown
                 ? <b>{num}</b>
-                : null
-        if (content !== null) content = (
-            <Dropdown {...{
-                defaultUpward: pageListDirection === 'upward',
-                className: pageListDirection || '',
-                icon: {
-                    className: 'no-margin',
-                    name: 'triangle up',
-                    style: {
-                        left: 0,
-                        position: 'absolute',
-                        top: 0,
-                        width: '100%',
-                    }
-                },
-                item: true,
-                text: `${num}`,
-            }}>
-                <Dropdown.Menu style={{
-                    borderRadius: '3px 3px 0px 0px',
-                    marginLeft: -2,
-                    overflowY: 'auto',
-                    maxHeight: 300,
-                }}>
-                    {new Array(total).fill(0).map((_, i) => (
-                        <Dropdown.Item {...{
-                            active: i + 1 === current,
-                            content: i + 1,
-                            key: i,
-                            onClick: () => i + 1 !== current
-                                && handleSelect(props, i + 1),
-                        }} />
-                    ))}
-                </Dropdown.Menu>
-            </Dropdown>
-        )
+                : getDropdown(num)
         return (
             <Menu.Item {...{
                 active: isCurrent,
