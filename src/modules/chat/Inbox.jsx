@@ -10,7 +10,7 @@ import client, {
     rxIsRegistered,
 } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { Message, useRxSubject } from '../../utils/reactjs'
+import { Message, useMount, useRxSubject } from '../../utils/reactjs'
 import { deferred, textEllipsis } from '../../utils/utils'
 import {
     getLayout,
@@ -104,7 +104,7 @@ export default function Inbox({ inboxKey }) {
     })
 
     // focus and scoll down to latest msg
-    useEffect(() => scrollToBottom(true, true), [])
+    useMount(() => scrollToBottom(true, true))
 
     return loaded && !!messages && (
         <div className='inbox'>
