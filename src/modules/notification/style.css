@@ -1,6 +1,11 @@
 .notification-list {
 	scroll-behavior: smooth;
 }
+
+body.inverted .notification-list {
+	background: grey;
+}
+
 .notification-list:not(.inline) {
 	max-height: calc(100% - 61px);
 	overflow: auto;
@@ -9,17 +14,21 @@
 	width: 400px;
 	z-index: 2;
 }
+
 body:not(.mobile) .notification-list:not(.inline) {
 	top: 61px;
 }
+
 body.mobile .notification-list:not(.inline) {
 	bottom: 47px;
 	max-height: calc(100% - 48px);
 	width: 100%;
 }
+
 body:not(.notification-visible) .notification-list:not(.inline) {
 	display: none;
 }
+
 /* hide scrollbar */
 .notification-list:not(.inline)::-webkit-scrollbar {
 	width: 0px;
@@ -30,6 +39,7 @@ body:not(.notification-visible) .notification-list:not(.inline) {
 	background: white;
 	min-height: 36px;
 }
+
 .notification-list .ui.buttons.actions .ui.button:hover {
 	background: #434446 !important;
 	border-radius: 0;

@@ -178,7 +178,7 @@ export default function TaskForm(props) {
         values = {},
     } = props
     const { allowEdit = true, deadline } = values
-    const [state] = useRxState(getInitialState(props))
+    const [state] = useRxState(getInitialState(props), {}, 'TaskForm useRxState')
     const [deadlinePassed] = !taskId
         ? [false]
         : useRxSubject(
@@ -188,17 +188,20 @@ export default function TaskForm(props) {
         )
     const formProps = { ...props, ...state }
 
-    if (allowEdit === false || deadlinePassed) {
-        formProps.submitDisabled = true
-        formProps.message = {
-            content: textsCap.errDeadline,
-            icon: true,
-            status: statuses.ERROR,
-        }
-        formProps.inputsDisabled = Object.values(inputNames)
-    }
-
-    return <FormBuilder {...formProps} />
+    return (
+        <FormBuilder {...{
+            ...formProps,
+            ...(allowEdit === false || deadlinePassed) && {
+                inputsDisabled: Object.values(inputNames),
+                message: {
+                    content: textsCap.errDeadline,
+                    icon: true,
+                    status: statuses.ERROR,
+                },
+                submitDisabled: true,
+            }
+        }} />
+    )
 }
 TaskForm.propTypes = {
     // use `1` to indicate acceptance & assignement of a marketplace task
@@ -320,6 +323,7 @@ const getInitialState = props => rxState => {
             hidden: true,
             name: inputNames.currency,
             onChange: async (...args) => {
+
                 const [_, values] = args
                 const { inputs } = rxState.value
                 const currency = values[inputNames.currency]
@@ -580,6 +584,8 @@ const getInitialState = props => rxState => {
     }
 
     setTimeout(() => init().catch(console.error))
+
+
     return state
 }
 
@@ -735,7 +741,11 @@ const handleBountyChangeCb = (props, rxState) => deferred((_, values) => {
         bountyIn.loading = false
 
         submitDisabled.bounty = false
-        rxState.next({ inputs, loading: false, submitDisabled })
+        rxState.next({
+            inputs,
+            loading: false,
+            submitDisabled
+        })
     }
     const handleErr = err => {
         bountyIn.invalid = !!err

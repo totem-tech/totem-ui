@@ -11,7 +11,7 @@ import {
 	rxVisible,
 	toggleRead,
 } from './notification'
-import ListItem from './NotificationItem'
+import NotificationItem from './NotificationItem'
 import './style.css'
 
 const textsCap = {
@@ -71,7 +71,7 @@ export default function NotificationView() {
 			// 	].map((n, id) => [`${id}`, n])
 			// )
 			.map(([id, notification]) => (
-				<ListItem {...{
+				<NotificationItem {...{
 					id,
 					key: id + notification.read,
 					notification,

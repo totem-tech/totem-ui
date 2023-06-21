@@ -94,7 +94,11 @@ export const showKeyboardShortcuts = () => confirm(
             <DataTable {...{
                 searchable: false,
                 columns: [
-                    { key: 'key', title: 'Shortcut Key' },
+                    {
+                        key: 'key',
+                        style: { paddingLeft: 25 },
+                        title: 'Shortcut Key',
+                    },
                     { key: 'action', title: 'Action' },
                 ],
                 data: [

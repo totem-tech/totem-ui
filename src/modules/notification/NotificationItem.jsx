@@ -9,7 +9,10 @@ import {
     toggleRead,
 } from './notification'
 
-export default function NotificationItem({ id, notification }) {
+export default function NotificationItem({
+    id,
+    notification,
+}) {
     const {
         from,
         type,
@@ -77,6 +80,7 @@ export default function NotificationItem({ id, notification }) {
             style: {
                 ...msg.style,
                 cursor: 'pointer',
+                margin: 0,
                 textAlign: 'left',
             },
         }} />
