@@ -92,20 +92,23 @@ export default class AdminUtils extends Component {
 		return (country && country.code) || ''
 	}
 
-	handleSubmit = (_, { action, text }) => {
+	handleSubmit = async (_, { action, text }) => {
 		switch (action) {
 			case 'language': // convert csv to json
 				downloadFile(
-					JSON.stringify(Array.from(csvToMap(text, null, '\t'))),
+					JSON.stringify(
+						Array.from(
+							csvToMap(text, null, '\t')
+						)
+					),
 					'translations.json',
 					'application/json',
 				)
 				break
 			case 'language-download':
-				client.languageErrorMessages((_, texts) => {
-					translated(texts || '')
-					downloadTextListCSV()
-				})
+				const texts = await client.languageErrorMessages()
+				translated(texts || '')
+				downloadTextListCSV()
 		}
 		this.setState({
 			message: {

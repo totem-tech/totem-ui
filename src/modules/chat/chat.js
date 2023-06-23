@@ -73,7 +73,7 @@ export const checkOnlineStatus = () => {
         .sort()
     if (!userIds.length) return rxUsersOnline.next(null)
 
-    checkOnlineStatus.updatePromise = client.isUserOnline.promise(userIds)
+    checkOnlineStatus.updatePromise = client.isUserOnline(userIds)
 
     checkOnlineStatus.updatePromise.then((online = {}) => {
         checkOnlineStatus.updatePromise = null
@@ -356,14 +356,13 @@ export const send = (receiverIds, message, encrypted = false) => {
 }
 
 // retrieve unread messages on re/connect
-rxIsLoggedIn.subscribe(loggedIn => {
+rxIsLoggedIn.subscribe(async loggedIn => {
     if (!loggedIn) return clearInterval(checkOnlineStatus.intervalId)
     const { lastMessageTS } = rw()
     // check & retrieve any unread mesages
-    client.messageGetRecent(lastMessageTS, (err, messages = []) => {
-        if (err) return console.log('Failed to retrieve recent inbox messages', err)
-        messages.forEach(msg => saveMessage(msg, true))
-    })
+    const messages = await client.messageGetRecent(lastMessageTS)
+        .catch(err => console.log('Failed to retrieve recent inbox messages', err))
+    messages.forEach(msg => saveMessage(msg, true))
 
     checkOnlineStatus()
     checkOnlineStatus.intervalId = setInterval(checkOnlineStatus, INTERVAL_FREQUENCY_MS)

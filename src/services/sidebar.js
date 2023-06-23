@@ -149,8 +149,14 @@ const MODULE_KEY = 'sidebar'
 const rw = value => storage.settings.module(MODULE_KEY, value)
 const settings = rw() || {} //initial settings
 // in-memory storage. However, values are automatically stored to the settings, on change.
-const statuses = new DataStorage(null, null, new Map(settings.items), map => rw({ items: Array.from(map) }))
-export const rxAllInactive = new BehaviorSubject()
+const statuses = new DataStorage(
+    null,
+    null,
+    new Map(settings.items),
+    // whenever value changes save to localStorage
+    map => rw({ items: Array.from(map) })
+)
+export const rxAllInactive = new BehaviorSubject(false)
 export const rxSidebarState = new BehaviorSubject({
     ...settings.status,
     visible: rxLayout.value !== MOBILE,

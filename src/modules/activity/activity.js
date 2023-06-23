@@ -59,7 +59,7 @@ export const fetchProjects = async (recordIds = [], ownAddress, isOwner, timeout
         firstSeen(recordIds, null, true),
         totalBlocks(recordIds, null, true),
         query.status(recordIds, null, true),
-        client.projectsByHashes.promise(recordIds),
+        client.projectsByHashes(recordIds),
     ])
     const result = await PromisE.timeout(promise, timeout)
     const [
