@@ -45,7 +45,6 @@ export const ToastsContainer = () => {
     useEffect(() => {
         let mounted = true
         const subscription = rxSidebarState.subscribe(({ visible }) => {
-            console.log('toast', { visible })
             if (!mounted) return
             const animationInProgress = toasts.size > 0 && rxLayout.value !== MOBILE
             setSidebarState([animationInProgress, visible])

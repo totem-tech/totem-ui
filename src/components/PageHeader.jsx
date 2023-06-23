@@ -59,18 +59,19 @@ const textsCap = {
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
 	darkMode: 'dark mode',
-	on: 'on',
-	off: 'off',
-	auto: 'auto',
-	darkModeOn: 'dark mode: off',
-	darkModeOff: 'dark mode: on',
+
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request funds',
 	shareIdentity: 'share my identity',
 	updateIdentity: 'update identity',
 }
-const texts = translated(textsCap, true)
+const texts = {
+	on: 'on',
+	off: 'off',
+	auto: 'auto',
+}
+translated(textsCap, true)
 let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
@@ -187,15 +188,17 @@ const PageHeaderView = React.memo(props => {
 					),
 					value: selected.address,
 				}} />
-				<Dropdown
-					item
-					text={langCode}
-					icon={{
+				<Dropdown {...{
+					item: true,
+					icon: {
 						name: 'cog',//'chevron circle ' + (showTools ? 'up' : 'down'),
 						size: 'large',
 						// className: 'no-margin',
-					}}
-					onClick={() => setShowTools(!showTools) | rxNotifVisible.next(false)}
+					},
+					onClick: () => setShowTools(!showTools) | rxNotifVisible.next(false),
+					text: langCode,
+				}}
+
 				>
 					<Dropdown.Menu className='left'>
 						{[
@@ -215,7 +218,9 @@ const PageHeaderView = React.memo(props => {
 								onClick: onCopy,
 							},
 							{
-								icon: !inverted ? 'moon outline' : 'moon',
+								icon: !inverted
+									? 'moon outline'
+									: 'moon',
 								content: (
 									<div style={{ display: 'inline-block' }}>
 										{textsCap.darkMode}: {inverted ? texts.off : texts.on}
