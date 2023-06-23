@@ -75,7 +75,11 @@ export default class NewsletteSignup extends Component {
             this.state.message = { content: textsCap.subheader }
         }
         if (window.isInIFrame) {
-            this.state.style = { maxWidth: 400, margin: 'auto', ...style }
+            this.state.style = {
+                maxWidth: 400,
+                margin: 'auto',
+                ...style,
+            }
         }
     }
 
@@ -87,7 +91,7 @@ export default class NewsletteSignup extends Component {
         })
         let error = null
         try {
-            await client.newsletterSignup.promise(values)
+            await client.newsletterSignup(values)
         } catch (err) {
             error = err
         }
@@ -96,10 +100,14 @@ export default class NewsletteSignup extends Component {
             submitDisabled: !error,
             success: !error,
             message: {
-                content: error ? `${error}` : textsCap.successMsg,
+                content: error
+                    ? `${error}`
+                    : textsCap.successMsg,
                 header: textsCap.successHeader,
                 icon: true,
-                status: error ? 'error' : 'success'
+                status: error
+                    ? 'error'
+                    : 'success'
             },
         })
         isFn(onSubmit) && onSubmit(!error)

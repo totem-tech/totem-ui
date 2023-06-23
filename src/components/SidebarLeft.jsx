@@ -19,7 +19,11 @@ import {
 	setActiveExclusive,
 } from '../services/sidebar'
 import { translated } from '../utils/languageHelper'
-import { useRxSubject } from '../utils/reactjs'
+import {
+	useIsMobile,
+	useRxSubject,
+	useRxSubjects
+} from '../utils/reactjs'
 import { deferred, isFn } from '../utils/utils'
 import { rxLayout, MOBILE } from '../utils/window'
 import ContentSegment from './ContentSegment'
@@ -31,10 +35,9 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-function SidebarLeft() {
-	const [allInactive] = useRxSubject(rxAllInactive)
-	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-	const [sidebarState] = useRxSubject(rxSidebarState)
+const SidebarLeft = React.memo(() => {
+	const [[allInactive = false, sidebarState]] = useRxSubjects([rxAllInactive, rxSidebarState])
+	const isMobile = useIsMobile()
 	const [hovered, setHovered] = useState(false)
 	let { collapsed = false, visible = false } = sidebarState
 	collapsed = !hovered && !allInactive && collapsed
@@ -101,24 +104,24 @@ function SidebarLeft() {
 			</Sidebar>
 		</React.Fragment>
 	)
-}
-export default React.memo(SidebarLeft)
+})
+export default SidebarLeft
 
-const _MainContentItem = props => {
+export const MainContentItem = React.memo(props => {
 	const { name, rxTrigger } = props
-	const [isMobile] = useRxSubject(rxLayout, layout => layout === MOBILE)
-	const [item] = useRxSubject(rxTrigger, () => getItem(name) || {})
-	const { active, elementRef, hidden } = item || {}
-	const show = !!item && active && !hidden
-	item.style = {
-		...item.style,
-		height: '100%',
-		padding: !isMobile
-			? undefined
-			: '0 15px',
-	}
+	const isMobile = useIsMobile()
+	const [item = {}] = useRxSubject(rxTrigger, () => getItem(name) || {})
 
-	return !show ? '' : (
+	const {
+		active,
+		elementRef,
+		hidden
+	} = item
+	const show = !!item
+		&& active
+		&& !hidden
+
+	return !!show && (
 		<div
 			id={name}
 			key={name}
@@ -129,19 +132,30 @@ const _MainContentItem = props => {
 				...item,
 				key: item.name,
 				onClose: name => setActive(name, false),
+				style: {
+					...item.style,
+					height: '100%',
+					padding: !isMobile
+						? undefined
+						: '0 15px',
+				},
 			}} />
 		</div>
 	)
-}
-_MainContentItem.propTypes = {
+})
+MainContentItem.propTypes = {
 	name: PropTypes.string.isRequired,
 	// RxJS subject
 	rxTrigger: PropTypes.object.isRequired,
 }
-export const MainContentItem = React.memo(_MainContentItem)
 
-const _SidebarMenuItem = props => {
-	let { name, rxTrigger, sidebarCollapsed, style } = props
+export const SidebarMenuItem = React.memo(props => {
+	let {
+		name,
+		rxTrigger,
+		sidebarCollapsed,
+		style
+	} = props
 	const [item, setItem] = useRxSubject(
 		rxTrigger,
 		() => getItem(name),
@@ -211,8 +225,8 @@ const _SidebarMenuItem = props => {
 				</span>
 			</Holdable>
 		)
-}
-_SidebarMenuItem.propTypes = {
+})
+SidebarMenuItem.propTypes = {
 	isMobile: PropTypes.bool.isRequired,
 	name: PropTypes.string.isRequired,
 	// RxJS subject
@@ -220,7 +234,6 @@ _SidebarMenuItem.propTypes = {
 	sidebarCollapsed: PropTypes.bool.isRequired,
 	style: PropTypes.object,
 }
-const SidebarMenuItem = React.memo(_SidebarMenuItem)
 
 const styles = {
 	collapsed: {

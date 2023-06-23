@@ -40,7 +40,11 @@ import {
 	rxIsInMaintenanceMode,
 	rxIsLoggedIn,
 } from '../utils/chatClient'
-import { unsubscribe, useRxSubject } from '../utils/reactjs'
+import {
+	unsubscribe,
+	useIsMobile,
+	useRxSubject,
+} from '../utils/reactjs'
 import {
 	className,
 	copyToClipboard,
@@ -76,11 +80,8 @@ let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
 function PageHeader(props) {
-	const [identityOptions] = useRxSubject(
-		rxIdentities,
-		getIdentityOptions,
-	)
-	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+	const [identityOptions] = useRxSubject(rxIdentities, getIdentityOptions)
+	const isMobile = useIsMobile()
 	const [[userId, isLoggedIn]] = useRxSubject(
 		rxIsLoggedIn,
 		isLoggedIn => ([

@@ -15,6 +15,7 @@ import {
     deferred,
     isObj,
     isStr,
+    toArray,
 } from '../utils/utils'
 import { rxModals } from './modal'
 import { rxSidebarState } from './sidebar'
@@ -35,12 +36,18 @@ export const ToastsContainer = () => {
         'rxModals'
     )
     const isMobile = useIsMobile()
-    const [toastEls] = useRxSubject(toasts.rxData, map => Array.from(map).map(([_, el]) => el))
+    const [toastEls] = useRxSubject(toasts.rxData, map => toArray(map))
     const [[animationInProgress, sidebarVisible], setSidebarState] = useState([])
     const mcEl = document.getElementById('main-content')
     const hasScrollbar = mcEl && mcEl.clientHeight !== mcEl.scrollHeight
-    const { left = 0, top = 0 } = !isModalOpen && mcEl && mcEl.getBoundingClientRect() || {}
-    const hide = !mcEl || !toastEls.length || (isMobile && sidebarVisible)
+    const { left = 0, top = 0 } = !isModalOpen
+        && mcEl
+        && mcEl.getBoundingClientRect()
+        || {}
+    const hide =
+        !mcEl ||
+        !toastEls.length
+        || (isMobile && sidebarVisible)
 
     useEffect(() => {
         let mounted = true

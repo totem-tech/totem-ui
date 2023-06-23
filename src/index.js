@@ -89,14 +89,17 @@ const initPromise = PromisE.timeout((resolve, reject) => {
 		await PromisE.delay(100)
 		await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
 		// Retrieve a list of countries and store in the browser local storage
-		client.countries(countriesHash, (err, countries) => {
+		const countries = await client
+			.countries(countriesHash)
+			.catch(() => null) // retrieve failed. retry on reconnect
+		if (countries !== null) {
 			countriesChecked = true
-			if (err || countries.size === 0) return
+			if (countries.size === 0) return
 
 			storage.countries.setAll(countries, true)
 			countriesHash = generateHash(Array.from(countries), 'blake2', 256)
 			console.log('Countries list updated', countries)
-		})
+		}
 
 		// check and update selected language texts
 		if (translationChecked) return
