@@ -93,11 +93,10 @@ export default function CurrencyList(props) {
                 let prices
                 try {
                     // retrieve all prices for this date
-                    prices = (await client.currencyPricesByDate.promise(date, []) || [])
-                        .map(c => {
-                            c.marketCapUSD = c.marketCapUSD || -1
-                            return c
-                        })
+                    prices = (await client.currencyPricesByDate(date, []) || [])
+                    prices.forEach(c =>
+                        c.marketCapUSD = c.marketCapUSD || -1
+                    )
                 } catch (err) {
                     return setToast(
                         { content: `${err}`, status: 'error' },

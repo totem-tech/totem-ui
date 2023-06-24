@@ -158,7 +158,7 @@ export default function DiscordRewardWizard(props) {
                     showForm(FormBuilder, formProps, modalId)
 
                     try {
-                        await client.rewardsClaim.promise(
+                        await client.rewardsClaim(
                             'twitter',
                             twHandle,
                             tweetId,

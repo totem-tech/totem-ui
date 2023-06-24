@@ -75,7 +75,7 @@ export const getRewards = async () => {
     try {
         // make sure user is logged in
         !rxIsLoggedIn.value && await subjectAsPromise(rxIsLoggedIn, true)[0]
-        const rewards = await client.rewardsGetData.promise()
+        const rewards = await client.rewardsGetData()
         const result = {
             // include referral twitter rewards as well
             referralRewards: rewards

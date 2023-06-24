@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Icon, Grid, GridRow, GridColumn } from 'semantic-ui-react'
-import { isFn, objCreate } from '../utils/utils'
+import { hasValue, isFn, objCreate } from '../utils/utils'
 import FormInput from '../components/FormInput'
 import { getConnection, query } from '../services/blockchain'
 import { translated } from '../utils/languageHelper'
 import { confirm } from '../services/modal'
-import { iUseReducer, useRxSubject } from '../utils/reactjs'
+import { RxSubjectView, iUseReducer, useQueryBlockchain, useRxSubject } from '../utils/reactjs'
 import client, {
 	getUser,
 	rxIsConnected,
 	rxIsInMaintenanceMode,
+	rxIsLoggedIn,
 } from '../utils/chatClient'
 
 const [texts, textsCap] = translated({
@@ -35,8 +36,48 @@ const [texts, textsCap] = translated({
 export default function SystemStatus() {
 	const [isAdmin] = useState(() => ((getUser() || {}).roles || []).includes('admin'))
 	const [state, setState] = iUseReducer(null, {})
-	const [msConnected] = useRxSubject(rxIsConnected)
-	const [msMaintenanceMode] = useRxSubject(rxIsInMaintenanceMode)
+	// const queryArgs = useMemo(() => [
+	// 	getConnection(),
+	// 	'api.rpc.chain.subscribeFinalizedHeads',
+	// 	[],
+	// 	false,
+	// 	result => console.log('api.rpc.chain.subscribeFinalizedHeads', { result }) || result,
+	// 	true
+	// ], [])
+	// useQueryBlockchain(...queryArgs)
+	// const [connection, queries, resultModifier, subscribe] = useMemo(() => [
+	//
+	//
+	//
+	// const q = useMemo(() => [
+	// 	getConnection(),
+	// 	[
+	// 		'api.rpc.chain.subscribeFinalizedHeads',
+	// 		'api.rpc.system.health',
+	// 		'api.rpc.chain.subscribeNewHeads',
+	// 		'api.rpc.system.chain',
+	// 		'api.rpc.system.version',
+	// 	],
+	// 	(results, queries) => !results
+	// 		.every(x => hasValue(x.result))
+	// 		? undefined
+	// 		// create an object from the results array
+	// 		: objCreate(
+	// 			[
+	// 				'finalizedHead',
+	// 				'health',
+	// 				'newHead',
+	// 				'rpcSystemChain',
+	// 				'rpcSystemVersion',
+	// 			],
+	// 			results.map(x => x.result),
+	// 		),
+	// 	// 3000,
+	// 	// null,
+	// ], [])
+	// const resultObj = useQueryBlockchain.multi(...q)
+	// console.log({ resultObj })
+
 	const {
 		newHead = { number: 0 },
 		finalizedHead = { number: 0 },
@@ -140,7 +181,58 @@ export default function SystemStatus() {
 					{textsCap.lag} : {chain_lag}
 				</GridColumn>
 			</GridRow>
-			<GridRow>
+
+			<RxSubjectView {...{
+				key: 'maintenancemode',
+				subject: [rxIsInMaintenanceMode, rxIsConnected, rxIsLoggedIn],
+				valueModifier: ([
+					active,
+					msConnected,
+					loggedIn,
+					isAdmin = loggedIn && getUser()?.roles?.includes?.('admin'),
+				]) => (
+					<GridRow>
+						<GridColumn width={6}>
+							<Icon
+								name="circle"
+								color={active
+									? 'yellow'
+									: msConnected
+										? 'green'
+										: 'red'
+								}
+							/>
+							{textsCap.messagingService}
+						</GridColumn>
+						<GridColumn width={6}>
+							<FormInput {...{
+								disabled: !isAdmin,
+								label: textsCap.maintenanceMode,
+								name: 'maintenance-mode',
+								readOnly: !isAdmin,
+								toggle: true,
+								type: 'checkbox',
+								onClick: e => {
+									e.preventDefault()
+									e.stopPropagation()
+
+									isAdmin && confirm({
+										header: active
+											? textsCap.deactivateMainenanceMode
+											: textsCap.activateMaintenanceMode,
+										// revert to original value
+										onCancel: () => rxIsInMaintenanceMode.next(active),
+										onConfirm: () => client.maintenanceMode(!active),
+										size: 'mini',
+									})
+								},
+								value: active,
+							}} />
+						</GridColumn>
+					</GridRow>
+				),
+			}} />
+			{/* <GridRow>
 				<GridColumn width={6}>
 					<Icon
 						name="circle"
@@ -172,17 +264,14 @@ export default function SystemStatus() {
 									: textsCap.activateMaintenanceMode,
 								// revert to original value
 								onCancel: () => rxIsInMaintenanceMode.next(rxIsInMaintenanceMode.value),
-								onConfirm: () => {
-									client.maintenanceMode
-										.promise(!rxIsInMaintenanceMode.value)
-								},
+								onConfirm: () => client.maintenanceMode(!rxIsInMaintenanceMode.value),
 								size: 'mini'
 							})
 						},
 						value: msMaintenanceMode,
 					}} />
 				</GridColumn>
-			</GridRow>
+			</GridRow> */}
 		</Grid>
 	)
 }

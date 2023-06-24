@@ -60,7 +60,7 @@ export default function useLedgerAcBalances(address, modifier, timeout = 10000) 
             let empty = !accounts.length
             try {
                 if (empty) throw textsCap.emptyMessage
-                const glAccounts = await client.glAccounts.promise(accounts.map(a => `${a}`)) // convert to string
+                const glAccounts = await client.glAccounts(accounts.map(a => `${a}`)) // convert to string
                 // unsubscribe if there is already an existing subscription
                 unsubscribers.balance && unsubscribers.balance()
                 unsubscribers.balance = await query.balanceByLedger(
@@ -73,9 +73,9 @@ export default function useLedgerAcBalances(address, modifier, timeout = 10000) 
                 error = true
                 setBalances(null)
                 setMessage({
-                    ...(!empty ? errorMsg : {
-                        status: 'basic',
-                    }),
+                    ...!empty
+                        ? errorMsg
+                        : { status: 'basic' },
                     content: `${err}`,
                 })
             }

@@ -72,7 +72,7 @@ export const convertTo = async (amount = 0, from, to, decimals, dateOrROE, decim
     let { ratioOfExchange: toROE } = toCurrency
     // retrieve price of a specific date
     if (isValidDate(dateOrROE)) {
-        const result = await client.currencyPricesByDate.promise(
+        const result = await client.currencyPricesByDate(
             dateOrROE,
             arrUnique([
                 fromCurrency._id,
@@ -114,7 +114,7 @@ export const convertTo = async (amount = 0, from, to, decimals, dateOrROE, decim
 const fetchCurrencies = async (cached = rwCache().currencies) => {
     const hash = generateHash(cached)
 
-    let currencies = await client.currencyList.promise(hash)
+    let currencies = await client.currencyList(hash)
 
     // currencies list is the same as in the server => use cached
     if (!currencies || currencies.length === 0) return cached

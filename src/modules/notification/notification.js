@@ -190,7 +190,17 @@ export const toggleRead = (id, read) => {
 // initialize
 setTimeout(() => {
     // handle new notification received
-    client.onNotify((id, from, type, childType, message, data, tsCreated, read = false, deleted = false) => {
+    client.onNotify((
+        id,
+        from,
+        type,
+        childType,
+        message,
+        data,
+        tsCreated,
+        read = false,
+        deleted = false
+    ) => {
         if (deleted) return notifications.delete(id)
         const newNotification = {
             from,
@@ -240,7 +250,8 @@ setTimeout(() => {
             .catch(err => console.error('client.notificationGetRecent', err))
         if (!items?.size) return
 
-        const itemsArr = Array.from(items)
+        const itemsArr = Array
+            .from(items)
             .filter(([id, { deleted }]) => {
                 // remove items deleted by user's other devices
                 if (deleted) {

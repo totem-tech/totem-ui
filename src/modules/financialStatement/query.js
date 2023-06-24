@@ -50,7 +50,7 @@ const query = {
      * 
      * @returns {Object[]}
      */
-    glAccounts: async (accountNumbers) => await client.glAccounts.promise(accountNumbers.map(a => `${a}`)),
+    glAccounts: async (accountNumbers) => await client.glAccounts(accountNumbers.map(a => `${a}`)),
 
     /**
      * @name    postingIds

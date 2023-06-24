@@ -104,7 +104,7 @@ export const query = {
      * 
      * @returns {Map}   list of tasks
      */
-    getDetailsByTaskIds: async (taskIds = []) => await client.taskGetById.promise(taskIds),
+    getDetailsByTaskIds: async (taskIds = []) => await client.taskGetById(taskIds),
     /**
      * @name    getDetailsByParentId
      * @summary get off-chain task data (eg: title, description, tags...) from messaging service by parent task ID.
@@ -113,7 +113,7 @@ export const query = {
      * 
      * @returns {Map}    list of tasks
      */
-    getDetailsByParentId: async (parentId) => await client.taskGetByParentId.promise(parentId),
+    getDetailsByParentId: async (parentId) => await client.taskGetByParentId(parentId),
     /**
      * @name    getTaskIds
      * @summary get lists of tasks for by types from blockchain
@@ -148,7 +148,7 @@ export const query = {
         multi,
     ),
     searchMarketplace: async (filter = {}) => {
-        const dbResult = await client.taskMarketSearch.promise(filter)
+        const dbResult = await client.taskMarketSearch(filter)
         const ids = [...dbResult.keys()]
         const orders = await query.orders(ids, null, true)
         const address = rxSelected.value
@@ -172,8 +172,7 @@ export const query = {
             .filter(Boolean)
         return new Map(tasks)
     },
-    searchMarketplace: async (filter = {}) => await client
-        .taskMarketSearch(filter),
+    searchMarketplace: async (filter = {}) => await client.taskMarketSearch(filter),
 }
 
 // list of PolkadotJS APIs used in the `queueables`

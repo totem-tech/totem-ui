@@ -442,7 +442,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
         let func = task.func
         func = (func.startsWith('client.') ? '' : 'client.') + func
         func = eval(func)
-        if (!isFn(func) || !isFn(func.promise)) throw textsCap.invalidFunc
+        if (!isFn(func)) throw textsCap.invalidFunc
 
         // process any dynamic arguments
         const [err, argsProcessed] = processArgs(rootTask, task)
@@ -451,7 +451,7 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
         _save(LOADING)
 
         // initiate request
-        const result = await func.promise.apply(null, task.argsProcessed || args)
+        const result = await func.apply(null, task.argsProcessed || args)
         _save(SUCCESS, result)
     } catch (err) {
         _save(ERROR, err)

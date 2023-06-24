@@ -396,7 +396,7 @@ export default class PartnerForm extends Component {
 		this.setState({ inputs })
 
 		// check if address is aleady public
-		const result = await client.companySearch.promise(address, true)
+		const result = await client.companySearch(address, true)
 		const exists = result.size > 0
 		const visibility = exists
 			? visibilityTypes.PUBLIC

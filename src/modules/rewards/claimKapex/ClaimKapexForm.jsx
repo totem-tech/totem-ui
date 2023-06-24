@@ -222,7 +222,7 @@ function ClaimKAPEXForm(props) {
 					const backupDone = await BackupForm.checkAndWarn(true, false, true)
 					if (backupDone === false) throw new Error(textsCap.errWarnBackup)
 
-					await chatClient.rewardsClaimKAPEX.promise(values)
+					await chatClient.rewardsClaimKAPEX(values)
 					status.submitted = true
 					statusCached(status)
 					// setStatus(status)

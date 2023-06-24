@@ -238,10 +238,11 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
     const { id: ownId } = getUser() || {}
     const [online, setOnline] = useState({})
     const isSupport = receiverIds.includes(SUPPORT)
+
     useEffect(() => {
         let isMounted = true
         const frequency = 60000 // check user status every 60 seconds
-        const checkOnline = () => {
+        const checkOnline = async () => {
             if (!isMounted) return
             if (!rxIsLoggedIn.value) return setOnline(false)
             const userIds = (
@@ -249,10 +250,12 @@ const MemberList = ({ inboxKey, isTrollbox, receiverIds }) => {
                     ? receiverIds
                     : getInboxUserIds(inboxKey)
             ).filter(id => id !== ownId)
-            userIds.length && client.isUserOnline(
-                userIds,
-                (err, online) => !err && setOnline(online)
-            )
+            if (!userIds.length) return
+            const online = client
+                .isUserOnline(userIds)
+                .catch(() => false) // ignore error
+
+            online && setOnline(online)
         }
         const intervalId = setInterval(checkOnline, frequency)
         checkOnline()

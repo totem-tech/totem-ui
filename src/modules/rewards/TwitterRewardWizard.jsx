@@ -70,7 +70,7 @@ export default function TwitterRewardWizard(props) {
                     {
                         content: (
                             <div>
-                                <b style={{color: 'red'}}>{textsCap.step3DescAlt}</b>
+                                <b style={{ color: 'red' }}>{textsCap.step3DescAlt}</b>
                             </div>
                         ),
                         name: 'html',
@@ -173,7 +173,7 @@ export default function TwitterRewardWizard(props) {
             //         showForm(FormBuilder, formProps, modalId)
 
             //         try {
-            //             await client.rewardsClaim.promise(
+            //             await client.rewardsClaim(
             //                 'twitter',
             //                 twHandle
             //                     .split('@')
@@ -222,7 +222,7 @@ export default function TwitterRewardWizard(props) {
         },
     ]
     return (
-        <Step.Group ordered vertical 
+        <Step.Group ordered vertical
             style={{ textAlign: 'center' }}>
             {steps.map(({ completed, description, disabled, title }, index) => (
                 <Step {...{

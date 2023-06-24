@@ -9,7 +9,7 @@ import { translated } from '../../utils/languageHelper'
 import client from '../../utils/chatClient'
 import { setPublic } from './partner'
 
-const textsCap = translated({
+const textsCap = {
     companyExistsMsg: 'An entity already exists with the following name. You cannot resubmit.',
     countryLabel: 'country of registration',
     countryPlaceholder: 'select a country',
@@ -24,7 +24,8 @@ const textsCap = translated({
     submitErrorHeader: 'submission failed',
     subheader: 'warning: doing this makes this partner visible to all Totem users',
     success: 'success',
-}, true)[1]
+}
+translated(textsCap, true)[1]
 
 export default class CompanyForm extends Component {
     constructor(props) {
@@ -89,10 +90,10 @@ export default class CompanyForm extends Component {
         this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
     }
 
-    componentWillMount = ()=> this._mounted = true
-    componentWillUnmount = ()=> this._mounted = true
+    componentWillMount = () => this._mounted = true
+    componentWillUnmount = () => this._mounted = true
 
-    handleIdentityChange = (_, { identity }) => {
+    handleIdentityChange = async (_, { identity }) => {
         // check if a company already exists with address
         const { inputs, submitDisabled } = this.state
         const input = findInput(inputs, 'identity')
@@ -101,38 +102,47 @@ export default class CompanyForm extends Component {
         submitDisabled.identity = true
         this.setState({ inputs, submitDisabled })
 
-        client.companySearch(identity, true, (_, result) => {
-            const exists = result.size > 0
-            input.loading = false
-            input.invalid = !!exists
-            input.message = !exists ? null : {
-                content: (
-                    <div>
-                        {textsCap.companyExistsMsg}
-                        <div><b>{Array.from(result)[0][1].name}</b></div>
-                    </div>
-                ),
-                icon: true,
-                status: 'error',
-            }
-            submitDisabled.identity = false
-            this.setState({ inputs, submitDisabled })
-            // if a company already exists associated with this address
-            // update partner accordingly
-            exists && setPublic(identity)
-        })
+        const result = await client
+            .companySearch(identity, true)
+            .catch(() => false)
+        if (!result) return
+
+        const exists = result.size > 0
+        input.loading = false
+        input.invalid = exists
+        input.message = exists && {
+            content: (
+                <div>
+                    {textsCap.companyExistsMsg}
+                    <div><b>{Array.from(result)[0][1].name}</b></div>
+                </div>
+            ),
+            icon: true,
+            status: 'error',
+        }
+        submitDisabled.identity = false
+        this.setState({ inputs, submitDisabled })
+        // if a company already exists associated with this address
+        // update partner accordingly
+        exists && setPublic(identity)
     }
 
     handleSubmit = async (e, values) => {
         const { onSubmit } = this.props
         const companyId = generateHash(values)
-        const err = await client.company.promise(companyId, values)
+        const err = await client.company(companyId, values)
         const success = !err
         const message = {
-            content: success ? textsCap.submitSuccessMsg : err,
-            header: success ? textsCap.success : textsCap.submitErrorHeader,
+            content: success
+                ? textsCap.submitSuccessMsg
+                : err,
+            header: success
+                ? textsCap.success
+                : textsCap.submitErrorHeader,
             icon: true,
-            status: success ? 'success' : 'error'
+            status: success
+                ? 'success'
+                : 'error'
         }
         this.setState({ success, message })
 

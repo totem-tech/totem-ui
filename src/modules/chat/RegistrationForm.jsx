@@ -103,15 +103,15 @@ const getInputs = (props, isRegistered) => {
 	if (referredBy && !referredBySaved) referralCode(referredBy)
 
 	const supportedPlatforms = ['twitter']
-	const isSocialRefer =
-		referredBy && supportedPlatforms.includes(`${referredBy}`.split('@')[1])
-	const validateRFC = async (_, { value }, _v, rxValue) => {
-		if (
-			!value ||
-			!values.referredBy ||
-			(await client.idExists.promise(value))
+	const isSocialRefer = referredBy
+		&& supportedPlatforms.includes(
+			`${referredBy}`.split('@')[1]
 		)
-			return
+	const validateRFC = async (_, { value }, _v, rxValue) => {
+		const ignore = !value
+			|| !values.referredBy
+			|| (await client.idExists(value))
+		if (ignore) return
 		// reset value, if invalid referral code used in the URL
 		rxValue.next('')
 		referralCode(null)
@@ -164,7 +164,7 @@ const handleSubmit = (props, setState) => async (_, values) => {
 	const address = rxSelected.value
 
 	setState({ submitInProgress: true })
-	const err = await client.register.promise(
+	const err = await client.register(
 		userId,
 		secret,
 		address,
@@ -177,7 +177,9 @@ const handleSubmit = (props, setState) => async (_, values) => {
 			? textsCap.registrationComplete
 			: textsCap.registrationFailed,
 		icon: true,
-		status: success ? 'success' : 'error',
+		status: success
+			? 'success'
+			: 'error',
 	}
 	const state = {
 		message,
