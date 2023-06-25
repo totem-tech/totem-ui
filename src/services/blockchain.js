@@ -11,6 +11,7 @@ import {
 import storage from '../utils/storageHelper'
 import types from '../utils/totem-polkadot-js-types'
 import {
+    arrUnique,
     generateHash,
     isArr,
     isFn,
@@ -66,9 +67,12 @@ export const hashTypes = {
     /// 9000
 }
 export const nodesDefault = [
-    process.env.Node_URL || 'wss://node1.totem.live',
+    process.env.REACT_APP_Node_URL || 'wss://node.totem.live',
 ]
-export const nodes = (storage.settings.module(MODULE_KEY) || {}).nodes || nodesDefault
+export const nodes = arrUnique([
+    ...(storage.settings.module(MODULE_KEY) || {}).nodes || [],
+    ...nodesDefault
+].filter(Boolean))
 setDefaultConfig(
     nodes,
     types,
