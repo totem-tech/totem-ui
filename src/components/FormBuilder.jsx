@@ -417,8 +417,10 @@ class FormBuilder extends Component {
 				{inputs.map(props => <FormInput {...props} />)}
 				{/* Include submit button if not a modal */}
 				{!modal && !hideFooter && (
-					<div style={{ textAlign: 'right' }}>
-						{submitBtn}
+					<div>
+						<div style={{ textAlign: 'right' }}>
+							{submitBtn}
+						</div>
 						{msg && <Message {...message} />}
 					</div>
 				)}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, isValidElement } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import {
@@ -37,10 +37,12 @@ import { setToast } from '../services/toast'
 // utils
 import {
 	getUser,
+	rxFaucetEnabled,
 	rxIsInMaintenanceMode,
 	rxIsLoggedIn,
 } from '../utils/chatClient'
 import {
+	RxSubjectView,
 	unsubscribe,
 	useIsMobile,
 	useRxSubject,
@@ -108,7 +110,7 @@ function PageHeader(props) {
 			type: QUEUE_TYPES.CHATCLIENT,
 			func: 'faucetRequest',
 			title: textsCap.faucetRequest,
-			// description: textsCap.faucetRequestDetails,
+			description: textsCap.faucetRequestDetails,
 			args: [getSelected().address]
 		}),
 		onSelection: (_, { value: address }) => setSelected(address),
@@ -248,23 +250,26 @@ const PageHeaderView = React.memo(props => {
 									setInvBrowser(false)
 								}
 							},
-							// userId && {
-							// 	icon: 'gem',
-							// 	content: textsCap.requestFunds,
-							// 	onClick: onFaucetRequest,
-							// },
+							<RxSubjectView {...{
+								key: 'faucet-request',
+								subject: [rxFaucetEnabled, rxIsLoggedIn],
+								valueModifier: ([enabled, isLoggedIn]) => !!enabled && !!isLoggedIn && (
+									<Dropdown.Item {...{
+										content: textsCap.requestFunds,
+										icon: 'gem',
+										key: 'faucet-request',
+										onClick: onFaucetRequest,
+									}} />
+								)
+							}} />,
 							{
 								icon: 'currency',
 								content: textsCap.changeCurrency,
 								onClick: () => showForm(SettingsForm, {
 									header: null, //textsCap.changeCurrency,
-									inputsHidden: Object.values(settingsInputNames)
-										.filter(x =>
-											![
-												settingsInputNames.currency,
-												settingsInputNames.currencyHtml
-											].includes(x)
-										),
+									inputsHidden: Object
+										.values(settingsInputNames)
+										.filter(x => settingsInputNames.currency !== x),
 									size: 'mini',
 								}),
 							},
@@ -281,7 +286,9 @@ const PageHeaderView = React.memo(props => {
 						]
 							.filter(Boolean)
 							.map((props, i) =>
-								<Dropdown.Item {...props} key={props.icon + i} />
+								isValidElement(props)
+									? props
+									: <Dropdown.Item {...{ ...props, key: props.icon + i }} />
 							)}
 					</Dropdown.Menu>
 				</Dropdown>

@@ -8,17 +8,22 @@ import { confirm } from '../services/modal'
 import { RxSubjectView, iUseReducer, useQueryBlockchain, useRxSubject } from '../utils/reactjs'
 import client, {
 	getUser,
+	rxFaucetEnabled,
+	rxIsAdmin,
 	rxIsConnected,
 	rxIsInMaintenanceMode,
 	rxIsLoggedIn,
 } from '../utils/chatClient'
 
-const [texts, textsCap] = translated({
+const textsCap = {
 	activateMaintenanceMode: 'activate maintenance mode',
 	blockchainRuntime: 'Connected Host Runtime Version',
 	blockNr: 'Block Number',
 	chainType: 'Chain type',
 	deactivateMainenanceMode: 'deactivate maintenance mode',
+	faucetDisable: 'disable faucet?',
+	faucetEnable: 'enable faulcet?',
+	faucetEnabled: 'faucet available',
 	hostConneced: 'Connected to host',
 	hostDisconnected: 'Disconnected from host',
 	lag: 'lag',
@@ -31,10 +36,11 @@ const [texts, textsCap] = translated({
 	peers: 'peers',
 	syncing: 'syncing',
 	yes: 'yes',
-}, true)
+}
+const texts = translated(textsCap, true)[0]
 
 export default function SystemStatus() {
-	const [isAdmin] = useState(() => ((getUser() || {}).roles || []).includes('admin'))
+	// const [isAdmin] = useState(() => ((getUser() || {}).roles || []).includes('admin'))
 	const [state, setState] = iUseReducer(null, {})
 	// const queryArgs = useMemo(() => [
 	// 	getConnection(),
@@ -139,7 +145,7 @@ export default function SystemStatus() {
 			<GridRow>
 				<GridColumn width={2}>
 					<Icon
-						name="circle"
+						name='circle'
 						color={isConnected ? 'green' : 'red'} />
 					{!!isConnected ? textsCap.online : textsCap.offline}
 				</GridColumn>
@@ -153,7 +159,7 @@ export default function SystemStatus() {
 			<GridRow>
 				<GridColumn width={2}>
 					<Icon
-						name="circle"
+						name='circle'
 						color={health.isSyncing ? 'green' : 'yellow'}
 					/>
 					{textsCap.syncing} - {health.isSyncing ? textsCap.yes : textsCap.no}
@@ -169,7 +175,7 @@ export default function SystemStatus() {
 			<GridRow>
 				<GridColumn width={2}>
 					<Icon
-						name="circle"
+						name='circle'
 						color={health.peers > 0 ? 'green' : 'red'}
 					/>
 					{textsCap.peers} #{health.peers}
@@ -184,18 +190,26 @@ export default function SystemStatus() {
 
 			<RxSubjectView {...{
 				key: 'maintenancemode',
-				subject: [rxIsInMaintenanceMode, rxIsConnected, rxIsLoggedIn],
+				subject: [
+					rxIsConnected,
+					rxIsLoggedIn,
+					rxIsAdmin,
+					rxIsInMaintenanceMode,
+					rxFaucetEnabled,
+				],
 				valueModifier: ([
-					active,
 					msConnected,
 					loggedIn,
-					isAdmin = loggedIn && getUser()?.roles?.includes?.('admin'),
+					isAdmin,
+					maintenanceMode,
+					faucetEnabled,
+					edit = loggedIn && isAdmin,
 				]) => (
 					<GridRow>
-						<GridColumn width={6}>
+						<GridColumn width={4}>
 							<Icon
-								name="circle"
-								color={active
+								name='circle'
+								color={maintenanceMode
 									? 'yellow'
 									: msConnected
 										? 'green'
@@ -204,12 +218,11 @@ export default function SystemStatus() {
 							/>
 							{textsCap.messagingService}
 						</GridColumn>
-						<GridColumn width={6}>
+						<GridColumn width={4}>
 							<FormInput {...{
-								disabled: !isAdmin,
+								disabled: !edit,
 								label: textsCap.maintenanceMode,
 								name: 'maintenance-mode',
-								readOnly: !isAdmin,
 								toggle: true,
 								type: 'checkbox',
 								onClick: e => {
@@ -217,16 +230,40 @@ export default function SystemStatus() {
 									e.stopPropagation()
 
 									isAdmin && confirm({
-										header: active
+										header: maintenanceMode
 											? textsCap.deactivateMainenanceMode
 											: textsCap.activateMaintenanceMode,
 										// revert to original value
-										onCancel: () => rxIsInMaintenanceMode.next(active),
-										onConfirm: () => client.maintenanceMode(!active),
+										onCancel: () => rxIsInMaintenanceMode.next(maintenanceMode),
+										onConfirm: () => client.maintenanceMode(!maintenanceMode),
 										size: 'mini',
 									})
 								},
-								value: active,
+								value: maintenanceMode,
+							}} />
+						</GridColumn>
+						<GridColumn width={4}>
+							<FormInput {...{
+								disabled: !edit,
+								label: textsCap.faucetEnabled,
+								name: 'faucet-status',
+								toggle: true,
+								type: 'checkbox',
+								onClick: e => {
+									e.preventDefault()
+									e.stopPropagation()
+									console.log({ isAdmin, faucetEnabled })
+									isAdmin && confirm({
+										header: faucetEnabled
+											? textsCap.faucetDisable
+											: textsCap.faucetEnable,
+										// revert to original value
+										onCancel: () => rxFaucetEnabled.next(faucetEnabled),
+										onConfirm: () => client.faucetStatus(!faucetEnabled),
+										size: 'mini',
+									})
+								},
+								value: faucetEnabled,
 							}} />
 						</GridColumn>
 					</GridRow>
@@ -235,7 +272,7 @@ export default function SystemStatus() {
 			{/* <GridRow>
 				<GridColumn width={6}>
 					<Icon
-						name="circle"
+						name='circle'
 						color={
 							msMaintenanceMode
 								? 'yellow'
