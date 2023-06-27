@@ -6,12 +6,18 @@ import { createInbox } from '../chat/chat'
 import IdentityShareForm, { inputNames } from '../identity/IdentityShareForm'
 import { remove, rxVisible, setItemViewHandler } from '../notification/notification'
 
-const [texts, textsCap] = translated({
+const textsCap = {
     chat: 'chat',
     connectMsg: 'You can connect with the user by sharing your identity or chat to help them get onboard Totem!',
     referralSuccess: 'joined Totem using your referral code.',
     shareIdentity: 'share identity',
-}, true)
+    signupRewardMsg: `
+        Some funds to get you started will arrive shortly.
+        Keep in eye on the identities module.
+        Have fun using Totem Live and don't forget to join us on our social media channels! :)
+    `,
+}
+const texts = translated(textsCap, true)[0]
 
 // rewards notifications
 const handleRewards = (id, notification, { senderId, senderIdBtn }) => {
@@ -74,10 +80,37 @@ const handleReferralReward = (id, notification, { senderId, senderIdBtn }) => {
     return item
 }
 
+// rewards notifications
+const handleSignupReward = (id, notification, { senderId, senderIdBtn }) => {
+    const { data = {}, message } = notification
+    const { status } = data
+    // translate message sent by backend
+    const { msg } = translated({ msg: message })[0]
+
+    return {
+        icon: { name: 'gift' },
+        status: !status || status === 'success'
+            ? 'info'
+            : 'error',
+        content: (
+            <div>
+                <div >
+                    {msg || textsCap.signupRewardMsg}
+                </div>
+            </div>
+        )
+    }
+}
+
 // register notification view handlers
 setTimeout(() => [
     {
         handler: handleRewards,
+        type: 'rewards',
+    },
+    {
+        childType: 'signupReward',
+        handler: handleSignupReward,
         type: 'rewards',
     },
     {

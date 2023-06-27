@@ -362,7 +362,8 @@ export const processOrder = (order, id, orderOrg = order) => {
 
 // automatically update task details whenever a new notification is recieved about a task
 rxNewNotification.subscribe(([id, notification]) => {
-    const { data: { taskId } = {}, type } = notification || {}
+    const { data, type } = notification || {}
+    const { taskId } = data || {} // data can be null
     if (type !== 'tasks' || !taskId) return
 
     rxUpdater.next([taskId])
