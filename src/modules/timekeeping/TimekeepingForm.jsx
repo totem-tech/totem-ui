@@ -38,6 +38,7 @@ import {
 import { handleInvitation } from './notificationHandlers'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
 import { subjectAsPromise } from '../../utils/reactjs'
+import PromisE from '../../utils/PromisE'
 
 // Hash that indicates creation of new record
 const DURATION_ZERO = '00:00:00'
@@ -254,13 +255,22 @@ export default class TimekeepingForm extends Component {
         super(props)
 
         const values = timerFormValues() || {}
-        const { breakCount, duration, durationValid, inprogress, projectHash, workerAddress } = values
-        values.durationValid = !isDefined(durationValid) ? true : durationValid
+        const {
+            breakCount,
+            duration,
+            durationValid,
+            inprogress,
+            projectHash,
+            workerAddress
+        } = values
+        values.durationValid = !isDefined(durationValid) || durationValid
         values.duration = duration || DURATION_ZERO
         values.breakCount = (breakCount || 0)
         values.workerAddress = workerAddress || getSelected().address
         const projectHashSupplied = hasValue(props.projectHash)
-        values.projectHash = projectHashSupplied && !inprogress ? props.projectHash : projectHash
+        values.projectHash = projectHashSupplied && !inprogress
+            ? props.projectHash
+            : projectHash
 
         this.state = {
             message: {},
@@ -381,7 +391,10 @@ export default class TimekeepingForm extends Component {
 
     // check if project is active (status = open or reopened)
     handleProjectChange = async (_, values, index) => {
-        let { projectHash: projectId, workerAddress } = values
+        let {
+            projectHash: projectId,
+            workerAddress = getSelected()?.address
+        } = values
         const { inputs } = this.state
         const isValidProject = projectId
             && (inputs[index].options || [])
@@ -403,10 +416,8 @@ export default class TimekeepingForm extends Component {
         // check if project status is open/reopened
         const statusCode = await queryProject.status(projectId)
         const projectActive = openStatuses.includes(statusCode)
-        const { address } = getSelected()
-        workerAddress = workerAddress || address
         inputs[index].invalid = !projectActive
-        inputs[index].message = projectActive ? undefined : {
+        inputs[index].message = !projectActive && {
             content: textsCap.selectActiveProject,
             header: textsCap.inactiveProjectSelected,
             icon: true,
@@ -418,14 +429,20 @@ export default class TimekeepingForm extends Component {
             return this.setState({ inputs, submitDisabled: false })
         }
 
+        await PromisE.delay(300)
         // check worker ban and invitation status
-        const [banned, invitedAr, acceptedAr] = await Promise.all([
+        const [
+            banned,
+            invitedAr,
+            acceptedAr
+        ] = await Promise.all([
             query.worker.banned(projectId, workerAddress),
             query.worker.listInvited(projectId),
             query.worker.listWorkers(projectId),
         ])
         const invited = invitedAr.includes(workerAddress)
         const accepted = acceptedAr.includes(workerAddress)
+        console.log({ workerAddress, invited, accepted })
         inputs[index].loading = false
         inputs[index].invalid = banned || !accepted
 
@@ -439,24 +456,34 @@ export default class TimekeepingForm extends Component {
             return this.setState({ inputs, submitDisabled: false })
         }
 
-        inputs[index].message = accepted ? undefined : {
-            content: !invited ? textsCap.inactiveWorkerMsg1 : (
-                <div>
-                    {textsCap.inactiveWorkerMsg3} <br />
-                    <ButtonAcceptOrReject
-                        onAction={async (_, accepted) => {
-                            const success = await handleInvitation(projectId, workerAddress, accepted)
-                            // force trigger change
-                            success && inputs[index].rxValue.next(projectId)
-                        }}
-                        style={{ marginTop: 10 }}
-                    />
-                </div>
-            ),
-            header: invited ? textsCap.inactiveWorkerHeader2 : textsCap.inactiveWorkerHeader1,
-            icon: true,
-            status: 'error',
-        }
+        inputs[index].message = accepted
+            ? undefined
+            : {
+                content: !invited
+                    ? textsCap.inactiveWorkerMsg1
+                    : (
+                        <div>
+                            {textsCap.inactiveWorkerMsg3} <br />
+                            <ButtonAcceptOrReject
+                                onAction={async (_, accepted) => {
+                                    const success = await handleInvitation(
+                                        projectId,
+                                        workerAddress,
+                                        accepted
+                                    )
+                                    // force trigger change
+                                    success && inputs[index].rxValue.next(projectId)
+                                }}
+                                style={{ marginTop: 10 }}
+                            />
+                        </div>
+                    ),
+                header: invited
+                    ? textsCap.inactiveWorkerHeader2
+                    : textsCap.inactiveWorkerHeader1,
+                icon: true,
+                status: 'error',
+            }
         this.setState({ inputs, submitDisabled: false })
         this.setIdentityOptions(projectId, workerAddress)
     }
@@ -469,7 +496,9 @@ export default class TimekeepingForm extends Component {
         let duration
         if (manualEntry) {
             // switched from timer to manual mode
-            duration = duraIn.readOnly ? blockCountToDuration(blockEnd - blockStart) : values.duration
+            duration = duraIn.readOnly
+                ? blockCountToDuration(blockEnd - blockStart)
+                : values.duration
         } else if (!manualEntry && !duraIn.readOnly) {
             // switched from manual to timer mode
             duration = values.duration
@@ -483,7 +512,9 @@ export default class TimekeepingForm extends Component {
 
     handleReset(userInitiated) {
         const { inputs, values } = this.state
-        const doConfirm = userInitiated && values.duration && values.duration !== DURATION_ZERO
+        const doConfirm = userInitiated
+            && values.duration
+            && values.duration !== DURATION_ZERO
         const reset = () => {
             values.blockStart = 0
             values.blockEnd = 0
@@ -497,14 +528,16 @@ export default class TimekeepingForm extends Component {
             timerFormValues(values)
         }
 
-        !doConfirm ? reset() : confirm({
-            header: textsCap.resetTimer,
-            content: textsCap.resetTimeWarning,
-            onConfirm: () => reset(),
-            confirmButton: textsCap.yes,
-            cancelButton: textsCap.no,
-            size: 'mini'
-        })
+        !doConfirm
+            ? reset()
+            : confirm({
+                header: textsCap.resetTimer,
+                // content: textsCap.resetTimeWarning,
+                onConfirm: () => reset(),
+                confirmButton: textsCap.yes,
+                cancelButton: textsCap.no,
+                size: 'mini'
+            })
     }
 
     handleStart() {

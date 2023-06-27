@@ -73,7 +73,11 @@ let textsCap = {
 textsCap = translated(textsCap, true)[1]
 
 const ActivityDetails = props => {
-    const { id, modalId, project } = props
+    const {
+        id,
+        modalId,
+        project
+    } = props
     const [tableProps, setTableProps] = useState({
         emptyMessage: {
             content: textsCap.loading,

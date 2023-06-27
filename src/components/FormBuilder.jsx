@@ -38,13 +38,15 @@ class FormBuilder extends Component {
 	constructor(props) {
 		super(props)
 
-		const {
+		const prefix = 'form__'
+		let {
 			modalId,
 			id = modalId || newId('form__'), // Form ID
 			inputs,
 			open,
 			rxValues = new BehaviorSubject(),
 		} = props
+		if (!`${id || ''}`.startsWith(prefix)) id = prefix + id
 		const values = getValues(inputs)
 		rxValues.next(values)
 		this.state = {

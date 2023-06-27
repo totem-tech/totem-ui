@@ -160,8 +160,9 @@ const handleSubmit = (props, rxState) => (e, values) => {
 		submitInProgress: true,
 	})
 
-	const handleOffChainResult = err => {
-		isFn(onSubmit) && onSubmit(!err, values)
+	const handleOffChainResult = (ok, err) => {
+		err = !ok && err
+		isFn(onSubmit) && onSubmit(ok, values)
 		rxState.next({
 			message: {
 				content: err || (
@@ -211,11 +212,11 @@ const handleSubmit = (props, rxState) => (e, values) => {
 				title: textsCap.saveDetailsTitle,
 				description,
 				// address: ownerAddress,
+				then: handleOffChainResult,
 				args: [
 					hash,
 					values,
 					create,
-					handleOffChainResult,
 				],
 			},
 		},

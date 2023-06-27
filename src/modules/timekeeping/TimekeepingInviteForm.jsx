@@ -13,7 +13,7 @@ import { getProjects as getUserProjects, openStatuses } from '../activity/activi
 import identities, { getSelected } from '../identity/identity'
 import partners, { rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
-import { query, queueables } from './timekeeping'
+import { getProjects, query, queueables } from './timekeeping'
 import getPartnerOptions from '../partner/getPartnerOptions'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
 
@@ -228,18 +228,29 @@ export default class TimeKeepingInviteForm extends Component {
                 loading: false,
                 success,
                 message: {
-                    header: success ? textsCap.invitedAndAccepted : textsCap.txFailed,
+                    header: success
+                        ? textsCap.invitedAndAccepted
+                        : textsCap.txFailed,
                     icon: true,
-                    status: success ? 'success' : 'error'
+                    status: success
+                        ? 'success'
+                        : 'error'
                 }
             })
             isFn(onSubmit) && onSubmit(success, values)
+            // trigger an update of list of timekeeping projects
+            getProjects(true)
         }
-        const acceptOwnInvitationTask = queueables.worker.accept(projectId, workerAddress, true, {
-            title: textsCap.queueTitleOwnAccept,
-            description: `${textsCap.identity}: ${name}`,
-            then: selfInviteThen,
-        })
+        const acceptOwnInvitationTask = queueables.worker.accept(
+            projectId,
+            workerAddress,
+            true,
+            {
+                title: textsCap.queueTitleOwnAccept,
+                description: `${textsCap.identity}: ${name}`,
+                then: selfInviteThen,
+            }
+        )
         const notifyWorkerTask = {
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
@@ -248,17 +259,25 @@ export default class TimeKeepingInviteForm extends Component {
                 notificationType,
                 childType,
                 null,
-                { projectHash: projectId, projectName, workerAddress },
+                {
+                    projectHash: projectId,
+                    projectName,
+                    workerAddress
+                },
                 err => {
                     this.setState({
                         submitDisabled: false,
                         loading: false,
                         success: !err,
                         message: {
-                            header: !err ? textsCap.inviteSuccess : textsCap.inviteSuccessNotifyFailed,
+                            header: !err
+                                ? textsCap.inviteSuccess
+                                : textsCap.inviteSuccessNotifyFailed,
                             content: err || '',
                             icon: true,
-                            status: !err ? 'success' : 'warning',
+                            status: !err
+                                ? 'success'
+                                : 'warning',
                         }
                     })
                     isFn(onSubmit) && onSubmit(!err, values)
@@ -269,20 +288,26 @@ export default class TimeKeepingInviteForm extends Component {
         const extraProps = {
             title: textsCap.formHeader,
             description: `${textsCap.invitee}: ${name}`,
-            then: isOwner ? selfInviteThen : (success, err) => {
-                if (success) return
-                this.setState({
-                    submitDisabled: false,
-                    loading: false,
-                    message: {
-                        header: textsCap.txFailed,
-                        content: `${err}`,
-                        icon: true,
-                        status: 'error',
-                    }
-                })
-            },
-            next: isOwner ? null : (ownIdentity ? acceptOwnInvitationTask : notifyWorkerTask)
+            then: isOwner
+                ? selfInviteThen
+                : (success, err) => {
+                    if (success) return
+                    this.setState({
+                        submitDisabled: false,
+                        loading: false,
+                        message: {
+                            header: textsCap.txFailed,
+                            content: `${err}`,
+                            icon: true,
+                            status: 'error',
+                        }
+                    })
+                },
+            next: isOwner
+                ? null
+                : ownIdentity
+                    ? acceptOwnInvitationTask
+                    : notifyWorkerTask
         }
         addToQueue(queueables.worker.add(
             projectId,

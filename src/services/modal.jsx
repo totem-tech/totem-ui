@@ -308,7 +308,7 @@ const IConfirm = props => {
 export const get = modalId => modals.get(modalId)
 
 export const newId = (prefix = 'modal_', seed) => prefix
-    + generateHash(seed, undefined, 32)
+    + generateHash(seed, 'blake2', 32)
         .replace('0x', '')
 
 /**
@@ -328,9 +328,10 @@ export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     if (!isFn(FormComponent)) return
     const { onClose } = props
     // grab the default modalId if already defined in the defualtProps
+    const prefix = 'form__'
     modalId = modalId
         || (FormComponent.defaultProps || {}).modalId
-        || newId('form_')
+        || newId(prefix)
     const form = (
         <FormComponent {...{
             ...props,
@@ -342,9 +343,16 @@ export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     )
     if (!focusRef) setTimeout(() => {
         // if focusRef not supplied attempt to auto-focus first input element
-        const selector = `#${modalId} input:first-child`
-        const firstInputEl = document.querySelector(selector)
-        firstInputEl && firstInputEl.focus()
+        try {
+            const idPrefix = `${modalId || ''}`.startsWith(prefix)
+                ? ''
+                : prefix
+            const selector = `#${idPrefix}${modalId} input:first-child`
+            const firstInputEl = document.querySelector(selector)
+            firstInputEl && firstInputEl.focus()
+        } catch (error) {
+            console.error('modalService.showForm', error)
+        }
     }, 50)
     return add(
         modalId,

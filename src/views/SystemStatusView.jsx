@@ -252,7 +252,6 @@ export default function SystemStatus() {
 								onClick: e => {
 									e.preventDefault()
 									e.stopPropagation()
-									console.log({ isAdmin, faucetEnabled })
 									isAdmin && confirm({
 										header: faucetEnabled
 											? textsCap.faucetDisable

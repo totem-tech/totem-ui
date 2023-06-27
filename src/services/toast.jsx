@@ -69,8 +69,10 @@ export const ToastsContainer = () => {
             style={{
                 ...styles.toastService,
                 left: animationInProgress ? 250 : left + 15,
+                right: isModalOpen
+                    ? 0
+                    : (hasScrollbar ? 15 : 5),
                 top: top + 10,
-                right: isModalOpen ? 0 : (hasScrollbar ? 15 : 5),
             }}>
             {toastEls}
         </div>
@@ -95,18 +97,23 @@ export const removeToast = id => toasts.delete(id)
  * 
  * @returns {String}        id  
  */
-export const setToast = (message, duration, id) => {
+export const setToast = (message, duration, id = uuid.v1()) => {
     // if text supplied use it as message content, without header
-    message = !isStr(message) ? message : { content: message }
-    if (!isObj(message) || (!message.header && !message.content)) return;
-    id = id || uuid.v1()
+    message = !isStr(message)
+        ? message
+        : { content: message }
+    if (!isObj(message) || (!message.header && !message.content)) return
+
     const autoClose = duration !== 0
     const handleClose = () => removeToast(id) | deferedCloseCbs.delete(id)
     const props = {
         ...message,
         key: id,
         onDismiss: handleClose,
-        style: { ...styles.message, ...message.style },
+        style: {
+            ...styles.message,
+            ...message.style,
+        },
     }
     toasts.set(id, <Message {...{ ...props, key: id }} />)
     if (autoClose) {
@@ -120,9 +127,11 @@ export const setToast = (message, duration, id) => {
 
 const styles = {
     message: {
-        margin: '5px 0',
+        margin: '5px auto',
+        // maxWidth: 600,
         opacity: 1,
         paddingRight: 35,// prevents close button overlapping text content
+        // textAlign: 'center',
         transition: 'all 0.5s ease',
         WebkitTransition: 'all 0.5s ease',
     },
