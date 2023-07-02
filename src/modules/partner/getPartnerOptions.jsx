@@ -6,7 +6,7 @@ import { getIdentityOptions } from '../identity/getIdentityOptions'
 import { rxPartners } from './partner'
 import PartnerIcon from './PartnerIcon'
 
-const textsCap = translated({ 
+const textsCap = translated({
     identityOptionsHeader: 'select own identity',
     partner: 'partner',
     partnerOptionsHeader: 'select a partner',
@@ -30,9 +30,15 @@ export const getPartnerOptions = (partners, formProps, includeIdentities = false
     partners = partners || rxPartners.value
     const identityOptions = includeIdentities && getIdentityOptions() || []
     const identityAddrs = identityOptions.map(x => x.value)
-    const partnerOptions = arrSort([...partners.values()], 'name')
+    const partnerOptions = [...partners.values()]
         .filter(x => !identityAddrs.includes(x.address))
-        .map(({ address, name, type, visibility, userId }) => ({
+        .map(({
+            address,
+            name,
+            type,
+            visibility,
+            userId
+        }) => ({
             description: <UserID {...{ userId }} />,
             key: address,
             keywords: [
@@ -44,7 +50,7 @@ export const getPartnerOptions = (partners, formProps, includeIdentities = false
                 'partner',
                 textsCap.partner,
             ].join(' '),
-            name, // keep
+            name, // used for sorting
             text: (
                 <span>
                     <PartnerIcon {...{
@@ -59,10 +65,11 @@ export const getPartnerOptions = (partners, formProps, includeIdentities = false
             ),
             value: address,
         }))
-    
-    const options = arrReverse([
+
+    const options = arrSort(
         [
-            includeIdentities
+            [
+                includeIdentities
                 && partnerOptions.length
                 && {
                     key: 'partners-header',
@@ -70,10 +77,10 @@ export const getPartnerOptions = (partners, formProps, includeIdentities = false
                     text: textsCap.partnerOptionsHeader,
                     value: '' // keep
                 },
-            ...partnerOptions,
-        ],
-        [
-            includeIdentities
+                ...partnerOptions,
+            ],
+            [
+                includeIdentities
                 && identityOptions.length
                 && {
                     key: 'identities-header',
@@ -81,9 +88,12 @@ export const getPartnerOptions = (partners, formProps, includeIdentities = false
                     text: textsCap.identityOptionsHeader,
                     value: '' // keep
                 },
-            ...identityOptions,
-        ]
-    ], reverse === true)
+                ...identityOptions,
+            ]
+        ],
+        'name',
+        reverse
+    )
     return options
         .flat()
         .filter(Boolean)

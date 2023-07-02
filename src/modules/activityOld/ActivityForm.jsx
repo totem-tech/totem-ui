@@ -13,9 +13,8 @@ import {
 } from '../../utils/utils'
 import { getSelected, rxIdentities } from '../identity/identity'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
-import { queueables } from './activity'
+import { getProjects, queueables } from './activity'
 import ActivityTeamList from './ActivityTeamList'
-import { rxForceUpdate } from './useActivities'
 
 let textsCap = {
 	create: 'create',
@@ -195,7 +194,7 @@ const handleSubmit = (props, rxState) => (e, values) => {
 			success: !err,
 		})
 		// trigger cache update
-		!err && rxForceUpdate.next(`${ownerAddress}`)
+		!err && getProjects(true)
 	}
 
 	// save auth token to blockchain and then store data to off-chain DB

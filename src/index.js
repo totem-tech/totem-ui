@@ -8,7 +8,7 @@ import './services/language' // setup language for build mode
 import { getConnection } from './services/blockchain'
 import client, { rxIsInMaintenanceMode, rxIsRegistered } from './utils/chatClient'
 import PromisE from './utils/PromisE'
-import { subjectAsPromise } from './utils/reactjs'
+import { subjectAsPromise, useQueryBlockchain } from './utils/reactjs'
 import storage from './utils/storageHelper'
 import {
 	generateHash,
@@ -77,6 +77,8 @@ if (!window.isInIFrame && window.isDebug) {
 }
 
 const initPromise = PromisE.timeout((resolve, reject) => {
+
+	useQueryBlockchain.defaultConnection = getConnection()
 	// initiate connection to blockchain
 	getConnection()
 	let countriesHash = generateHash(

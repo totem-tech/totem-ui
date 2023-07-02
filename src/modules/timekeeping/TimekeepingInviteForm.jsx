@@ -1,25 +1,33 @@
-import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
-import { isFn, arrSort, textEllipsis } from '../../utils/utils'
-// services
-import { translated } from '../../utils/languageHelper'
 import { showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { unsubscribe } from '../../utils/reactjs'
-import { getProjects as getUserProjects, openStatuses } from '../activity/activity'
-import identities, { getSelected } from '../identity/identity'
+import { translated } from '../../utils/languageHelper'
+import { useRxState } from '../../utils/reactjs'
+import {
+    isFn,
+    arrSort,
+    textEllipsis,
+    deferred
+} from '../../utils/utils'
+import { openStatuses } from '../activity/activity'
+import useActivities from '../activity/useActivities'
+import identities from '../identity/identity'
 import partners, { rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
-import { getProjects, query, queueables } from './timekeeping'
 import getPartnerOptions from '../partner/getPartnerOptions'
-import { getIdentityOptions } from '../identity/getIdentityOptions'
+import {
+    getProjects,
+    query,
+    queueables
+} from './timekeeping'
 
 const notificationType = 'timekeeping'
 const childType = 'invitation'
-const textsCap = translated({
+const textsCap = {
     activity: 'activity',
     close: 'close',
     identity: 'identity',
@@ -42,8 +50,9 @@ const textsCap = translated({
     queueTitleOwnAccept: 'Timekeeping - accept own invitation',
     txFailed: 'transaction failed',
     updateParner: 'update Partner',
-    zeroActivityWarning: 'you must have one or more open activities',
-}, true)[1]
+    zeroActivityWarning: 'no activities available',
+}
+translated(textsCap, true)
 
 export const inputNames = {
     addpartner: 'addpartner',
@@ -51,274 +60,42 @@ export const inputNames = {
     workerAddress: 'workerAddress',
 }
 
-export default class TimeKeepingInviteForm extends Component {
-    constructor(props) {
-        super(props)
+const TimeKeepingInviteForm = React.memo(props => {
+    const rxActivities = useActivities(null, true)
+    const [state, setState] = useRxState(getInitialState(props, rxActivities))
 
-        this.state = {
-            submitDisabled: undefined,
-            loading: false,
-            message: {},
-            onSubmit: this.handleSubmit.bind(this),
-            success: false,
-            inputs: [
-                {
-                    label: textsCap.activity,
-                    name: inputNames.projectHash,
-                    options: [],
-                    placeholder: textsCap.activityLabel,
-                    required: true,
-                    search: true,
-                    selection: true,
-                    type: 'dropdown',
-                    value: '',
-                },
-                {
-                    rxValue: new BehaviorSubject(),
-                    label: textsCap.partner,
-                    name: inputNames.workerAddress,
-                    onChange: this.handlePartnerChange,
-                    options: [],
-                    placeholder: textsCap.partnerLabel,
-                    rxOptions: rxPartners,
-                    rxOptionsModifier: partners => getPartnerOptions(partners, {}, true),
-                    required: true,
-                    search: ['text', 'value', 'description'],
-                    selection: true,
-                    type: 'dropdown',
-                },
-                {
-                    content: textsCap.addPartner,
-                    icon: 'plus',
-                    name: inputNames.addpartner,
-                    onClick: () => showForm(PartnerForm, {
-                        // once partner created update the input with newly created partner's address
-                        onSubmit: (success, { address }) => success && findInput(
-                            this.state.inputs,
-                            'workerAddress'
-                        ).rxValue.next(address)
-                    }),
-                    fluid: true,
-                    type: 'button',
-                },
-            ]
-        }
 
-        this.originalSetState = this.setState
-        this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
-    }
+    // async componentWillMount() {
+    //     this._mounted = true
+    //     const { values } = this.props
+    //     const { inputs } = this.state
+    //     const proIn = findInput(inputs, 'projectHash')
+    //     proIn.loading = true
+    //     this.setState({ inputs })
 
-    async componentWillMount() {
-        this._mounted = true
-        const { values } = this.props
-        const { inputs } = this.state
-        const proIn = findInput(inputs, 'projectHash')
-        proIn.loading = true
-        this.setState({ inputs })
+    //     // retrieve project hashes by address
+    //     proIn.loading = false
 
-        // retrieve project hashes by address
-        const projects = await getUserProjects()
-        proIn.loading = false
-        proIn.options = arrSort(
-            Array.from(projects)
-                // include only active (open/reopened) projects
-                .filter(([_, { status }]) => openStatuses.indexOf(status) >= 0)
-                .map(([pId, project]) => ({
-                    key: pId,
-                    text: project.name || textEllipsis(pId, 40),
-                    value: pId,
-                    project,
-                })),
-            'text'
-        )
-        proIn.invalid = proIn.options.length === 0
-        proIn.message = !proIn.invalid
-            ? null
-            : {
-                content: textsCap.zeroActivityWarning,
-                status: 'error'
-            }
+    //     proIn.invalid = proIn.options.length === 0
+    //     proIn.message = !proIn.invalid
+    //         ? null
+    //         : {
+    //             content: textsCap.zeroActivityWarning,
+    //             status: 'error'
+    //         }
 
-        values && fillValues(inputs, values)
-        this.setState({ inputs })
-    }
+    //     values && fillValues(inputs, values)
+    //     this.setState({ inputs })
+    // }
 
-    componentWillUnmount = () => this._mounted = false
+    // componentWillUnmount = () => this._mounted = false
 
-    handlePartnerChange = async (_, { projectHash: projectId, workerAddress }) => {
-        const { inputs } = this.state
-        const partnerIn = findInput(inputs, 'workerAddress')
-        const partner = partners.get(workerAddress)
-        const { userId } = partner || {}
-        // do not require user id if selected address belongs to user
-        const requireUserId = !identities.get(workerAddress) && partner && !userId
-        partnerIn.invalid = requireUserId
-        partnerIn.loading = !!projectId && !!workerAddress && !requireUserId
-        partnerIn.message = !requireUserId ? null : {
-            content: (
-                <p>
-                    {textsCap.partnerUserIdWarning} <br />
-                    <Button
-                        basic
-                        content={textsCap.updateParner}
-                        onClick={e => e.preventDefault() | showForm(PartnerForm, {
-                            onSubmit: (_, { address, userId }) => {
-                                partnerIn.invalid = !userId
-                                userId && partnerIn.rxValue.next(address)
-                            },
-                            values: partner,
-                        })}
-                    />
-                </p>
-            ),
-            status: 'error'
-        }
-        this.setState({ inputs, submitDisabled: partnerIn.loading })
-        if (!partnerIn.loading) return
 
-        // check if partner is already invited or accepted
-        const [invitedAr, acceptedAr] = await Promise.all([
-            query.worker.listInvited(projectId),
-            query.worker.listWorkers(projectId),
-        ])
-        const accepted = acceptedAr.includes(workerAddress)
-        const invited = invitedAr.includes(workerAddress)
-        /*
-         * accepted values:
-         * null => not yet invited or rejected
-         * true => invited and already accepted
-         * false => invited but hasn't responded
-         */
-        partnerIn.loading = false
-        // allows (re-)invitation if user hasn't accepted (!== true) invitation
-        partnerIn.invalid = !!accepted
-        if (accepted || invited) {
-            partnerIn.message = {
-                content: accepted ? textsCap.partnerAcceptedInvite : textsCap.partnerInvited,
-                status: accepted ? 'error' : 'warning'
-            }
-        }
-        this.setState({ inputs, submitDisabled: false })
-    }
 
-    handleSubmit(e, values) {
-        const { onSubmit } = this.props
-        const { inputs } = this.state
-        const { projectHash: projectId, workerAddress } = values
-        const { project } = findInput(inputs, 'projectHash')
-            .options.find(x => x.value === projectId)
-        const { name: projectName, ownerAddress } = project
-        const ownIdentity = identities.get(workerAddress)
-        const isOwner = ownIdentity && workerAddress === ownerAddress
-        const { name, userId } = ownIdentity || partners.get(workerAddress)
-        this.setState({
-            submitDisabled: true,
-            loading: true,
-            message: {
-                content: textsCap.addedToQueueDesc,
-                header: textsCap.addedToQueue,
-                icon: true,
-                status: 'loading'
-            }
-        })
 
-        const selfInviteThen = success => {
-            this.setState({
-                submitDisabled: false,
-                loading: false,
-                success,
-                message: {
-                    header: success
-                        ? textsCap.invitedAndAccepted
-                        : textsCap.txFailed,
-                    icon: true,
-                    status: success
-                        ? 'success'
-                        : 'error'
-                }
-            })
-            isFn(onSubmit) && onSubmit(success, values)
-            // trigger an update of list of timekeeping projects
-            getProjects(true)
-        }
-        const acceptOwnInvitationTask = queueables.worker.accept(
-            projectId,
-            workerAddress,
-            true,
-            {
-                title: textsCap.queueTitleOwnAccept,
-                description: `${textsCap.identity}: ${name}`,
-                then: selfInviteThen,
-            }
-        )
-        const notifyWorkerTask = {
-            type: QUEUE_TYPES.CHATCLIENT,
-            func: 'notify',
-            args: [
-                [userId],
-                notificationType,
-                childType,
-                null,
-                {
-                    projectHash: projectId,
-                    projectName,
-                    workerAddress
-                },
-                err => {
-                    this.setState({
-                        submitDisabled: false,
-                        loading: false,
-                        success: !err,
-                        message: {
-                            header: !err
-                                ? textsCap.inviteSuccess
-                                : textsCap.inviteSuccessNotifyFailed,
-                            content: err || '',
-                            icon: true,
-                            status: !err
-                                ? 'success'
-                                : 'warning',
-                        }
-                    })
-                    isFn(onSubmit) && onSubmit(!err, values)
-                }
-            ],
-        }
-
-        const extraProps = {
-            title: textsCap.formHeader,
-            description: `${textsCap.invitee}: ${name}`,
-            then: isOwner
-                ? selfInviteThen
-                : (success, err) => {
-                    if (success) return
-                    this.setState({
-                        submitDisabled: false,
-                        loading: false,
-                        message: {
-                            header: textsCap.txFailed,
-                            content: `${err}`,
-                            icon: true,
-                            status: 'error',
-                        }
-                    })
-                },
-            next: isOwner
-                ? null
-                : ownIdentity
-                    ? acceptOwnInvitationTask
-                    : notifyWorkerTask
-        }
-        addToQueue(queueables.worker.add(
-            projectId,
-            ownerAddress,
-            workerAddress,
-            extraProps,
-        ))
-    }
-
-    render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
-}
+    return <FormBuilder {...{ ...props, ...state }} />
+})
+export default TimeKeepingInviteForm
 TimeKeepingInviteForm.propTypes = {
     values: PropTypes.shape({
         projectHash: PropTypes.string,
@@ -331,4 +108,333 @@ TimeKeepingInviteForm.defaultProps = {
     header: textsCap.formHeader,
     size: 'tiny',
     submitText: textsCap.invite,
+}
+
+const getInitialState = (props, rxActivities) => rxState => {
+    const { values } = props
+    const rxWorker = new BehaviorSubject()
+    const inputs = [
+        {
+            label: textsCap.activity,
+            name: inputNames.projectHash,
+            options: [],
+            placeholder: textsCap.activityLabel,
+            required: true,
+            rxOptions: rxActivities,
+            rxOptionsModifier: (activities = new Map()) => {
+                if (!activities.size) return [{
+                    key: 'empty',
+                    text: textsCap.zeroActivityWarning,
+                    value: '',
+                }]
+                return arrSort(
+                    Array.from(activities)
+                        // include only active (open/reopened) projects
+                        .filter(([_, { status }]) => openStatuses.includes(status))
+                        .map(([activityId, activity]) => ({
+                            activity,
+                            key: activityId,
+                            text: activity.name || textEllipsis(activityId, 40),
+                            value: activityId,
+                        })),
+                    'text'
+                )
+            },
+            search: true,
+            selection: true,
+            type: 'dropdown',
+            value: '',
+        },
+        {
+            label: textsCap.partner,
+            name: inputNames.workerAddress,
+            options: [],
+            placeholder: textsCap.partnerLabel,
+            required: true,
+            rxOptions: rxPartners,
+            rxOptionsModifier: partners => getPartnerOptions(
+                partners,
+                {
+                    // trigger re-validation of worker address whenever partner is updated from the options
+                    onSubmit: deferred((ok, values) => {
+                        const address = rxWorker.value
+                        // ignore if not selected worker address
+                        if (values.address !== address) return
+                        // trigger re-evaluation
+                        rxWorker.next('')
+
+                        setTimeout(() => rxWorker.next(`${address}`), 100)
+                    }, 200)
+                },
+                true
+            ),
+            rxValue: rxWorker,
+            search: ['keywords'],
+            selection: true,
+            type: 'dropdown',
+            validate: validateWorker(rxState),
+        },
+        {
+            content: textsCap.addPartner,
+            icon: 'plus',
+            name: inputNames.addpartner,
+            onClick: () => showForm(PartnerForm, {
+                // once partner created update the input with newly created partner's address
+                onSubmit: (ok, { address }) => ok && rxWorker.next(address)
+            }),
+            fluid: true,
+            type: 'button',
+        },
+    ]
+    const state = {
+        submitDisabled: { workerAddress: false },
+        loading: false,
+        message: {},
+        onSubmit: handleSubmit(
+            props,
+            rxState,
+            rxActivities
+        ),
+        success: false,
+        inputs: fillValues(inputs, values),
+    }
+    return state
+}
+
+const handleSubmit = (props, rxState, rxActivities) => (e, values) => {
+    const { onSubmit } = props
+    const {
+        projectHash: activityId,
+        workerAddress
+    } = values
+    const activity = rxActivities.value?.get?.(activityId)
+    if (!activity) return
+
+    const {
+        name: activityName,
+        ownerAddress
+    } = activity
+    const workerIdentity = identities.get(workerAddress)
+    const isWorker = !!workerIdentity
+    // activity owner is also the worker
+    const isSelfInvite = isWorker && workerAddress === ownerAddress
+    const { name, userId } = workerIdentity
+        || partners.get(workerAddress)
+    rxState.next({
+        submitInProgress: true,
+        loading: true,
+        message: {
+            content: textsCap.addedToQueueDesc,
+            header: textsCap.addedToQueue,
+            icon: true,
+            status: 'loading'
+        }
+    })
+
+    // display/update self invite status message
+    const updateSelfInviteMsg = skipOnSuccess => success => {
+        // update message when 
+        if (skipOnSuccess && success) return
+        rxState.next({
+            submitInProgress: false,
+            loading: false,
+            success,
+            message: {
+                header: success
+                    ? textsCap.invitedAndAccepted
+                    : textsCap.txFailed,
+                icon: true,
+                status: success
+                    ? 'success'
+                    : 'error'
+            }
+        })
+        isFn(onSubmit) && onSubmit(success, values)
+        // trigger an update of list of timekeeping projects
+        getProjects(true)
+    }
+    // queue itme to accept invitation of own identity
+    const acceptInvitationTask = queueables.worker.accept(
+        activityId,
+        workerAddress,
+        true,
+        {
+            title: textsCap.queueTitleOwnAccept,
+            description: `${textsCap.identity}: ${name}`,
+            then: updateSelfInviteMsg,
+        }
+    )
+
+    // mesaging service request to send a notification to worker+partner (if not self)
+    const notifyWorkerTask = {
+        type: QUEUE_TYPES.CHATCLIENT,
+        func: 'notify',
+        args: [
+            [userId],
+            notificationType,
+            childType,
+            null,
+            {
+                projectHash: activityId,
+                projectName: activityName,
+                workerAddress
+            },
+            err => {
+                rxState.next({
+                    submitInProgress: false,
+                    loading: false,
+                    success: !err,
+                    message: {
+                        header: !err
+                            ? textsCap.inviteSuccess
+                            : textsCap.inviteSuccessNotifyFailed,
+                        content: err || '',
+                        icon: true,
+                        status: !err
+                            ? 'success'
+                            : 'warning',
+                    }
+                })
+                isFn(onSubmit) && onSubmit(!err, values)
+            }
+        ],
+    }
+
+    // queue item to invite worker (self or partner)
+    const inviteWorkerTask = queueables.worker.add(
+        activityId,
+        ownerAddress,
+        workerAddress,
+        {
+            title: textsCap.formHeader,
+            description: `${textsCap.invitee}: ${name}`,
+            then: isSelfInvite
+                ? updateSelfInviteMsg()
+                : (success, err) => {
+                    if (success) return
+                    rxState.next({
+                        submitInProgress: false,
+                        loading: false,
+                        message: {
+                            header: textsCap.txFailed,
+                            content: `${err}`,
+                            icon: true,
+                            status: 'error',
+                        }
+                    })
+                },
+            next: isSelfInvite
+                ? null
+                : isWorker
+                    ? acceptInvitationTask
+                    : notifyWorkerTask,
+            // ...isSelfInvite
+            //     ? {
+            //         // queue itme to accept invitation of own identity
+            //         next: queueables.worker.accept(
+            //             activityId,
+            //             workerAddress,
+            //             true,
+            //             {
+            //                 title: textsCap.queueTitleOwnAccept,
+            //                 description: `${textsCap.identity}: ${name}`,
+            //                 then: updateSelfInviteMsg(false),
+            //             }
+            //         ),
+            //         then: updateSelfInviteMsg(true),
+            //     }
+            //     : {
+            //         next: notifyWorkerTask,
+            //         then: (success, err) => {
+            //             if (success) return
+            //             rxState.next({
+            //                 submitInProgress: false,
+            //                 loading: false,
+            //                 message: {
+            //                     header: textsCap.txFailed,
+            //                     content: `${err}`,
+            //                     icon: true,
+            //                     status: 'error',
+            //                 }
+            //             })
+            //         }
+            //     },
+        }
+    )
+    addToQueue(inviteWorkerTask)
+}
+
+const validateWorker = rxState => async (_, { value }, values) => {
+    const workerAddress = value
+    if (!workerAddress) return
+
+    const { inputs, submitDisabled } = rxState.value
+    const activityId = values[inputNames.projectHash]
+    const partnerIn = findInput(inputs, inputNames.workerAddress)
+    const partner = partners.get(workerAddress)
+    const { userId } = partner || {}
+    // do not require user id if selected address belongs to user
+    const missingUserId = !identities.get(workerAddress) && !userId
+    partnerIn.loading = !!activityId && !missingUserId
+    if (missingUserId) return {
+        content: (
+            <p>
+                {textsCap.partnerUserIdWarning} <br />
+                <Button {...{
+                    basic: true,
+                    content: textsCap.updateParner,
+                    onClick: e => {
+                        e.preventDefault()
+                        showForm(PartnerForm, {
+                            onSubmit: (_, { address, userId }) => {
+                                if (!userId) return
+                                const { rxValue } = partnerIn
+                                rxValue.next('')
+                                setTimeout(() => rxValue.next(`${address}`), 500)
+                            },
+                            values: partner,
+                        })
+                    },
+                }} />
+            </p>
+        ),
+        status: 'error'
+    }
+    if (!partnerIn.loading) return
+
+    // disable submit button
+    submitDisabled.workerAddress = true
+    // check if partner is already invited or accepted
+    const [invitedAr, acceptedAr] = await Promise
+        .all([
+            query.worker.listInvited(activityId),
+            query.worker.listWorkers(activityId),
+        ])
+        .finally(() => submitDisabled.workerAddress = false)
+    const accepted = acceptedAr.includes(workerAddress)
+    const invited = invitedAr.includes(workerAddress)
+    /*
+     * accepted values:
+     * null => not yet invited or rejected
+     * true => invited and already accepted
+     * false => invited but hasn't responded
+     */
+    partnerIn.loading = false
+    // allows (re-)invitation if user hasn't accepted (!== true) invitation
+    return (accepted || invited) && {
+        content: accepted
+            ? textsCap.partnerAcceptedInvite
+            : textsCap.partnerInvited,
+        status: accepted
+            ? 'error'
+            : 'warning'
+    }
+    if (accepted || invited) return {
+        content: accepted
+            ? textsCap.partnerAcceptedInvite
+            : textsCap.partnerInvited,
+        status: accepted
+            ? 'error'
+            : 'warning'
+    }
 }

@@ -20,6 +20,7 @@ import {
 	arrUnique,
 	isObj,
 	hasValue,
+	isInteger,
 } from '../utils/utils'
 import { translated } from '../utils/languageHelper'
 import {
@@ -126,9 +127,22 @@ export default class DataTable extends Component {
 
 	getColumnsVisible = () => {
 		const { columns, columnsHidden } = this.props
-		return columns.filter(x =>
-			!x.hidden && !columnsHidden.includes(x.name || x.key)
+		const hiddenIndexes = columns
+			.map((x, i) => {
+				let hidden = columnsHidden.includes(x.name || x.key)
+				if (!hidden) {
+					hidden = isFn(x.hidden)
+						? x.hidden(this.props, x)
+						: x.hidden
+				}
+				return !!hidden && i
+			})
+			.filter(isInteger)
+		const columnsVisible = columns.filter((_, i) =>
+			!hiddenIndexes.includes(i)
 		)
+
+		return columnsVisible
 	}
 
 	getHeaders(totalRows, columns, selectedIndexes) {
@@ -283,8 +297,9 @@ export default class DataTable extends Component {
 				: null
 			const props = {
 				...objWithoutKeys(column, nonAttrs),
-				key: key + j,
 				draggable,
+				hidden: undefined,
+				key: key + j,
 				onDragStart: !draggable
 					? undefined
 					: this.handleDragStartCb(
@@ -399,7 +414,9 @@ export default class DataTable extends Component {
 				disabled: selectedIndexes.length === 0,
 				fluid: isMobile,
 				style: {
-					margin: !isMobile ? undefined : '5px 0',
+					margin: !isMobile
+						? undefined
+						: '5px 0',
 					textAlign: 'center',
 				},
 				// // Semantic only allows string. Grrrr!
@@ -416,13 +433,19 @@ export default class DataTable extends Component {
 				text: `${textsCap.actions}${!showCount ? '' : ' (' + selectedIndexes.length + ')'}`
 			}}>
 				<Dropdown.Menu direction='right' style={{ minWidth: 'auto' }}>
-					{menuOnSelect.map((item, i) =>
-						React.isValidElement(item) && item || (
+					{menuOnSelect.map((item, i) => React.isValidElement(item)
+						? item
+						: (
 							<Dropdown.Item {...{
 								...item,
 								key: i,
-								onClick: () => isFn(item.onClick)
-									&& item.onClick(selectedIndexes)
+								onClick: !isFn(item.onClick)
+									? undefined
+									: e => item.onClick(
+										selectedIndexes,
+										data,
+										e
+									)
 							}} />
 						)
 					)}
@@ -494,8 +517,12 @@ export default class DataTable extends Component {
 							fluid: isMobile,
 							key: i,
 							onClick: !isFn(onClick)
-								? null
-								: e => onClick(selectedIndexes, data, e),
+								? undefined
+								: e => onClick(
+									selectedIndexes,
+									data,
+									e
+								),
 							style: {
 								...isMobile && { marginBottom: 5 },
 								...style,
@@ -674,19 +701,15 @@ export default class DataTable extends Component {
 
 							<Table.Body>{rows}</Table.Body>
 
-							{!footerContent && totalPages <= 1
-								? undefined
-								: (
-									<Table.Footer>
-										<Table.Row>
-											<Table.HeaderCell
-												colSpan={columnsVisible.length + 1}
-											>
-												{this.getFooter(totalPages, pageNo)}
-											</Table.HeaderCell>
-										</Table.Row>
-									</Table.Footer>
-								)}
+							{!!footerContent || totalPages > 1 && (
+								<Table.Footer>
+									<Table.Row>
+										<Table.HeaderCell colSpan={columnsVisible.length + 1}>
+											{this.getFooter(totalPages, pageNo)}
+										</Table.HeaderCell>
+									</Table.Row>
+								</Table.Footer>
+							)}
 						</Invertible>
 					)}
 				</div>
@@ -698,6 +721,15 @@ const gridProps = PropTypes.shape({
 	computer: PropTypes.number,
 	tablet: PropTypes.number,
 })
+const buttonsType = PropTypes.arrayOf(
+	PropTypes.oneOfType([
+		PropTypes.element,
+		PropTypes.shape({
+			// onClick args: [selectedIndexes, data, onClickEvent]
+			onClick: PropTypes.func,
+		}),
+	])
+)
 DataTable.propTypes = {
 	// data: PropTypes.oneOfType([
 	//     PropTypes.array,
@@ -720,7 +752,11 @@ DataTable.propTypes = {
 			// column header cell properties
 			headerProps: PropTypes.object,
 			// whether to hide the column
-			hidden: PropTypes.bool,
+			hidden: PropTypes.oneOfType([
+				PropTypes.bool,
+				// function args: props, column
+				PropTypes.func,
+			]),
 			// object property name. The value of the property will be displayed only if `content` is not provided.
 			key: PropTypes.string,
 			// (optional) specify a name for the column. Can be useful to hide the column externally using `columnsHidden` prop
@@ -777,8 +813,8 @@ DataTable.propTypes = {
 		left: gridProps,
 		right: gridProps,
 	}),
-	topLeftMenu: PropTypes.arrayOf(PropTypes.object),
-	topRightMenu: PropTypes.arrayOf(PropTypes.object),
+	topLeftMenu: buttonsType,
+	topRightMenu: buttonsType,
 }
 DataTable.defaultProps = {
 	columns: [],

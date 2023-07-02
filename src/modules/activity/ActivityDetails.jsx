@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
-import { statuses, subjectAsPromise } from '../../utils/reactjs'
+import { RxSubjectView, statuses, subjectAsPromise, useQueryBlockchain, useRxSubject } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import { rxBlockNumber } from '../../services/blockchain'
 import { showForm, showInfo } from '../../services/modal'
@@ -11,6 +11,7 @@ import LabelCopy from '../../components/LabelCopy'
 import TimekeepingList from '../timekeeping/TimekeepingList'
 import ActivityForm from './ActivityForm'
 import ActivityTeamList from './ActivityTeamList'
+import { BehaviorSubject } from 'rxjs'
 
 let textsCap = {
     actions: 'actions',
@@ -73,52 +74,101 @@ let textsCap = {
 textsCap = translated(textsCap, true)[1]
 
 const ActivityDetails = props => {
+    const { id, project } = props
+    const args = useMemo(() => [id], [id])
+    // fetch and retrieve the block number Activity was first seen 
+    const {
+        result: {
+            columns,
+            buttons
+        } = {},
+        message,
+    } = useQueryBlockchain(
+        null,
+        'api.query.timekeeping.projectFirstSeen',
+        args,
+        false,
+        handleFirstSeenCb(props),
+    )
+
+    return (
+        <div>
+            <DataTableVertical {...{
+                columns,
+                emptyMessage: message || {
+                    content: textsCap.loading,
+                    icon: true,
+                    status: statuses.LOADING,
+                },
+                data: !columns
+                    ? []
+                    : [{ id, ...project }],
+            }} />
+            <div style={{
+                marginBottom: 14,
+                marginTop: -14,
+                padding: 1,
+            }}>
+                <ButtonGroup {...{
+                    buttons,
+                    fluid: true,
+                }} />
+            </div>
+        </div>
+    )
+}
+ActivityDetails.propTypes = {
+    id: PropTypes.string,
+    modalId: PropTypes.string,
+    project: PropTypes.object,
+}
+ActivityDetails.asModal = (props = {}) => {
+    let { id, modalId } = props
+    modalId = modalId || id
+
+    return showInfo({
+        collapsing: true,
+        content: <ActivityDetails {...{ ...props, modalId }} />,
+        header: textsCap.detailsFormHeader,
+        size: 'mini',
+    }, modalId)
+}
+export default ActivityDetails
+
+const handleFirstSeenCb = props => (firstSeen = 0) => {
     const {
         id,
         modalId,
         project
     } = props
-    const [tableProps, setTableProps] = useState({
-        emptyMessage: {
-            content: textsCap.loading,
-            icon: true,
-            status: statuses.LOADING,
+    const columns = [
+        { key: 'name', title: textsCap.detailsNameLabel },
+        {
+            content: ({ id }) => (
+                <LabelCopy {...{ value: id }} />
+            ),
+            key: 'recordId',
+            title: textsCap.detailsRecordIdLabel,
+        },
+        { key: 'description', title: textsCap.detailsDescLabel },
+        { key: '_totalTime', title: textsCap.detailsTotalTimeLabel },
+        { key: '_statusText', title: textsCap.detailsStatusLabel },
+        {
+            content: () => (
+                <RxSubjectView {...{
+                    key: firstSeen,
+                    subject: rxBlockNumber,
+                    valueModifier: (currentBlock, oldValue) => {
+                        if (oldValue !== undefined) return RxSubjectView.IGNORE_UPDATE
+                        return firstSeen
+                            ? blockToDate(firstSeen, currentBlock)
+                            : textsCap.never
+                    },
+                }} />
+            ),
+            title: textsCap.detailsFirstSeenLabel,
         }
-    })
-
-    useEffect(() => {
-        let mounted = true
-        const [promise] = subjectAsPromise(rxBlockNumber)
-        promise.then(currentBlock => {
-            if (!mounted) return
-
-            const columns = [
-                { key: 'name', title: textsCap.detailsNameLabel },
-                {
-                    content: ({ id }) => (
-                        <LabelCopy {...{ value: id }} />
-                    ),
-                    key: 'recordId',
-                    title: textsCap.detailsRecordIdLabel,
-                },
-                { key: 'description', title: textsCap.detailsDescLabel },
-                { key: '_totalTime', title: textsCap.detailsTotalTimeLabel },
-                { key: '_statusText', title: textsCap.detailsStatusLabel },
-                {
-                    content: ({ firstSeen }) => firstSeen
-                        ? blockToDate(firstSeen, currentBlock)
-                        : textsCap.never,
-                    key: 'firstSeen',
-                    title: textsCap.detailsFirstSeenLabel,
-                }
-            ]
-            setTableProps({
-                columns,
-            })
-        })
-        return () => mounted = false
-    }, [])
-
+    ]
     const buttons = [
         {
             // view team button
@@ -175,139 +225,105 @@ const ActivityDetails = props => {
         }
     ].filter(Boolean)
 
-    return (
-        <div>
-            <DataTableVertical {...{
-                ...tableProps,
-                data: [{ id, ...project }],
-            }} />
-            <div style={{
-                marginBottom: 14,
-                marginTop: -14,
-                padding: 1,
-            }}>
-                <ButtonGroup {...{
-                    buttons,
-                    fluid: true,
-                }} />
-            </div>
-        </div>
-    )
+    return { columns, buttons }
 }
-ActivityDetails.propTypes = {
-    id: PropTypes.string,
-    modalId: PropTypes.string,
-    project: PropTypes.object,
-}
-ActivityDetails.asModal = (props = {}) => {
-    let { id, modalId } = props
-    modalId = modalId || id
 
-    return showInfo({
-        collapsing: true,
-        content: <ActivityDetails {...{ ...props, modalId }} />,
-        header: textsCap.detailsFormHeader,
-        size: 'mini',
-    }, modalId)
-}
-export default ActivityDetails
-
-const showDetails = (project, recordId) => {
-    const { isMobile } = this.state
-    const data = { ...project }
-    data.recordId = textEllipsis(recordId, 23)
-    data._firstSeen = data.firstSeen ? data.firstSeen : textsCap.never
-    const labels = {
-        name: textsCap.detailsNameLabel,
-        recordId: textsCap.detailsRecordIdLabel,
-        description: textsCap.detailsDescLabel,
-        _totalTime: textsCap.detailsTotalTimeLabel,
-        _statusText: textsCap.detailsStatusLabel,
-        _firstSeen: textsCap.detailsFirstSeenLabel
-    }
-    // Create a form on the fly and display data a read-only input fields
-    const getContent = (mobile, desktop = mobile) => {
-        const El = isMobile
-            ? 'div'
-            : 'span'
-        return <El>{isMobile ? mobile : desktop}</El>
-    }
-    const btnRecords = {
-        // view time records button
-        content: getContent(
-            textsCap.records,
-            textsCap.detailsTimeRecordsBtn,
-        ),
-        icon: 'clock outline',
-        key: 'records',
-        name: 'records',
-        onClick: () => confirm({
-            cancelButton: textsCap.close,
-            confirmButton: null,
-            content: <TimekeepingList {...{
-                isOwner: true,
-                manage: true,
-                projectHash: recordId,
-                projectName: project.name,
-                ownerAddress: project.ownerAddress,
-            }} />,
-            header: `${project.name}: ${textsCap.timekeeping}`,
-        }),
-        type: 'Button',
-    }
-    const btnTeam = {
-        content: getContent(
-            textsCap.team,
-            textsCap.viewTeam,
-        ),
-        icon: { name: 'group' },
-        key: 'workers',
-        onClick: () => this.showTeam(recordId, project.name),
-        title: textsCap.viewTeam,
-    }
-    const btnEdit = {
-        content: getContent(
-            textsCap.update,
-            textsCap.editProject,
-        ),
-        key: 'edit',
-        icon: 'pencil',
-        onClick: () => showForm(ActivityForm, { hash: recordId, values: project }),
-        title: textsCap.editProject,
-    }
-    const btnGroup = {
-        basic: true,
-        buttons: [btnTeam, btnRecords, btnEdit],
-        El: ButtonGroup,
-        fluid: true,
-        name: 'buttons',
-        type: 'button',
-        // vertical: isMobile,
-    }
-    showForm(FormBuilder, {
-        closeOnEscape: true,
-        closeOnDimmerClick: true,
-        closeText: null,
-        header: textsCap.detailsFormHeader,
-        inputs: Object
-            .keys(labels)
-            .map(key => ({
-                action: key !== 'recordId'
-                    ? undefined
-                    : {
-                        icon: 'copy',
-                        onClick: () => copyToClipboard(recordId),
-                    },
-                label: labels[key],
-                name: key,
-                readOnly: true,
-                type: key === 'description'
-                    ? 'textarea'
-                    : 'text',
-                value: data[key]
-            }))
-            .concat(btnGroup),
-        size: 'tiny',
-        submitText: null
-    })
-}
+// const showDetails = (project, recordId) => {
+//     const { isMobile } = this.state
+//     const data = { ...project }
+//     data.recordId = textEllipsis(recordId, 23)
+//     data._firstSeen = data.firstSeen ? data.firstSeen : textsCap.never
+//     const labels = {
+//         name: textsCap.detailsNameLabel,
+//         recordId: textsCap.detailsRecordIdLabel,
+//         description: textsCap.detailsDescLabel,
+//         _totalTime: textsCap.detailsTotalTimeLabel,
+//         _statusText: textsCap.detailsStatusLabel,
+//         _firstSeen: textsCap.detailsFirstSeenLabel
+//     }
+//     // Create a form on the fly and display data a read-only input fields
+//     const getContent = (mobile, desktop = mobile) => {
+//         const El = isMobile
+//             ? 'div'
+//             : 'span'
+//         return <El>{isMobile ? mobile : desktop}</El>
+//     }
+//     const btnRecords = {
+//         // view time records button
+//         content: getContent(
+//             textsCap.records,
+//             textsCap.detailsTimeRecordsBtn,
+//         ),
+//         icon: 'clock outline',
+//         key: 'records',
+//         name: 'records',
+//         onClick: () => confirm({
+//             cancelButton: textsCap.close,
+//             confirmButton: null,
+//             content: <TimekeepingList {...{
+//                 isOwner: true,
+//                 manage: true,
+//                 projectHash: recordId,
+//                 projectName: project.name,
+//                 ownerAddress: project.ownerAddress,
+//             }} />,
+//             header: `${project.name}: ${textsCap.timekeeping}`,
+//         }),
+//         type: 'Button',
+//     }
+//     const btnTeam = {
+//         content: getContent(
+//             textsCap.team,
+//             textsCap.viewTeam,
+//         ),
+//         icon: { name: 'group' },
+//         key: 'workers',
+//         onClick: () => this.showTeam(recordId, project.name),
+//         title: textsCap.viewTeam,
+//     }
+//     const btnEdit = {
+//         content: getContent(
+//             textsCap.update,
+//             textsCap.editProject,
+//         ),
+//         key: 'edit',
+//         icon: 'pencil',
+//         onClick: () => showForm(ActivityForm, { hash: recordId, values: project }),
+//         title: textsCap.editProject,
+//     }
+//     const btnGroup = {
+//         basic: true,
+//         buttons: [btnTeam, btnRecords, btnEdit],
+//         El: ButtonGroup,
+//         fluid: true,
+//         name: 'buttons',
+//         type: 'button',
+//         // vertical: isMobile,
+//     }
+//     showForm(FormBuilder, {
+//         closeOnEscape: true,
+//         closeOnDimmerClick: true,
+//         closeText: null,
+//         header: textsCap.detailsFormHeader,
+//         inputs: Object
+//             .keys(labels)
+//             .map(key => ({
+//                 action: key !== 'recordId'
+//                     ? undefined
+//                     : {
+//                         icon: 'copy',
+//                         onClick: () => copyToClipboard(recordId),
+//                     },
+//                 label: labels[key],
+//                 name: key,
+//                 readOnly: true,
+//                 type: key === 'description'
+//                     ? 'textarea'
+//                     : 'text',
+//                 value: data[key]
+//             }))
+//             .concat(btnGroup),
+//         size: 'tiny',
+//         submitText: null
+//     })
+// }

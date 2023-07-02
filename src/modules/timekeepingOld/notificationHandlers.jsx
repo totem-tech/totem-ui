@@ -57,12 +57,7 @@ const TK_ChildTypes = {
  * 
  * @returns {Boolean}   resolves with a boolean value indicating success or failue
  */
-export const handleInvitation = (
-    projectId,
-    workerAddress,
-    accepted,
-    notificationId
-) => new Promise(async (resolve) => {
+export const handleInvitation = (projectId, workerAddress, accepted, notificationId) => new Promise(async (resolve) => {
     let confirmId
     const resolver = err => {
         resolve(!err)

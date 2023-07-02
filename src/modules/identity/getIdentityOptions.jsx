@@ -1,14 +1,20 @@
 import React from 'react'
 import { translated } from '../../utils/languageHelper'
-import { arrSort, isObj, textEllipsis } from '../../utils/utils'
+import { RxSubjectView } from '../../utils/reactjs'
+import {
+    arrSort,
+    isObj,
+    textEllipsis
+} from '../../utils/utils'
 import Balance from './Balance'
-import { rxIdentities } from './identity'
+import { rxIdentities, rxSelected } from './identity'
 import IdentityIcon from './IdentityIcon'
 
-const textsCap = translated({
-    identity: 'own identity',
-}, true)[1]
-
+const textsCap = {
+    identity: 'identity',
+    selected: 'selected identity',
+}
+translated(textsCap, true)
 /**
  * @name    getIdentityOptions
  * @summary constructs a list of Dropdown options using identities
@@ -18,29 +24,45 @@ const textsCap = translated({
  * 
  * @returns {Array}
  */
-export const getIdentityOptions = (identities = rxIdentities.value, formProps) =>
-    arrSort([...identities.values()], 'name')
-        .map(({ address, name, usageType }) => ({
-            description: <Balance {...{ address, showDetailed: null }} />,
-            key: address,
-            keywords: [
-                name,
-                address,
-                usageType,
-                'identity',
-                textsCap.identity,
-            ].join(' '),
-            name, // keep
-            value: address,
-            text: (
-                <span title={name}>
-                    <IdentityIcon {...{
-                        address,
-                        formProps: isObj(formProps) && formProps || {},
-                        key: address,
-                        usageType,
-                    }} />
-                    {' ' + textEllipsis(name, 25, 3, false)}
-                </span>
-            ),
-        }))
+export const getIdentityOptions = (
+    identities = rxIdentities.value,
+    formProps,
+) => arrSort([...identities.values()], 'name')
+    .map(({
+        address,
+        name,
+        usageType
+    }) => ({
+        description: <Balance {...{ address, showDetailed: null }} />,
+        key: address,
+        keywords: [
+            name,
+            address,
+            usageType,
+            'identity',
+            textsCap.identity,
+        ].join(' '),
+        name, // used for sorting
+        value: address,
+        text: (
+            <RxSubjectView {...{
+                key: address,
+                subject: rxSelected,
+                valueModifier: selected => (
+                    <span title={selected === address && textsCap.selected || ''}>
+                        <IdentityIcon {...{
+                            color: selected === address
+                                ? 'orange'
+                                : 'grey',
+                            address,
+                            formProps: isObj(formProps) && formProps || {},
+                            key: address,
+                            usageType,
+                        }} />
+                        {' ' + textEllipsis(name, 25, 3, false)}
+                    </span>
+                )
+            }} />
+
+        ),
+    }))

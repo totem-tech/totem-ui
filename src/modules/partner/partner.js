@@ -38,13 +38,16 @@ export const get = address => partners.get(address)
 
 // returns name of an address if available in identity or partner lists.
 // Otherwise, returns shortened address
-export const getAddressName = (address, shortenAddress = true) => {
+export const getAddressName = (address, shortenAddress = true, useAlternative = true) => {
     const entry = identities.get(address) || get(address) || {}
-    return entry.name || (
-        shortenAddress
-            ? textEllipsis(address, 15, 5)
-            : address
-    )
+    return entry.name
+        || useAlternative
+        && (
+            shortenAddress
+                ? textEllipsis(address, 15, 5)
+                : address
+        )
+        || ''
 }
 
 export const getAll = () => partners.getAll()

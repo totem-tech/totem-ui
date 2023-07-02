@@ -22,7 +22,7 @@ const textsCap = translated({
 // cache balances and locks
 export const rxBalances = new BehaviorSubject(new Map())
 export const rxLocks = new BehaviorSubject(new Map())
-export const Balance = props => {
+export const Balance = React.memo(props => {
 	let {
 		address,
 		detailsPrefix,
@@ -121,7 +121,7 @@ export const Balance = props => {
 				toggleOnHover: true,
 			}} />
 		)
-}
+})
 Balance.propTypes = {
 	address: PropTypes.string.isRequired,
 	details: PropTypes.any,
@@ -138,7 +138,7 @@ Balance.defaultProps = {
 	lockSeparator: ' | ',
 	showDetailed: false,
 }
-export default React.memo(Balance)
+export default Balance
 
 /**
  * @name    useBalance

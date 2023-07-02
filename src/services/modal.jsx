@@ -29,6 +29,7 @@ import {
     toggleFullscreen,
     useInverted,
 } from '../utils/window'
+import { isMemo } from '../utils/reactjs'
 
 const modals = new DataStorage()
 export const rxModals = modals.rxData
@@ -325,7 +326,7 @@ export const newId = (prefix = 'modal_', seed) => prefix
  */
 export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     // Invalid component supplied
-    if (!isFn(FormComponent)) return
+    if (!isFn(FormComponent) && !isMemo(FormComponent)) return
     const { onClose } = props
     // grab the default modalId if already defined in the defualtProps
     const prefix = 'form__'

@@ -209,6 +209,7 @@ export class FormInput extends Component {
 			type,
 			validate,
 		} = this.props
+		if (this.props.name === 'workerAddress') console.log('workerAddress', data)
 		// for custom input types (eg: UserIdInput)
 		if (data.invalid) return isFn(onChange) && onChange(
 			event,
@@ -407,15 +408,15 @@ export class FormInput extends Component {
 		const handleValidate = msg => {
 			const isEl = React.isValidElement(msg)
 			message = isBool(msg) || !msg
-				? !!message
-					? message
+				? !!msg
+					? msg
 					: null // no need to display a message
 				: {
 					content: isEl
 						? msg
 						: `${msg}`,
 					status: statuses.ERROR,
-					...(!isEl && isObj(msg) ? msg : {}),
+					...!isEl && isObj(msg) && msg,
 				}
 			err = isObj(message) && !isEl
 				? message.status === statuses.ERROR

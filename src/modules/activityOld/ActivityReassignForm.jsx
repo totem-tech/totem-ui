@@ -1,20 +1,21 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
+import { iUseReducer } from '../../utils/reactjs'
+import { generateHash, isFn, objClean } from '../../utils/utils'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+// services
+import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { iUseReducer } from '../../utils/reactjs'
-import { translated } from '../../utils/languageHelper'
-import { generateHash, isFn, objClean } from '../../utils/utils'
+// modules
 import { getIdentityOptions } from '../identity/getIdentityOptions'
 import { find as findIdentity, rxIdentities } from '../identity/identity'
 import { rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import getPartnerOptions from '../partner/getPartnerOptions'
-import { queueables } from './activity'
+import { getProjects, queueables } from './activity'
 import { bonsaiKeys } from './ActivityForm'
-import { rxForceUpdate } from './useActivities'
 
 let textsCap = {
     addPartner: 'add partner',
@@ -38,9 +39,9 @@ let textsCap = {
     queueTitle: 're-assign activity owner',
     saveBONSAIToken: 'save BONSAI auth token',
 }
-translated(textsCap, true)
+textsCap = translated(textsCap, true)[1]
 
-const ActivityReassignForm = React.memo(props => {
+export default function ActivityReassignForm(props) {
     const [state] = iUseReducer(null, rxSetState => {
         const { hash, values } = props
         const inputs = [
@@ -124,8 +125,7 @@ const ActivityReassignForm = React.memo(props => {
 
 
     return <FormBuilder {...{ ...props, ...state }} />
-})
-export default ActivityReassignForm
+}
 ActivityReassignForm.propTypes = {
     hash: PropTypes.string.isRequired,
     values: PropTypes.shape({
@@ -162,7 +162,7 @@ const handleSubmit = (props, rxSetState) => (_, values) => {
             success,
         })
 
-        isLast && success && rxForceUpdate.next(ownerAddress)
+        isLast && success && getProjects(true)
     }
     const projectUpdated = {
         ...project,

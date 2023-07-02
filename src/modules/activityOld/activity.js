@@ -13,7 +13,6 @@ import client from '../../utils/chatClient'
 import identities, { getSelected, rxSelected } from '../identity/identity'
 import partners from '../partner/partner'
 import { query as tkQuery } from '../timekeeping/timekeeping'
-import { translated } from '../../utils/languageHelper'
 
 export const MODULE_KEY = 'projects'
 const rxProjects = new Subject()
@@ -34,17 +33,7 @@ export const statusCodes = {
     close: 500,
     delete: 999,
 }
-export const statusTexts = {
-    0: 'open',
-    100: 're-opened',
-    200: 'on-hold',
-    300: 'abandoned',
-    400: 'canceled',
-    500: 'closed',
-    999: 'deleted',
-    unknown: 'unknown',
-}
-translated(statusTexts)
+
 // status codes that indicate project is open
 export const openStatuses = [statusCodes.open, statusCodes.reopen]
 setTimeout(() => rxSelected.subscribe(() => getProjects(true)))
@@ -117,18 +106,18 @@ export const fetchProjects = async (recordIds = [], ownAddress, isOwner, timeout
 //
 // Params:
 // @recordids   array: array of project IDs
-// export const forceUpdate = async (recordIds, ownerAddress) => {
-//     const updateProjects = await fetchProjects(recordIds, ownerAddress, true)
-//     const projects = await getProjects()
-//     Array.from(updateProjects).forEach(
-//         ([recordId, project]) => projects.set(recordId, project)
-//     )
-//     // save to local storage
-//     saveProjects(projects, ownerAddress)
-// }
+export const forceUpdate = async (recordIds, ownerAddress) => {
+    const updateProjects = await fetchProjects(recordIds, ownerAddress, true)
+    const projects = await getProjects()
+    Array.from(updateProjects).forEach(
+        ([recordId, project]) => projects.set(recordId, project)
+    )
+    // save to local storage
+    saveProjects(projects, ownerAddress)
+}
 
-// // getProject retrieves a single project by hash
-// export const getProject = async (recordId) => (await getProjects()).get(recordId)
+// getProject retrieves a single project by hash
+export const getProject = async (recordId) => (await getProjects()).get(recordId)
 
 // getProjects retrieves projects along with relevant details owned by selected identity.
 // Retrieved data is cached in localStorage and only updated when list of projects changes in the blockchain
@@ -345,6 +334,7 @@ export const queueables = {
 }
 export default {
     fetchProjects,
+    getProject,
     getProjects,
     openStatuses,
     statusCodes,
