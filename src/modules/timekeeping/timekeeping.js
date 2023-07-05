@@ -49,18 +49,29 @@ export const statuses = {
  * @summary convert number of blocks rounded to specified/user-selected preference
  * 
  * @param   {Number} numBlocks 
- * @param   {String} preference 
+ * @param   {String} preference             (optional) duration format. See `durationPreferences`.
+ *                                          Default: `rxDurtionPreference.value`
+ * @param   {Number} blockDurationSeconds   (optional) number of seconds per block.
+ *                                          Default: `BLOCK_DURATION_SECONDS`
  * 
  * @returns {String|Number}
  */
-export const blocksToDuration = (numBlocks, preference, blockDurationSeconds = BLOCK_DURATION_SECONDS) => {
-    preference = !!Object.values(durationPreferences).includes(preference)
+export const blocksToDuration = (
+    numBlocks,
+    preference,
+    blockDurationSeconds = BLOCK_DURATION_SECONDS
+) => {
+    preference = !!Object
+        .values(durationPreferences)
+        .includes(preference)
         ? preference
         : rxDurtionPreference.value
     if (preference === durationPreferences.blocks) return numBlocks
 
     let numMinutes = numBlocks * blockDurationSeconds / 60
-    let roundToMins = parseInt(preference.split('hhmm')[1])
+    let roundToMins = parseInt(
+        preference.split('hhmm')[1]
+    )
 
     numMinutes = !roundToMins
         ? numMinutes
@@ -205,7 +216,7 @@ export const query = {
      * Timekeeping record related queries
      */
     record: {
-        // get details of a record
+        // get details of timekeeping record(s)
         get: (recordId, callback, multi) => queryBlockchain(
             queryPrefix + 'timeRecord',
             [recordId, callback].filter(isDefined),
@@ -230,15 +241,15 @@ export const query = {
             multi,
         ),
         // list of all record hashes in a project 
-        listByProject: (projectId, callback, multi) => queryBlockchain(
+        listByProject: (activityId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectTimeRecordsHashList',
-            [projectId, callback].filter(isDefined),
+            [activityId, callback].filter(isDefined),
             multi,
         ),
         // list of all archived record hashes in a project 
-        listByProjectArchive: (projectId, callback, multi) => queryBlockchain(
+        listByProjectArchive: (activityId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectTimeRecordsHashListArchive',
-            [projectId, callback].filter(isDefined),
+            [activityId, callback].filter(isDefined),
             multi,
         ),
     },
@@ -247,27 +258,27 @@ export const query = {
      */
     worker: {
         // status of invitation | DOES NOT WORK | deprecated
-        accepted: (projectId, workerAddress, callback, multi) => queryBlockchain(
+        accepted: (activityId, workerAddress, callback, multi) => queryBlockchain(
             queryPrefix + 'workerProjectsBacklogStatus',
-            [projectId, workerAddress, callback].filter(isDefined),
+            [activityId, workerAddress, callback].filter(isDefined),
             multi,
         ),
         // check if worker is banned. undefined: not banned, object: banned
-        banned: (projectId, callback, multi) => queryBlockchain(
+        banned: (activityId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectWorkersBanList',
-            [projectId, callback].filter(isDefined),
+            [activityId, callback].filter(isDefined),
             multi,
         ),
         // workers that have been invited to but hasn't responded yet
-        listInvited: (projectId, callback, multi) => queryBlockchain(
+        listInvited: (activityId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectInvitesList',
-            [projectId, callback].filter(isDefined),
+            [activityId, callback].filter(isDefined),
             multi,
         ),
         // workers that has accepted invitation
-        listWorkers: (projectId, callback, multi) => queryBlockchain(
+        listWorkers: (activityId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectWorkersList',
-            [projectId, callback].filter(isDefined),
+            [activityId, callback].filter(isDefined),
             multi,
         ),
         // projects that worker has been invited to or accepted
@@ -328,19 +339,27 @@ export const queueables = {
         //
         // Params:
         // @workerAddress   string
-        // @projectId       string
+        // @activityId       string
         // @recordHash      string
         // @status          integer: default 0
         // @reason          object: {ReasonCode: integer, ReasonCodeType: integer}
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        approve: (ownerAddress, workerAddress, projectId, recordId, accepted, reason, queueProps = {}) => ({
+        approve: (
+            ownerAddress,
+            workerAddress,
+            activityId,
+            recordId,
+            accepted,
+            reason,
+            queueProps = {}
+        ) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'authoriseTime',
             type: TX_STORAGE,
             args: [
                 workerAddress,
-                projectId,
+                activityId,
                 recordId,
                 accepted ? statuses.accept : statuses.reject,
                 reason || {
@@ -350,10 +369,10 @@ export const queueables = {
             ],
         }),
         // Add or update a time record. To add a new record, must use `NEW_RECORD_HASH`.
-        // 
+        //
         // Params:
         // @address         string: worker's address (create or update) or owner address (only set as draft)
-        // @projectId       string
+        // @activityId       string
         // @recordId        string: leave empty to create a new record, otherwise, use existing record's hash
         // @status          int: record status code
         // @reason          object: valid properties => ReasonCodeKey, ReasonCodeTypeKey
@@ -363,13 +382,25 @@ export const queueables = {
         // @blockCount      int: total number of blocks worker has been active
         // @breakCount      int: number of breaks taken during record period
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        save: (address, projectId, recordId, status, reason, blockCount, postingPeriod, blockStart, blockEnd, breakCount, queueProps) => ({
+        save: (
+            address,
+            activityId,
+            recordId,
+            status,
+            reason,
+            blockCount,
+            postingPeriod,
+            blockStart,
+            blockEnd,
+            breakCount,
+            queueProps = {}
+        ) => ({
             ...queueProps,
             address: address,
             func: txPrefix + 'submitTime',
             type: TX_STORAGE,
             args: [
-                projectId,
+                activityId,
                 recordId || NEW_RECORD_HASH,
                 status || 0,
                 reason || {
@@ -391,59 +422,79 @@ export const queueables = {
         // (worker) accept invitation to a project
         //
         // Params:
-        // @projectId       string
+        // @activityId       string
         // @workerAddress   string
         // @accepted        boolean: indicates acceptence or rejection
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        accept: (projectId, workerAddress, accepted, queueProps = {}) => ({
+        accept: (
+            activityId,
+            workerAddress,
+            accepted,
+            queueProps = {}
+        ) => ({
             ...queueProps,
             address: workerAddress,
             func: txPrefix + 'workerAcceptanceProject',
             type: TX_STORAGE,
-            args: [projectId, accepted],
+            args: [activityId, accepted],
         }),
         // (project owner) invite a worker to join a project
         //
-        // Params: 
-        // @projectId       string
+        // Params:
+        // @activityId       string
         // @ownerAddress    string
         // @workerAddress   string
         // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
-        add: (projectId, ownerAddress, workerAddress, queueProps = {}) => ({
+        add: (
+            activityId,
+            ownerAddress,
+            workerAddress,
+            queueProps = {}
+        ) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'notifyProjectWorker',
             type: TX_STORAGE,
-            args: [workerAddress, projectId],
+            args: [workerAddress, activityId],
         }),
         // ban project worker
         //
         // Params:
-        // @projectId       string
+        // @activityId       string
         // @ownerAddress    string
         // @recordId        string
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        banWorker: (projectId, ownerAddress, recordId, queueProps = {}) => ({
+        banWorker: (
+            activityId,
+            ownerAddress,
+            recordId,
+            queueProps = {}
+        ) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'banWorker',
             type: TX_STORAGE,
-            args: [projectId, recordId],
+            args: [activityId, recordId],
         }),
         // unban project worker
         //
         // Params:
-        // @projectId       string
+        // @activityId       string
         // @ownerAddress    string
         // @ownerAddress    string
         // @recordHash      string
         // @queueProps      object: provide task specific properties (eg: description, title, then, next...)
-        unbanWorker: (projectId, ownerAddress, workerAddress, queueProps = {}) => ({
+        unbanWorker: (
+            activityId,
+            ownerAddress,
+            workerAddress,
+            queueProps = {}
+        ) => ({
             ...queueProps,
             address: ownerAddress,
             func: txPrefix + 'banWorker',
             type: TX_STORAGE,
-            args: [projectId, workerAddress],
+            args: [activityId, workerAddress],
         }),
     },
 }

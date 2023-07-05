@@ -2,35 +2,53 @@ import React, { useEffect } from 'react'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../utils/languageHelper'
 import {
-    iUseReducer,
     statuses,
     unsubscribe,
+    useRxState,
     useRxSubject,
 } from '../../utils/reactjs'
-import { isArr } from '../../utils/utils'
+import { isMap, isPositiveNumber } from '../../utils/utils'
 import { rxSelected } from '../identity/identity'
+import AddressName from '../partner/AddressName'
 import {
     blocksToDuration,
     durationPreferences,
-    getProjects,
     query,
     rxDurtionPreference,
 } from './timekeeping'
+import useTkActivities from './useTKActivities'
 
 const textsCap = {
     activity: 'activity',
     loading: 'loading...',
+    owner: 'activity owner',
     percentage: 'percentage',
     noTimeRecords: 'you have not yet booked time on an activity',
     totalBlocks: 'total time in blocks',
     totalHours: 'total time in hours',
-    yourContribution: 'how your time is divided',
     unnamed: 'unnamed',
+    yourContribution: 'how your time is divided',
 }
 translated(textsCap, true)
 
-const TimekeepingSummaryList = () => {
-    const [state, setState] = iUseReducer(null, {
+const TimekeepingSummaryList = React.memo(({
+    identity = useRxSubject(rxSelected)[0],
+    ...props
+}) => {
+    const [[
+        activities = new Map(),
+        activityIds
+    ]] = useTkActivities({
+        identity,
+        includeOwned: false, // only fetch activities where user has accepted invitation
+        valueModifier: (activities = new Map()) => [
+            activities,
+            Array
+                .from(activities)
+                .map(([id]) => id)
+        ],
+    })
+    const [state, setState] = useRxState(() => ({
         columns: [
             {
                 key: 'name',
@@ -51,6 +69,13 @@ const TimekeepingSummaryList = () => {
                 key: 'percentage',
                 textAlign: 'center',
                 title: textsCap.yourContribution,
+            },
+            {
+                collapsing: true,
+                content: x => <AddressName address={x?.ownerAddress} />,
+                key: 'ownerAddress',
+                style: { padding: '0 15px ' },
+                title: textsCap.owner,
             }
         ],
         emptyMessage: {
@@ -59,77 +84,85 @@ const TimekeepingSummaryList = () => {
             status: statuses.LOADING,
         },
         searchable: false,
-    })
-    const [address] = useRxSubject(rxSelected)
-    const [preference] = useRxSubject(rxDurtionPreference, p =>
-        durationPreferences.blocks === p
+    }))
+    const [preference] = useRxSubject(
+        rxDurtionPreference,
+        p => durationPreferences.blocks === p
             ? durationPreferences.hhmmss
             : p
     )
-    const { arrTotalBlocks } = state
+    const { totalBlocksMap } = state
 
+    // subscribe and fetch the total number of blocks user submitted and were accepted
     useEffect(() => {
         let mounted = true
         const subs = {}
-        const doSubscribe = async () => {
-            const activities = await getProjects()
-            const activityIds = Array
-                .from(activities)
-                .map(([id]) => id)
-            // unsubscribe from existing subscription
-            subs.totalBlocks = query.worker.totalBlocksByProject(
-                activityIds.map(() => address),
-                activityIds, // for multi query needs to be a 2D array of arguments
-                arrTotalBlocks => {
-                    setState({ arrTotalBlocks })
-                },
-                true,
-            )
-        }
-        !!address && doSubscribe()
+        const ids = [...activityIds || []]
+        subs.totalBlocks = !!identity
+            && !!ids.length
+            && query
+                .worker
+                .totalBlocksByProject(
+                    ids.map(() => identity),
+                    ids,
+                    totalBlocksArr => setState({
+                        totalBlocksMap: new Map(
+                            totalBlocksArr
+                                .map((totalBlocks, i) => [ids[i], totalBlocks])
+                        )
+                    }),
+                    true,
+                )
 
         return () => {
             mounted = false
             unsubscribe(subs)
         }
-    }, [address])
+    }, [identity, activityIds])
 
+    // calculate percentage etc and populate table data
     useEffect(() => {
-        isArr(arrTotalBlocks) && getProjects()
-            .then(activities => {
-                const activityIds = Array
-                    .from(activities)
-                    .map(([id]) => id)
-                const sumTotalBlocks = arrTotalBlocks
-                    .reduce((sum, next) => sum + next, 0)
-                const data = arrTotalBlocks.map((totalBlocks, i) => ({
-                    name: activities
-                        .get(activityIds[i])
-                        .name
-                        || textsCap.unnamed,
+        if (!isMap(totalBlocksMap)) return
+
+        const sumTotalBlocks = Array
+            .from(totalBlocksMap)
+            .reduce((sum, [_, next]) => sum + next, 0)
+        const data = Array
+            .from(totalBlocksMap)
+            .map(([activityId, totalBlocks]) => {
+                const activity = activities.get(activityId)
+                if (!activity) return
+
+                const {
+                    isOwner,
+                    name = textsCap.unnamed,
+                    ownerAddress
+                } = activity
+                const totalHours = blocksToDuration(totalBlocks, preference)
+                const n = totalBlocks * 100 / sumTotalBlocks
+                const percentage = `${(isPositiveNumber(n) ? n : 0).toFixed(1)}%`
+                return {
+                    activityId,
+                    isOwner,
+                    name: name || textsCap.unnamed,
+                    ownerAddress,
+                    percentage,
                     totalBlocks,
-                    totalHours: blocksToDuration(
-                        totalBlocks,
-                        preference,
-                    ),
-                    percentage: totalBlocks === 0
-                        ? '0%'
-                        : (totalBlocks * 100 / sumTotalBlocks)
-                            .toFixed(0) + '%',
-                }))
-                setState({
-                    arrTotalBlocks,
-                    data,
-                    emptyMessage: {
-                        content: textsCap.noTimeRecords,
-                        status: 'warning',
-                    },
-                })
+                    totalHours,
+                }
             })
+            .filter(Boolean)
 
-    }, [arrTotalBlocks, preference])
+        setState({
+            arrTotalBlocks: totalBlocksMap,
+            data,
+            emptyMessage: {
+                content: textsCap.noTimeRecords,
+                status: 'warning',
+            },
+        })
+    }, [totalBlocksMap, preference])
 
-    return <DataTable {...state} />
-}
-
-export default React.memo(TimekeepingSummaryList)
+    return <DataTable {...{ ...props, ...state }} />
+})
+export default TimekeepingSummaryList

@@ -1,13 +1,15 @@
-import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
-import {
-    deferred,
-    hasValue,
-    isDefined,
-    isFn,
-} from '../../utils/utils'
+import { ButtonAcceptOrReject } from '../../components/buttons'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import DataTableVertical from '../../components/DataTableVertical'
+import { rxBlockNumber } from '../../services/blockchain'
+import { translated } from '../../utils/languageHelper'
+import { confirm, confirmAsPromise } from '../../services/modal'
+import { addToQueue } from '../../services/queue'
+import { unsubscribe } from '../../utils/reactjs'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -15,15 +17,12 @@ import {
     secondsToDuration,
     blockToDate,
 } from '../../utils/time'
-import { ButtonAcceptOrReject } from '../../components/buttons'
-import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import DataTableVertical from '../../components/DataTableVertical'
-// services
-import { rxBlockNumber } from '../../services/blockchain'
-import { translated } from '../../utils/languageHelper'
-import { confirm, confirmAsPromise } from '../../services/modal'
-import { addToQueue } from '../../services/queue'
-import { unsubscribe } from '../../utils/reactjs'
+import {
+    deferred,
+    hasValue,
+    isDefined,
+    isFn,
+} from '../../utils/utils'
 import { openStatuses, query as queryProject } from '../activity/activity'
 import { getSelected } from '../identity/identity'
 import AddressName from '../partner/AddressName'
@@ -47,7 +46,7 @@ const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration)
     ? 0
     : parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
 
-let textsCap = {
+const textsCap = {
     activity: 'activity',
     close: 'close',
     duration: 'duration',
@@ -111,7 +110,7 @@ let textsCap = {
     updateFormHeader: 'update Record',
     workerBannedMsg: 'permission denied',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 const handleValidateDuration = (_1, _2, values) => {
     const { duration, manualEntry } = values
@@ -256,11 +255,12 @@ export default class TimekeepingForm extends Component {
 
         const values = timerFormValues() || {}
         const {
+            activityId,
             breakCount,
             duration,
             durationValid,
             inprogress,
-            projectHash,
+            projectHash = activityId,
             workerAddress
         } = values
         values.durationValid = !isDefined(durationValid) || durationValid
@@ -442,7 +442,6 @@ export default class TimekeepingForm extends Component {
         ])
         const invited = invitedAr.includes(workerAddress)
         const accepted = acceptedAr.includes(workerAddress)
-        console.log({ workerAddress, invited, accepted })
         inputs[index].loading = false
         inputs[index].invalid = banned || !accepted
 
@@ -769,7 +768,8 @@ TimekeepingForm.defaultProps = {
 }
 
 TimekeepingForm.propTypes = {
-    projectHash: PropTypes.string,
+    activityId: PropTypes.string,
+    projectHash: PropTypes.string, // ToDo: deprecated
 }
 // ToDo: separate file and text extraction for language
 export class TimekeepingUpdateForm extends Component {

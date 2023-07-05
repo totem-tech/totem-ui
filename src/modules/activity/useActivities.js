@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { showInfo } from '../../services/modal'
 import { setToast } from '../../services/toast'
 import chatClient from '../../utils/chatClient'
 import {
@@ -8,67 +7,107 @@ import {
     useRxSubject,
     useUnmount
 } from '../../utils/reactjs'
+import storage from '../../utils/storageHelper'
 import {
     deferred,
-    generateHash,
-    getUrlParam,
     isAddress,
     isFn,
-    isPositiveInteger,
-    toArray
 } from '../../utils/utils'
 import { get as getIdentity, rxSelected } from '../identity/identity'
 import { getAddressName } from '../partner/partner'
-import { blocksToDuration, query as tkQuery } from '../timekeeping/timekeeping'
+import {
+    blocksToDuration,
+    rxDurtionPreference,
+    query as tkQuery
+} from '../timekeeping/timekeeping'
 import { query, statusTexts } from './activity'
 
-// todo: update cache storage whenever rxActivities changes
-export const subjects = {}
-export const rxForceUpdate = new BehaviorSubject() // identity
-const s = {} // subscriptions
-export const subscribe = (identity = rxSelected.value) => {
-    if (!isAddress(identity)) return
+// RxJS BehaviorSubjects for each identity that is being requested
+const subjects = {}
+// RxJS subject to trigger update of activity details for both activities and timekeeping modules
+// Expected value: identity
+export const rxForceUpdate = new BehaviorSubject()
+// unsubscribe functions and extra info relating to identities
+const subscriptions = {}
+export const types = {
+    activities: 'projects',// for compatibility with legacy storage keys
+    timekeeping: 'timekeeping',
+}
+const typesFuncs = {
+    // function to subscribe & fetch list of activity IDs
+    // args: identity, callback
+    [types.activities]: query.listByOwner,
+    [types.timekeeping]: tkQuery.worker.listWorkerProjects,
+}
 
-    subjects[identity] ??= new BehaviorSubject()
-    const countKey = `${identity}-count`
-    s[countKey] ??= 0
-    s[countKey]++
-    let unsbuscribed = false
+/**
+ * @name    subscribe
+ * @summary subscribe and fetch activities and details from both on-chain and off-chain
+ * 
+ * @param   {Sting} identity    (optional) user identity.
+ *                              Default: selected identity from the identities module
+ * @param   {Sting} type        (optional) type of activity (see `types`).
+ *                              Default: `activities`
+ * 
+ * @returns {Array} [BehaviorSubject, Function (unsubscribe)]
+ */
+export const subscribe = (identity, type, save = false) => {
+    identity ??= rxSelected.value
+    const fetchActivityIds = typesFuncs[type] || typesFuncs[types.activities]
+    if (!isAddress(identity) || !isFn(fetchActivityIds)) return
+
+    const moduleKey = types[type] || types.activities
+    const itemKey = `${moduleKey}-${identity}`
+    const isOwner = !!getIdentity(identity)
+    subjects[itemKey] ??= new BehaviorSubject(
+        new Map(
+            storage.cache(
+                moduleKey,
+                itemKey
+            )
+        )
+    )
+    subscriptions[itemKey] ??= {}
+    const subject = subjects[itemKey]
+    const subscription = subscriptions[itemKey]
+    subscription.count ??= 0
+    subscription.count++
+    let unsubscribed = false
     const unsub = () => {
-        unsbuscribed = true
-        // no need to unsbuscrbe
-        if (!isPositiveInteger(s[countKey])) return
+        // already unsubscribed
+        if (unsubscribed) return
 
-        --s[countKey]
-        // more listeners remains >> no ned to unsubscribe
-        if (s[countKey] > 0) return
+        unsubscribed = true
+        --subscription.count
+        // other subscribers still listensing >> no need to unsubscribe
+        if (subscription.count > 0) return
 
         // unsubscribe from 
-        unsubscribe(s[identity])
-        s[identity] = {}
+        unsubscribe(subscription)
+        subscriptions[itemKey] = {}
     }
-    const result = [subjects[identity], unsub]
-    // another listener already activated subscriptions
-    if (s[countKey] > 1) return result
+    const result = [subject, unsub]
+    // another listener already activated subscription for this identity.
+    // the returned subject will be automatically updated for all listeners of this identity.
+    if (subscription.count > 1) return result
 
-    // first subscribe request >> subscribe to blockchain storage
-    s[identity] ??= {}
-    const isOwner = !!getIdentity(identity)
     const data = {
-        activities: new Map(),
-        activityIds: [],
+        activities: null,
+        activityIds: null,
         arrTotalBlocks: [],
         statusCodes: [],
     }
-    const update = deferred(() => {
-        if (unsbuscribed) return
+    // once all data has been retrieved process it and update the subject
+    const updateSubject = deferred(() => {
+        if (unsubscribed) return
         const {
             activities,
             activityIds,
             statusCodes,
             arrTotalBlocks,
         } = data
-        const arrActivities = Array
+        if (!activities || !activityIds) return
+        const arr2D = Array
             .from(activities)
             .map(([activityId, activity]) => {
                 const index = activityIds.indexOf(activityId)
@@ -84,33 +123,41 @@ export const subscribe = (identity = rxSelected.value) => {
                 if (status === null) return
 
                 const totalBlocks = arrTotalBlocks[index] || 0
-                return [activityId, {
-                    ...activity,
-                    description: description || '',
-                    ownerAddress: isOwner
-                        ? identity
-                        : ownerAddress,
-                    isOwner: isOwner
-                        || identity === ownerAddress
-                        || getSelected().address === ownerAddress,
-                    name: name || '',
-                    ownerName: getAddressName(
+                return [
+                    activityId,
+                    {
+                        ...activity,
+                        description: description || '',
                         ownerAddress,
-                        false,
-                        false
-                    ),
-                    totalBlocks,
-                    _statusText: statusTexts[status] || statusTexts.unknown,
-                    // convert to duration HH:MM:SS
-                    _totalTime: blocksToDuration(totalBlocks)
-                }]
+                        isOwner,
+                        name: name || '',
+                        ownerName: getAddressName(
+                            ownerAddress,
+                            false,
+                            false
+                        ),
+                        totalBlocks,
+                        _statusText: statusTexts[status] || statusTexts.unknown,
+                        // convert to duration HH:MM:SS
+                        _totalTime: blocksToDuration(totalBlocks)
+                    }
+                ]
             })
-        subjects[identity].next(new Map(arrActivities))
-    }, 200)
+        subject.next(new Map(arr2D))
 
+        // write to cached storage
+        save && storage.cache(
+            moduleKey,
+            itemKey,
+            arr2D,
+        )
+    }, 50)
+
+    // once activity IDs are received fetch off-chain information from messaging service 
+    // and other information from blockchain
     const handleActivityIds = async (activityIds = []) => {
-        if (unsbuscribed) return
-        if (!activityIds.length) return update()
+        if (unsubscribed) return
+        if (!activityIds.length) return updateSubject()
 
         data.activityIds = activityIds
         // fetch activities from messaging service
@@ -123,7 +170,7 @@ export const subscribe = (identity = rxSelected.value) => {
                 })
                 return []
             })
-        if (unsbuscribed) return
+        if (unsubscribed) return
         data.activities = activities
 
         // Records that are not found in the off-chain database
@@ -132,81 +179,74 @@ export const subscribe = (identity = rxSelected.value) => {
         )
 
         // auto fetch status codes
-        unsubscribe(s[identity].status)
-        s[identity].status = query.status(
+        unsubscribe(subscription.status)
+        subscription.status = query.status(
             activityIds,
             (statusCodes = []) => {
                 data.statusCodes = statusCodes
-                update()
+                updateSubject()
             },
             true,
         )
 
         // auto fetch total blocks
-        unsubscribe(s[identity].totalBlocks)
-        s[identity].totalBlocks = tkQuery.project.totalBlocks(
+        unsubscribe(subscription.totalBlocks)
+        subscription.totalBlocks = tkQuery.project.totalBlocks(
             activityIds,
             (arrTotalBlocks = []) => {
                 data.arrTotalBlocks = arrTotalBlocks
-                update()
+                updateSubject()
             },
             true,
         )
 
-        // listen for and force update 
-        unsubscribe(s[identity].forceUpdate)
-        s[identity].forceUpdate = rxForceUpdate.subscribe(target => {
-            if (target !== identity) return
+        // listen for and force update
+        unsubscribe(subscription.forceUpdate)
+        subscription.forceUpdate = rxForceUpdate.subscribe(target => {
+            if (unsubscribed || target !== identity) return
             rxForceUpdate.next(null)
             // execute update of activity details from chat client after a slight delay
-            setTimeout(
-                () => handleActivityIds(data.activityIds, true),
-                300
-            )
+            handleActivityIds(data.activityIds, true)
         })
+
+        // listen for and update whenever duration display preferences changes
+        unsubscribe(subscription.durationPreference)
+        subscription.durationPreference = rxDurtionPreference.subscribe(updateSubject)
     }
 
     // first subscribe to retrieve list of activity IDs
-    query
-        .listByOwner(identity, handleActivityIds)
-        .then(unsub => s[identity].listByOwner = unsub)
+    fetchActivityIds(identity, handleActivityIds)
+        .then(unsub => subscription.listByOwner = unsub)
 
     return result
 }
 
-export default function useActivities(identity, subjectOnly = false) {
+/**
+ * 
+ * @param   {Boolean}   subjectOnly     (optional) if truthy, will return the RxJS subject without subscribing to it.
+ *                                      Default: `false`
+ * @param   {Function}  valueModifier   (optional)
+ * @param   {String}    identity        (optional) Default: selected identity from identities module
+ * @param   {String}    type            (optional) Default: `'activities'` (See `types` for all available options)
+ * 
+ * @returns {BehaviorSubject|Array} if subjectOnly, `BehaviorSubject`. Otherwise, `[Map, BehaviorSubject, Function]`
+ */
+const useActivities = ({
+    identity,
+    subjectOnly = false,
+    valueModifier,
+} = {}) => {
     identity ??= useRxSubject(rxSelected)[0]
-    const [subject, unsubscribe] = useMemo(() => subscribe(identity) || [], [identity])
+    const [subject, unsubscribe] = useMemo(
+        () => subscribe(identity) || [],
+        [identity]
+    )
     // trigger unsubscribe onUnmount
     useUnmount(unsubscribe)
     if (subjectOnly) return subject
 
-    const [activities] = useRxSubject(subject)
+    const [activities] = useRxSubject(subject, valueModifier)
 
-
-    return [activities, subject]
+    return [activities, subject, unsubscribe]
 }
-
-const DemoUseActivities = () => {
-    const [activities] = useActivities()
-    return (
-        <div>
-            {toArray(activities || new Map())
-                .map((activity, i) => (
-                    <div key={activity._id + i} style={{ whiteSpace: 'pre-wrap' }}>
-                        {JSON.stringify(activity, null, 4)}
-                        <br />
-                    </div>
-                ))}
-            <div className='empty-message'>
-                <center>No activities found</center>
-            </div>
-        </div>
-    )
-}
-
-const showWIP = getUrlParam('wip') === 'yes'
-showWIP && setTimeout(() => showInfo({
-    content: <DemoUseActivities />,
-    header: 'Demo Use Activities'
-}))
+export default useActivities

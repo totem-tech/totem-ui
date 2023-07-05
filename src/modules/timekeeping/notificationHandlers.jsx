@@ -18,25 +18,23 @@ import {
 } from '../notification/notification'
 import { queueables } from './timekeeping'
 
-let textsCap = {
+const textsCap = {
     accept: 'accept',
-    reject: 'reject',
+    acceptedInvitation: 'accepted invitation to activity',
+    acceptInvitation: 'accept invitation',
     activity: 'activity',
     activityNotFound: 'activity not found',
+    loadingData: 'loading data...',
+    reject: 'reject',
+    rejectedInvitation: 'rejected invitation to activity',
+    rejectInvitation: 'reject invitation',
+    timekeeping: 'timekeeping',
     tkInvitationMsg: 'invited you to start booking time.',
     tkInviteAcceptMsg: 'accepted your invitation to the following activity',
     tkInviteRejectMsg: 'rejected your invitation to the following activity',
     yourIdentity: 'your identity',
-
-    acceptInvitation: 'accept invitation',
-    acceptedInvitation: 'accepted invitation to activity',
-    rejectInvitation: 'reject invitation',
-    rejectedInvitation: 'rejected invitation to activity',
-    timekeeping: 'timekeeping',
-
-    loadingData: 'loading data',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 // notification types
 const TK_TYPE = 'timekeeping'
 const TK_ChildTypes = {
@@ -48,7 +46,7 @@ const TK_ChildTypes = {
  * @name    handleInvitation
  * @summary respond to timekeeping invitation
  * 
- * @param   {String}    projectId
+ * @param   {String}    activityId
  * @param   {String}    workerAddress
  * @param   {Boolean}   accepted
  * @param   {String}    projectOwnerId (optional)
@@ -58,7 +56,7 @@ const TK_ChildTypes = {
  * @returns {Boolean}   resolves with a boolean value indicating success or failue
  */
 export const handleInvitation = (
-    projectId,
+    activityId,
     workerAddress,
     accepted,
     notificationId
@@ -75,71 +73,95 @@ export const handleInvitation = (
     }
     try {
         const currentUserId = (getUser() || {}).id
+        // show loading modal 
         confirmId = confirm({
-            cancelButton: null,
+            confirmButton: null,
             content: textsCap.loadingData,
             size: 'mini',
         })
-        const project = (await fetchProjects([projectId]))
-            .get(projectId)
+        const activity = (await fetchProjects([activityId]))
+            .get(activityId)
+        // close loading 
         closeModal(confirmId)
-        if (!project) return resolver(textsCap.activityNotFound)
+        if (!activity) return resolver(textsCap.activityNotFound)
 
-        const { name: projectName, userId: projectOwnerId } = project
+        const {
+            name: activityName,
+            userId: activityOwnerId
+        } = activity
         // find any notifications matching the for the specific invitation
         notificationId = getMatchingIds( //notificationId || 
-            { type: TK_TYPE, childType: TK_ChildTypes.invitation },
-            { projectHash: projectId, workerAddress },
+            {
+                type: TK_TYPE,
+                childType: TK_ChildTypes.invitation,
+            },
+            {
+                projectHash: activityId,
+                workerAddress,
+            },
         )
-        const description = `${textsCap.activity}: ${projectName}`
-        const actionStr = `${accepted ? textsCap.acceptInvitation : textsCap.rejectInvitation}`
+        const description = `${textsCap.activity}: ${activityName}`
+        const actionStr = accepted
+            ? textsCap.acceptInvitation
+            : textsCap.rejectInvitation
+        const actionDoneStr = accepted
+            ? textsCap.acceptedInvitation
+            : textsCap.rejectedInvitation
         const title = `${textsCap.timekeeping} - ${actionStr}`
-        const shoudNotify = projectOwnerId && projectOwnerId !== currentUserId
+        const shoudNotify = activityOwnerId
+            && activityOwnerId !== currentUserId
         // notify project owner, if current user is not the owner
-        const next = !shoudNotify ? undefined : {
+        const next = shoudNotify && {
             address: workerAddress, // for automatic balance check
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
             notificationId,
             args: [
-                [projectOwnerId], // recipient user IDs
+                [activityOwnerId], // recipient user IDs
                 TK_TYPE,
                 TK_ChildTypes.invitationResponse,
-                `${accepted ? textsCap.acceptedInvitation : textsCap.rejectedInvitation}: "${projectName}"`,
+                `${actionDoneStr}: "${activityName}"`,
                 {
                     accepted,
-                    projectHash: projectId,
-                    projectName,
+                    projectHash: activityId,
+                    projectName: activityName,
                     workerAddress,
                 },
                 err => resolver(err)
             ]
         }
-        const queueProps = queueables.worker.accept(
-            projectId,
-            workerAddress,
-            accepted,
-            {
-                title,
-                description,
-                notificationId,
-                then: success => {
-                    remove(notificationId)
-                    !shoudNotify && resolver(!success)
+        const queueProps = queueables
+            .worker
+            .accept(
+                activityId,
+                workerAddress,
+                accepted,
+                {
+                    title,
+                    description,
+                    notificationId,
+                    then: success => {
+                        remove(notificationId)
+                        !shoudNotify && resolver(!success)
+                    },
+                    next,
                 },
-                next,
-            },
-        )
+            )
 
-        confirm({
-            confirmButton: {
-                content: actionStr,
-                positive: accepted,
-                negative: !accepted,
+        confirm(
+            {
+                confirmButton: {
+                    content: actionStr,
+                    positive: accepted,
+                    negative: !accepted,
+                },
+                // make sure to resolve when user cancels action
+                onCancel: () => resolver(),
+                onConfirm: () => addToQueue(queueProps),
+                size: 'mini',
             },
-            onConfirm: () => addToQueue(queueProps),
-            size: 'mini',
-        })
+            confirmId,
+        )
     } catch (err) {
         resolver(err)
     }

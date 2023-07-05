@@ -14,16 +14,12 @@ import {
     deferred
 } from '../../utils/utils'
 import { openStatuses } from '../activity/activity'
-import useActivities from '../activity/useActivities'
+import useActivities, { rxForceUpdate } from '../activity/useActivities'
 import identities from '../identity/identity'
 import partners, { rxPartners } from '../partner/partner'
 import PartnerForm from '../partner/PartnerForm'
 import getPartnerOptions from '../partner/getPartnerOptions'
-import {
-    getProjects,
-    query,
-    queueables
-} from './timekeeping'
+import { query, queueables } from './timekeeping'
 
 const notificationType = 'timekeeping'
 const childType = 'invitation'
@@ -61,37 +57,8 @@ export const inputNames = {
 }
 
 const TimeKeepingInviteForm = React.memo(props => {
-    const rxActivities = useActivities(null, true)
-    const [state, setState] = useRxState(getInitialState(props, rxActivities))
-
-
-    // async componentWillMount() {
-    //     this._mounted = true
-    //     const { values } = this.props
-    //     const { inputs } = this.state
-    //     const proIn = findInput(inputs, 'projectHash')
-    //     proIn.loading = true
-    //     this.setState({ inputs })
-
-    //     // retrieve project hashes by address
-    //     proIn.loading = false
-
-    //     proIn.invalid = proIn.options.length === 0
-    //     proIn.message = !proIn.invalid
-    //         ? null
-    //         : {
-    //             content: textsCap.zeroActivityWarning,
-    //             status: 'error'
-    //         }
-
-    //     values && fillValues(inputs, values)
-    //     this.setState({ inputs })
-    // }
-
-    // componentWillUnmount = () => this._mounted = false
-
-
-
+    const rxActivities = useActivities({ subjectOnly: true })
+    const [state] = useRxState(getInitialState(props, rxActivities))
 
     return <FormBuilder {...{ ...props, ...state }} />
 })
@@ -201,7 +168,11 @@ const getInitialState = (props, rxActivities) => rxState => {
     return state
 }
 
-const handleSubmit = (props, rxState, rxActivities) => (e, values) => {
+const handleSubmit = (
+    props,
+    rxState,
+    rxActivities
+) => (e, values) => {
     const { onSubmit } = props
     const {
         projectHash: activityId,
@@ -251,7 +222,7 @@ const handleSubmit = (props, rxState, rxActivities) => (e, values) => {
         })
         isFn(onSubmit) && onSubmit(success, values)
         // trigger an update of list of timekeeping projects
-        getProjects(true)
+        rxForceUpdate.next(workerAddress)
     }
     // queue itme to accept invitation of own identity
     const acceptInvitationTask = queueables.worker.accept(
@@ -261,7 +232,7 @@ const handleSubmit = (props, rxState, rxActivities) => (e, values) => {
         {
             title: textsCap.queueTitleOwnAccept,
             description: `${textsCap.identity}: ${name}`,
-            then: updateSelfInviteMsg,
+            then: updateSelfInviteMsg(),
         }
     )
 
@@ -309,7 +280,7 @@ const handleSubmit = (props, rxState, rxActivities) => (e, values) => {
             title: textsCap.formHeader,
             description: `${textsCap.invitee}: ${name}`,
             then: isSelfInvite
-                ? updateSelfInviteMsg()
+                ? updateSelfInviteMsg(true)
                 : (success, err) => {
                     if (success) return
                     rxState.next({
@@ -328,37 +299,6 @@ const handleSubmit = (props, rxState, rxActivities) => (e, values) => {
                 : isWorker
                     ? acceptInvitationTask
                     : notifyWorkerTask,
-            // ...isSelfInvite
-            //     ? {
-            //         // queue itme to accept invitation of own identity
-            //         next: queueables.worker.accept(
-            //             activityId,
-            //             workerAddress,
-            //             true,
-            //             {
-            //                 title: textsCap.queueTitleOwnAccept,
-            //                 description: `${textsCap.identity}: ${name}`,
-            //                 then: updateSelfInviteMsg(false),
-            //             }
-            //         ),
-            //         then: updateSelfInviteMsg(true),
-            //     }
-            //     : {
-            //         next: notifyWorkerTask,
-            //         then: (success, err) => {
-            //             if (success) return
-            //             rxState.next({
-            //                 submitInProgress: false,
-            //                 loading: false,
-            //                 message: {
-            //                     header: textsCap.txFailed,
-            //                     content: `${err}`,
-            //                     icon: true,
-            //                     status: 'error',
-            //                 }
-            //             })
-            //         }
-            //     },
         }
     )
     addToQueue(inviteWorkerTask)
@@ -422,14 +362,6 @@ const validateWorker = rxState => async (_, { value }, values) => {
     partnerIn.loading = false
     // allows (re-)invitation if user hasn't accepted (!== true) invitation
     return (accepted || invited) && {
-        content: accepted
-            ? textsCap.partnerAcceptedInvite
-            : textsCap.partnerInvited,
-        status: accepted
-            ? 'error'
-            : 'warning'
-    }
-    if (accepted || invited) return {
         content: accepted
             ? textsCap.partnerAcceptedInvite
             : textsCap.partnerInvited,

@@ -1,7 +1,7 @@
 import React from 'react'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
-import { translated } from '../../utils/languageHelper'
 import { confirm, showForm } from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
 import { hasValue, isObj } from '../../utils/utils'
 import {
 	get as getContact,
@@ -26,7 +26,7 @@ import AddressName from './AddressName'
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
 
-let textsCap = {
+const textsCap = {
 	addPartner: 'add partner',
 	ignore: 'ignore',
 	identityShareMsg: 'shared an identity',
@@ -35,7 +35,7 @@ let textsCap = {
 	updatePartner: 'update partner',
 	unexpectedError: 'unexpected error occurred!',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 // identity received from other user
 const handleIdentityReceived = (
@@ -92,7 +92,6 @@ const handleIdentityReceived = (
 					},
 					locationId,
 				)
-				console.log(locationId === savedId)
 			}
 			if (hasContact) {
 				saveContact(

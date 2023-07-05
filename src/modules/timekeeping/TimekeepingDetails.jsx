@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { ButtonGroup } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
@@ -9,8 +9,12 @@ import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
 import { isFn, objWithoutKeys } from '../../utils/utils'
 import AddressName from '../partner/AddressName'
+import { rxInProgressIds } from './TimekeepingList'
 
-let textsCap = {
+const textsCap = {
+    activityName: 'activity name',
+    activityOwner: 'activity owner',
+    activityUnnamed: 'unnamed activity',
     blockCount: 'number of blocks',
     blockEnd: 'end block',
     blockStart: 'start block',
@@ -18,96 +22,23 @@ let textsCap = {
     header: 'record details',
     finishedAt: 'finished at',
     numberOfBreaks: 'number of breaks',
-    projectName: 'activity name',
-    projectOwner: 'activity owner',
-    startedAt: 'started at',
-    status: 'status',
     recordDetails: 'record details',
     recordId: 'record ID',
+    startedAt: 'started at',
+    status: 'status',
     worker: 'worker',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 const TimekeepingDetails = props => {
     const {
         getActionButtons,
-        manage,
         recordId,
         rxData,
-        rxInProgressIds,
     } = props
-    const getFormProps = useCallback((data = new Map()) => {
-        const record = data.get(recordId)
-        const columns = [
-            {
-                content: x => x.projectName || (
-                    <LabelCopy {...{
-                        maxLength: 18,
-                        value: x.projectHash,
-                    }} />
-                ),
-                title: textsCap.projectName,
-            },
-            // user is assignee
-            !manage && {
-                content: x => <AddressName address={x.projectOwnerAddress} />,
-                title: textsCap.projectOwner,
-            },
-            {
-                content: x => (
-                    <LabelCopy {...{
-                        maxLength: 18,
-                        value: x.hash,
-                    }} />
-                ),
-                title: textsCap.recordId,
-            },
-            {
-                content: x => <AddressName address={x.workerAddress} />,
 
-                title: textsCap.worker,
-            },
-            {
-                key: '_status',
-                title: textsCap.status,
-            },
-            {
-                key: 'duration',
-                title: textsCap.duration,
-            },
-            {
-                key: 'total_blocks',
-                title: textsCap.blockCount,
-            },
-            {
-                key: 'nr_of_breaks',
-                title: textsCap.numberOfBreaks,
-            },
-            {
-                key: '_start_block',
-                title: textsCap.startedAt,
-            },
-            {
-                key: '_end_block',
-                title: textsCap.finishedAt,
-            },
-            // {
-            //     key: 'start_block',
-            //     title: textsCap.blockStart,
-            // },
-            // {
-            //     key: 'end_block',
-            //     title: textsCap.blockEnd,
-            // },
-        ]
-        return {
-            columns,
-            data: [record],
-            record,
-        }
-    })
-    const [state] = useRxSubject(rxData, getFormProps, [])
-    const [inProgressIds = []] = useRxSubject(rxInProgressIds)
+    const [state] = useRxSubject(rxData, getFormProps(props), [])
+    const [inProgressIds = new Map()] = useRxSubject(rxInProgressIds)
     const { record } = state
 
     const buttons = record && getActionButtons(record, recordId)
@@ -121,7 +52,7 @@ const TimekeepingDetails = props => {
                 onClick,
                 title,
             } = props
-            disabled = disabled || inProgressIds.includes(recordId)
+            disabled = disabled || !!inProgressIds.get(recordId)
             return {
                 ...button,
                 props: {
@@ -142,7 +73,6 @@ const TimekeepingDetails = props => {
         'recordId',
         'record',
         'rxData',
-        'rxInprogressIds',
     ]
     return (
         <div>
@@ -153,10 +83,7 @@ const TimekeepingDetails = props => {
                 padding: 1,
                 textAlign: 'center',
             }}>
-                <ButtonGroup {...{
-                    buttons,
-                    fluid: true,
-                }} />
+                {buttons && <ButtonGroup {...{ buttons, fluid: true }} />}
             </div>
         </div>
     )
@@ -166,7 +93,6 @@ TimekeepingDetails.propTypes = {
     manage: PropTypes.bool,
     recordId: PropTypes.string,
     rxData: PropTypes.instanceOf(BehaviorSubject),
-    rxInProgressIds: PropTypes.instanceOf(BehaviorSubject),
 }
 TimekeepingDetails.asModal = (props) => showInfo({
     collapsing: true,
@@ -175,3 +101,76 @@ TimekeepingDetails.asModal = (props) => showInfo({
     size: 'mini',
 }, props.recordId)
 export default TimekeepingDetails
+
+const getFormProps = props => (data = new Map()) => {
+    const { manage, recordId } = props
+    const record = data.get(recordId)
+    const columns = [
+        {
+            content: x => (
+                <LabelCopy {...{
+                    content: x.activityName || textsCap.activityUnnamed,
+                    maxLength: 18,
+                    value: x.activityId,
+                }} />
+            ),
+            title: textsCap.activityName,
+        },
+        // user is assignee
+        !manage && {
+            content: x => <AddressName address={x.projectOwnerAddress} />,
+            title: textsCap.activityOwner,
+        },
+        {
+            content: x => (
+                <LabelCopy {...{
+                    maxLength: 18,
+                    value: x.hash,
+                }} />
+            ),
+            title: textsCap.recordId,
+        },
+        {
+            content: x => <AddressName address={x.workerAddress} />,
+
+            title: textsCap.worker,
+        },
+        {
+            key: '_status',
+            title: textsCap.status,
+        },
+        {
+            key: 'duration',
+            title: textsCap.duration,
+        },
+        {
+            key: 'total_blocks',
+            title: textsCap.blockCount,
+        },
+        {
+            key: 'nr_of_breaks',
+            title: textsCap.numberOfBreaks,
+        },
+        {
+            key: '_start_block',
+            title: textsCap.startedAt,
+        },
+        {
+            key: '_end_block',
+            title: textsCap.finishedAt,
+        },
+        // {
+        //     key: 'start_block',
+        //     title: textsCap.blockStart,
+        // },
+        // {
+        //     key: 'end_block',
+        //     title: textsCap.blockEnd,
+        // },
+    ]
+    return {
+        columns,
+        data: [record],
+        record,
+    }
+}

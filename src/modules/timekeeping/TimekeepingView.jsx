@@ -184,7 +184,7 @@ const getInitialState = props => rxState => {
             content: textsCap.timer,
             icon: 'clock outline',
             key: 'timer',
-            onClick: () => showForm(TimeKeepingForm, { projectHash: projectHash }),
+            onClick: () => showForm(TimeKeepingForm, { projectHash }),
             style: { display: 'inline' }
         },
         viewOptions,

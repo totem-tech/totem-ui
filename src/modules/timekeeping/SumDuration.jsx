@@ -3,22 +3,24 @@ import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from '../../components/buttons'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactjs'
-import { MOBILE, rxLayout } from '../../utils/window'
+import { useIsMobile, useRxSubjectOrValue } from '../../utils/reactjs'
 import { blocksToDuration, statuses } from './timekeeping'
 
-let textsCap = {
+const textsCap = {
     approved: 'approved time',
     overall: 'overall time',
     submitted: 'submitted time',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
-const SumDuration = props => {
-    const [data = new Map()] = useRxSubject(props.data)
-    const [ids = []] = useRxSubject(props.ids)
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
-
+const SumDuration = React.memo(props => {
+    let {
+        data = new Map(),
+        ids = [],
+        isMobile = useIsMobile(),
+    } = props
+    data = useRxSubjectOrValue(data)
+    ids = useRxSubjectOrValue(ids)
     if (!data.size) return ''
 
     const sum = (sum, item) => sum + item.total_blocks
@@ -79,7 +81,7 @@ const SumDuration = props => {
             {getBtn(submitted, textsCap.submitted)}
         </div>
     )
-}
+})
 SumDuration.propTypes = {
     data: PropTypes.oneOfType([
         PropTypes.array,
@@ -91,4 +93,4 @@ SumDuration.propTypes = {
         PropTypes.instanceOf(BehaviorSubject),
     ]),
 }
-export default React.memo(SumDuration)
+export default SumDuration

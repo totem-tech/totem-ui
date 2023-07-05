@@ -154,8 +154,8 @@ const getInitialState = rxState => {
                         icon: { name: 'eye' },
                         key: 'detials',
                         onClick: () => ActivityDetails.asModal({
-                            id: activityId,
-                            project: activity,
+                            activity,
+                            activityId,
                         }),
                         title: textsCap.viewDetails,
                     }

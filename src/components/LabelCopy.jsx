@@ -19,10 +19,11 @@ import { MOBILE, rxLayout } from '../utils/window'
 import Invertible from './Invertible'
 import Label from './Label'
 
-const textsCap = translated({
+const textsCap = {
     copiedMsg: 'copied to clipboard',
     copyMsg: 'copy to clipboard',
-}, true)[1]
+}
+translated(textsCap, true)
 
 function LabelCopy(props) {
     const [state, setState] = iUseReducer(null, {

@@ -36,7 +36,7 @@ export default function ActivityTeamList(props) {
     const [tableProps] = useState(() => getTableProps(props))
     const [workers, setWorkers] = useState([])
     const [invitees, setInvitees] = useState([])
-    const { projectHash: projectId } = props
+    const { projectHash: activityId } = props
 
     useEffect(() => {
         let mounted = true
@@ -52,22 +52,26 @@ export default function ActivityTeamList(props) {
                         ? textsCap.invited
                         : (
                             // Worker identity belongs to current user => button to accept or reject
-                            <ButtonAcceptOrReject
-                                onAction={(_, accept) => handleTkInvitation(projectId, address, accept)}
-                                style={{ marginTop: 10 }}
-                            />
+                            <ButtonAcceptOrReject {...{
+                                onAction: (_, accept) => handleTkInvitation(
+                                    activityId,
+                                    address,
+                                    accept
+                                ),
+                                style: { marginTop: 10 },
+                            }} />
                         )
             })
             mounted && setState(addresses.map(addDetails))
         }
         const subs = {
             workers: query.worker.listWorkers(
-                projectId,
+                activityId,
                 postProcess(true, setWorkers),
             ),
             invitees: query.worker.listInvited(
-                projectId,
-                postProcess(true, setInvitees),
+                activityId,
+                postProcess(false, setInvitees),
             ),
         }
 

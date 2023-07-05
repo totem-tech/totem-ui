@@ -34,9 +34,10 @@ export const ButtonGroup = React.memo(props => {
 	} = props
 	const [{ loading, index }, setLoading] = useRxState({})
 	const buttonsEl = buttons.map((button, i) => {
-		button = (isValidElement(button)
+		button = isValidElement(button)
 			? button.props
-			: button)
+			: button
+		const { onClick } = button
 		return [
 			or && i > 0 && (
 				<Button.Or {...{
@@ -62,10 +63,8 @@ export const ButtonGroup = React.memo(props => {
 						index: i,
 					})
 					try {
-						isFn(button.onClick)
-							&& await button.onClick(event, values[i])
-						isFn(onAction)
-							&& await onAction(event, values[i])
+						isFn(onClick) && await onClick(event, values[i])
+						isFn(onAction) && await onAction(event, values[i])
 					} catch (err) {
 						console.warn('ButtonGroup: unexpected error occured while executing onAction.', err)
 					} finally {
