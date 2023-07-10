@@ -87,12 +87,10 @@ const statusTexts = {
     [statuses.delete]: textsCap.deleted,
 }
 
-// trigger refresh on not-archived records tables if multiple open at the same time 
-export const rxTrigger = new BehaviorSubject()
 export const rxInProgressIds = new BehaviorSubject(new Map()) // key: recordId, value: button title
 
 const TimeKeepingList = React.memo(props => {
-    const [data, rxData] = useTkRecords(
+    const [data, rxRecords] = useTkRecords(
         objClean(props, [
             'activityId',
             'archive',
@@ -100,10 +98,11 @@ const TimeKeepingList = React.memo(props => {
             'manage'
         ])
     )
-    const [state, setState] = useRxState(getInitialState(props, rxData))
+    const [state, setState] = useRxState(getInitialState(props, rxRecords))
     useRxSubject(rxInProgressIds) // trigger state update on change??
 
     const {
+        activityId,
         archive,
         hideTimer,
         isMobile = useIsMobile(),
@@ -134,30 +133,35 @@ const TimeKeepingList = React.memo(props => {
             : 'file archive'
     })
 
+    const content = !loaded
+        ? textsCap.loading
+        : archive
+            ? textsCap.emptyMessageArchive
+            : (
+                <p>
+                    {manage
+                        ? textsCap.noTimeRecords
+                        : textsCap.emptyMessage + ' '}
+                    {manage && (
+                        <Button
+                            positive
+                            content={textsCap.orInviteATeamMember}
+                            onClick={() => showForm(TimekeepingInviteForm, {
+                                values: {
+                                    projectHash: activityId
+                                }
+                            })}
+                        />
+                    )}
+                </p>
+            )
     return (
         <DataTable {...{
             ...props,
             ...state,
             data,
             emptyMessage: {
-                content: !loaded
-                    ? textsCap.loading
-                    : archive
-                        ? textsCap.emptyMessageArchive
-                        : (
-                            <p>
-                                {manage
-                                    ? textsCap.noTimeRecords
-                                    : textsCap.emptyMessage + ' '}
-                                {manage && (
-                                    <Button
-                                        positive
-                                        content={textsCap.orInviteATeamMember}
-                                        onClick={() => showForm(TimekeepingInviteForm)}
-                                    />
-                                )}
-                            </p>
-                        ),
+                content,
                 icon: !loaded,
                 status: loaded
                     ? undefined
@@ -172,11 +176,15 @@ const TimeKeepingList = React.memo(props => {
         }} />
     )
 })
+const arrOrStr = PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.string),
+    PropTypes.string,
+])
 TimeKeepingList.propTypes = {
-    // manage single project
-    activityId: PropTypes.string,
+    activityId: arrOrStr,
     // whether to retrieve archives
     archive: PropTypes.bool,
+    identity: arrOrStr,
     hideTimer: PropTypes.bool,
     // manage records of projects owned by selected identity
     manage: PropTypes.bool,
@@ -188,7 +196,7 @@ TimeKeepingList.defaultProps = {
 }
 export default TimeKeepingList
 
-const getInitialState = (props, rxData) => rxState => {
+const getInitialState = (props, rxRecords) => rxState => {
     const {
         activityId,
         archive,
@@ -235,7 +243,7 @@ const getInitialState = (props, rxData) => rxState => {
         },
         {
             collapsing: true,
-            content: getActionButtons(rxState, props),
+            content: getActionButtons(props),
             draggable: false,
             style: { padding: '0px 5px' },
             textAlign: 'center',
@@ -250,7 +258,7 @@ const getInitialState = (props, rxData) => rxState => {
         handleApprove(
             data.get(recordId),
             recordId,
-            approve
+            approve,
         )
     )
     const topRightMenu = [
@@ -307,7 +315,7 @@ const getInitialState = (props, rxData) => rxState => {
         }
     ]
     const state = {
-        rxData,
+        rxRecords,
         recordIds,
 
         // table props
@@ -355,7 +363,7 @@ const getInitialState = (props, rxData) => rxState => {
                 )
             },
             <SumDuration {...{
-                data: rxData,
+                data: rxRecords,
                 ids: rxSelectedIds,
                 key: 'sum'
             }} />,
@@ -365,12 +373,12 @@ const getInitialState = (props, rxData) => rxState => {
     return state
 }
 
-const getActionButtons = (rxState, props = {}) => (
-    record,
-    recordId,
-    asButton = true
-) => {
-    const { archive, manage } = props
+export const getActionButtons = ({
+    activityId,
+    archive,
+    manage,
+    identity,
+} = {}) => (record, recordId, asButton = true) => {
     const {
         approved,
         locked,
@@ -391,11 +399,14 @@ const getActionButtons = (rxState, props = {}) => (
     const buttons = [
         {
             icon: 'eye',
-            onClick: () => showDetailsModal(
-                props,
-                rxState,
-                recordId
-            ),
+            // Show details of the record in a modal
+            onClick: () => TimekeepingDetailsForm.asModal({
+                activityId,
+                archive,
+                manage,
+                identity,
+                recordId,
+            }),
             title: textsCap.recordDetails,
         },
         !archive && {
@@ -433,15 +444,15 @@ const getActionButtons = (rxState, props = {}) => (
             hidden: !manage || !approved,
             icon: 'reply',
             loading: isBtnInprogress(textsCap.setAsDraft),
-            onClick: () => confirm({
+            onClick: (record, recordId, records) => confirm({
                 content: <h3>{textsCap.setAsDraftDetailed}?</h3>,
                 onConfirm: () => handleSetAsDraft(
-                    rxState,
+                    record,
                     recordId,
                     textsCap.setAsDraft,
                 ),
                 size: 'tiny',
-            }),
+            }) | console.log({ record, recordId, records }),
             title: textsCap.setAsDraft,
         },
         // !archive && {
@@ -534,10 +545,7 @@ const handleApprove = (
         {
             title: `${textsCap.timekeeping} - ${actionTitle}`,
             description: `${textsCap.recordId}: ${recordId}`,
-            then: success => {
-                setBtnInprogress(recordId)
-                success && updateTrigger()
-            },
+            then: () => setBtnInprogress(recordId),
         }
     )
     addToQueue(task)
@@ -557,10 +565,7 @@ const handleArchive = (recordId, archive = true, workerAddress) => {
         {
             title,
             description: `${textsCap.hash}: ${recordId}`,
-            then: () => {
-                setBtnInprogress(recordId)
-                updateTrigger()
-            }
+            then: () => setBtnInprogress(recordId),
         }
     )
     addToQueue(queueProps)
@@ -592,16 +597,11 @@ const handleEdit = (record, recordId, btnTitle) => {
         projectName: activityName,
         // if closed without submitting
         onClose: () => setBtnInprogress(recordId),
-        onSubmit: success => {
-            if (!success) return
-            setBtnInprogress(recordId)
-            updateTrigger()
-        }
+        // onSubmit: () => setBtnInprogress(recordId),
     })
 }
 
-const handleSetAsDraft = (rxState, recordId, btnTitle) => {
-    const { rxData } = rxState.value
+const handleSetAsDraft = (record, recordId, btnTitle) => {
     const {
         activityId,
         activityOwnerAddress,
@@ -611,7 +611,7 @@ const handleSetAsDraft = (rxState, recordId, btnTitle) => {
         posting_period,
         start_block,
         total_blocks,
-    } = rxData.value?.get(recordId) || {}
+    } = record || {}
     // allow activity owner to be able to set record as draft ONLY IF approved
     if (!approved || !identities.find(activityOwnerAddress)) return
 
@@ -634,12 +634,7 @@ const handleSetAsDraft = (rxState, recordId, btnTitle) => {
         {
             title: `${textsCap.timekeeping} - ${textsCap.setAsDraft}`,
             description: `${textsCap.recordId}: ${recordId}`,
-            then: success => {
-                setBtnInprogress(recordId)
-                if (!success) return
-
-                updateTrigger()
-            },
+            then: () => setBtnInprogress(recordId),
         }
     )
     addToQueue(task)
@@ -658,22 +653,3 @@ const setBtnInprogress = (recordId, btnTitle) => {
         : map.delete(recordId)
     rxInProgressIds.next(new Map(map))
 }
-
-// Show details of the record in a modal
-const showDetailsModal = (props, rxState, recordId) => {
-    const { manage } = props
-    const { rxData } = rxState.value
-    TimekeepingDetailsForm.asModal({
-        getActionButtons: getActionButtons(rxState, props),
-        manage,
-        recordId,
-        rxData,
-    })
-}
-
-// trigger an update to the entire table. (should not be needed after using useTkActivities???)
-const updateTrigger = deferred(() => rxTrigger.next(uuid.v1()), 150)
-
-/*
- ToDo: combine init(), updateRecords() and setTableData() into a single React hook useTkRecords
-*/

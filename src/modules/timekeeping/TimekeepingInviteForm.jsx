@@ -57,7 +57,8 @@ export const inputNames = {
 }
 
 const TimeKeepingInviteForm = React.memo(props => {
-    const rxActivities = useActivities({ subjectOnly: true })
+    const { activityId } = props
+    const rxActivities = useActivities({ activityId, subjectOnly: true })
     const [state] = useRxState(getInitialState(props, rxActivities))
 
     return <FormBuilder {...{ ...props, ...state }} />

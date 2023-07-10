@@ -22,7 +22,7 @@ const rxTaskMarketCreated = new BehaviorSubject()
 
 const useSearch = (filter = {}) => {
     const [newId] = useRxSubject(rxTaskMarketCreated)
-    const [queryArgs, setQueryArgs] = useState([])
+    const [queryArgs, setQueryArgs] = useState({})
     const [{ message, result }, setResult] = useState({
         message: {
             content: textsCap.loading,
@@ -70,18 +70,14 @@ const useSearch = (filter = {}) => {
                     result: new Map(detailsMap),
                 })
             }
-            window.taskIds = taskIds
-            window.detailsMap = detailsMap
-            setQueryArgs([
-                getConnection(),
-                'api.query.orders.orders',
-                [taskIds],
-                true,
+            setQueryArgs({
+                connection: getConnection(),
+                func: 'api.query.orders.orders',
+                args: [taskIds],
+                multi: true,
                 valueModifier,
-                true,
-                textsCap.loading,
-                // true // print results for debugging
-            ])
+                subscribe: true,
+            })
         }
 
         // second, search & fetch marketplace tasks from messaging service

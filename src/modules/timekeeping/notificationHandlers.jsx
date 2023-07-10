@@ -1,5 +1,5 @@
 import React from 'react'
-import { ButtonGroupOr } from '../../components/buttons'
+import { Button, ButtonGroupOr } from '../../components/buttons'
 import { closeModal, confirm } from '../../services/modal'
 import {
     addToQueue,
@@ -17,6 +17,7 @@ import {
     setItemViewHandler
 } from '../notification/notification'
 import { queueables } from './timekeeping'
+import ActivityDetails from '../activity/ActivityDetails'
 
 const textsCap = {
     accept: 'accept',
@@ -32,6 +33,7 @@ const textsCap = {
     tkInvitationMsg: 'invited you to start booking time.',
     tkInviteAcceptMsg: 'accepted your invitation to the following activity',
     tkInviteRejectMsg: 'rejected your invitation to the following activity',
+    viewActivity: 'view activity',
     yourIdentity: 'your identity',
 }
 translated(textsCap, true)
@@ -224,19 +226,49 @@ setTimeout(() => [
         type: TK_TYPE,
     },
     {
+        // partner responded to invition to join activity team
         childType: TK_ChildTypes.invitationResponse,
-        handler: (id, notification, { senderIdBtn }) => {
+        handler: (_id, notification, { senderIdBtn }) => {
             const { data } = notification
-            const { accepted, projectName } = data || {}
+            const {
+                accepted,
+                projectHash: activityId,
+                projectName: activityName = '',
+            } = data || {}
             const item = { icon: 'clock outline' }
+            const msg = accepted
+                ? textsCap.tkInviteAcceptMsg
+                : textsCap.tkInviteRejectMsg
+            const viewActivityBtn = (
+                <Button {...{
+                    icon: 'eye',
+                    onClick: e => {
+                        e?.stopPropagation?.()
+                        return ActivityDetails.asModal({ activityId })
+                    },
+                    size: 'mini',
+                    title: textsCap.viewActivity,
+                }} />
+            )
             item.content = (
                 <div>
-                    {senderIdBtn} {accepted ? textsCap.tkInviteAcceptMsg : textsCap.tkInviteRejectMsg}:
-                    <b> {projectName}</b>
+                    {senderIdBtn}
+                    {` ${msg}:`}
+                    <div style={{ fontWeight: 'bold' }}>
+                        {viewActivityBtn}
+                        {' ' + activityName}
+                    </div>
+
                 </div>
             )
             return item
         },
         type: TK_TYPE,
     }
-].forEach(x => setItemViewHandler(x.type, x.childType, x.handler)))
+].forEach(x =>
+    setItemViewHandler(
+        x.type,
+        x.childType,
+        x.handler
+    )
+))

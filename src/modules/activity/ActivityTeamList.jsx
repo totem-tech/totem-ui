@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { unsubscribe } from '../../utils/reactjs'
+import { Message, useQueryBlockchain } from '../../utils/reactjs'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../utils/languageHelper'
@@ -14,38 +14,64 @@ import AddressName from '../partner/AddressName'
 import {
     handleInvitation as handleTkInvitation,
 } from '../timekeeping/notificationHandlers'
-import { query } from '../timekeeping/timekeeping'
 import TimekeepingInviteForm, {
     inputNames as tkInputNames
 } from '../timekeeping/TimekeepingInviteForm'
 
-let textsCap = {
+const textsCap = {
     accepted: 'accepted',
-    invite: 'invite',
-    invited: 'invited',
-    status: 'status',
-
     addMyself: 'add myself',
     addPartner: 'add partner',
     emptyMessage: 'No team member available. Click on the invite button to invite parters.',
+    invite: 'invite',
+    invited: 'invited',
+    status: 'status',
     teamMember: 'team member',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export default function ActivityTeamList(props) {
-    const [tableProps] = useState(() => getTableProps(props))
-    const [workers, setWorkers] = useState([])
-    const [invitees, setInvitees] = useState([])
-    const { projectHash: activityId } = props
+    const { activityId } = props
+    // const [tableProps] = useState(() => getTableProps(props))
+    const [
+        tableProps,
+        inviteesQuery,
+        workersQuery
+    ] = useMemo(() => [
+        getTableProps(props),
+        {
+            args: [activityId],
+            func: 'api.query.timekeeping.projectInvitesList',
+        },
+        {
+            args: [activityId],
+            func: 'api.query.timekeeping.projectWorkersList',
+            // valueModifier: postProcess(true),
+        }
+    ], [activityId])
+    const {
+        message: msg1,
+        result: invitees = []
+    } = useQueryBlockchain(inviteesQuery)
+    const {
+        message: msg2,
+        result: workers = []
+    } = useQueryBlockchain(workersQuery)
 
-    useEffect(() => {
-        let mounted = true
-        const postProcess = (accepted, setState) => addresses => {
-            const addDetails = address => ({
+    if (msg1 || msg2) return <Message {...msg1 || msg2} />
+
+    const data = [...workers, ...invitees].map((
+        address,
+        _1,
+        _2,
+        accepted = workers.includes(address)
+    ) => [
+            address,
+            {
                 accepted,
                 address,
-                name: <AddressName {...{ address }} />,
                 invited: true,
+                name: <AddressName {...{ address }} />,
                 status: accepted
                     ? textsCap.accepted
                     : !getIdentity(address)
@@ -61,42 +87,20 @@ export default function ActivityTeamList(props) {
                                 style: { marginTop: 10 },
                             }} />
                         )
-            })
-            mounted && setState(addresses.map(addDetails))
-        }
-        const subs = {
-            workers: query.worker.listWorkers(
-                activityId,
-                postProcess(true, setWorkers),
-            ),
-            invitees: query.worker.listInvited(
-                activityId,
-                postProcess(false, setInvitees),
-            ),
-        }
-
-        return () => {
-            mounted = false
-            unsubscribe(subs)
-        }
-    }, [])
-
-
+            }
+        ])
     return (
         <DataTable {...{
             ...props,
             ...tableProps,
-            data: new Map(
-                [...workers, ...invitees]
-                    .map(x => [x.address, x])
-            ),
+            data: new Map(data),
         }} />
     )
 }
 ActivityTeamList.propTypes = {
-    projectHash: PropTypes.string.isRequired,
+    activityId: PropTypes.string.isRequired,
 }
-const getTableProps = (props) => ({
+const getTableProps = ({ activityId }) => ({
     columns: [
         {
             key: 'name',
@@ -126,7 +130,7 @@ const getTableProps = (props) => ({
                             inputsDisabled: Object.values(tkInputNames),
                             inputsHidden: ['addpartner'],
                             values: {
-                                projectHash: props.projectHash,
+                                projectHash: activityId,
                                 workerAddress: getSelectedIdentity().address,
                             },
                         })
@@ -140,7 +144,7 @@ const getTableProps = (props) => ({
     topLeftMenu: [{
         content: textsCap.invite,
         onClick: () => showForm(TimekeepingInviteForm, {
-            values: { projectHash: props.projectHash }
+            values: { projectHash: activityId }
         })
     }],
 })

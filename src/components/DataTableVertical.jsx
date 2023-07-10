@@ -9,7 +9,7 @@ import {
 import { MOBILE, rxLayout } from '../utils/window'
 import DataTable from './DataTable'
 
-const DataTableVertical = (props) => {
+const DataTableVertical = React.memo((props) => {
     const [isMobile] = [rxLayout.value === MOBILE]//useRxSubject(rxLayout, l => l === MOBILE)
     let {
         columns = [],
@@ -104,7 +104,7 @@ const DataTableVertical = (props) => {
             }
         }} />
     )
-}
+})
 DataTableVertical.defaultProps = {
     // columns: [
     //     { key: 'first', title: 'First' },
@@ -124,4 +124,4 @@ DataTableVertical.defaultProps = {
     //     { 0: 'third', 1: 'third', 2: 'third', 3: 'third' },
     // ],
 }
-export default React.memo(DataTableVertical)
+export default DataTableVertical

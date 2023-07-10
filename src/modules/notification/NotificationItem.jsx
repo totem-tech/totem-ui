@@ -2,7 +2,7 @@ import React from 'react'
 import { UserID } from '../../components/buttons'
 import TimeSince from '../../components/TimeSince'
 import { Message } from '../../utils/reactjs'
-import { isFn } from '../../utils/utils'
+import { isDefined, isFn } from '../../utils/utils'
 import {
     itemViewHandlers,
     remove,
@@ -31,16 +31,13 @@ export default function NotificationItem({
             userId: senderId,
         }} />
     )
-    const isCustom = isFn(handler)
     let msg = {
-        ...(isCustom
+        status,
+        ...(isFn(handler)
             ? handler(
                 id,
                 notification,
-                {
-                    senderId,
-                    senderIdBtn,
-                }
+                { senderId, senderIdBtn }
             )
             : {
                 content: <span>{senderIdBtn} {message}</span>,
@@ -54,28 +51,30 @@ export default function NotificationItem({
             }
         )
     }
-    msg.icon = msg.icon || { name: 'bell outline' }
     msg.content = (
         <div className='details'>
             {msg.content}
-            <TimeSince className='time-since' date={tsCreated} />
+            <TimeSince key={id} className='time-since' date={tsCreated} />
         </div>
     )
-    const msgStatus = msg.status || status
     const isLoading = status === 'loading'
     return (
         <Message {...{
             ...msg,
+            color: null,
             icon: isLoading
                 ? true
-                : msg.icon || { name: 'bell outline' },
+                : isDefined(msg.icon)
+                    ? msg.icon
+                    : { name: 'bell outline' },
             className: 'list-item',
             onClick: () => !isLoading && toggleRead(id),
             onDismiss: e => e.stopPropagation() | remove(id),
             status: read
                 ? 'basic'
-                : ['loading', 'error'].includes(msgStatus)
-                    ? msgStatus
+                // statuses when a queue service item related to the notification is inprogress or failed
+                : ['loading', 'error'].includes(msg.status)
+                    ? msg.status
                     : 'info',
             style: {
                 ...msg.style,

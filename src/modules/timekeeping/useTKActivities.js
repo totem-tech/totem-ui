@@ -16,17 +16,29 @@ export const rxForceUpdate = _rxForceUpdate
  * @name    subscribe
  * @summary subscribe to and fetch timekeeping related activities
  * 
- * @param   {String} identity
+ * @param   {Sting|Array}   identity      (optional) identity or activityIds (if type is `types.activity`).
+ *                                        Default: selected identity from the identities module
+ * @param   {Boolean}       includeOwned  (optional) if falsy, will only fetch activites where user is part of the team.
+ *                                        Default: `true`
+ * @param   {Boolean}       save          (optional)
  *  
  * @returns {Array} [BehaviorSubject, Function]
  */
-export const subscribe = (identity, includeOwn = true) => {
+export const subscribe = (identity, includeOwned = true, save) => {
     // subscribe and fetch activities that user is a team member of (has been invited to and aceepted)
-    const [rxTkActivities, unsubTk] = _subscribe(identity, types.timekeeping)
-    if (!includeOwn) return [rxTkActivities, unsubTk]
+    const [rxTkActivities, unsubTk] = _subscribe(
+        identity,
+        types.timekeeping,
+        save,
+    )
+    if (!includeOwned) return [rxTkActivities, unsubTk]
 
     // subscribe and fetch activities user owns
-    const [rxOwnActivities, unsub] = _subscribe(identity)
+    const [rxOwnActivities, unsub] = _subscribe(
+        identity,
+        types.activities,
+        save,
+    )
     const subject = copyRxSubject(
         [rxOwnActivities, rxTkActivities],
         new BehaviorSubject(new Map()),
@@ -34,7 +46,12 @@ export const subscribe = (identity, includeOwn = true) => {
         ([
             ownActivities = new Map(),
             tkActivities = new Map()
-        ]) => mapJoin(ownActivities, tkActivities),
+        ]) => {
+            const merged = mapJoin(ownActivities, tkActivities)
+            merged.loaded = true
+            return merged
+        },
+        100,
     )
 
     const unsubscribe = () => {
@@ -44,6 +61,22 @@ export const subscribe = (identity, includeOwn = true) => {
     return [subject, unsubscribe]
 }
 
+/**
+ * @name    useTkActivities
+ * @summary React hook to subscribe and fetch timekeeping related activites
+ * 
+ * @param   {Object}    p
+ * @param   {Boolean}   p.includeOwned  (optional) if falsy, will only fetch activities where user is a team member.
+ *                                      Default: `true`
+ * @param   {String}    p.identity      (optional) user identity.
+ *                                      Default: selected identity from identities module
+ * @param   {Boolean}   p.subjectOnly   (optional) if true, will only return RxJS the subject.
+ * @param   {Function}  p.valueModifier (optional) callback to modify activities result.
+ *                                      Arguments: [newValue, oldValue, rxActivities]
+ *  
+ * @returns {[Map, BehaviorSubject, Function, String]|BehaviorSubject} If subjectOnly is truthy: rxActivities. 
+ *                                      Otherwise, [activities, rxActivities, unsubscribe, identity]
+ */
 export default function useTkActivities({
     includeOwned = true,
     identity,
@@ -51,15 +84,20 @@ export default function useTkActivities({
     valueModifier,
 } = {}) {
     identity ??= useRxSubject(rxSelected)[0]
-    const [subject, unsubscribe] = useMemo(
+    const [rxActivities, unsubscribe] = useMemo(
         () => subscribe(identity, includeOwned) || [],
         [identity]
     )
     // trigger unsubscribe onUnmount
     useUnmount(unsubscribe)
-    if (subjectOnly) return subject
+    if (subjectOnly) return rxActivities
 
-    const [activities] = useRxSubject(subject, valueModifier)
+    const [activities] = useRxSubject(rxActivities, valueModifier)
 
-    return [activities, subject, unsubscribe, identity]
+    return [
+        activities,
+        rxActivities,
+        unsubscribe,
+        identity
+    ]
 }

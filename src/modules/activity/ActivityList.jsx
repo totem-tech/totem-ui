@@ -78,8 +78,10 @@ const getInitialState = rxState => {
         perPage: 5,
         onRowSelect: handleRowSelection(rxState),
         searchExtraKeys: [
-            'description',
+            '_id',
             'ownerAddress',
+            'ownerName',
+            'userId',
             'status',
             '_statusText',
         ],
@@ -396,6 +398,6 @@ const handleRowSelection = rxState => activityIds => {
 
 // show activity team in a modal
 const handleShowTeam = (activityId, activityName = textsCap.unnamed) => showInfo({
-    content: <ActivityTeamList projectHash={activityId} />,
+    content: <ActivityTeamList activityId={activityId} />,
     header: `${textsCap.activityTeam} - ${activityName}`,
 })

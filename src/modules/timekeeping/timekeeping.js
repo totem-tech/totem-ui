@@ -92,12 +92,19 @@ export const forceUpdate = async (recordIds, ownerAddress) => {
         )
 }
 
-// timeKeeping form values and states for use with the Timekeeping form
+/**
+ * @name    timerFormValues
+ * @summary read and write cached timekeeping form values in the local storage
+ * 
+ * @param   {Object}    values (optional)   if not an object, will simply return the cached values
+ * 
+ * @returns {Object}    values
+ */
 export function timerFormValues(values) {
-    if (!isObj(values)) return rwCache('formData') || {}
+    if (!isObj(values) && values !== null) return rwCache('formData') || {}
 
-    rxTimerInProgress.next(values.inprogress)
-    values = rwCache('formData', values)
+    rxTimerInProgress.next(!!values?.inprogress)
+    values = rwCache('formData', values) || {}
     return values
 }
 
@@ -263,7 +270,7 @@ export const query = {
             [activityId, workerAddress, callback].filter(isDefined),
             multi,
         ),
-        // check if worker is banned. undefined: not banned, object: banned
+        // check if worker is banned. Result: undefined: not banned, object: banned
         banned: (activityId, callback, multi) => queryBlockchain(
             queryPrefix + 'projectWorkersBanList',
             [activityId, callback].filter(isDefined),

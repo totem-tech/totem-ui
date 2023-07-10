@@ -454,9 +454,11 @@ export default class DataTable extends Component {
 		)
 
 		// if searchable is a valid element search is assumed to be externally handled
-		const searchEl = showSearch &&
-			(React.isValidElement(searchable)
-				&& searchable || (
+		const searchEl = !showSearch
+			? null
+			: React.isValidElement(searchable)
+				? searchable
+				: (
 					<Input {...{
 						action: !keywords
 							? undefined
@@ -483,7 +485,7 @@ export default class DataTable extends Component {
 						type: 'search', // enables escape to clear
 						value: keywords || '',
 					}} />
-				))
+				)
 
 		const { topGrid = {} } = this.props
 		const {
@@ -534,7 +536,7 @@ export default class DataTable extends Component {
 		)
 
 		return (
-			<Grid columns={showSearch ? 2 : 1} style={styles.tableTopContent}>
+			<Grid className='topcontent' columns={showSearch ? 2 : 1} style={styles.tableTopContent}>
 				<Grid.Row>
 					{leftBtns}
 					<Grid.Column {...{
@@ -592,6 +594,7 @@ export default class DataTable extends Component {
 
 	render() {
 		let {
+			containerProps = {},
 			data,
 			emptyMessage,
 			footerContent,
@@ -683,7 +686,13 @@ export default class DataTable extends Component {
 			}} >
 				{!isLoading && this.getTopContent(totalRows, selectedIndexes)}
 
-				<div style={styles.tableContent}>
+				<div {...{
+					...containerProps,
+					style: {
+						...styles.tableContent,
+						...containerProps.style,
+					}
+				}}>
 					{isEmpty
 						&& emptyMessage
 						&& <Message {...emptyMessage} />}
@@ -699,7 +708,7 @@ export default class DataTable extends Component {
 								</Table.Header>
 							)}
 
-							<Table.Body>{rows}</Table.Body>
+							<Table.Body className='table-body'>{rows}</Table.Body>
 
 							{!!footerContent || totalPages > 1 && (
 								<Table.Footer>
@@ -772,6 +781,7 @@ DataTable.propTypes = {
 	).isRequired,
 	// array of column `name`s to hide
 	columnsHidden: PropTypes.array,
+	containerProps: PropTypes.object,
 	// Object key to set initial sort by
 	defaultSort: PropTypes.oneOfType([
 		PropTypes.bool,

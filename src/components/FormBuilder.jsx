@@ -400,7 +400,7 @@ class FormBuilder extends Component {
 		}
 
 		const as = El || (modal ? 'div' : 'form')
-		msg = true
+		// msg = true
 
 		const form = (
 			<Invertible {...{
@@ -480,7 +480,7 @@ class FormBuilder extends Component {
 						{submitBtn}
 					</Modal.Actions>
 				)}
-				{msg && <Message {...message} />}
+				{!!msg && <Message {...message} />}
 			</IModal>
 		)
 	}

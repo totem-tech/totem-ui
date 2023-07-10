@@ -32,7 +32,7 @@ let textsCap = {
 	namePlaceholder: 'enter activity name',
 	ownerLabel: 'select the owner Identity for this Activity ',
 	ownerPlaceholder: 'select owner',
-	projectTeam: 'activity team',
+	activityTeam: 'activity team',
 	saveBONSAIToken: 'save BONSAI auth token',
 	saveDetailsTitle: 'save Activity details to messaging service',
 	submitErrorHeader: 'request failed',
@@ -54,10 +54,10 @@ export const bonsaiKeys = [
 	inputNames.name,
 	inputNames.ownerAddress,
 ]
-// Create or update project form
+// Create or update activity form
 export default function ActivityForm(props) {
 	const [state] = iUseReducer(null, rxState => {
-		const { hash, header, values = {} } = props
+		const { activityId, header, values = {} } = props
 		values.ownerAddress = values.ownerAddress || getSelected().address
 		const inputs = [
 			{
@@ -70,7 +70,7 @@ export default function ActivityForm(props) {
 				type: 'text',
 			},
 			{
-				disabled: !!props.hash,
+				disabled: !!activityId,
 				label: textsCap.ownerLabel,
 				name: inputNames.ownerAddress,
 				placeholder: textsCap.ownerPlaceholder,
@@ -95,11 +95,11 @@ export default function ActivityForm(props) {
 			onSubmit: handleSubmit(props, rxState),
 			success: false,
 			header: header || (
-				hash
+				activityId
 					? textsCap.formHeaderUpdate
 					: textsCap.formHeaderCreate
 			),
-			submitText: hash
+			submitText: activityId
 				? textsCap.update
 				: textsCap.create,
 			inputs: fillValues(inputs, values),
@@ -110,8 +110,7 @@ export default function ActivityForm(props) {
 	return <FormBuilder {...{ ...props, ...state }} />
 }
 ActivityForm.propTypes = {
-	// Project hash
-	hash: PropTypes.string,
+	activityId: PropTypes.string,
 	values: PropTypes.shape({
 		description: PropTypes.string.isRequired,
 		name: PropTypes.string.isRequired,
@@ -123,20 +122,20 @@ ActivityForm.defaultProps = {
 }
 
 const handleSubmit = (props, rxState) => (e, values) => {
-	const { onSubmit, hash: existingHash } = props
-	const create = !existingHash
-	const hash = existingHash || generateHash(values)
+	const { onSubmit, activityId: existingId } = props
+	const create = !existingId
+	const activityId = existingId || generateHash(values)
 	const tokenData = objClean(values, bonsaiKeys)
 	const token = generateHash(tokenData)
 	const {
 		description: desc,
-		name: projectName,
+		name: activityName,
 		ownerAddress,
 	} = values
 	const title = create
 		? textsCap.submitTitleCreate
 		: textsCap.submitTitleUpdate
-	const description = `${textsCap.name}: ${projectName}`
+	const description = `${textsCap.name}: ${activityName}`
 		+ '\n'
 		+ `${textsCap.description}: ${desc}`
 	const message = {
@@ -176,8 +175,8 @@ const handleSubmit = (props, rxState) => (e, values) => {
 							confirm({
 								cancelButton: null,
 								confirmButton: null,
-								content: <ActivityTeamList projectHash={hash} />,
-								header: `${textsCap.projectTeam} - ${title}`,
+								content: <ActivityTeamList activityId={activityId} />,
+								header: `${textsCap.activityTeam} - ${title}`,
 							})
 						},
 					}} />
@@ -201,7 +200,7 @@ const handleSubmit = (props, rxState) => (e, values) => {
 	// save auth token to blockchain and then store data to off-chain DB
 	const updateTask = queueables.saveBONSAIToken(
 		ownerAddress,
-		hash,
+		activityId,
 		token,
 		{
 			title: textsCap.saveBONSAIToken,
@@ -215,7 +214,7 @@ const handleSubmit = (props, rxState) => (e, values) => {
 				// address: ownerAddress,
 				then: handleOffChainResult,
 				args: [
-					hash,
+					activityId,
 					values,
 					create,
 				],
@@ -224,7 +223,7 @@ const handleSubmit = (props, rxState) => (e, values) => {
 	)
 
 	// Send transaction to blockchain first, then add to external storage
-	const createTask = queueables.add(ownerAddress, hash, {
+	const createTask = queueables.add(ownerAddress, activityId, {
 		title,
 		description,
 		then: handleTxError,

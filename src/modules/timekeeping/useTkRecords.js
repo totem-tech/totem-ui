@@ -9,7 +9,6 @@ import {
 } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import { deferred, isArr } from '../../utils/utils'
-import { subscribe as subscribeActivities } from '../activity/useActivities'
 import { rxSelected } from '../identity/identity'
 import {
     blocksToDuration,
@@ -17,16 +16,17 @@ import {
     rxDurtionPreference,
     statuses
 } from './timekeeping'
+import { subscribe as subscribeTkActivities } from './useTKActivities'
 
 const subjects = {}
 const subscriptions = {}
-const rxForceUpdate = new BehaviorSubject() // identity
 
 export const subscribe = ({
     manage = false,
     archive = false,
     activityId,
     identity = rxSelected.value,
+    save = false,
 }) => {
     if (!activityId && !identity) return
     const itemKey = [
@@ -93,7 +93,8 @@ export const subscribe = ({
                     worker,
                 } = record
                 const recordId = recordIds[i]
-                const { name, ownerAddress } = activities.get(activityId) || {}
+                const activity = activities.get(activityId)
+                const { name, ownerAddress } = activity || {}
 
                 return [
                     recordId,
@@ -125,11 +126,10 @@ export const subscribe = ({
         if (unsubscribed) return
 
         // flatten the array, in case, records are being retrieved for multiple activities at the same time
-        recordIds = recordIds.flat()
-        data.recordIds = recordIds
+        data.recordIds = recordIds.flat()
         unsubscribe(subscription.records)
         subscription.records = query.record.get(
-            recordIds,
+            data.recordIds,
             handleRecords,
             true
         )
@@ -137,24 +137,21 @@ export const subscribe = ({
 
     // listen for changes in the duration preferences and auto update record duration
     unsubscribe(subscription.pref)
-    subscription.pref = rxDurtionPreference.subscribe(() => {
-        if (!subscription.pif) {
-            // prevents
-            subscription.pif = true
-            return
-        }
-        handleRecords()
-    })
+    subscription.pref = rxDurtionPreference.subscribe(() => handleRecords())
 
     // subscribe and fetch recordIds based on preference
-    const fetchIds = (target) => {
+    const handleActivities = (activities = new Map()) => {
         if (unsubscribed) return
 
-        target ??= !manage
+        data.activities = activities
+        const target = !manage
             ? identity
-            : activityId
-        unsubscribe(subscription.recordIds)
+            : activityId || Array
+                .from(activities)
+                .map(([id, { isOwner }]) => isOwner && id)
+                .filter(Boolean)
 
+        unsubscribe(subscription.recordIds)
         const qr = query.record
         const queryFn = archive
             ? manage
@@ -177,52 +174,19 @@ export const subscribe = ({
     // subscribe and fetch relevant activities
     unsubscribe(subscription.tkActivities)
     unsubscribe(subscription.unsubTkActivities)
-    const [rxTkActivities, unsubTkActivities] = subscribeActivities(identity, true)
+    const [rxTkActivities, unsubTkActivities] = subscribeTkActivities(identity, true)
     subscription.unsubTkActivities = unsubTkActivities
-    subscription.tkActivities = rxTkActivities.subscribe(
-        deferred((activities = new Map()) => {
-            if (unsubscribed) return
+    subscription.tkActivities = rxTkActivities.subscribe(handleActivities)
 
-            data.activities = activities
-            fetchIds(
-                manage && !activityId
-                    ? Array
-                        .from(activities)
-                        .map(([id, { isOwner }]) => isOwner && id)
-                        .filter(Boolean)
-                    : undefined
-            )
-        }, 100)
-    )
     return result
-
-
-    // if (manage) {
-    //     // auto update partner/identity names
-    //     let idIgnrFirst = false
-    //     this.subs.identities = rxIdentities.subscribe(() => {
-    //         if (!idIgnrFirst) {
-    //             idIgnrFirst = true
-    //             return
-    //         }
-    //         this.setTableData(this.rxData.value)
-    //     })
-    //     let partIgnrFirst = false
-    //     this.subs.partners = rxPartners.subscribe(() => {
-    //         if (!partIgnrFirst) {
-    //             partIgnrFirst = true
-    //             return
-    //         }
-    //         this.setTableData(this.rxData.value)
-    //     })
-    // }
-
-    // update record details whenever triggered
-    // this.subs.trigger = rxTrigger.subscribe(() => {
-    //     this.updateRecords()
-    // })
 }
 
+/**
+ * @name    useTkRecords
+ * @summary React hook to subscribe to and fetch timekeeping records
+ * @param {*} param0 
+ * @returns 
+ */
 const useTkRecords = ({
     activityId,
     archive,
@@ -249,8 +213,12 @@ const useTkRecords = ({
     if (subjectOnly) return subject
 
     const [records] = useRxSubject(subject, valueModifier)
-    return [records, subject, unsubscribe, identity]
 
-
+    return [
+        records,
+        subject,
+        unsubscribe,
+        identity
+    ]
 }
 export default useTkRecords

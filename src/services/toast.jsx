@@ -23,6 +23,7 @@ import { MOBILE, rxLayout } from '../utils/window'
 
 const DURATION = 5000
 const toasts = new DataStorage()
+window.toasts = toasts
 const deferedCloseCbs = new Map()
 
 export const ToastsContainer = () => {
@@ -33,10 +34,12 @@ export const ToastsContainer = () => {
         false,
         false,
         0,
-        'rxModals'
     )
     const isMobile = useIsMobile()
-    const [toastEls] = useRxSubject(toasts.rxData, map => toArray(map))
+    const [toastEls] = useRxSubject(
+        toasts.rxData,
+        map => toArray(map),
+    )
     const [[animationInProgress, sidebarVisible], setSidebarState] = useState([])
     const mcEl = document.getElementById('main-content')
     const hasScrollbar = mcEl && mcEl.clientHeight !== mcEl.scrollHeight

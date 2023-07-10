@@ -1,18 +1,22 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import { BehaviorSubject } from 'rxjs'
 import { ButtonGroup } from '../../components/buttons'
 import DataTableVertical from '../../components/DataTableVertical'
 import LabelCopy from '../../components/LabelCopy'
 import { showInfo } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactjs'
-import { isFn, objWithoutKeys } from '../../utils/utils'
+import { useRxSubjects } from '../../utils/reactjs'
+import {
+    isFn,
+    isMap,
+    objWithoutKeys
+} from '../../utils/utils'
 import AddressName from '../partner/AddressName'
-import { rxInProgressIds } from './TimekeepingList'
+import { getActionButtons, rxInProgressIds } from './TimekeepingList'
+import useTkRecords from './useTkRecords'
 
 const textsCap = {
-    activityName: 'activity name',
+    activity: 'activity',
     activityOwner: 'activity owner',
     activityUnnamed: 'unnamed activity',
     blockCount: 'number of blocks',
@@ -32,69 +36,57 @@ translated(textsCap, true)
 
 const TimekeepingDetails = props => {
     const {
-        getActionButtons,
-        recordId,
-        rxData,
+        activityId,
+        archive,
+        identity,
+        manage,
     } = props
+    const rxRecord = useTkRecords({
+        activityId,
+        archive,
+        identity,
+        manage,
+        subjectOnly: true,
+    })
 
-    const [state] = useRxSubject(rxData, getFormProps(props), [])
-    const [inProgressIds = new Map()] = useRxSubject(rxInProgressIds)
-    const { record } = state
+    const [state] = useRxSubjects(
+        [rxRecord, rxInProgressIds],
+        getState(props),
+    )
+    const { buttons = [] } = state
 
-    const buttons = record && getActionButtons(record, recordId)
-        .filter(({ props: { title } = {} }) =>
-            title !== textsCap.recordDetails
-        )
-        .map(button => {
-            const { props = {} } = button
-            let {
-                disabled,
-                onClick,
-                title,
-            } = props
-            disabled = disabled || !!inProgressIds.get(recordId)
-            return {
-                ...button,
-                props: {
-                    ...props,
-                    content: title,
-                    disabled,
-                    onClick: (...args) => {
-                        args[0].preventDefault()
-                        isFn(onClick) && onClick(...args)
-                    },
-                }
-            }
-        })
-
-    const ignoredAttrs = [
-        'actionButtons',
-        'manage',
-        'recordId',
-        'record',
-        'rxData',
-    ]
     return (
         <div>
-            <DataTableVertical {...objWithoutKeys(state, ignoredAttrs)} />
-            <div style={{
-                marginBottom: 14,
-                marginTop: -14,
-                padding: 1,
-                textAlign: 'center',
-            }}>
-                {buttons && <ButtonGroup {...{ buttons, fluid: true }} />}
-            </div>
+            <DataTableVertical {...objWithoutKeys(
+                state,
+                // prevents passing on unnecessary props to the table
+                Object.keys(TimekeepingDetails.propTypes)
+            )} />
+            {!!buttons.length && (
+                <div style={{
+                    marginBottom: 14,
+                    marginTop: -14,
+                    padding: 1,
+                    textAlign: 'center',
+                }}>
+                    <ButtonGroup {...{ buttons, fluid: true }} />
+                </div>
+            )}
         </div>
     )
 }
+const arrOrStr = PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.string),
+    PropTypes.string,
+])
 TimekeepingDetails.propTypes = {
-    getActionButtons: PropTypes.func,
-    manage: PropTypes.bool,
-    recordId: PropTypes.string,
-    rxData: PropTypes.instanceOf(BehaviorSubject),
+    activityId: arrOrStr,
+    archive: PropTypes.bool.isRequired,
+    identity: arrOrStr,
+    manage: PropTypes.bool.isRequired,
+    recordId: PropTypes.string.isRequired,
 }
-TimekeepingDetails.asModal = (props) => showInfo({
+TimekeepingDetails.asModal = (props = {}) => showInfo({
     collapsing: true,
     content: <TimekeepingDetails {...props} />,
     header: textsCap.header,
@@ -102,36 +94,48 @@ TimekeepingDetails.asModal = (props) => showInfo({
 }, props.recordId)
 export default TimekeepingDetails
 
-const getFormProps = props => (data = new Map()) => {
+const getState = (props = {}) => ([
+    record = new Map(),
+    inProgressIds = []
+]) => {
     const { manage, recordId } = props
-    const record = data.get(recordId)
+    record = isMap(record)
+        // Map or rxRecords received in the props
+        ? record.get(recordId) || {}
+        : record || {}
+    const {
+        activityId,
+        activityName,
+        activityOwnerAddress,
+        workerAddress,
+    } = record
     const columns = [
         {
-            content: x => (
+            content: () => (
                 <LabelCopy {...{
-                    content: x.activityName || textsCap.activityUnnamed,
+                    content: activityName || textsCap.activityUnnamed,
                     maxLength: 18,
-                    value: x.activityId,
+                    value: activityId,
                 }} />
             ),
-            title: textsCap.activityName,
+            title: textsCap.activity,
         },
         // user is assignee
         !manage && {
-            content: x => <AddressName address={x.projectOwnerAddress} />,
+            content: () => <AddressName address={activityOwnerAddress} />,
             title: textsCap.activityOwner,
         },
         {
-            content: x => (
+            content: () => (
                 <LabelCopy {...{
                     maxLength: 18,
-                    value: x.hash,
+                    value: recordId,
                 }} />
             ),
             title: textsCap.recordId,
         },
         {
-            content: x => <AddressName address={x.workerAddress} />,
+            content: () => <AddressName address={workerAddress} />,
 
             title: textsCap.worker,
         },
@@ -169,8 +173,47 @@ const getFormProps = props => (data = new Map()) => {
         // },
     ]
     return {
+        ...props,
+        buttons: getButtons(props, inProgressIds, record),
         columns,
         data: [record],
-        record,
     }
+}
+
+const getButtons = (
+    props,
+    inProgressIds = new Map(),
+    record
+) => {
+    const { recordId } = props
+    const allBtns = !record
+        ? []
+        : getActionButtons(props)(record, recordId)
+    const buttons = allBtns
+        // exclude the details button to prevent openting this modal recursively
+        .filter(({ props: { title } = {} }) =>
+            title !== textsCap.recordDetails
+        )
+        .map(button => {
+            const { props = {} } = button
+            let {
+                disabled,
+                onClick,
+                title,
+            } = props
+            disabled = disabled || !!inProgressIds.get(recordId)
+            return {
+                ...button,
+                props: {
+                    ...props,
+                    content: title,
+                    disabled,
+                    onClick: (...args) => {
+                        args[0].preventDefault()
+                        isFn(onClick) && onClick(...args)
+                    },
+                }
+            }
+        })
+    return buttons
 }

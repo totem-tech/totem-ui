@@ -6,7 +6,11 @@ import ContentSegment from '../../components/ContentSegment'
 import CheckboxGroup from '../../components/CheckboxGroup'
 import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import { Message, useIsMobile, useRxState } from '../../utils/reactjs'
+import {
+    Message,
+    useIsMobile,
+    useRxState
+} from '../../utils/reactjs'
 import storage from '../../utils/storageHelper'
 import { isArr, isStr } from '../../utils/utils'
 import useActivities from '../activity/useActivities'
@@ -33,10 +37,10 @@ const textsCap = translated({
 }, true)[1]
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
-const TimekeepingView = React.memo(props => {
-    const {
-        isMobile = useIsMobile()
-    } = props
+const TimekeepingView = React.memo(({
+    isMobile = useIsMobile(),
+    ...props
+}) => {
     const [activities] = useActivities()
     const [state] = useRxState(getInitialState(props), {
         valueModifier: (state, prevState) => {
@@ -118,11 +122,11 @@ const TimekeepingView = React.memo(props => {
         </div>
     )
 })
-export default TimekeepingView
 TimekeepingView.propTypes = {
     // Default: ['records']
     viewOptions: PropTypes.array,
 }['records']
+export default TimekeepingView
 
 const getInitialState = props => rxState => {
     let {

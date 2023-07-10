@@ -1,7 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
-import { RxSubjectView, statuses, subjectAsPromise, useQueryBlockchain, useRxSubject } from '../../utils/reactjs'
+import {
+    RxSubjectView,
+    statuses,
+    useQueryBlockchain,
+} from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import { rxBlockNumber } from '../../services/blockchain'
 import { showForm, showInfo } from '../../services/modal'
@@ -11,9 +15,9 @@ import LabelCopy from '../../components/LabelCopy'
 import TimekeepingList from '../timekeeping/TimekeepingList'
 import ActivityForm from './ActivityForm'
 import ActivityTeamList from './ActivityTeamList'
-import { BehaviorSubject } from 'rxjs'
+import useActivities, { types } from './useActivities'
 
-let textsCap = {
+const textsCap = {
     actions: 'actions',
     activity: 'activity',
     abandoned: 'abandoned',
@@ -31,7 +35,6 @@ let textsCap = {
     onHold: 'On-hold',
     open: 'open',
     proceed: 'proceed',
-    project: 'project',
     records: 'records',
     reopen: 're-open',
     reopened: 're-opened',
@@ -43,7 +46,7 @@ let textsCap = {
     unnamed: 'unnamed',
 
     areYouSure: 'are you sure?',
-    closeProject: 'close activity',
+    closeActivity: 'close activity',
     deleteConfirmMsg1: 'you are about to delete the following activities:',
     deleteConfirmMsg2: `Warning: This action cannot be undone! 
         You will lose access to this Activity data forever! 
@@ -57,10 +60,8 @@ let textsCap = {
     detailsFirstSeenLabel: 'first used at',
     detailsFormHeader: 'activity details',
     detailsTimeRecordsBtn: 'view time records',
-    editProject: 'update activity',
+    editActitity: 'update activity',
     loading: 'loading...',
-    projectsFailed: 'failed to retrieve activities',
-    projectCloseReopenWarning: 'you are about to change status of the following activities to:',
     projectTeam: 'activity team',
     reassignOwner: 're-assign owner',
     reopenProject: 're-open ativity',
@@ -71,49 +72,67 @@ let textsCap = {
     subheader: 'time records',
     name404: 'unnamed activity'
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 const ActivityDetails = React.memo(props => {
-    const { activityId, activity } = props
-    const args = useMemo(() => [activityId], [activityId])
-    // fetch and retrieve the block number Activity was first seen 
+    let { activity, activityId } = props
+    const activityIds = useMemo(() => [activityId], [activityId])
+    activity = activity || activityId && useActivities({
+        activityIds: activityIds,
+        type: types.activity,
+        valueModifier: map => map.get(activityId),
+    })[0]
+
+    // fetch and retrieve the block number Activity was first seen (first time a time record was submitted) 
     const {
         result: {
             columns,
-            buttons
+            buttons = []
         } = {},
         message,
-    } = useQueryBlockchain(
-        null,
-        'api.query.timekeeping.projectFirstSeen',
-        args,
-        false,
-        handleFirstSeenCb(props),
-    )
+    } = useQueryBlockchain({
+        // in case activity is not provided in the props, 
+        // this will show a loading spinner until activity is fetched using `useActivities` hook.
+        func: !!activity && 'api.query.timekeeping.projectFirstSeen',
+        args: activityIds,
+        subscribe: false,
+        valueModifier: handleFirstSeenCb({ ...props, activity }),
+    })
 
     return (
         <div>
             <DataTableVertical {...{
                 columns,
-                emptyMessage: message || {
-                    content: textsCap.loading,
-                    icon: true,
-                    status: statuses.LOADING,
-                },
                 data: !columns
                     ? []
                     : [{ activityId, ...activity }],
+                emptyMessage: {
+                    ...!!message
+                        ? message
+                        : {
+                            content: textsCap.loading,
+                            icon: true,
+                            status: statuses.LOADING,
+                        },
+                    style: { margin: 0 },
+                },
+                ...!columns && {
+                    containerProps: { style: { margin: 0 } },
+                    tableProps: { style: { margin: 0 } },
+                }
             }} />
-            <div style={{
-                marginBottom: 14,
-                marginTop: -14,
-                padding: 1,
-            }}>
-                <ButtonGroup {...{
-                    buttons,
-                    fluid: true,
-                }} />
-            </div>
+            {!!buttons.length && (
+                <div style={{
+                    marginBottom: 14,
+                    marginTop: -14,
+                    padding: 1,
+                }}>
+                    <ButtonGroup {...{
+                        buttons,
+                        fluid: true,
+                    }} />
+                </div>
+            )}
         </div>
     )
 })
@@ -137,9 +156,9 @@ export default ActivityDetails
 
 const handleFirstSeenCb = props => (firstSeen = 0) => {
     const {
-        id,
+        activityId,
         modalId,
-        project
+        activity
     } = props
     const columns = [
         { key: 'name', title: textsCap.detailsNameLabel },
@@ -174,9 +193,9 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
             icon: { name: 'group' },
             key: 'workers',
             onClick: () => showInfo({
-                content: <ActivityTeamList projectHash={id} />,
+                content: <ActivityTeamList activityId={activityId} />,
                 header: textsCap.projectTeam,
-                subheader: project.name,
+                subheader: activity.name,
             }),
             title: textsCap.viewTeam,
         },
@@ -189,23 +208,23 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
             onClick: () => showInfo({
                 content: (
                     <TimekeepingList {...{
-                        activityId: id,
+                        activityId: activityId,
                         hideTimer: true,
                         isMobile: true,
                         isOwner: true,
                         manage: true,
-                        projectName: project.name,
-                        ownerAddress: project.ownerAddress,
+                        projectName: activity.name,
+                        ownerAddress: activity.ownerAddress,
                         topGrid: {
                             left: { computer: 12 },
                             right: { computer: 4 },
-                        }
+                        },
                     }} />
                 ),
                 collapsing: false,
                 confirmButton: null,
                 cancelButton: null,
-                header: project.name || textsCap.name404,
+                header: activity.name || textsCap.name404,
                 subheader: textsCap.subheader,
             }),
             type: 'Button',
@@ -216,10 +235,10 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
             key: 'edit',
             icon: 'pencil',
             onClick: () => showForm(ActivityForm, {
-                hash: id,
-                values: project,
+                activityId,
+                values: activity,
             }, modalId),
-            title: textsCap.editProject,
+            title: textsCap.editActitity,
         }
     ].filter(Boolean)
 

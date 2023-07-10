@@ -685,7 +685,7 @@ export class FormInput extends Component {
 							key='labelDetails'
 							style={{
 								lineHeight: '15px',
-								margin: '-5px 0 8px 0',
+								margin: '-5px 0 5px 0',
 							}}
 						>
 							<small style={{
