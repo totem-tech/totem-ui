@@ -98,6 +98,7 @@ const TimeKeepingList = React.memo(props => {
             'manage'
         ])
     )
+    console.log('TimeKeepingList', { props, data })
     const [state, setState] = useRxState(getInitialState(props, rxRecords))
     useRxSubject(rxInProgressIds) // trigger state update on change??
 
@@ -212,14 +213,19 @@ const getInitialState = (props, rxRecords) => rxState => {
             title: textsCap.finishedAt,
         },
         {
-            content: x => x.activityName || textsCap.activityUnnamed,
+            content: x => (
+                <div>
+                    {x.activityName || textsCap.activityUnnamed}
+                    (<AddressName address={x.activityOwnerAddress} />)
+                </div>
+            ),
             hidden: ({ isMobile }) => manage && isMobile,
             key: 'activityName',
             title: textsCap.activity,
             style: { minWidth: 125 }
         },
         {
-            content: ({ workerAddress }) => <AddressName {...{ address: workerAddress }} />,
+            content: ({ workerAddress }) => <AddressName address={workerAddress} />,
             draggableValueKey: 'workerAddress',
             key: 'workerAddress',
             title: textsCap.workerIdentity,

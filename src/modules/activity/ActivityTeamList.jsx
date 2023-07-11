@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { Message, useQueryBlockchain } from '../../utils/reactjs'
+import { Message, useQueryBlockchain, UseHook, unsubscribe } from '../../utils/reactjs'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { translated } from '../../utils/languageHelper'
-import { showForm } from '../../services/modal'
+import { showForm, showInfo } from '../../services/modal'
 import {
     get as getIdentity,
     getSelected as getSelectedIdentity,
@@ -17,22 +17,24 @@ import {
 import TimekeepingInviteForm, {
     inputNames as tkInputNames
 } from '../timekeeping/TimekeepingInviteForm'
+import useActivities, { types } from './useActivities'
 
 const textsCap = {
     accepted: 'accepted',
+    activityTeam: 'activity team',
     addMyself: 'add myself',
     addPartner: 'add partner',
     emptyMessage: 'No team member available. Click on the invite button to invite parters.',
     invite: 'invite',
     invited: 'invited',
+    loading: 'loading...',
     status: 'status',
     teamMember: 'team member',
 }
 translated(textsCap, true)
 
-export default function ActivityTeamList(props) {
+const ActivityTeamList = React.memo(props => {
     const { activityId } = props
-    // const [tableProps] = useState(() => getTableProps(props))
     const [
         tableProps,
         inviteesQuery,
@@ -46,7 +48,6 @@ export default function ActivityTeamList(props) {
         {
             args: [activityId],
             func: 'api.query.timekeeping.projectWorkersList',
-            // valueModifier: postProcess(true),
         }
     ], [activityId])
     const {
@@ -96,10 +97,46 @@ export default function ActivityTeamList(props) {
             data: new Map(data),
         }} />
     )
-}
+})
 ActivityTeamList.propTypes = {
     activityId: PropTypes.string.isRequired,
 }
+ActivityTeamList.asModal = props => {
+    let {
+        activityId,
+        header = textsCap.activityTeam,
+        modalId,
+        subheader,
+    } = props
+    if (!activityId) return
+
+    console.log({ modalId })
+    subheader ??= (
+        <UseHook {...{
+            hooks: [[
+                useActivities,
+                {
+                    activityIds: [activityId],
+                    type: types.activityIds,
+                }
+            ]],
+            render: ([[activities, _, unsubscribe]]) => {
+                if (!activities.loaded) return textsCap.loading
+
+                const name = activities?.get(activityId)?.name || ''
+                unsubscribe?.()
+                return name
+            }
+        }} />
+    )
+    return showInfo({
+        content: <ActivityTeamList {...props} />,
+        header,
+        subheader,
+    }, modalId)
+}
+export default ActivityTeamList
+
 const getTableProps = ({ activityId }) => ({
     columns: [
         {

@@ -25,7 +25,7 @@ const textsCap = translated({
  * @summary display name of the identity or partner along with appropriate icon. 
  * If not own identity or partner, will show a button to add as partner.
  */
-function AddressName(props) {
+const AddressName = React.memo(props => {
     const {
         address = '',
         allowCopy,
@@ -107,7 +107,7 @@ function AddressName(props) {
                     )}
         </Component>
     )
-}
+})
 AddressName.prototype = {
     address: PropTypes.string.isRequired,
     // @allowCopy: whether to include a copy button when name is not found and plain address is dislayed.
@@ -135,4 +135,4 @@ AddressName.defaultProps = {
     ],
     maxLength: 32,
 }
-export default React.memo(AddressName)
+export default AddressName

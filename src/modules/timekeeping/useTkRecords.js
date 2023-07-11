@@ -5,11 +5,12 @@ import {
     subjectAsPromise,
     unsubscribe,
     useRxSubject,
-    useUnmount
+    useUnmount,
+    useUnsubscribe
 } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import { deferred, isArr } from '../../utils/utils'
-import { rxSelected } from '../identity/identity'
+import { get, rxSelected } from '../identity/identity'
 import {
     blocksToDuration,
     query,
@@ -29,6 +30,8 @@ export const subscribe = ({
     save = false,
 }) => {
     if (!activityId && !identity) return
+
+    console.warn({ identity, id: get(identity) })
     const itemKey = [
         identity,
         activityId,
@@ -75,6 +78,7 @@ export const subscribe = ({
         if (unsubscribed || !records || !activities || !recordIds) return false
 
         data.records = records
+        !archive && !manage && console.log({ records, recordIds })
         const currentBlock = await subjectAsPromise(rxBlockNumber, x => x > 0)[0]
         // due to connection delay or some other reason block number received after subscriber unsubscribed
         if (unsubscribed) return
@@ -160,6 +164,12 @@ export const subscribe = ({
             : manage
                 ? qr.listByProject
                 : qr.list
+        window.query = {
+            qr,
+            queryFn,
+            target,
+            multi: isArr(target)
+        }
         // Retrieve list(s) of records either by identity or activity.
         // Target can be either a single idenity or activity, or an array of identities or activities.
         subscription.recordIds = queryFn(
@@ -190,33 +200,44 @@ export const subscribe = ({
 const useTkRecords = ({
     activityId,
     archive,
-    identity = rxSelected.value,// useRxSubject(rxSelected)[0],
+    identity = useRxSubject(rxSelected)[0],
     manage,
     subjectOnly = false,
     valueModifier,
 }) => {
-    const [subject, unsubscribe] = useMemo(
-        () => subscribe({
+    const rxRecords = useMemo(() => new BehaviorSubject(new Map()), [])
+    const changeTriggers = [
+        manage,
+        archive,
+        activityId,
+        identity
+    ]
+    const [unsubscribe, subscription] = useMemo(() => {
+        const [currentSubject, unsubscribe] = subscribe({
             manage,
             archive,
             activityId,
             identity,
-        }) || [],
-        [
-            manage,
-            archive,
-            activityId,
-            identity
+        }) || []
+        const subscription = currentSubject?.subscribe(
+            value => rxRecords.next(value)
+        )
+        return [
+            unsubscribe,
+            subscription,
         ]
-    )
-    useUnmount(unsubscribe)
-    if (subjectOnly) return subject
+    }, changeTriggers)
 
-    const [records] = useRxSubject(subject, valueModifier)
+    // unsubscribe from subscriptions
+    useUnsubscribe([unsubscribe, subscription])
+
+    if (subjectOnly) return rxRecords
+
+    const [records] = useRxSubject(rxRecords, valueModifier)
 
     return [
         records,
-        subject,
+        rxRecords,
         unsubscribe,
         identity
     ]

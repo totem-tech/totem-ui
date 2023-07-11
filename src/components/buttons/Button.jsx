@@ -26,14 +26,15 @@ export const Button = React.memo(props => {
 		primary,
 		title,
 	} = props
-	const _inverted = useInverted()
+
+	if (state.error) color = 'red'
 	inverted = isBool(inverted)
 		? inverted
 		: !color
 		&& !negative
 		&& !positive
 		&& !primary
-		&& _inverted
+		&& useInverted()
 
 	return (
 		<SemanticButton {...{

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { useRxSubject, useUnmount } from '../../utils/reactjs'
-import { copyRxSubject } from '../../utils/rx'
+import { useRxSubject, useUnmount, useUnsubscribe } from '../../utils/reactjs'
+import { copyRxSubject, unsubscribe } from '../../utils/rx'
 import { mapJoin } from '../../utils/utils'
 import {
     rxForceUpdate as _rxForceUpdate,
@@ -84,12 +84,21 @@ export default function useTkActivities({
     valueModifier,
 } = {}) {
     identity ??= useRxSubject(rxSelected)[0]
-    const [rxActivities, unsubscribe] = useMemo(
-        () => subscribe(identity, includeOwned) || [],
-        [identity]
-    )
+    const rxActivities = useMemo(() => new BehaviorSubject(new Map()), [])
+    const [unsubscribe, subscription] = useMemo(() => {
+        const [currentSubject, unsubscribe] = subscribe(identity, includeOwned) || []
+        // current subject will change based on identity selected.
+        // copy values from current subject to rxActivities.
+        const subscription = currentSubject?.subscribe(value =>
+            rxActivities.next(value)
+        )
+        return [
+            unsubscribe,
+            subscription
+        ]
+    }, [identity])
     // trigger unsubscribe onUnmount
-    useUnmount(unsubscribe)
+    useUnsubscribe([unsubscribe, subscription])
     if (subjectOnly) return rxActivities
 
     const [activities] = useRxSubject(rxActivities, valueModifier)

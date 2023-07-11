@@ -34,6 +34,7 @@ const textsCap = {
     never: 'never',
     onHold: 'On-hold',
     open: 'open',
+    owner: 'owner',
     proceed: 'proceed',
     records: 'records',
     reopen: 're-open',
@@ -62,7 +63,6 @@ const textsCap = {
     detailsTimeRecordsBtn: 'view time records',
     editActitity: 'update activity',
     loading: 'loading...',
-    projectTeam: 'activity team',
     reassignOwner: 're-assign owner',
     reopenProject: 're-open ativity',
     totalTime: 'total time',
@@ -79,7 +79,7 @@ const ActivityDetails = React.memo(props => {
     const activityIds = useMemo(() => [activityId], [activityId])
     activity = activity || activityId && useActivities({
         activityIds: activityIds,
-        type: types.activity,
+        type: types.activityIds,
         valueModifier: map => map.get(activityId),
     })[0]
 
@@ -161,6 +161,7 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
         activity
     } = props
     const columns = [
+        { key: 'ownerAddress', title: textsCap.owner },
         { key: 'name', title: textsCap.detailsNameLabel },
         {
             content: x => <LabelCopy {...{ value: x?.activityId }} />,
@@ -192,11 +193,15 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
             content: <div>{textsCap.team}</div>,
             icon: { name: 'group' },
             key: 'workers',
-            onClick: () => showInfo({
-                content: <ActivityTeamList activityId={activityId} />,
-                header: textsCap.projectTeam,
+            onClick: () => ActivityTeamList.asModal({
+                activityId,
                 subheader: activity.name,
             }),
+            //     showInfo({
+            //     content: <ActivityTeamList activityId={activityId} />,
+            //     header: textsCap.activityTeam,
+            //     subheader: activity.name,
+            // }),
             title: textsCap.viewTeam,
         },
         {

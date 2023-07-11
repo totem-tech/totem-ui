@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types'
-import React, { Component } from 'react'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import { ButtonAcceptOrReject } from '../../components/buttons'
@@ -9,7 +9,7 @@ import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
 import { confirm, confirmAsPromise } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
-import { RxSubjectView, copyRxSubject, unsubscribe, useRxState, useRxSubject } from '../../utils/reactjs'
+import { useRxState } from '../../utils/reactjs'
 import {
     BLOCK_DURATION_SECONDS,
     BLOCK_DURATION_REGEX,
@@ -23,7 +23,6 @@ import {
     hasValue,
     isDefined,
     isFn,
-    isPositiveInteger,
     objClean,
     objWithoutKeys,
 } from '../../utils/utils'
@@ -40,9 +39,7 @@ import {
 import { handleInvitation } from './notificationHandlers'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
 import { subjectAsPromise } from '../../utils/reactjs'
-import PromisE from '../../utils/PromisE'
 import useTkActivities from './useTKActivities'
-import FormInput from '../../components/FormInput'
 
 const textsCap = {
     activity: 'activity',
@@ -233,7 +230,6 @@ const TimekeepingForm = React.memo(props => {
             icon: true,
             status: 'info'
         }
-    console.log('state', state)
     return (
         <FormBuilder {...{
             ...props,
@@ -241,9 +237,14 @@ const TimekeepingForm = React.memo(props => {
             closeText: closeBtn,
             inputs,
             message,
-            onChange: handleValuesChange(rxState),
+            onChange: deferred((_, formValues) => rxState.next({
+                values: {
+                    ...rxState?.value?.values,
+                    ...formValues,
+                }
+            }), 100),
             onSubmit: (...args) => inprogress
-                ? handleStopTimer(rxState)
+                ? handlePauseTimer(rxState)
                 : done
                     ? handleSubmit(
                         props,
@@ -269,10 +270,6 @@ const TimekeepingForm = React.memo(props => {
                 disabled: (manualEntry || stopped) && !durationValid
                     ? true
                     : undefined,
-                // labelPosition: !!inprogress
-                //     ? 'right'
-                //     : undefined,
-                // onClick: 
                 positive: !inprogress,
                 color: inprogress
                     ? 'grey'
@@ -323,6 +320,9 @@ const getInitialState = (props, rxActivities) => rxState => {
         ? pActivityId
         : activityId
 
+
+    const rxManualEntry = new BehaviorSubject()
+    const rxDuration = new BehaviorSubject()
     // seconds counter
     const rxSeconds = new BehaviorSubject(
         !tsStarted
@@ -330,22 +330,18 @@ const getInitialState = (props, rxActivities) => rxState => {
             : (new Date() - new Date(tsStarted)) / 1000
     )
     let intervalId
-    rxSeconds.start = reset => {
-        reset && rxSeconds.stop()
+    const startCount = reset => {
+        stopCount(reset)
         intervalId = setInterval(
             () => rxSeconds.next(rxSeconds.value + 1),
             1000
         )
     }
-    rxSeconds.stop = () => {
+    const stopCount = reset => {
         clearInterval(intervalId)
-        rxSeconds.next(0)
+        reset && rxSeconds.next(0)
     }
 
-    console.log({ inprogress, tsStarted })
-    inprogress
-        && tsStarted
-        && setTimeout(() => handleResume(rxState), 100)
     const inputs = [
         {
             clearable: true,
@@ -425,30 +421,30 @@ const getInitialState = (props, rxActivities) => rxState => {
         {
             hidden: true,
             name: inputNames.seconds,
+            onChange: () => {
+                if (rxManualEntry.value) return
+                const duration = secondsToDuration(rxSeconds.value)
+                rxDuration.next(duration)
+            },
             rxValue: rxSeconds,
         },
         {
-            content: (
-                <RxSubjectView {...{
-                    subject: [rxState, rxSeconds],
-                    valueModifier: ([state, seconds]) => (
-                        <FormInput {...{
-                            autoComplete: 'off',
-                            label: textsCap.duration,
-                            labelDetails: 'hh:mm:ss',
-                            name: inputNames.duration,
-                            placeholder: 'hh:mm:ss',
-                            readOnly: state?.values?.manualEntry !== true,
-                            type: 'text',
-                            validate: handleValidateDuration,
-                            value: secondsToDuration(seconds),
-                        }} />
-                    )
-                }} />
-            ),
+            autoComplete: 'off',
+            label: textsCap.duration,
+            labelDetails: 'hh:mm:ss',
             name: inputNames.duration,
-            rxValue: new BehaviorSubject(),
-            type: 'html',
+            onChange: (_, values) => {
+                if (!values[inputNames.manualEntry]) return
+                const duration = values[inputNames.duration]
+                rxSeconds.next(
+                    durationToSeconds(duration) || 0
+                )
+            },
+            placeholder: 'hh:mm:ss',
+            readOnly: values => !values[inputNames.manualEntry],
+            rxValue: rxDuration,
+            type: 'text',
+            validate: handleValidateDuration,
         },
         {
             disabled: !!values.inprogress,
@@ -459,7 +455,7 @@ const getInitialState = (props, rxActivities) => rxState => {
                 value: true
             }],
             required: false,
-            rxValue: new BehaviorSubject(),
+            rxValue: rxManualEntry,
             type: 'checkbox-group',
         },
     ]
@@ -477,12 +473,16 @@ const getInitialState = (props, rxActivities) => rxState => {
         ),
         // set loading status until activity options are loaded
         loading: true,
-        rxSeconds,
-        startCount: rxSeconds.start,
-        stopCount: rxSeconds.stop,
+        startCount,
+        stopCount,
         submitDisabled: false,
         values,
     }
+
+    // resume on start??
+    inprogress
+        && tsStarted
+        && setTimeout(() => handleResume(rxState), 100)
     return state
 }
 
@@ -526,7 +526,6 @@ const handleActivityChange = rxState => async (_, values, index) => {
         status: 'error',
     }
     if (!isOpen) {
-        console.log('activity not open')
         // project is not active anymore
         activityIn.loading = false
         return rxState.next({ inputs, submitDisabled: false })
@@ -596,7 +595,10 @@ const handleActivityChange = rxState => async (_, values, index) => {
 }
 
 const handleReset = async (rxState, userInitiated) => {
-    const { inputs = [], values = {} } = rxState.value
+    const {
+        inputs = [],
+        values = {}
+    } = rxState.value
     const { tsStarted } = values
     const doConfirm = userInitiated && tsStarted
     const confirmed = !doConfirm || await confirmAsPromise({
@@ -607,18 +609,18 @@ const handleReset = async (rxState, userInitiated) => {
         cancelButton: textsCap.no,
         size: 'mini'
     })
-    if (!confirmed) return console.log({ confirmed })
+    if (!confirmed) return
 
     if (userInitiated) {
         values.inprogress = false
         values.stopped = false
         values.breakCount = 0
+        values[inputNames.seconds] = 0
         delete values.tsStarted
         delete values.tsStopped
         values[inputNames.manualEntry] = false
         values[inputNames.duration] = DURATION_ZERO
 
-        console.log('handleReset', { inputs, values, rxState, v: rxState.value.values })
         rxState.next({
             inputs: fillValues(
                 inputs,
@@ -655,7 +657,6 @@ const handleResume = rxState => () => {
     meIn.defaultChecked = false
     meIn.disabled = true
     rxState.next({ inputs, values })
-    console.log('handleResume', values, startCount)
     startCount?.()
     timerFormValues(values)
 }
@@ -666,10 +667,10 @@ const handleStartTimer = rxState => {
         startCount,
         values
     } = rxState.value
-    const manualEntryIn = inputs.find(x => x.name === inputNames.manualEntry)
-    const duraIn = inputs.find(x => x.name === inputNames.duration)
+    const manualEntryIn = findInput(inputs, inputNames.manualEntry)
+    const duraIn = findInput(inputs, inputNames.duration)
     manualEntryIn.disabled = true
-    duraIn.readOnly = true
+    // duraIn.readOnly = true
     duraIn.message = null
     values.workerAddress = getSelected().address
     values.stopped = false
@@ -677,12 +678,11 @@ const handleStartTimer = rxState => {
     values.durationValid = true
     values.tsStarted = new Date().toISOString()
     rxState.next({ inputs, values })
-    console.log('handleStartTimer', values)
     startCount?.(true)
     timerFormValues(values)
 }
 
-const handleStopTimer = async rxState => {
+const handlePauseTimer = async rxState => {
     const {
         inputs,
         stopCount,
@@ -698,13 +698,12 @@ const handleStopTimer = async rxState => {
     timerFormValues(values)
 }
 
-const handleSubmit = (props, rxState, rxActivities) => () => {
+const handleSubmit = (props, rxState, rxActivities) => async () => {
     const { values = {} } = rxState.value
     const activityId = values[inputNames.activityId]
+    // make sure the activity ID is available in the activity options
     const activity = rxActivities?.value?.get?.(activityId)
-    if (!activity) return console.log('Activity not found')
-
-    handleSubmitTime(
+    activity && await handleSubmitTime(
         props,
         rxState,
         NEW_RECORD_HASH, // specific ID used to indicate creation of new time record
@@ -724,9 +723,7 @@ const handleSubmitTime = async (
     reason,
     checkBanned = true
 ) => {
-    const {
-        blockNumber = await subjectAsPromise(rxBlockNumber)[0]
-    } = rxState.value
+    const blockNumber = await subjectAsPromise(rxBlockNumber)[0]
     const { onSubmit } = props
     const {
         breakCount,
@@ -743,9 +740,10 @@ const handleSubmitTime = async (
     // Check if user is banned from the activity.
     // If user has been banned, they will not be able to submit time any more.
     if (activityId !== NEW_RECORD_HASH && checkBanned) {
-        const banned = await query
-            .worker
-            .banned(activityId, workerAddress)
+        const banned = await query.worker.banned(
+            activityId,
+            workerAddress
+        )
         if (banned) return rxState.next({
             message: {
                 header: textsCap.permissionDenied,
@@ -754,8 +752,6 @@ const handleSubmitTime = async (
             }
         })
     }
-
-    // return handleReset(rxState)
     const handleResult = success => {
         isFn(onSubmit) && onSubmit(success, values)
         rxState.next({
@@ -775,9 +771,8 @@ const handleSubmitTime = async (
             submitInProgress: false,
             success,
         })
-        console.log('onSuccess', { values: rxState.value.values })
 
-        // success && setTimeout(() => handleReset(rxState))
+        success && setTimeout(() => handleReset(rxState))
     }
     const qDesc = `${textsCap.activity}: ${activityName} | ${textsCap.duration}: ${values.duration}`
     const queueProps = queueables.record.save(
@@ -820,8 +815,7 @@ const handleSubmitTime = async (
             }],
         }} />
     )
-    console.log('handleSubmit', { values, blockNumber })
-    const proceed = await confirmAsPromise({
+    const confirmed = await confirmAsPromise({
         collapsing: true,
         cancelButton: textsCap.goBack,
         confirmButton: (
@@ -836,11 +830,11 @@ const handleSubmitTime = async (
         subheader: textsCap.submitConfirmationMsg,
     })
     // send task to queue service
-    if (!proceed) return
+    if (!confirmed) return
 
-    // addToQueue(queueProps)
+    // execute the transaction
+    addToQueue(queueProps)
 
-    console.log('set loading')
     rxState.next({
         closeText: textsCap.close,
         submitInProgress: true,
@@ -850,22 +844,18 @@ const handleSubmitTime = async (
             status: 'loading',
             icon: true
         },
-        submitDisabled: true,
     })
 
-    setTimeout(() => handleResult(true), 5000)
 }
 
-const handleValidateDuration = (_1, _2, values) => {
-    const { duration, manualEntry } = values
-    if (!manualEntry) return
+const handleValidateDuration = (_, values) => {
+    if (!values[inputNames.manualEntry]) return
 
+    const duration = values[inputNames.duration]
     const valid = BLOCK_DURATION_REGEX.test(duration)
-    const invalid = !manualEntry
-        ? !valid
-        : duration === DURATION_ZERO || !valid
+        || duration === DURATION_ZERO
 
-    return invalid && {
+    return !valid && {
         content: (
             <span>
                 {textsCap.invalidDurationMsgPart1}<br />
@@ -878,33 +868,11 @@ const handleValidateDuration = (_1, _2, values) => {
     }
 }
 
-const handleValuesChange = rxState => (_, formValues) => {
-    // let { inputs, values } = rxState.value
-    // values = { ...values, ...formValues }
-    // const {
-    //     blockEnd,
-    //     blockStart,
-    //     manualEntry
-    // } = values
-    // const duraIn = inputs.find(x => x.name === inputNames.duration)
-    // let duration
-    // if (manualEntry) {
-    //     // switched from timer to manual mode
-    //     duration = duraIn.readOnly
-    //         ? blockCountToDuration(blockEnd - blockStart)
-    //         : values.duration
-    // } else if (!manualEntry && !duraIn.readOnly) {
-    //     // switched from manual to timer mode
-    //     duration = values.duration
-    // }
-
-    // // Disable duration input when in timer mode
-    // duraIn.readOnly = !manualEntry
-    // rxState.next({ inputs, values })
-    // console.log('handleValuesChange', { values })
-    // duraIn?.rxValue?.next(duration)
-    // timerFormValues(values)
-}
+const handleValuesChange = rxState => deferred((_, formValues) => {
+    let { values } = rxState.value
+    values = { ...values, ...formValues }
+    return rxState.next({ values })
+}, 200)
 
 // set identity options to only include identities where user is a worker of the selected activity
 const setIdentityOptions = async (rxState, activityId, workerAddress) => {

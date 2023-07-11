@@ -55,7 +55,8 @@ const ActivityList = React.memo(props => {
         isMobile = useIsMobile()
     } = props
     const [state] = useRxState(getInitialState)
-    const [activities] = useActivities()
+    const [activities, rxActivities] = useActivities()
+    console.log({ activities, rxActivities })
     state.data = activities
     state.isMobile = isMobile
     state.emptyMessage = activities
@@ -149,7 +150,10 @@ const getInitialState = rxState => {
                     !isMobile && {
                         icon: { name: 'group' },
                         key: 'workers',
-                        onClick: () => handleShowTeam(activityId, activity.name),
+                        onClick: () => ActivityTeamList.asModal({
+                            activityId,
+                            subheader: activity.name,
+                        }),
                         title: textsCap.viewTeam,
                     },
                     {
@@ -395,9 +399,3 @@ const handleRowSelection = rxState => activityIds => {
 
     rxState.next({ topRightMenu })
 }
-
-// show activity team in a modal
-const handleShowTeam = (activityId, activityName = textsCap.unnamed) => showInfo({
-    content: <ActivityTeamList activityId={activityId} />,
-    header: `${textsCap.activityTeam} - ${activityName}`,
-})

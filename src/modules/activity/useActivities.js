@@ -4,7 +4,8 @@ import chatClient from '../../utils/chatClient'
 import {
     unsubscribe,
     useRxSubject,
-    useUnmount
+    useUnmount,
+    useUnsubscribe
 } from '../../utils/reactjs'
 import storage from '../../utils/storageHelper'
 import {
@@ -35,14 +36,14 @@ export const rxForceUpdate = new BehaviorSubject()
 const subscriptions = {}
 export const types = {
     activities: 'projects',// for compatibility with legacy storage keys
-    activity: 'activity',
+    activityIds: 'activityIds',
     timekeeping: 'timekeeping',
 }
 // function to subscribe & fetch list of activity IDs
 // args: identity, callback
 const typesFuncs = {
     // this type allows retrieving activities by given IDs (without subscribing to an a storage for list of IDs).
-    [types.activity]: (activityIds = [], callback) => {
+    [types.activityIds]: (activityIds = [], callback) => {
         callback(
             !isArr(activityIds)
                 ? [activityIds].filter(Boolean)
@@ -70,10 +71,10 @@ export const subscribe = (
     save = false,
     defer = 100,
 ) => {
-    identity ??= type !== types.activity && rxSelected.value
+    identity ??= type !== types.activityIds && rxSelected.value
     const fetchActivityIds = typesFuncs[type] || typesFuncs[types.activities]
     // prevent saving result for this type of subscriptions
-    if (type === types.activity) save = false
+    if (type === types.activityIds || isArr(identity)) save = false
     if (!identity || !isFn(fetchActivityIds)) return
 
     const moduleKey = types[type] || types.activities
@@ -219,6 +220,8 @@ export const subscribe = (
             .flat()
             .filter(Boolean)
         data.activityIds = activityIds
+
+        console.log({ identity, activityIds })
         if (!activityIds.length) return updateSubject()
 
         //fetch title, description etc. from messaging service
@@ -304,21 +307,29 @@ const useActivities = ({
     valueModifier,
 } = {}) => {
     if (!activityIds) identity ??= useRxSubject(rxSelected)[0]
-    const [rxActivities, unsubscribe] = useMemo(
-        () => subscribe(activityIds || identity, type) || [],
-        [activityIds, identity, type]
-    )
+    const rxActivities = useMemo(() => new BehaviorSubject(new Map()), [])
+    const [unsubscribe, subscription] = useMemo(() => {
+        const [currentSubject, unsubscribe1] = subscribe(
+            activityIds || identity,
+            type
+        ) || []
+        // currentSubject will change based on identity, activityIds and type.
+        // copy values from the current subject to rxActivities
+        const subscription = currentSubject?.subscribe(value =>
+            rxActivities.next(value)
+        )
+        return [unsubscribe1, subscription]
+    }, [activityIds, identity, type])
     // trigger unsubscribe onUnmount
-    useUnmount(unsubscribe)
+    useUnsubscribe([unsubscribe, subscription])
     if (subjectOnly) return rxActivities
-    // const [subject, unsubscribe] = useActivitiesSubject(type, identity)
 
     const [activities] = useRxSubject(rxActivities, valueModifier)
 
     return [
         activities,
         rxActivities,
-        unsubscribe
+        unsubscribe,
     ]
 }
 export default useActivities

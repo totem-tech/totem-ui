@@ -19,7 +19,7 @@ import TimeKeepingForm from './TimekeepingForm'
 import TimekeepingList from './TimekeepingList'
 import TimekeepingSummaryList from './TimekeepingSummaryList'
 
-const textsCap = translated({
+const textsCap = {
     archive: 'archive',
     createProjectOrRequestInvite: `create a new activity or request to be invited to some else's activity`,
     loading: 'loading...',
@@ -34,7 +34,8 @@ const textsCap = translated({
     timer: 'timer',
     unknown: 'unknown',
     zeroActivities: 'please create an activity first'
-}, true)[1]
+}
+translated(textsCap, true)
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 
 const TimekeepingView = React.memo(({
@@ -92,7 +93,10 @@ const TimekeepingView = React.memo(({
             status: 'loading',
         }
         : !activities.size
-            ? { content: textsCap.zeroActivities }
+            ? {
+                content: textsCap.zeroActivities,
+                status: 'warning',
+            }
             : null
     if (message) return <Message {...message} />
 

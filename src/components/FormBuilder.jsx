@@ -114,15 +114,15 @@ class FormBuilder extends Component {
 			content: isFn(content)
 				? content(values, name)
 				: content,
-			disabled: toArray(inputsDisabled).includes(name) || (
+			disabled: toArray(inputsDisabled).includes(name) || !!(
 				isFn(disabled)
 					? disabled(values, name)
 					: disabled
 			),
-			hidden: toArray(inputsHidden).includes(name) || (
-				!isFn(hidden)
-					? hidden
-					: !!hidden(values, name)
+			hidden: toArray(inputsHidden).includes(name) || !!(
+				isFn(hidden)
+					? hidden(values, name)
+					: hidden
 			),
 			inputs: isGroup
 				? childInputs.map(
@@ -143,7 +143,11 @@ class FormBuilder extends Component {
 					parentIndex || index,
 					parentIndex ? index : undefined
 				),
-			readOnly: toArray(inputsReadOnly).includes(name) || readOnly,
+			readOnly: toArray(inputsReadOnly).includes(name) || !!(
+				isFn(readOnly)
+					? readOnly(values, name)
+					: readOnly
+			),
 			validate: isFn(validate)
 				? handleValidate
 				: undefined,
@@ -194,7 +198,11 @@ class FormBuilder extends Component {
 					values,
 					toArray(inputsHidden),
 				)
-				await formOnChange(event, values, formInvalid)
+				await formOnChange(
+					event,
+					values,
+					formInvalid
+				)
 			}
 		} catch (err) {
 			window.isDebug
@@ -399,12 +407,13 @@ class FormBuilder extends Component {
 			closeText = <Button {...closeProps} />
 		}
 
-		const as = El || (modal ? 'div' : 'form')
-		// msg = true
-
 		const form = (
 			<Invertible {...{
-				as,
+				as: El || (
+					modal
+						? 'div'
+						: 'form'
+				),
 				className: 'ui form',
 				El: Form,
 				error: message.status === statuses.ERROR,
@@ -428,8 +437,9 @@ class FormBuilder extends Component {
 				)}
 			</Invertible>
 		)
+		if (!modal) return form
 
-		return !modal && form || (
+		return (
 			<IModal {...{
 				as: 'form',
 				className: 'form', // fixes form input label and other styles
@@ -480,7 +490,15 @@ class FormBuilder extends Component {
 						{submitBtn}
 					</Modal.Actions>
 				)}
-				{!!msg && <Message {...message} />}
+				{!!msg && (
+					<Message {...{
+						...message,
+						style: {
+							display: 'flex',
+							...message.style,
+						}
+					}} />
+				)}
 			</IModal>
 		)
 	}
