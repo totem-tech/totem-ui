@@ -73,7 +73,9 @@ export const ModalsConainer = React.memo(() => {
  * @param   {*}         focusRef element reference to auto focus on
  */
 const add = (id, element, focusRef, onClose) => {
-    id = id || newId()
+    id ??= newId()
+    // a modal is already open with the id trigger the onClose before being replace
+    if (modals.get(id)) onCloseHandlers.get(id)?.(id)
     modals.set(id, element)
     isFn(onClose) && onCloseHandlers.set(id, onClose)
     // If already in fullscreen, exit. Otherwise, modal will not be visible.
@@ -98,9 +100,9 @@ export const closeModal = (id, delayMs = 0) => {
 
     if (isArr(id)) return id.forEach(idx => closeModal(idx))
 
-    const onClose = onCloseHandlers.get(id)
+    onCloseHandlers.get(id)?.(id)
+    onCloseHandlers.delete(id)
     modals.delete(id)
-    isFn(onClose) && onClose(id)
 }
 
 /**

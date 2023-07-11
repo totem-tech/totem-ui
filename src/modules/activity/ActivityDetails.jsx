@@ -16,61 +16,26 @@ import TimekeepingList from '../timekeeping/TimekeepingList'
 import ActivityForm from './ActivityForm'
 import ActivityTeamList from './ActivityTeamList'
 import useActivities, { types } from './useActivities'
+import AddressName from '../partner/AddressName'
 
 const textsCap = {
-    actions: 'actions',
-    activity: 'activity',
-    abandoned: 'abandoned',
-    blocks: 'blocks',
-    cancelled: 'cancelled',
-    close: 'close',
-    closed: 'closed',
-    create: 'create',
-    delete: 'delete',
-    deleted: 'deleted',
-    description: 'description',
-    export: 'export',
+    activityIdLabel: 'activity ID',
+    descLabel: 'description of activity',
+    editActitity: 'update activity',
+    firstSeenLabel: 'first used at',
+    formHeader: 'activity details',
+    loading: 'loading...',
     name: 'name',
     never: 'never',
-    onHold: 'On-hold',
-    open: 'open',
     owner: 'owner',
-    proceed: 'proceed',
     records: 'records',
-    reopen: 're-open',
-    reopened: 're-opened',
-    status: 'status',
+    statusLabel: 'activity status',
     team: 'team',
-    timekeeping: 'timekeeping',
+    timeRecords: 'time records',
+    totalTimeLabel: 'total time',
     update: 'update',
-    unknown: 'unknown',
-    unnamed: 'unnamed',
-
-    areYouSure: 'are you sure?',
-    closeActivity: 'close activity',
-    deleteConfirmMsg1: 'you are about to delete the following activities:',
-    deleteConfirmMsg2: `Warning: This action cannot be undone! 
-        You will lose access to this Activity data forever! 
-        A better option might be to archive the Activity.`,
-    deleteConfirmHeader: 'delete activities',
-    detailsNameLabel: 'activity name',
-    detailsRecordIdLabel: 'activity ID',
-    detailsDescLabel: 'description of activity',
-    detailsTotalTimeLabel: 'total time',
-    detailsStatusLabel: 'activity status',
-    detailsFirstSeenLabel: 'first used at',
-    detailsFormHeader: 'activity details',
-    detailsTimeRecordsBtn: 'view time records',
-    editActitity: 'update activity',
-    loading: 'loading...',
-    reassignOwner: 're-assign owner',
-    reopenProject: 're-open ativity',
-    totalTime: 'total time',
-    viewDetails: 'view details',
+    viewRecords: 'view time records',
     viewTeam: 'view team',
-
-    subheader: 'time records',
-    name404: 'unnamed activity'
 }
 translated(textsCap, true)
 
@@ -148,7 +113,7 @@ ActivityDetails.asModal = (props = {}) => {
     return showInfo({
         collapsing: true,
         content: <ActivityDetails {...{ ...props, modalId }} />,
-        header: textsCap.detailsFormHeader,
+        header: textsCap.formHeader,
         size: 'mini',
     }, modalId)
 }
@@ -161,16 +126,20 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
         activity
     } = props
     const columns = [
-        { key: 'ownerAddress', title: textsCap.owner },
-        { key: 'name', title: textsCap.detailsNameLabel },
+        {
+            content: x => <AddressName address={x.ownerAddress} />,
+            key: 'ownerAddress',
+            title: textsCap.owner,
+        },
+        { key: 'name', title: textsCap.name },
         {
             content: x => <LabelCopy {...{ value: x?.activityId }} />,
             key: 'activityId',
-            title: textsCap.detailsRecordIdLabel,
+            title: textsCap.activityIdLabel,
         },
-        { key: 'description', title: textsCap.detailsDescLabel },
-        { key: '_totalTime', title: textsCap.detailsTotalTimeLabel },
-        { key: '_statusText', title: textsCap.detailsStatusLabel },
+        { key: 'description', title: textsCap.descLabel },
+        { key: '_totalTime', title: textsCap.totalTimeLabel },
+        { key: '_statusText', title: textsCap.statusLabel },
         {
             content: () => (
                 <RxSubjectView {...{
@@ -184,7 +153,7 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
                     },
                 }} />
             ),
-            title: textsCap.detailsFirstSeenLabel,
+            title: textsCap.firstSeenLabel,
         }
     ]
     const buttons = [
@@ -195,13 +164,9 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
             key: 'workers',
             onClick: () => ActivityTeamList.asModal({
                 activityId,
+                modalId,
                 subheader: activity.name,
             }),
-            //     showInfo({
-            //     content: <ActivityTeamList activityId={activityId} />,
-            //     header: textsCap.activityTeam,
-            //     subheader: activity.name,
-            // }),
             title: textsCap.viewTeam,
         },
         {
@@ -229,9 +194,10 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
                 collapsing: false,
                 confirmButton: null,
                 cancelButton: null,
-                header: activity.name || textsCap.name404,
-                subheader: textsCap.subheader,
+                header: activity.name,
+                subheader: textsCap.timeRecords,
             }),
+            title: textsCap.viewRecords,
             type: 'Button',
         },
         {

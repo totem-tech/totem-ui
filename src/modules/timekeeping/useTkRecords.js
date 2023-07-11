@@ -31,7 +31,6 @@ export const subscribe = ({
 }) => {
     if (!activityId && !identity) return
 
-    console.warn({ identity, id: get(identity) })
     const itemKey = [
         identity,
         activityId,
@@ -78,7 +77,6 @@ export const subscribe = ({
         if (unsubscribed || !records || !activities || !recordIds) return false
 
         data.records = records
-        !archive && !manage && console.log({ records, recordIds })
         const currentBlock = await subjectAsPromise(rxBlockNumber, x => x > 0)[0]
         // due to connection delay or some other reason block number received after subscriber unsubscribed
         if (unsubscribed) return

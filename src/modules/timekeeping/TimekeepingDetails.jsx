@@ -41,7 +41,7 @@ const TimekeepingDetails = props => {
         identity,
         manage,
     } = props
-    const rxRecord = useTkRecords({
+    const rxRecords = useTkRecords({
         activityId,
         archive,
         identity,
@@ -50,7 +50,7 @@ const TimekeepingDetails = props => {
     })
 
     const [state] = useRxSubjects(
-        [rxRecord, rxInProgressIds],
+        [rxRecords, rxInProgressIds],
         getState(props),
     )
     const { buttons = [] } = state

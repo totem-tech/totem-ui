@@ -48,15 +48,12 @@ const textsCap = {
     error: 'error',
     identity: 'identity',
     no: 'no',
-    project: 'project',
     proceed: 'proceed',
     start: 'start',
     stop: 'stop',
     submit: 'submit',
     success: 'success',
     timekeeping: 'timekeeping',
-    unknown: 'unknown',
-    update: 'update',
     yes: 'yes',
     wallet: 'wallet',
 
@@ -78,13 +75,14 @@ const textsCap = {
     invalidDuration: 'invalid duration',
     invalidDurationMsgPart1: 'please enter a valid duration using the following format:',
     manuallyEnterDuration: 'manually enter duration',
+    msgSubmitted: 'your time record has been submitted for approval',
+    msgSavedAsDraft: 'your time record has been saved as draft',
     newRecord: 'new Record',
     noContinueTimer: 'no, continue timer',
     noProjectsMsg: 'create a new activity or ask to be invited to the Team',
     numberOfBlocks: 'number of blocks',
     numberOfBreaks: 'number of breaks',
     permissionDenied: 'permission denied',
-    recordSubmittedSuccessfully: 'your time record has been submitted for approval',
     requestQueuedMsg1: 'request has been added to queue.',
     requestQueuedMsg2: 'you will be notified of the progress shortly.',
     resetTimer: 'reset the Timer',
@@ -107,16 +105,7 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-// Hash that indicates creation of new record
-const DURATION_ZERO = '00:00:00'
-const blockCountToDuration = blockCount => secondsToDuration(
-    blockCount * BLOCK_DURATION_SECONDS
-)
-const durationToBlockCount = (duration = '') => BLOCK_DURATION_REGEX.test(duration)
-    && parseInt(
-        durationToSeconds(duration) / BLOCK_DURATION_SECONDS
-    )
-    || 0
+export const DURATION_ZERO = '00:00:00'
 
 export const inputNames = {
     activityId: 'projectHash',
@@ -294,8 +283,6 @@ TimekeepingForm.propTypes = {
 }
 export default TimekeepingForm
 
-export const TimekeepingUpdateForm = TimekeepingForm
-
 const getInitialState = (props, rxActivities) => rxState => {
     const {
         projectHash: pph,
@@ -380,7 +367,7 @@ const getInitialState = (props, rxActivities) => rxState => {
                                 userId,
                                 ownerAddress,
                             ].join(' '),
-                            text: name || textsCap.unknown,
+                            text: name,
                             value: activityId,
                         }
                     })
@@ -707,13 +694,13 @@ const handleSubmit = (props, rxState, rxActivities) => async () => {
         props,
         rxState,
         NEW_RECORD_HASH, // specific ID used to indicate creation of new time record
-        activity.name || textsCap.unknown,
+        activity.name,
         values,
         statuses.submit
     )
 }
 
-const handleSubmitTime = async (
+export const handleSubmitTime = async (
     props,
     rxState,
     activityId,
@@ -721,22 +708,26 @@ const handleSubmitTime = async (
     values,
     status,
     reason,
-    checkBanned = true
+    checkBanned = true,
 ) => {
     const blockNumber = await subjectAsPromise(rxBlockNumber)[0]
     const { onSubmit } = props
     const {
         breakCount,
         duration,
-        seconds,
-        tsStarted,
-        tsStopped,
         workerAddress,
+
+        // reverse calclulate values when necessary.
+        // Eg1: when user directly enters duration without starting the timer
+        // Eg2: when updating record using the update form where seconds, tsStarted, tsStopped are not used.
+        seconds,
+        blockCount = seconds / BLOCK_DURATION_SECONDS,
+        tsStarted = blockToDate(blockNumber - blockCount, blockNumber),
+        tsStopped = blockToDate(blockNumber, blockNumber),
+        blockEnd = dateToBlock(tsStopped, blockNumber),
+        blockStart = dateToBlock(tsStarted, blockNumber),
     } = values
 
-    const blockCount = seconds / BLOCK_DURATION_SECONDS
-    const blockEnd = dateToBlock(tsStopped, blockNumber)
-    const blockStart = dateToBlock(tsStarted, blockNumber)
     // Check if user is banned from the activity.
     // If user has been banned, they will not be able to submit time any more.
     if (activityId !== NEW_RECORD_HASH && checkBanned) {
@@ -758,7 +749,9 @@ const handleSubmitTime = async (
             closeText: undefined,
             message: {
                 content: success
-                    ? textsCap.recordSubmittedSuccessfully
+                    ? status === statuses.draft
+                        ? textsCap.msgSavedAsDraft
+                        : textsCap.msgSubmitted
                     : textsCap.transactionFailed,
                 header: success
                     ? textsCap.success
@@ -848,7 +841,7 @@ const handleSubmitTime = async (
 
 }
 
-const handleValidateDuration = (_, values) => {
+export const handleValidateDuration = (_e, _d, values) => {
     if (!values[inputNames.manualEntry]) return
 
     const duration = values[inputNames.duration]
@@ -867,12 +860,6 @@ const handleValidateDuration = (_, values) => {
         status: 'error',
     }
 }
-
-const handleValuesChange = rxState => deferred((_, formValues) => {
-    let { values } = rxState.value
-    values = { ...values, ...formValues }
-    return rxState.next({ values })
-}, 200)
 
 // set identity options to only include identities where user is a worker of the selected activity
 const setIdentityOptions = async (rxState, activityId, workerAddress) => {

@@ -158,6 +158,7 @@ export default [
     "./src/modules/task/useTasks.js",
     "./src/modules/timekeeping/SumDuration.jsx",
     "./src/modules/timekeeping/TimekeepingDetails.jsx",
+    "./src/modules/timekeeping/TimekeepingForm copy 2 - pre-remove-blocknumber .jsx",
     "./src/modules/timekeeping/TimekeepingForm copy.jsx",
     "./src/modules/timekeeping/TimekeepingForm.jsx",
     "./src/modules/timekeeping/TimekeepingInviteForm.jsx",

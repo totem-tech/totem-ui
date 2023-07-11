@@ -24,19 +24,18 @@ import { query, queueables } from './timekeeping'
 const notificationType = 'timekeeping'
 const childType = 'invitation'
 const textsCap = {
-    activity: 'activity',
-    close: 'close',
     identity: 'identity',
     invite: 'invite',
     invitee: 'invitee',
     partner: 'partner',
-    myself: 'myself',
+    activity: 'activity',
     activityLabel: 'select an activity',
     addedToQueueDesc: 'invitation request has been added to background queue',
     addedToQueue: 'added to queue',
     addPartner: 'add new partner',
+    close: 'close',
     formHeader: 'Timekeeping - invitation to join the Team',
-    invitedAndAccepted: 'invited and accepted successfully',
+    invitedAndAccepted: 'your identity has been successfully added to the Activity as team member.',
     inviteSuccess: 'invitation sent!',
     inviteSuccessNotifyFailed: 'invitation sent but failed to notify user!',
     partnerAcceptedInvite: 'partner already accepted an invitation to the selected activity',
@@ -51,40 +50,42 @@ const textsCap = {
 translated(textsCap, true)
 
 export const inputNames = {
+    activityId: 'activityId',
     addpartner: 'addpartner',
-    projectHash: 'projectHash',
     workerAddress: 'workerAddress',
 }
 
-const TimeKeepingInviteForm = React.memo(props => {
+const TimeKeepingInviteForm = props => {
     const { activityId } = props
     const rxActivities = useActivities({ activityId, subjectOnly: true })
     const [state] = useRxState(getInitialState(props, rxActivities))
 
     return <FormBuilder {...{ ...props, ...state }} />
-})
-export default TimeKeepingInviteForm
-TimeKeepingInviteForm.propTypes = {
-    values: PropTypes.shape({
-        projectHash: PropTypes.string,
-        userIds: PropTypes.array,
-        workerAddress: PropTypes.string,
-    })
 }
+export default TimeKeepingInviteForm
 TimeKeepingInviteForm.defaultProps = {
     closeText: textsCap.close,
     header: textsCap.formHeader,
     size: 'tiny',
     submitText: textsCap.invite,
 }
+TimeKeepingInviteForm.inputNames = inputNames
+TimeKeepingInviteForm.propTypes = {
+    values: PropTypes.shape({
+        activityId: PropTypes.string,
+        userIds: PropTypes.array,
+        workerAddress: PropTypes.string,
+    })
+}
 
 const getInitialState = (props, rxActivities) => rxState => {
     const { values } = props
+    values.activityId ??= values.projectHash
     const rxWorker = new BehaviorSubject()
     const inputs = [
         {
             label: textsCap.activity,
-            name: inputNames.projectHash,
+            name: inputNames.activityId,
             options: [],
             placeholder: textsCap.activityLabel,
             required: true,
@@ -176,7 +177,7 @@ const handleSubmit = (
 ) => (e, values) => {
     const { onSubmit } = props
     const {
-        projectHash: activityId,
+        activityId,
         workerAddress
     } = values
     const activity = rxActivities.value?.get?.(activityId)
@@ -310,7 +311,7 @@ const validateWorker = rxState => async (_, { value }, values) => {
     if (!workerAddress) return
 
     const { inputs, submitDisabled } = rxState.value
-    const activityId = values[inputNames.projectHash]
+    const activityId = values[inputNames.activityId]
     const partnerIn = findInput(inputs, inputNames.workerAddress)
     const partner = partners.get(workerAddress)
     const { userId } = partner || {}

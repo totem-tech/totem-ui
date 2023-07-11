@@ -32,7 +32,6 @@ let textsCap = {
 	namePlaceholder: 'enter activity name',
 	ownerLabel: 'select the owner Identity for this Activity ',
 	ownerPlaceholder: 'select owner',
-	activityTeam: 'activity team',
 	saveBONSAIToken: 'save BONSAI auth token',
 	saveDetailsTitle: 'save Activity details to messaging service',
 	submitErrorHeader: 'request failed',
@@ -169,14 +168,13 @@ const handleSubmit = (props, rxState) => (e, values) => {
 					<Button {...{
 						content: textsCap.addTeamMembers,
 						onClick: e => {
+							// button is inside the form element.
+							// this prevents form being submitted.
 							e.preventDefault()
-							const { modalId } = props
-							closeModal(modalId)
-							confirm({
-								cancelButton: null,
-								confirmButton: null,
-								content: <ActivityTeamList activityId={activityId} />,
-								header: `${textsCap.activityTeam} - ${title}`,
+							return ActivityTeamList.asModal({
+								activityId,
+								modalId: props?.modalId,
+								subheader: activityName,
 							})
 						},
 					}} />

@@ -56,7 +56,6 @@ const ActivityList = React.memo(props => {
     } = props
     const [state] = useRxState(getInitialState)
     const [activities, rxActivities] = useActivities()
-    console.log({ activities, rxActivities })
     state.data = activities
     state.isMobile = isMobile
     state.emptyMessage = activities
@@ -146,7 +145,12 @@ const getInitialState = rxState => {
             {
                 // No key required
                 collapsing: true,
-                content: (activity, activityId, _, { isMobile } = {}) => [
+                content: (
+                    activity,
+                    activityId,
+                    _,
+                    { isMobile } = {}
+                ) => [
                     !isMobile && {
                         icon: { name: 'group' },
                         key: 'workers',

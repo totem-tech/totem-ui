@@ -16,7 +16,8 @@ import {
 import { deferred, objClean } from '../../utils/utils'
 import identities, { rxIdentities } from '../identity/identity'
 import AddressName from '../partner/AddressName'
-import TimekeepingForm, { TimekeepingUpdateForm } from './TimekeepingForm'
+import TimekeepingForm from './TimekeepingForm'
+import TimekeepingUpdateForm from './TimekeepingUpdateForm'
 import SumDuration from './SumDuration'
 import { statuses, queueables } from './timekeeping'
 import TimekeepingDetailsForm from './TimekeepingDetails'
@@ -90,7 +91,7 @@ const statusTexts = {
 export const rxInProgressIds = new BehaviorSubject(new Map()) // key: recordId, value: button title
 
 const TimeKeepingList = React.memo(props => {
-    const [data, rxRecords] = useTkRecords(
+    const [data = new Map(), rxRecords] = useTkRecords(
         objClean(props, [
             'activityId',
             'archive',
@@ -98,8 +99,7 @@ const TimeKeepingList = React.memo(props => {
             'manage'
         ])
     )
-    console.log('TimeKeepingList', { props, data })
-    const [state, setState] = useRxState(getInitialState(props, rxRecords))
+    const state = useRxState(getInitialState(props, rxRecords))[0]
     useRxSubject(rxInProgressIds) // trigger state update on change??
 
     const {
@@ -115,7 +115,7 @@ const TimeKeepingList = React.memo(props => {
         topLeftMenu,
         topRightMenu
     } = state
-    const { loaded } = data || new Map()
+    const { loaded } = data
     const colWorkerAddress = columns.find(x => x.key === 'workerAddress')
     colWorkerAddress.hidden = !manage
     const timeBtn = topLeftMenu.find(x => x.key === 'timer')
@@ -156,6 +156,7 @@ const TimeKeepingList = React.memo(props => {
                     )}
                 </p>
             )
+
     return (
         <DataTable {...{
             ...props,
@@ -213,19 +214,13 @@ const getInitialState = (props, rxRecords) => rxState => {
             title: textsCap.finishedAt,
         },
         {
-            content: x => (
-                <div>
-                    {x.activityName || textsCap.activityUnnamed}
-                    (<AddressName address={x.activityOwnerAddress} />)
-                </div>
-            ),
             hidden: ({ isMobile }) => manage && isMobile,
             key: 'activityName',
             title: textsCap.activity,
             style: { minWidth: 125 }
         },
         {
-            content: ({ workerAddress }) => <AddressName address={workerAddress} />,
+            content: x => <AddressName address={x?.workerAddress} />,
             draggableValueKey: 'workerAddress',
             key: 'workerAddress',
             title: textsCap.workerIdentity,
@@ -458,7 +453,7 @@ export const getActionButtons = ({
                     textsCap.setAsDraft,
                 ),
                 size: 'tiny',
-            }) | console.log({ record, recordId, records }),
+            }),
             title: textsCap.setAsDraft,
         },
         // !archive && {
@@ -589,21 +584,21 @@ const handleEdit = (record, recordId, btnTitle) => {
     } = record
     setBtnInprogress(recordId, btnTitle)
     showForm(TimekeepingUpdateForm, {
+        activityId,
+        activityName,
+        // remove it from inprogress list
+        onClose: () => setBtnInprogress(recordId),
+        recordId,
         values: {
+            activityId,
+            activityName,
             blockCount: total_blocks,
             blockEnd: start_block + total_blocks,
             blockStart: start_block,
             duration,
-            projectHash: activityId,
-            projectName: activityName,
             status: submit_status,
             workerAddress,
         },
-        hash: recordId,
-        projectName: activityName,
-        // if closed without submitting
-        onClose: () => setBtnInprogress(recordId),
-        // onSubmit: () => setBtnInprogress(recordId),
     })
 }
 

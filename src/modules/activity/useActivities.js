@@ -4,7 +4,6 @@ import chatClient from '../../utils/chatClient'
 import {
     unsubscribe,
     useRxSubject,
-    useUnmount,
     useUnsubscribe
 } from '../../utils/reactjs'
 import storage from '../../utils/storageHelper'
@@ -221,7 +220,6 @@ export const subscribe = (
             .filter(Boolean)
         data.activityIds = activityIds
 
-        console.log({ identity, activityIds })
         if (!activityIds.length) return updateSubject()
 
         //fetch title, description etc. from messaging service

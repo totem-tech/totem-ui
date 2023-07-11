@@ -28,13 +28,14 @@ export const Button = React.memo(props => {
 	} = props
 
 	if (state.error) color = 'red'
+	const _inverted = useInverted()
 	inverted = isBool(inverted)
 		? inverted
 		: !color
 		&& !negative
 		&& !positive
 		&& !primary
-		&& useInverted()
+		&& _inverted
 
 	return (
 		<SemanticButton {...{
@@ -52,6 +53,7 @@ export const Button = React.memo(props => {
 					isFn(onClick) && await onClick(...args)
 				} catch (err) {
 					error = `${err}`
+					window.isDebug && console.error(err)
 				} finally {
 					setState({ error, loading: false })
 				}

@@ -1,22 +1,24 @@
 import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
-import { Message, useQueryBlockchain, UseHook, unsubscribe } from '../../utils/reactjs'
 import { ButtonAcceptOrReject } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
-import { translated } from '../../utils/languageHelper'
 import { showForm, showInfo } from '../../services/modal'
+import { translated } from '../../utils/languageHelper'
+import {
+    Message,
+    UseHook,
+    useQueryBlockchain,
+} from '../../utils/reactjs'
 import {
     get as getIdentity,
     getSelected as getSelectedIdentity,
 } from '../identity/identity'
 import AddressName from '../partner/AddressName'
 import {
-    handleInvitation as handleTkInvitation,
+    handleInvitation as handleTkInvite
 } from '../timekeeping/notificationHandlers'
-import TimekeepingInviteForm, {
-    inputNames as tkInputNames
-} from '../timekeeping/TimekeepingInviteForm'
+import InviteForm from '../timekeeping/TimekeepingInviteForm'
 import useActivities, { types } from './useActivities'
 
 const textsCap = {
@@ -33,7 +35,8 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-const ActivityTeamList = React.memo(props => {
+
+const ActivityTeamList = props => {
     const { activityId } = props
     const [
         tableProps,
@@ -80,7 +83,7 @@ const ActivityTeamList = React.memo(props => {
                         : (
                             // Worker identity belongs to current user => button to accept or reject
                             <ButtonAcceptOrReject {...{
-                                onAction: (_, accept) => handleTkInvitation(
+                                onAction: (_, accept) => handleTkInvite(
                                     activityId,
                                     address,
                                     accept
@@ -97,7 +100,7 @@ const ActivityTeamList = React.memo(props => {
             data: new Map(data),
         }} />
     )
-})
+}
 ActivityTeamList.propTypes = {
     activityId: PropTypes.string.isRequired,
 }
@@ -105,12 +108,12 @@ ActivityTeamList.asModal = props => {
     let {
         activityId,
         header = textsCap.activityTeam,
-        modalId,
+        modalId = activityId,
         subheader,
     } = props
     if (!activityId) return
 
-    console.log({ modalId })
+    // fetch activity and use the activity name as subheader
     subheader ??= (
         <UseHook {...{
             hooks: [[
@@ -162,9 +165,9 @@ const getTableProps = ({ activityId }) => ({
                     <Button {...{
                         content: textsCap.addMyself,
                         icon: 'plus',
-                        onClick: () => showForm(TimekeepingInviteForm, {
+                        onClick: () => showForm(InviteForm, {
                             submitText: textsCap.addMyself,
-                            inputsDisabled: Object.values(tkInputNames),
+                            inputsDisabled: Object.values(InviteForm.inputNames),
                             inputsHidden: ['addpartner'],
                             values: {
                                 projectHash: activityId,
@@ -180,7 +183,7 @@ const getTableProps = ({ activityId }) => ({
     searchExtraKeys: ['address', 'userId', 'status'],
     topLeftMenu: [{
         content: textsCap.invite,
-        onClick: () => showForm(TimekeepingInviteForm, {
+        onClick: () => showForm(InviteForm, {
             values: { projectHash: activityId }
         })
     }],
