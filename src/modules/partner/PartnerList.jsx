@@ -60,7 +60,11 @@ export default function PartnerList(props = {}) {
 			partner._address = textEllipsis(address, 15, 3)
 			partner._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
 			partner._name = (
-				<div style={{ margin: !userId ? 0 : '-10px 0' }}>
+				<div style={{
+					margin: !userId
+						? 0
+						: '-5px 0'
+				}}>
 					<div {...{
 						draggable: true,
 						onDragStart: (e) => e.dataTransfer.setData('Text', name),

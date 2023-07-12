@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { useRxSubject, useUnmount, useUnsubscribe } from '../../utils/reactjs'
-import { copyRxSubject, unsubscribe } from '../../utils/rx'
+import { useRxSubject, useUnsubscribe } from '../../utils/reactjs'
+import { copyRxSubject } from '../../utils/rx'
 import { mapJoin } from '../../utils/utils'
 import {
     rxForceUpdate as _rxForceUpdate,
@@ -48,7 +48,7 @@ export const subscribe = (identity, includeOwned = true, save) => {
             tkActivities = new Map()
         ]) => {
             const merged = mapJoin(ownActivities, tkActivities)
-            merged.loaded = true
+            merged.loaded = ownActivities.loaded && tkActivities.loaded
             return merged
         },
         100,
@@ -57,6 +57,7 @@ export const subscribe = (identity, includeOwned = true, save) => {
     const unsubscribe = () => {
         unsubTk()
         unsub()
+        subject.unsubscribe()
     }
     return [subject, unsubscribe]
 }

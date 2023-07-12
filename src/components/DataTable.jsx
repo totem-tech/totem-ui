@@ -255,6 +255,14 @@ export default class DataTable extends Component {
 				items,
 				this.props,
 			) || {}
+			const cellProps = {
+				...column,
+				...dynamicProps,
+				style: {
+					...column.style,
+					...dynamicProps.style,
+				},
+			}
 			let {
 				collapsing,
 				content,
@@ -266,15 +274,13 @@ export default class DataTable extends Component {
 				style,
 				textAlign = 'left',
 				title,
-			} = {
-				...column,
-				...dynamicProps,
-				style: {
-					...column.style,
-					...dynamicProps.style,
-				}
-			}
+			} = cellProps
 			draggable = draggable !== false
+			style = {
+				...collapsing && { padding: '0 5px' },
+				...style,
+				...draggable && { cursor: 'grab' },
+			}
 			content = isFn(content)
 				? content(
 					item,
@@ -283,15 +289,6 @@ export default class DataTable extends Component {
 					this.props,
 				)
 				: content || item[contentKey]
-			style = {
-				cursor: draggable
-					? 'grab'
-					: undefined,
-				padding: collapsing
-					? '0 5px'
-					: undefined,
-				...style,
-			}
 			const dragValue = draggableValueKey
 				? item[draggableValueKey] || ''
 				: null

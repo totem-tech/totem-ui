@@ -144,6 +144,7 @@ export const getProjects = async (forceUpdate, callback, timeout = 30000) => {
     } = config
     const { address } = getSelected() || {}
     if (!address) return
+
     const cacheKey = cacheKeyProjects(address)
 
     if (!navigator.onLine) return new Map(rwCache(cacheKey) || [])

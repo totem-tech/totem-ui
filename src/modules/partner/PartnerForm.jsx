@@ -4,7 +4,6 @@ import { BehaviorSubject } from 'rxjs'
 import { ss58Decode, addressToStr } from '../../utils/convert'
 import PromisE from '../../utils/PromisE'
 import {
-	arrSort,
 	deferred,
 	isFn,
 	arrUnique,
@@ -29,7 +28,7 @@ import ContactForm, {
 	inputNames as contactInputNames,
 } from '../contact/ContactForm'
 import BackupForm from '../gettingStarted/BackupForm'
-import identityService, { rxIdentities } from '../identity/identity'
+import { rxIdentities } from '../identity/identity'
 import locations, {
 	newId as newLocationId,
 	requiredKeys as locationRequiredKeys,
@@ -51,7 +50,7 @@ import {
 import PartnerIcon from './PartnerIcon'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
 
-let textsCap = {
+const textsCap = {
 	addressAdditionLabel: 'use',
 	addressLabel: 'search for Company or Identity',
 	addressEmptySearchMessage: 'enter a compnay name to search',
@@ -94,7 +93,7 @@ let textsCap = {
 	vatNumberLabel: 'VAT number',
 	vatNumberPlaceholder: 'VAT registration number',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export const requiredFields = {
 	address: 'address',
@@ -130,7 +129,13 @@ export default class PartnerForm extends Component {
 		this.partner = values && get(values.address)
 		this.doUpdate = !!this.partner
 		values = { ...this.partner, ...values }
-		const { address, name, tags = [], type, visibility } = values
+		const {
+			address,
+			name,
+			tags = [],
+			type,
+			visibility
+		} = values
 		const query = { partnerIdentity: address }
 		const [locationId, location] = Array.from(
 			!address
@@ -582,17 +587,19 @@ export default class PartnerForm extends Component {
 			locationFormHtml.content = this.getLocationForm(
 				location,
 				this.locationId,
-				{
-					submitText: null,
-				},
+				{ submitText: null },
 			)
 
 			nameIn.rxValue.next(cName || name)
 			typeIn.rxValue.next(
-				com ? types.BUSINESS : types.PERSONAL
+				com
+					? types.BUSINESS
+					: types.PERSONAL
 			)
 			visibilityIn.rxValue.next(
-				com ? visibilityTypes.PUBLIC : visibilityTypes.PRIVATE
+				com
+					? visibilityTypes.PUBLIC
+					: visibilityTypes.PRIVATE
 			)
 		}
 		this.setState({ inputs })
@@ -613,7 +620,7 @@ export default class PartnerForm extends Component {
 			<div>
 				<PartnerIcon visibility={visibilityTypes.PUBLIC} />
 				{' ' + name}
-				<div style={{ color: 'grey' }}>
+				<div style={{ color: '#ccc' }}>
 					<small>{subText}</small>
 				</div>
 			</div>

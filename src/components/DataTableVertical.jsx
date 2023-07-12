@@ -6,15 +6,15 @@ import {
     isObj,
     objWithoutKeys
 } from '../utils/utils'
-import { MOBILE, rxLayout } from '../utils/window'
 import DataTable from './DataTable'
+import { useIsMobile } from '../utils/reactjs'
 
-const DataTableVertical = React.memo((props) => {
-    const [isMobile] = [rxLayout.value === MOBILE]//useRxSubject(rxLayout, l => l === MOBILE)
+const DataTableVertical = React.memo(props => {
     let {
         columns = [],
         columnsHidden = [],
         data: items = [],
+        isMobile = useIsMobile(),
         tableProps = {},
     } = props
     if (isObj(items)) items = [items]
@@ -44,7 +44,7 @@ const DataTableVertical = React.memo((props) => {
                         items,
                         props,
                     )
-                    : item[key]
+                    : content || item[key]
             })
         return [title, ...row]
     })
@@ -65,11 +65,15 @@ const DataTableVertical = React.memo((props) => {
             active: i === 0,
             draggable: false,
             dynamicProps: (_, index) => {
-                const column = columns[index] || {}
+                const column = { ...columns[index] }
                 const isHeader = i === 0
-                return isHeader
-                    ? column.headerProps
-                    : objWithoutKeys(columns, ['content'])
+                if (isHeader) return column.headerProps
+
+                // Content is already populated in the `vData`.
+                // Remove both `content` and `key` properties.
+                delete column.content
+                delete column.key
+                return column
             },
             key: `${i}`,
             style: {
@@ -88,6 +92,7 @@ const DataTableVertical = React.memo((props) => {
 
     return (
         <DataTable {...{
+            debug: true,
             perPage: columns.length,
             ...props,
             columns: vColumns,

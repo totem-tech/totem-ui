@@ -20,7 +20,7 @@ import TimekeepingForm from './TimekeepingForm'
 import TimekeepingUpdateForm from './TimekeepingUpdateForm'
 import SumDuration from './SumDuration'
 import { statuses, queueables } from './timekeeping'
-import TimekeepingDetailsForm from './TimekeepingDetails'
+import TimekeepingDetailsForm from './RecordDetails'
 import TimekeepingInviteForm from './TimekeepingInviteForm'
 import useTkRecords from './useTkRecords'
 
@@ -78,7 +78,7 @@ const textsCap = {
     workerIdentity: 'worker identity',
 }
 translated(textsCap, true)
-const statusTexts = {
+export const statusTexts = {
     [statuses.draft]: textsCap.draft,
     [statuses.submit]: textsCap.submitted,
     [statuses.dispute]: textsCap.disputed,
@@ -139,22 +139,24 @@ const TimeKeepingList = React.memo(props => {
         : archive
             ? textsCap.emptyMessageArchive
             : (
-                <p>
+                <div>
                     {manage
                         ? textsCap.noTimeRecords
                         : textsCap.emptyMessage + ' '}
                     {manage && (
-                        <Button
-                            positive
-                            content={textsCap.orInviteATeamMember}
-                            onClick={() => showForm(TimekeepingInviteForm, {
-                                values: {
-                                    projectHash: activityId
-                                }
-                            })}
-                        />
+                        <div>
+                            <Button {...{
+                                positive: true,
+                                content: textsCap.orInviteATeamMember,
+                                onClick: () => showForm(
+                                    TimekeepingInviteForm,
+                                    { values: { activityId } },
+                                ),
+                            }}
+                            />
+                        </div>
                     )}
-                </p>
+                </div>
             )
 
     return (

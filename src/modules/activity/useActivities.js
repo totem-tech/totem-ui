@@ -186,8 +186,19 @@ export const subscribe = (
         )
     }, defer)
 
+    const handleActivityReceived = (activityId, activity) => {
+        if (unsubscribed || !data.activityIds?.includes(activityId)) return
+
+        data.activities?.set(activityId, activity)
+        updateSubject()
+    }
+
+
+    subscription.onActivity ??= chatClient.onActivity(handleActivityReceived)
+
+    console.log(subscription)
     // fetch activities from messaging service
-    const fetchOffChainData = async () => {
+    const fetchOffChainData = deferred(async () => {
         const { activityIds } = data
         if (unsubscribed || !activityIds) return
 
@@ -207,8 +218,10 @@ export const subscribe = (
             })
         if (unsubscribed) return
         data.activities = activities
+
+        subscription.onActivity ??= chatClient.onActivity(handleActivityReceived)
         updateSubject()
-    }
+    }, 1000)
 
     // once activity IDs are received fetch off-chain information from messaging service 
     // and other information from blockchain
@@ -222,7 +235,7 @@ export const subscribe = (
 
         if (!activityIds.length) return updateSubject()
 
-        //fetch title, description etc. from messaging service
+        // fetch title, description etc. from messaging service
         fetchOffChainData()
 
         // auto fetch status codes
@@ -258,7 +271,12 @@ export const subscribe = (
         // listen for and udpate activity details from messaging service
         unsubscribe(subscription.forceUpdate)
         subscription.forceUpdate = rxForceUpdate.subscribe(value => {
-            if (!value || unsubscribed || identity !== value) return
+            const ignore = unsubscribed
+                || !value
+                || identity !== value
+                || isArr(identity) && !identity.includes(value)
+            if (ignore) return
+
             rxForceUpdate.next(null)
             fetchOffChainData()
         })

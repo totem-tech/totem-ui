@@ -12,13 +12,16 @@ import {
     objWithoutKeys
 } from '../../utils/utils'
 import AddressName from '../partner/AddressName'
-import { getActionButtons, rxInProgressIds } from './TimekeepingList'
+import {
+    getActionButtons,
+    rxInProgressIds,
+    statusTexts,
+} from './TimekeepingList'
 import useTkRecords from './useTkRecords'
 
 const textsCap = {
     activity: 'activity',
     activityOwner: 'activity owner',
-    activityUnnamed: 'unnamed activity',
     blockCount: 'number of blocks',
     blockEnd: 'end block',
     blockStart: 'start block',
@@ -34,7 +37,7 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-const TimekeepingDetails = props => {
+const RecordDetails = props => {
     const {
         activityId,
         archive,
@@ -60,7 +63,7 @@ const TimekeepingDetails = props => {
             <DataTableVertical {...objWithoutKeys(
                 state,
                 // prevents passing on unnecessary props to the table
-                Object.keys(TimekeepingDetails.propTypes)
+                Object.keys(RecordDetails.propTypes)
             )} />
             {!!buttons.length && (
                 <div style={{
@@ -79,20 +82,20 @@ const arrOrStr = PropTypes.oneOfType([
     PropTypes.arrayOf(PropTypes.string),
     PropTypes.string,
 ])
-TimekeepingDetails.propTypes = {
+RecordDetails.propTypes = {
     activityId: arrOrStr,
     archive: PropTypes.bool.isRequired,
     identity: arrOrStr,
     manage: PropTypes.bool.isRequired,
     recordId: PropTypes.string.isRequired,
 }
-TimekeepingDetails.asModal = (props = {}) => showInfo({
+RecordDetails.asModal = (props = {}) => showInfo({
     collapsing: true,
-    content: <TimekeepingDetails {...props} />,
+    content: <RecordDetails {...props} />,
     header: textsCap.header,
     size: 'mini',
 }, props.recordId)
-export default TimekeepingDetails
+export default RecordDetails
 
 const getState = (props = {}) => ([
     record = new Map(),
@@ -113,7 +116,16 @@ const getState = (props = {}) => ([
         {
             content: () => (
                 <LabelCopy {...{
-                    content: activityName || textsCap.activityUnnamed,
+                    maxLength: 18,
+                    value: recordId,
+                }} />
+            ),
+            title: textsCap.recordId,
+        },
+        {
+            content: () => (
+                <LabelCopy {...{
+                    content: activityName,
                     maxLength: 18,
                     value: activityId,
                 }} />
@@ -126,21 +138,13 @@ const getState = (props = {}) => ([
             title: textsCap.activityOwner,
         },
         {
-            content: () => (
-                <LabelCopy {...{
-                    maxLength: 18,
-                    value: recordId,
-                }} />
-            ),
-            title: textsCap.recordId,
-        },
-        {
             content: () => <AddressName address={workerAddress} />,
 
             title: textsCap.worker,
         },
         {
-            key: '_status',
+            content: x => statusTexts[x.submit_status],
+            key: 'submit_status',
             title: textsCap.status,
         },
         {
@@ -174,7 +178,11 @@ const getState = (props = {}) => ([
     ]
     return {
         ...props,
-        buttons: getButtons(props, inProgressIds, record),
+        buttons: getButtons(
+            props,
+            inProgressIds,
+            record
+        ),
         columns,
         data: [record],
     }

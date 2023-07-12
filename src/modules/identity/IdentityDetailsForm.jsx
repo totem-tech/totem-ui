@@ -116,8 +116,8 @@ class IdentityDetailsForm extends Component {
 										},
 									},
 									style: {
-    									borderBottomLeftRadius: 0,
-    									borderTopLeftRadius: 0,
+										borderBottomLeftRadius: 0,
+										borderTopLeftRadius: 0,
 										marginLeft: 1,
 									},
 									value: this.identity.address,
@@ -169,24 +169,24 @@ class IdentityDetailsForm extends Component {
 									this.showSeed
 										? toggle()
 										: confirm({
-												cancelButton: (
-													<Button
-														positive
-														content={
-															textsCap.noKeepItHidden
-														}
-													/>
-												),
-												confirmButton: (
-													<Button
-														negative
-														content={textsCap.show}
-													/>
-												),
-												header: textsCap.showSeed,
-												onConfirm: toggle,
-												size: 'mini',
-										  })
+											cancelButton: (
+												<Button
+													positive
+													content={
+														textsCap.noKeepItHidden
+													}
+												/>
+											),
+											confirmButton: (
+												<Button
+													negative
+													content={textsCap.show}
+												/>
+											),
+											header: textsCap.showSeed,
+											onConfirm: toggle,
+											size: 'mini',
+										})
 								},
 							},
 							labelPosition: 'left', // for inlineLabel
@@ -300,11 +300,6 @@ class IdentityDetailsForm extends Component {
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-IdentityDetailsForm.propTypes = {
-	values: PropTypes.shape({
-		address: PropTypes.string.isRequired,
-	}).isRequired,
-}
 IdentityDetailsForm.defaultProps = {
 	closeOnSubmit: true,
 	closeOnDimmerClick: true,
@@ -312,7 +307,13 @@ IdentityDetailsForm.defaultProps = {
 	closeOnEscape: true,
 	closeText: null,
 	header: textsCap.identityDetails,
-	size: 'tiny',
+	size: 'mini',
+}
+IdentityDetailsForm.propTypes = {
+	values: PropTypes.shape({
+		address: PropTypes.string.isRequired,
+	}).isRequired,
+	// other modal props
 }
 
 export default IdentityDetailsForm

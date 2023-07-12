@@ -2,9 +2,12 @@ import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { translated } from '../../utils/languageHelper'
 import {
+    Message,
     RxSubjectView,
+    copyRxSubject,
     statuses,
     useQueryBlockchain,
+    useRxSubjects,
 } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import { rxBlockNumber } from '../../services/blockchain'
@@ -17,6 +20,10 @@ import ActivityForm from './ActivityForm'
 import ActivityTeamList from './ActivityTeamList'
 import useActivities, { types } from './useActivities'
 import AddressName from '../partner/AddressName'
+import { BehaviorSubject, first } from 'rxjs'
+import { isStr } from '../../utils/utils'
+import { statusTexts } from './activity'
+import { blocksToDuration } from '../timekeeping/timekeeping'
 
 const textsCap = {
     activityIdLabel: 'activity ID',
@@ -41,36 +48,46 @@ translated(textsCap, true)
 
 const ActivityDetails = React.memo(props => {
     let { activity, activityId } = props
-    const activityIds = useMemo(() => [activityId], [activityId])
-    activity = activity || activityId && useActivities({
-        activityIds: activityIds,
-        type: types.activityIds,
-        valueModifier: map => map.get(activityId),
-    })[0]
+    const activityIds = useMemo(() => [activityId].filter(Boolean), [activityId])
+    activity = !!activity
+        ? activity
+        : !activityId
+            ? null
+            : useActivities({
+                activityIds: activityIds,
+                subjectOnly: true,
+                type: types.activityIds,
+                valueModifier: map => map.get(activityId),
+            })[0]
 
     // fetch and retrieve the block number Activity was first seen (first time a time record was submitted) 
-    const {
-        result: {
-            columns,
-            buttons = []
-        } = {},
-        message,
-    } = useQueryBlockchain({
-        // in case activity is not provided in the props, 
-        // this will show a loading spinner until activity is fetched using `useActivities` hook.
-        func: !!activity && 'api.query.timekeeping.projectFirstSeen',
+    const rxFirstSeenQuery = useQueryBlockchain({
+        func: !!activityIds.length
+            && 'api.query.timekeeping.projectFirstSeen',
         args: activityIds,
         subscribe: false,
-        valueModifier: handleFirstSeenCb({ ...props, activity }),
+        subjectOnly: true,
     })
+
+    const [{
+        columns,
+        data,
+        buttons = [],
+        message,
+    }] = useRxSubjects(
+        [
+            props,
+            activity,
+            rxFirstSeenQuery
+        ],
+        getState,
+    )
 
     return (
         <div>
             <DataTableVertical {...{
                 columns,
-                data: !columns
-                    ? []
-                    : [{ activityId, ...activity }],
+                data,
                 emptyMessage: {
                     ...!!message
                         ? message
@@ -119,12 +136,22 @@ ActivityDetails.asModal = (props = {}) => {
 }
 export default ActivityDetails
 
-const handleFirstSeenCb = props => (firstSeen = 0) => {
+const getState = ([
+    props = {},
+    activity,
+    firstSeenQuery = {}
+] = []) => {
     const {
-        activityId,
-        modalId,
-        activity
-    } = props
+        result: firstSeen = 0,
+        message,
+    } = firstSeenQuery
+    const { activityId, modalId } = props
+    const {
+        name,
+        ownerAddress,
+        status,
+        totalBlocks = 0
+    } = activity || {}
     const columns = [
         {
             content: x => <AddressName address={x.ownerAddress} />,
@@ -141,20 +168,42 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
         { key: '_totalTime', title: textsCap.totalTimeLabel },
         { key: '_statusText', title: textsCap.statusLabel },
         {
-            content: () => (
-                <RxSubjectView {...{
-                    key: firstSeen,
-                    subject: rxBlockNumber,
-                    valueModifier: (currentBlock, oldValue) => {
-                        if (oldValue !== undefined) return RxSubjectView.IGNORE_UPDATE
-                        return firstSeen
-                            ? blockToDate(firstSeen, currentBlock)
-                            : textsCap.never
-                    },
-                }} />
-            ),
+            // this messaage will only be displayed when activity is loaded from cache but first seen retrieval failed
+            content: () => !!message
+                ? (
+                    <Message {...{
+                        ...message,
+                        style: {
+                            borderRadius: 0,
+                            margin: 0,
+                        },
+                        size: 'mini',
+                    }} />
+                )
+                : (
+                    <RxSubjectView {...{
+                        key: firstSeen,
+                        subject: copyRxSubject(rxBlockNumber),
+                        valueModifier: (
+                            currentBlock,
+                            _oldValue,
+                            rxCopyBlockNr
+                        ) => {
+                            const res = currentBlock > 0
+                                ? firstSeen
+                                    ? blockToDate(firstSeen, currentBlock)
+                                    : textsCap.never
+                                : null // not ready yet
+
+                            // once a value is retrieved unsbuscribe from 
+                            if (currentBlock > 0 && isStr(res)) rxCopyBlockNr.unsubscribe()
+                            return res
+                        },
+                    }} />
+                ),
+            style: !!message && { padding: 0 } || {},
             title: textsCap.firstSeenLabel,
-        }
+        },
     ]
     const buttons = [
         {
@@ -165,7 +214,7 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
             onClick: () => ActivityTeamList.asModal({
                 activityId,
                 modalId,
-                subheader: activity.name,
+                subheader: name,
             }),
             title: textsCap.viewTeam,
         },
@@ -183,8 +232,8 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
                         isMobile: true,
                         isOwner: true,
                         manage: true,
-                        projectName: activity.name,
-                        ownerAddress: activity.ownerAddress,
+                        projectName: name,
+                        ownerAddress: ownerAddress,
                         topGrid: {
                             left: { computer: 12 },
                             right: { computer: 4 },
@@ -194,7 +243,7 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
                 collapsing: false,
                 confirmButton: null,
                 cancelButton: null,
-                header: activity.name,
+                header: name,
                 subheader: textsCap.timeRecords,
             }),
             title: textsCap.viewRecords,
@@ -205,13 +254,31 @@ const handleFirstSeenCb = props => (firstSeen = 0) => {
             content: <div>{textsCap.update}</div>,
             key: 'edit',
             icon: 'pencil',
-            onClick: () => showForm(ActivityForm, {
-                activityId,
-                values: activity,
-            }, modalId),
+            onClick: () => showForm(
+                ActivityForm,
+                {
+                    activityId,
+                    values: activity,
+                },
+                modalId
+            ),
             title: textsCap.editActitity,
         }
     ].filter(Boolean)
 
-    return { columns, buttons }
+    return {
+        buttons,
+        columns,
+        data: [
+            activity && {
+                ...activity,
+                activityId,
+                _statusText: statusTexts[status] || statusTexts.unknown,
+                _totalTime: blocksToDuration(totalBlocks)
+            }
+        ].filter(Boolean),
+        message: !activity
+            ? message
+            : null,
+    }
 }
