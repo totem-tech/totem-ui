@@ -4,6 +4,7 @@ import { translated } from '../../utils/languageHelper'
 import {
     Message,
     RxSubjectView,
+    UNSUBSCRIBE_SYMBOL,
     copyRxSubject,
     statuses,
     useQueryBlockchain,
@@ -20,8 +21,7 @@ import ActivityForm from './ActivityForm'
 import ActivityTeamList from './ActivityTeamList'
 import useActivities, { types } from './useActivities'
 import AddressName from '../partner/AddressName'
-import { BehaviorSubject, first } from 'rxjs'
-import { isStr } from '../../utils/utils'
+import { isMap, isStr } from '../../utils/utils'
 import { statusTexts } from './activity'
 import { blocksToDuration } from '../timekeeping/timekeeping'
 
@@ -46,7 +46,7 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-const ActivityDetails = React.memo(props => {
+function ActivityDetails(props) {
     let { activity, activityId } = props
     const activityIds = useMemo(() => [activityId].filter(Boolean), [activityId])
     activity = !!activity
@@ -58,10 +58,10 @@ const ActivityDetails = React.memo(props => {
                 subjectOnly: true,
                 type: types.activityIds,
                 valueModifier: map => map.get(activityId),
-            })[0]
+            })
 
     // fetch and retrieve the block number Activity was first seen (first time a time record was submitted) 
-    const rxFirstSeenQuery = useQueryBlockchain({
+    const rxFirstSeenResult = useQueryBlockchain({
         func: !!activityIds.length
             && 'api.query.timekeeping.projectFirstSeen',
         args: activityIds,
@@ -78,7 +78,7 @@ const ActivityDetails = React.memo(props => {
         [
             props,
             activity,
-            rxFirstSeenQuery
+            rxFirstSeenResult
         ],
         getState,
     )
@@ -117,10 +117,10 @@ const ActivityDetails = React.memo(props => {
             )}
         </div>
     )
-})
+}
 ActivityDetails.propTypes = {
     activity: PropTypes.object,
-    activityId: PropTypes.string,
+    activityId: PropTypes.string.isRequired,
     modalId: PropTypes.string,
 }
 ActivityDetails.asModal = (props = {}) => {
@@ -138,14 +138,18 @@ export default ActivityDetails
 
 const getState = ([
     props = {},
-    activity,
-    firstSeenQuery = {}
+    activity = new Map(),
+    firstSeenResult = {}
 ] = []) => {
     const {
         result: firstSeen = 0,
         message,
-    } = firstSeenQuery
+    } = firstSeenResult
     const { activityId, modalId } = props
+    activity = isMap(activity)
+        // if fetched using useActivities hook
+        ? activity.get(activityId)
+        : activity
     const {
         name,
         ownerAddress,
@@ -182,22 +186,23 @@ const getState = ([
                 )
                 : (
                     <RxSubjectView {...{
+                        allowSubjectUpdate: true,
                         key: firstSeen,
                         subject: copyRxSubject(rxBlockNumber),
                         valueModifier: (
                             currentBlock,
-                            _oldValue,
-                            rxCopyBlockNr
+                            prevResult,
                         ) => {
-                            const res = currentBlock > 0
+                            // once a value is retrieved unsbuscribe from  subject to prevent unnecessary state update
+                            if (isStr(prevResult)) return UNSUBSCRIBE_SYMBOL
+
+                            const result = currentBlock > 0
                                 ? firstSeen
                                     ? blockToDate(firstSeen, currentBlock)
                                     : textsCap.never
                                 : null // not ready yet
 
-                            // once a value is retrieved unsbuscribe from 
-                            if (currentBlock > 0 && isStr(res)) rxCopyBlockNr.unsubscribe()
-                            return res
+                            return result
                         },
                     }} />
                 ),
@@ -229,7 +234,7 @@ const getState = ([
                     <TimekeepingList {...{
                         activityId: activityId,
                         hideTimer: true,
-                        isMobile: true,
+                        // isMobile: true,
                         isOwner: true,
                         manage: true,
                         projectName: name,
@@ -267,16 +272,14 @@ const getState = ([
     ].filter(Boolean)
 
     return {
-        buttons,
+        buttons: activity && buttons || [],
         columns,
-        data: [
-            activity && {
-                ...activity,
-                activityId,
-                _statusText: statusTexts[status] || statusTexts.unknown,
-                _totalTime: blocksToDuration(totalBlocks)
-            }
-        ].filter(Boolean),
+        data: activity && [{
+            ...activity,
+            activityId,
+            _statusText: statusTexts[status] || statusTexts.unknown,
+            _totalTime: blocksToDuration(totalBlocks)
+        }] || [],
         message: !activity
             ? message
             : null,

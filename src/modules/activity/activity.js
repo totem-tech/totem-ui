@@ -1,29 +1,11 @@
 // *********
 // IMPORTANT NOTE the terminology "project" has been replaced by "activity" in the UI. 
-// It has not been replaced in the code.
+// It has not been replaced in all of the codes, yet.
 // *********
-import { Subject } from 'rxjs'
-import { bytesToHex } from '../../utils/convert'
-import PromisE from '../../utils/PromisE'
-import storage from '../../utils/storageHelper'
-import { arrUnique, isFn, isStr } from '../../utils/utils'
-// services
-import {
-    hashTypes,
-    query as queryBlockchain,
-    getConnection
-} from '../../services/blockchain'
-import client from '../../utils/chatClient'
-import identities, { getSelected, rxSelected } from '../identity/identity'
-import partners from '../partner/partner'
-import { query as tkQuery } from '../timekeeping/timekeeping'
+import { hashTypes, query as queryBC } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
 
 export const MODULE_KEY = 'projects'
-const rxProjects = new Subject()
-// read or write to cache storage
-const cacheRW = (key, value) => storage.cache(MODULE_KEY, key, value)
-const cacheKeyProjects = address => `projects-${address}`
 const queryPrefix = 'api.query.projects.'
 const txPrefix = 'api.tx.projects.'
 // transaction queue item type
@@ -51,172 +33,6 @@ export const statusTexts = {
 translated(statusTexts)
 // status codes that indicate project is open
 export const openStatuses = [statusCodes.open, statusCodes.reopen]
-setTimeout(() => rxSelected.subscribe(() => getProjects(true)))
-
-// retrieve project details by record IDs
-//
-// Params:
-// @recordIds       array: array of project IDs
-// @ownAddress      string: address of the users own identity to determine if user owns individual records.
-// @timeout         integer: (optional) duration in milliseconds to timeout the request
-//
-// Returns          map: list of projects
-export const fetchProjects = async (recordIds = [], ownAddress, isOwner, timeout = 10000) => {
-    recordIds = await new PromisE(recordIds)
-    recordIds = arrUnique(
-        recordIds.map(id =>
-            isStr(id) ? id : bytesToHex(id)
-        )
-    ).filter(Boolean)
-    if (recordIds.length === 0) return new Map()
-    const { firstSeen, totalBlocks } = tkQuery.project
-    const promise = Promise.all([
-        firstSeen(recordIds, null, true),
-        totalBlocks(recordIds, null, true),
-        query.status(recordIds, null, true),
-        client.projectsByHashes(recordIds),
-    ])
-    const result = await PromisE.timeout(promise, timeout)
-    const [
-        arFirstSeen,
-        arTotalBlocks,
-        arStatusCode,
-        clientResult,
-    ] = result
-    const [projects = new Map(), unknownIds = []] = clientResult || []
-
-    // Records that are somehow not found in the off-chain database
-    unknownIds.forEach(recordId => projects.set(recordId, {}))
-    isOwner = isOwner && !!ownAddress
-
-    // process projects to include extra information
-    const projectsArr = Array.from(projects).map(([recordId, project]) => {
-        const index = recordIds.indexOf(recordId)
-        project.status = arStatusCode[index]
-        // exclude deleted project
-        if (project.status === null) return
-
-        const { description, name, ownerAddress } = project
-        const { name: ownerName } = identities.get(ownerAddress) || partners.get(ownerAddress) || {}
-        return [recordId, {
-            ...project,
-            ownerName: ownerName,
-            firstSeen: arFirstSeen[index],
-            totalBlocks: arTotalBlocks[index],
-            ownerAddress: isOwner
-                ? ownAddress
-                : ownerAddress,
-            isOwner: isOwner
-                || ownAddress === ownerAddress
-                || getSelected().address === ownerAddress,
-            name: name || '',
-            description: description || '',
-        }]
-    })
-    const projectsMap = new Map(projectsArr.filter(Boolean))
-    return projectsMap
-}
-
-// @forceUpdate updates only specified @recordIds in the projects list.
-//
-// Params:
-// @recordids   array: array of project IDs
-// export const forceUpdate = async (recordIds, ownerAddress) => {
-//     const updateProjects = await fetchProjects(recordIds, ownerAddress, true)
-//     const projects = await getProjects()
-//     Array.from(updateProjects).forEach(
-//         ([recordId, project]) => projects.set(recordId, project)
-//     )
-//     // save to local storage
-//     saveProjects(projects, ownerAddress)
-// }
-
-// // getProject retrieves a single project by hash
-// export const getProject = async (recordId) => (await getProjects()).get(recordId)
-
-// getProjects retrieves projects along with relevant details owned by selected identity.
-// Retrieved data is cached in localStorage and only updated when list of projects changes in the blockchain
-// or manually triggered by invoking `getProjects(true)`.
-//
-// Params:
-// @forceUpdate     Boolean: (optional) whether to attempt to update cached data immediately instead of re-using cache.
-//                      Default: false
-// @callback        function: (optional) indicates whether to subscribe to changes on the list of projects.
-//                      If  a valid functin supplied, it will be invoked with the value whenever projects list changes.
-// 
-// Returns          Map: list of projects
-export const getProjects = async (forceUpdate = false, callback, timeout = 10000) => {
-    if (isFn(callback)) {
-        const subscribed = rxProjects.subscribe(callback)
-        // makes sure query.worker.listWorkerProjects is subscribed
-        getProjects(forceUpdate).then(callback)
-        return () => subscribed.unsubscribe()
-    }
-
-    let result
-    const config = getProjects
-    const {
-        address: addressPrev,
-        unsubscribe,
-        updatePromise,
-    } = config
-    const { address } = getSelected() || {}
-    if (!address) return
-    const cacheKey = cacheKeyProjects(address)
-
-    if (!navigator.onLine) return new Map(cacheRW(cacheKey) || [])
-    if (address !== addressPrev || !updatePromise || updatePromise.rejected) {
-        // selected identity changed
-        config.address = address
-        isFn(unsubscribe) && unsubscribe()
-        config.updatePromise = new PromisE((resolve, reject) => (async () => {
-            try {
-                await getConnection()
-            } catch (err) {
-                // reset update promise
-                config.updatePromise = null
-                // use cache if not connected
-                return resolve(new Map(cacheRW(cacheKey) || []))
-            }
-            config.unsubscribe = await query.listByOwner(address, async (recordIds) => {
-                try {
-                    const projects = await fetchProjects(recordIds, address)
-                    saveProjects(projects, address)
-                    resolve(projects)
-                } catch (err) {
-                    reject(err)
-                }
-            })
-        })())
-    } else if (forceUpdate) {
-        // once-off update
-        config.updatePromise = fetchProjects(query.listByOwner(address), address, true)
-        // update rxProjects
-        config.updatePromise.then(projects => saveProjects(projects, address))
-    }
-
-    const promise = PromisE.timeout(config.updatePromise, timeout)
-    try {
-        result = await promise
-    } catch (err) {
-        // if timed out, return cached. Otherwise, throw error
-        if (!promise.timeout.rejected) throw err
-    }
-    return result || new Map(cacheRW(cacheKey) || [])
-}
-
-// save projects to local storage and trigger change on `rxProjects`
-//
-// Params:
-// @projects        Map/2D Array
-// @ownerAddress    string: identity that owns the projects
-const saveProjects = (projects, ownerAddress) => {
-    if (!projects || !ownerAddress) return
-    const cacheKey = cacheKeyProjects(ownerAddress)
-    cacheRW(cacheKey, projects)
-    // update rxProjects
-    rxProjects.next(projects)
-}
 
 export const query = {
     // getOwner retrives the owner address of a project
@@ -227,7 +43,7 @@ export const query = {
     // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
     //
     // Returns Promise/function
-    getOwner: (recordId, callback, multi = false) => queryBlockchain(
+    getOwner: (recordId, callback, multi = false) => queryBC(
         queryPrefix + 'projectHashOwner',
         [recordId, callback].filter(Boolean),
         multi,
@@ -240,7 +56,7 @@ export const query = {
     // @multi       function: (optional) indicates multiple storage states are being queried in a single request
     //
     // Returns      promise
-    listByOwner: (address, callback, multi = false) => queryBlockchain(
+    listByOwner: (address, callback, multi = false) => queryBC(
         queryPrefix + 'ownerProjectsList',
         [address, callback].filter(Boolean),
         multi,
@@ -252,7 +68,7 @@ export const query = {
     // @multi       function: (optional) indicates multiple storage states are being queried in a single request
     //
     // Returns      promise
-    status: (recordId, callback, multi = false) => queryBlockchain(
+    status: (recordId, callback, multi = false) => queryBC(
         queryPrefix + 'projectHashStatus',
         [recordId, callback].filter(Boolean),
         multi,
@@ -348,8 +164,6 @@ export const queueables = {
     }),
 }
 export default {
-    fetchProjects,
-    getProjects,
     openStatuses,
     statusCodes,
     queueables,

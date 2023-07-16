@@ -75,7 +75,8 @@ export const ModalsConainer = React.memo(() => {
 const add = (id, element, focusRef, onClose) => {
     id ??= newId()
     // a modal is already open with the id trigger the onClose before being replace
-    if (modals.get(id)) onCloseHandlers.get(id)?.(id)
+    if (modals.get(id)) closeModal(id)
+
     modals.set(id, element)
     isFn(onClose) && onCloseHandlers.set(id, onClose)
     // If already in fullscreen, exit. Otherwise, modal will not be visible.
@@ -96,7 +97,9 @@ const add = (id, element, focusRef, onClose) => {
  * @param   {Number}        delayMs (optional)
  */
 export const closeModal = (id, delayMs = 0) => {
-    if (delayMs > 0) return setTimeout(() => closeModal(id), delayMs)
+    if (delayMs > 0) return delayMs > 0
+        ? setTimeout(() => closeModal(id), delayMs)
+        : closeModal(id)
 
     if (isArr(id)) return id.forEach(idx => closeModal(idx))
 
@@ -338,6 +341,7 @@ export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     const form = (
         <FormComponent {...{
             ...props,
+            key: generateHash(),
             modal: true,
             modalId,
             open: true,

@@ -24,7 +24,11 @@ export const rxForceUpdate = _rxForceUpdate
  *  
  * @returns {Array} [BehaviorSubject, Function]
  */
-export const subscribe = (identity, includeOwned = true, save) => {
+export const subscribe = (
+    identity,
+    includeOwned = true,
+    save
+) => {
     // subscribe and fetch activities that user is a team member of (has been invited to and aceepted)
     const [rxTkActivities, unsubTk] = _subscribe(
         identity,
@@ -48,10 +52,10 @@ export const subscribe = (identity, includeOwned = true, save) => {
             tkActivities = new Map()
         ]) => {
             const merged = mapJoin(ownActivities, tkActivities)
-            merged.loaded = ownActivities.loaded && tkActivities.loaded
+            merged.loaded = !!ownActivities.loaded && !!tkActivities.loaded
             return merged
         },
-        100,
+        300,
     )
 
     const unsubscribe = () => {
@@ -97,7 +101,7 @@ export default function useTkActivities({
             unsubscribe,
             subscription
         ]
-    }, [identity])
+    }, [identity, includeOwned])
     // trigger unsubscribe onUnmount
     useUnsubscribe([unsubscribe, subscription])
     if (subjectOnly) return rxActivities

@@ -96,7 +96,9 @@ const DataTableVertical = React.memo(props => {
             perPage: columns.length,
             ...props,
             columns: vColumns,
-            data: vData,
+            data: !items?.size && !items.length
+                ? [] // if not data provided empty message will be displayed
+                : vData,
             headers: false,
             searchable: false,
             sortBy: false,

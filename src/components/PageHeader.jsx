@@ -1,4 +1,8 @@
-import React, { useState, useEffect, isValidElement } from 'react'
+import React, {
+	useState,
+	useEffect,
+	isValidElement
+} from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import {
@@ -8,7 +12,6 @@ import {
 	Menu,
 } from 'semantic-ui-react'
 import SettingsForm, { inputNames as settingsInputNames } from '../forms/Settings'
-// modules
 import {
 	rxUnreadCount as rxUnreadMsgCount,
 	rxVisible as rxChatVisible,
@@ -21,26 +24,27 @@ import {
 } from '../modules/identity/identity'
 import IdentityForm from '../modules/identity/IdentityForm'
 import IdentityShareForm from '../modules/identity/IdentityShareForm'
-import { getSelected as getSelectedLang, translated } from '../utils/languageHelper'
 import {
 	rxNewNotification,
 	rxVisible as rxNotifVisible,
 	rxUnreadCount as rxUnreadNotifCount,
 } from '../modules/notification/notification'
-import { rxTimerInProgress } from '../modules/timekeeping/timekeeping'
 import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
-// services
+import timer from '../modules/timekeeping/Timer'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
 import { setToast } from '../services/toast'
-// utils
 import {
 	getUser,
 	rxFaucetEnabled,
 	rxIsInMaintenanceMode,
 	rxIsLoggedIn,
 } from '../utils/chatClient'
+import {
+	getSelected as getSelectedLang,
+	translated
+} from '../utils/languageHelper'
 import {
 	RxSubjectView,
 	unsubscribe,
@@ -53,24 +57,23 @@ import {
 	textEllipsis,
 } from '../utils/utils'
 import {
-	MOBILE,
 	rxInverted,
-	rxLayout,
 	setInvertedBrowser,
 	useInverted,
 } from '../utils/window'
+import { DURATION_ZERO } from '../modules/timekeeping/timekeeping'
 
 const textsCap = {
 	addressCopied: 'your identity copied to clipboard',
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
 	darkMode: 'dark mode',
-
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request funds',
 	shareIdentity: 'share my identity',
 	updateIdentity: 'update identity',
+	unsubmittedTime: 'click to review and submit your time'
 }
 const texts = {
 	on: 'on',
@@ -134,7 +137,6 @@ const PageHeaderView = React.memo(props => {
 	const inverted = useInverted()
 	const [invBrowser, setInvBrowser] = useState(() => setInvertedBrowser())
 	const {
-		userId,
 		isLoggedIn,
 		isMobile,
 		isRegistered,
@@ -314,7 +316,7 @@ const PageHeaderView = React.memo(props => {
 })
 
 export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
-	const [timerInProgress] = useRxSubject(rxTimerInProgress)
+	const [timerInprogress] = useRxSubject(timer.rxInprogress)
 	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount)
 	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount)
 	const [notifBlink, setNotifBlink] = useState(false)
@@ -362,14 +364,37 @@ export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
 			)}
 
 			<Menu.Item
+				content={
+					<div style={{
+						bottom: 1,
+						color: 'grey',
+						left: 0,
+						position: 'absolute',
+						textAlign: 'center',
+						width: '100%',
+					}}>
+						<RxSubjectView {...{
+							subject: [timer.rxInterval, timer.rxValues],
+							valueModifier: ([_, { inprogress }]) => {
+								const duration = timer.getDuration()
+								const ignore = !inprogress && duration === DURATION_ZERO
+								return (
+									<small title={textsCap.unsubmittedTime}>
+										{!ignore && duration}
+									</small>
+								)
+							},
+						}} />
+					</div>
+				}
 				icon={{
-					color: timerInProgress && 'yellow' || undefined,
+					color: timerInprogress && 'yellow' || undefined,
 					className: 'no-margin',
-					loading: timerInProgress,
+					loading: timerInprogress,
 					name: 'clock outline',
 					size: 'large',
 				}}
-				onClick={() => showForm(TimekeepingForm, {})}
+				onClick={() => showForm(TimekeepingForm)}
 			/>
 
 			<Menu.Item {...{

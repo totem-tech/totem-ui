@@ -1,21 +1,21 @@
-import React, { useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useState } from 'react'
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import ContactForm, { inputNames } from './ContactForm'
 
-let textsCap = {
-		action: 'action',
-		add: 'add',
-		email: 'email',
-		id: 'ID',
-		name: 'name',
-		phone: 'phone',
-		update: 'update',
+const textsCap = {
+	action: 'action',
+	add: 'add',
+	email: 'email',
+	id: 'ID',
+	name: 'name',
+	phone: 'phone',
+	update: 'update',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export const ContactList = props => {
 	const [tableProps] = useState(() => ({
@@ -63,7 +63,6 @@ export const ContactList = props => {
 				textAlign: 'center',
 				title: textsCap.phone,
 			},
-
 			{
 				collapsing: true,
 				content: entry => [{
@@ -86,14 +85,12 @@ export const ContactList = props => {
 		<DataTable {...{
 			...props,
 			...tableProps,
-			topLeftMenu: [
-				{
-					// add user contact details
-					content: textsCap.add,
-					icon: 'plus',
-					onClick: () => showForm(ContactForm),
-				},
-			],
+			topLeftMenu: [{
+				// add user contact details
+				content: textsCap.add,
+				icon: 'plus',
+				onClick: () => showForm(ContactForm),
+			}],
 		}} />
 	)
 }

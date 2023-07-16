@@ -132,10 +132,15 @@
 	}
 } */
 
-@media only screen and /* iphone XR */ (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2),
-	/* iphone XS */ (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3),
-	/* iphone XS Max */ (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3),
-	(max-width: 767px) {
+@media only screen and
+
+/* iphone XR */
+(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2),
+/* iphone XS */
+(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3),
+/* iphone XS Max */
+(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3),
+(max-width: 767px) {
 	.ui.container {
 		width: auto !important;
 		margin-left: 1em !important;
@@ -156,11 +161,12 @@
 }
 
 #app,
-#app > div {
+#app>div {
 	height: 100%;
 	width: 100%;
 	overflow: hidden;
 }
+
 #main-content {
 	border-radius: 0;
 	height: 100%;
@@ -168,29 +174,35 @@
 	padding: 15px 15px 0;
 	overflow: hidden auto;
 	scroll-behavior: smooth;
-    transition: all 0.3s ease;
+	transition: all 0.3s ease;
 	--webkit-overflow: hidden auto;
 }
+
 body.mobile #main-content {
 	padding: 0;
 	margin: 0 !important;
 	overflow: auto !important;
 }
+
 body .pushable {
 	margin: 0px;
 	height: calc(100% - 59px);
 	overflow: hidden;
 	-webkit-overflow: hidden;
 }
+
 body.mobile:not(.unregistered) .pushable {
 	height: calc(100% - 108px);
 }
+
 .mobile #main-content::-webkit-scrollbar {
 	width: 3px;
 }
+
 .empty-message:not(:only-child) {
 	display: none !important;
 }
+
 /* Fixes the dimmer height being limited due to the use of scrollbar */
 body.mobile.sidebar-visible #main-content:after {
 	position: fixed;
@@ -200,35 +212,42 @@ body.mobile.sidebar-visible #main-content:after {
 	right: 0;
 	height: 100%;
 }
+
 .ui.visible.sidebar.left {
 	transition: all 0.3s ease;
 }
-.ui.left.visible.sidebar > a {
+
+.ui.left.visible.sidebar>a {
 	white-space: nowrap;
 	overflow: hidden;
 }
+
 /* hide footer bar when mobile sidebar is open */
-.mobile.sidebar-visible > .ui.menu.bottom {
+.mobile.sidebar-visible>.ui.menu.bottom {
 	display: none;
 }
-.mobile.sidebar-visible > .notification-list {
+
+.mobile.sidebar-visible>.notification-list {
 	display: none;
 }
+
 /* Main content width and positioning when sidebar is collapsed (icon-only mode) */
-body:not(.mobile) .ui.visible.left.sidebar.very.thin ~ .pusher#main-content {
+body:not(.mobile) .ui.visible.left.sidebar.very.thin~.pusher#main-content {
 	-webkit-transform: translate3d(60px, 0, 0);
 	transform: translate3d(60px, 0, 0);
 	max-width: calc(100% - 60px) !important;
 	margin-left: 0 !important;
 	overflow: auto !important;
 }
-body:not(.mobile) .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
+
+body:not(.mobile) .ui.visible.left.sidebar:not(.thin)~.pusher#main-content {
 	-webkit-transform: translate3d(300px, 0, 0);
 	transform: translate3d(235px, 0, 0);
 	max-width: calc(100% - 235px) !important;
 	margin-left: 0 !important;
 	overflow: auto !important;
 }
+
 body:not(.mobile) .ui.sidebar.left.wide {
 	width: 235px !important;
 }
@@ -238,70 +257,88 @@ body:not(.mobile) .ui.sidebar.left.wide {
 	width: 62% !important;
 	height: 100%;
 }
-.mobile .ui.visible.left.sidebar:not(.thin) ~ .pusher#main-content {
+
+.mobile .ui.visible.left.sidebar:not(.thin)~.pusher#main-content {
 	transform: none !important;
 	max-width: 100%;
 }
 
 .no-margin,
-.ui.menu .ui.dropdown .menu > .item .icon:not(.dropdown).no-margin {
+.ui.menu .ui.dropdown .menu>.item .icon:not(.dropdown).no-margin {
 	margin: 0 !important;
 }
+
 body .no-padding,
 body .ui.modal .no-padding {
 	padding: 0 !important;
 }
+
 .clickable {
 	cursor: pointer;
 }
+
 .blink {
 	animation: blinker 1s linear infinite;
 }
+
 @keyframes blinker {
 	50% {
 		opacity: 0;
 	}
 }
+
 .shake:hover,
 .shake-trigger:hover .shake {
 	animation: shake 1s;
 	animation-iteration-count: 1;
 }
+
 .shake.forever {
 	animation: shake 1s;
 	animation-iteration-count: infinite;
 }
+
 @keyframes shake {
 	0% {
 		transform: translate(1px, 1px) rotate(0deg);
 	}
+
 	10% {
 		transform: translate(-1px, -2px) rotate(-30deg);
 	}
+
 	20% {
 		transform: translate(-3px, 0px) rotate(30deg);
 	}
+
 	30% {
 		transform: translate(3px, 2px) rotate(-30deg);
 	}
+
 	40% {
 		transform: translate(1px, -1px) rotate(30deg);
 	}
+
 	50% {
 		transform: translate(-1px, 2px) rotate(-30deg);
 	}
+
 	60% {
 		transform: translate(-3px, 1px) rotate(30deg);
 	}
+
 	70% {
 		transform: translate(3px, 1px) rotate(-30deg);
 	}
+
 	80% {
 		transform: translate(-1px, -1px) rotate(30deg);
 	}
+
 	90% {
 		transform: translate(1px, 2px) rotate(-30deg);
 	}
+
 	100% {
 		transform: translate(1px, -2px) rotate(0deg);
 	}
@@ -315,21 +352,27 @@ body .ui.modal .no-padding {
 	grid-gap: 15px;
 	grid-auto-rows: auto;
 }
+
 .simple-grid.col-2 {
 	grid-template-columns: repeat(2, 1fr);
 }
+
 .simple-grid.col-3 {
 	grid-template-columns: repeat(3, 1fr);
 }
+
 .simple-grid.col-4 {
 	grid-template-columns: repeat(4, 1fr);
 }
+
 .simple-grid.col-5 {
 	grid-template-columns: repeat(5, 1fr);
 }
+
 .simple-grid.col-6 {
 	grid-template-columns: repeat(6, 1fr);
 }
+
 /* Prevents text selection. Useful for clickable icons */
 .text-deselect,
 i.icon {
@@ -345,7 +388,7 @@ i.icon:not(.no-margin) {
 	margin-left: 0.25rem !important;
 }
 
-.ui.header > .icon {
+.ui.header>.icon {
 	font-size: 1.2em !important;
 }
 
@@ -365,11 +408,13 @@ div.ui.padded.segment {
 .ui.sidebar.left a span {
 	font-weight: normal;
 }
+
 /* overrides `font-weight: bolder` which doesn't seem to work for the fonts used */
 body b,
 body strong {
 	font-weight: bold;
 }
+
 /*
  * Form Builder
  */
@@ -378,53 +423,63 @@ body strong {
   margin-bottom: 37px;
 } */
 /* Capitalize input labels */
-form.ui.form div.field > label {
+form.ui.form div.field>label {
 	text-transform: capitalize;
 }
+
 /* Group inputs: remove extra padding */
 .ui.form .fields.form-group {
 	margin: 0 -.5em 1em;
 }
-.ui.form .fields.form-group > .field > .field {
+
+.ui.form .fields.form-group>.field>.field {
 	/* fix for secondary form input group */
 	margin-top: 0;
 	padding: 0;
 }
-body.mobile .fields.form-group > .field:not(:last-child) {
+
+body.mobile .fields.form-group>.field:not(:last-child) {
 	margin-bottom: 10px;
 }
+
 /* hide if no children */
 .form-group:empty {
 	display: none;
 }
+
 /* Input group with accordion */
-.ui.form > .accordion.styled {
+.ui.form>.accordion.styled {
 	box-shadow: 1px 3px 3px 0 rgba(34, 36, 38, 0.15),
 		1px 3px 15px 2px rgba(34, 36, 38, 0.15);
 }
+
 /* secondary form inside accordion */
-.ui.form > .accordion .ui.form > .field,
-.ui.form .accordion .ui.form > .fields > .field {
+.ui.form>.accordion .ui.form>.field,
+.ui.form .accordion .ui.form>.fields>.field {
 	margin-bottom: 10px;
 }
-.ui.form > .accordion .ui.form > .fields {
+
+.ui.form>.accordion .ui.form>.fields {
 	margin: 0 0 10px;
 }
+
 .ui.form .fields.equal.width .field:not(.width) {
 	width: initial;
 }
+
 /* Fix for .message > .content  weird padding when inside an accordion */
-.accordion .message > .content,
-.accordion .message > .content > .content {
+.accordion .message>.content,
+.accordion .message>.content>.content {
 	padding: initial !important;
 }
+
 /* checkbox/radios: bold text when checked */
-input:checked ~ label {
+input:checked~label {
 	font-weight: bold;
 }
 
 /* read only inputs */
-.ui.input > input[readonly],
+.ui.input>input[readonly],
 input[readonly] {
 	background: #cccccc !important;
 	cursor: not-allowed;
@@ -435,12 +490,14 @@ input[readonly] {
 	z-index: 1;
 }
 
-.ui.modal > .header {
+.ui.modal>.header {
 	text-transform: capitalize;
 }
-.ui.modal > .header > .sub {
+
+.ui.modal>.header>.sub {
 	text-transform: initial;
 }
+
 body.mobile .ui.modal {
 	/* bottom: 0; */
 	/* left: 0; */
@@ -448,24 +505,28 @@ body.mobile .ui.modal {
 	margin: 0 !important;
 	max-height: 100%;
 }
+
 body.mobile .ui.modals::-webkit-scrollbar {
 	width: 3px;
 }
+
 /* hide actions container if empty */
-.ui.modal > .actions:empty {
+.ui.modal>.actions:empty {
 	display: none;
 }
+
 /* border radius */
 .ui.moda,
-.ui.modal > .header, 
-.ui.modal > .content,
- .ui.modal > .actions {
-    border-radius: 3px !important;
+.ui.modal>.header,
+.ui.modal>.content,
+.ui.modal>.actions {
+	border-radius: 3px !important;
 }
+
 /* collapsing modal: no spacing on content */
-.ui.modal.collapsing > .content {
+.ui.modal.collapsing>.content {
 	margin: -15px 0px !important;
-    padding: 0px !important;
+	padding: 0px !important;
 }
 
 /* Page header:
@@ -476,21 +537,25 @@ body.mobile .ui.modals::-webkit-scrollbar {
 	overflow: auto;
 	width: 400px;
 }
-.identity-dropdown .menu > div > div:first-child {
+
+.identity-dropdown .menu>div>div:first-child {
 	float: left;
 	max-width: 60%;
 	overflow: hidden;
 }
+
 .mobile .identity-dropdown:before {
 	background: transparent !important;
 }
+
 .mobile .identity-dropdown .menu {
 	overflow-x: auto;
 	position: fixed !important;
 	top: 61px !important;
 	width: 100%;
 }
-.mobile .identity-dropdown .menu > div > div:first-child {
+
+.mobile .identity-dropdown .menu>div>div:first-child {
 	max-width: 55% !important;
 	overflow-x: hidden;
 }
@@ -503,6 +568,7 @@ body.inverted #main-content.inverted {
 	background: #2e2d2d;
 	color: white;
 }
+
 /* anything inside the #main-content with .inverted class */
 body.inverted #main-content .inverted,
 body.inverted .accordion {
@@ -510,44 +576,53 @@ body.inverted .accordion {
 	background: #353535;
 	color: white;
 }
+
 body.inverted #main-content .icon.inverted {
 	background: inherit;
 }
+
 /* Accordion when in dark mode */
 body.inverted .ui.accordion.styled {
 	border: 1px solid grey !important;
 	border-radius: 3px;
 }
-body.inverted .ui.accordion.styled > .title:not(:first-child) {
+
+body.inverted .ui.accordion.styled>.title:not(:first-child) {
 	border-top: 1px solid grey;
 }
-body.inverted .ui.accordion.styled > .title.active > .icon,
-body.inverted .ui.accordion.styled > .title:hover > .icon {
+
+body.inverted .ui.accordion.styled>.title.active>.icon,
+body.inverted .ui.accordion.styled>.title:hover>.icon {
 	color: white !important;
 }
+
 /* button/group */
 .ui.button.inverted,
 body.inverted .ui.dropdown.button {
-    background: #545454 !important;
-    box-shadow: none !important;
+	background: #545454 !important;
+	box-shadow: none !important;
 	color: white !important;
 }
-.ui.inverted.buttons > .button.inverted {
+
+.ui.inverted.buttons>.button.inverted {
 	border: 1px solid grey;
-    box-shadow: none !important;
+	box-shadow: none !important;
 }
-.ui.inverted.buttons > .button.inverted:active,
-.ui.inverted.buttons > .button.inverted:focus,
-.ui.inverted.buttons > .button.inverted:hover {
-    /* border-bottom: 1px solid white !important;
+
+.ui.inverted.buttons>.button.inverted:active,
+.ui.inverted.buttons>.button.inverted:focus,
+.ui.inverted.buttons>.button.inverted:hover {
+	/* border-bottom: 1px solid white !important;
     border-top: 1px solid white !important; */
 	background: #393939 !important
 }
+
 /* Chat */
 body.inverted .chat-container {
 	background: #2a2a2a;
 	color: white;
 }
+
 /* Left Sidebar */
 /* body.inverted .pushable .ui.sidebar.left {
 	background: red
@@ -562,97 +637,115 @@ body.inverted .ui.basic.inverted.segment.data-table {
 	background: #464646;
 	/* border: 1px solid #505050; */
 }
+
 /* stacked table on mobile: empty cell */
-body.mobile .ui.table:not(.unstackable) > tbody > tr > td:empty {
-    display: none !important;
+body.mobile .ui.table:not(.unstackable)>tbody>tr>td:empty {
+	display: none !important;
 }
+
 /* DataTableVertical */
 body.inverted .ui.table.vertical tbody tr td:first-child {
-    background: #696969 !important;
-    color: white !important;
+	background: #696969 !important;
+	color: white !important;
 }
+
 body.inverted .ui.table.vertical tbody tr:not(:last-child) td:first-child {
-    border-bottom: 1px solid #80808045 !important;    
+	border-bottom: 1px solid #80808045 !important;
 }
+
 /* 
  * Form and Inputs
  */
 body.inverted input,
 body.inverted textarea,
 body.inverted .dropdown.selection {
-    /* background: #333 !important; */
-    background: #555555 !important;
-    border: 1px solid #5d5d5d !important;
-    /* color: #ccc !important; */
-	color: white  !important;
+	/* background: #333 !important; */
+	background: #555555 !important;
+	border: 1px solid #5d5d5d !important;
+	/* color: #ccc !important; */
+	color: white !important;
 }
+
 body.inverted .ui.input *.disabled,
-body.inverted .ui.input *[readonly]{
-    background: grey !important;
+body.inverted .ui.input *[readonly] {
+	background: grey !important;
 	border: 1px solid grey !important;
 }
+
 /* dropdown menu */
 body.inverted .ui.dropdown .menu,
-body.inverted .ui.dropdown .menu > .item,
-body.inverted .ui.menu .ui.dropdown .menu > .item {
-    background: #333 !important;
-    border: none !important;
-    color: white !important;
+body.inverted .ui.dropdown .menu>.item,
+body.inverted .ui.menu .ui.dropdown .menu>.item {
+	background: #333 !important;
+	border: none !important;
+	color: white !important;
 }
-body.inverted .ui.dropdown > .menu.visible > *:not(:last-child) {
-    border-bottom: 1px solid #393939 !important;
+
+body.inverted .ui.dropdown>.menu.visible>*:not(:last-child) {
+	border-bottom: 1px solid #393939 !important;
 }
-body.inverted .ui.dropdown > .menu.visible {
-    border:  1px solid #565555 !important;
+
+body.inverted .ui.dropdown>.menu.visible {
+	border: 1px solid #565555 !important;
 }
-body.inverted .ui.dropdown .menu > .item > .description {
-    color: #ccc !important;
+
+body.inverted .ui.dropdown .menu>.item>.description {
+	color: #ccc !important;
 }
-body.inverted .ui.dropdown .menu > .item.selected,
-body.inverted .ui.dropdown .menu > .item:hover,
-body.inverted .ui.menu .ui.dropdown .menu > .item.selected,
-body.inverted .ui.menu .ui.dropdown .menu > .item:hover {
-    color: white !important;
-    background: grey !important;
+
+body.inverted .ui.dropdown .menu>.item.selected,
+body.inverted .ui.dropdown .menu>.item:hover,
+body.inverted .ui.menu .ui.dropdown .menu>.item.selected,
+body.inverted .ui.menu .ui.dropdown .menu>.item:hover {
+	color: white !important;
+	background: grey !important;
 }
+
 /* solves selected in-dropdown text being black colored when in dark mode */
 body.inverted .ui.selection.visible.dropdown>.text:not(.default) {
 	color: white !important;
 }
+
 /* Dropdown empty message */
-body.inverted .dropdown > .menu > .message {
-    color: white !important;
+body.inverted .dropdown>.menu>.message {
+	color: white !important;
 }
+
 /* input acton/label */
-body.inverted .ui.input.label > .label,
-body.inverted .ui.input.action > .button {
+body.inverted .ui.input.label>.label,
+body.inverted .ui.input.action>.button {
 	background: #ccc !important;
-    border: 1px solid #ccc !important;
-    color: grey;
+	border: 1px solid #ccc !important;
+	color: grey;
 }
-body.inverted .ui.input > .icon {
-    color: #ccc;
+
+body.inverted .ui.input>.icon {
+	color: #ccc;
 }
+
 /* Label */
 .ui.label.inverted {
-    background: grey !important;
-    color: white !important;
+	background: grey !important;
+	color: white !important;
 }
+
 /* Modals */
 body.inverted .ui.modal,
-body.inverted .ui.modal > .content,
+body.inverted .ui.modal>.content,
 body.inverted .ui.modal .accordion,
-body.inverted .ui.modal .accordion > * {
+body.inverted .ui.modal .accordion>* {
 	background: #464646;
 	color: white;
 }
+
 /* body.inverted .ui.modal > .modal-close, */
-body.inverted .ui.modal > .header,
-body.inverted .ui.modal > .actions {
+body.inverted .ui.modal>.header,
+body.inverted .ui.modal>.actions {
 	background: #2e2d2d;
 	border-radius: 0;
 	color: white;
 }
+
 body.inverted .ui.form.inverted.loading::before {
 	background: rgba(90, 90, 90, 0.8);
 }
@@ -661,20 +754,28 @@ body.inverted .ui.form.inverted.loading::before {
 body.inverted .ui.inverted.loading.form:before {
 	background: #464646eb;
 }
+
 /* Form loading spinner when inverted */
 body.inverted .ui.inverted.loading.form:after {
 	border-color: white rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1);
 }
+
 /* Form accordion when inverted */
-body.inverted .ui.form > .accordion.styled,
-body.inverted .ui.form > .accordion.styled {
+body.inverted .ui.form>.accordion.styled,
+body.inverted .ui.form>.accordion.styled {
 	box-shadow: 1px 3px 3px 0 rgba(34, 36, 38, 0.15),
 		1px 3px 15px 2px rgba(34, 36, 38, 0.5);
 }
 
+/* Fix for error input background color when in dark mode */
+body.inverted .error>input {
+	background: #e72e2714 !important;
+	border-color: #a06e6c !important;
+}
+
 /* checkbox/radio label when inverted */
-body.inverted .ui.checkbox input + label.checkbox-group-item,
-body.inverted .ui.checkbox input:focus + label.checkbox-group-item {
+body.inverted .ui.checkbox input+label.checkbox-group-item,
+body.inverted .ui.checkbox input:focus+label.checkbox-group-item {
 	color: white !important;
 }
 
@@ -688,27 +789,32 @@ body.inverted .ui.steps .step:not(.active):after {
 	color: white !important;
 	transition: none;
 }
+
 body.inverted .ui.steps .step,
 body.inverted .ui.steps .step.active,
 body.inverted .ui.steps .step.active:after {
 	background: #2a2a2a !important;
 	border: 1px solid #323030 !important;
 }
+
 body.inverted .ui.steps .step:hover,
 body.inverted .ui.steps .step:hover.active:after,
 body.inverted .ui.steps .step:focus,
 body.inverted .ui.steps .step:focus.active:after {
 	background: #222121 !important;
 }
+
 body.inverted .ui.steps .step.active:after {
 	border: none !important;
 }
+
 body.inverted .steps .step.active:before,
 body.inverted .steps .step.active .content .description,
 body.inverted .ordered.steps .step.active:before,
 body.inverted .ordered.steps .step.active .description {
 	color: white;
 }
+
 body.inverted .steps .step:not(.active) .description,
 body.inverted .steps .step:not(.active) .title {
 	color: grey;
@@ -718,10 +824,12 @@ body.inverted .steps .step:not(.active) .title {
 body.iframe {
 	background: transparent;
 }
+
 body.iframe label,
 .success-message * {
 	color: white !important;
 }
+
 body.iframe .message.success-message {
 	background: transparent;
 	box-shadow: none;

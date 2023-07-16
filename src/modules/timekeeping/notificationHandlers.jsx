@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button, ButtonGroupOr } from '../../components/buttons'
-import { closeModal, confirm } from '../../services/modal'
+import { closeModal, confirm, confirmAsPromise } from '../../services/modal'
 import {
     addToQueue,
     QUEUE_TYPES,
@@ -8,7 +8,9 @@ import {
 } from '../../services/queue'
 import { getUser } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { fetchProjects } from '../activity/activity'
+import ActivityDetails from '../activity/ActivityDetails'
+import ActivityName from '../activity/ActivityName'
+import { fetchById } from '../activity/useActivities'
 import { find as findIdentity } from '../identity/identity'
 import IdentityIcon from '../identity/IdentityIcon'
 import {
@@ -17,7 +19,6 @@ import {
     setItemViewHandler
 } from '../notification/notification'
 import { queueables } from './timekeeping'
-import ActivityDetails from '../activity/ActivityDetails'
 
 const textsCap = {
     accept: 'accept',
@@ -81,8 +82,7 @@ export const handleInvitation = (
             content: textsCap.loadingData,
             size: 'mini',
         })
-        const activity = (await fetchProjects([activityId]))
-            .get(activityId)
+        const activity = await fetchById(activityId)
         // close loading 
         closeModal(confirmId)
         if (!activity) return resolver(textsCap.activityNotFound)
@@ -110,10 +110,10 @@ export const handleInvitation = (
             ? textsCap.acceptedInvitation
             : textsCap.rejectedInvitation
         const title = `${textsCap.timekeeping} - ${actionStr}`
-        const shoudNotify = activityOwnerId
+        const shouldNotify = activityOwnerId
             && activityOwnerId !== currentUserId
         // notify project owner, if current user is not the owner
-        const next = shoudNotify && {
+        const next = shouldNotify && {
             address: workerAddress, // for automatic balance check
             type: QUEUE_TYPES.CHATCLIENT,
             func: 'notify',
@@ -126,7 +126,7 @@ export const handleInvitation = (
                 {
                     accepted,
                     projectHash: activityId,
-                    projectName: activityName,
+                    projectName: activityName,// unused
                     workerAddress,
                 },
                 err => resolver(err)
@@ -144,26 +144,23 @@ export const handleInvitation = (
                     notificationId,
                     then: success => {
                         remove(notificationId)
-                        !shoudNotify && resolver(!success)
+                        !shouldNotify && resolver(!success)
                     },
                     next,
                 },
             )
 
-        confirm(
-            {
-                confirmButton: {
-                    content: actionStr,
-                    positive: accepted,
-                    negative: !accepted,
-                },
-                // make sure to resolve when user cancels action
-                onCancel: () => resolver(),
-                onConfirm: () => addToQueue(queueProps),
-                size: 'mini',
+        await confirmAsPromise({
+            confirmButton: {
+                content: actionStr,
+                positive: accepted,
+                negative: !accepted,
             },
-            confirmId,
-        )
+            // make sure to resolve when user cancels action
+            onCancel: () => resolver(),
+            onConfirm: () => addToQueue(queueProps),
+            size: 'mini',
+        }, confirmId)
     } catch (err) {
         resolver(err)
     }
@@ -233,32 +230,32 @@ setTimeout(() => [
             const {
                 accepted,
                 projectHash: activityId,
-                projectName: activityName = '',
             } = data || {}
             const item = { icon: 'clock outline' }
             const msg = accepted
                 ? textsCap.tkInviteAcceptMsg
                 : textsCap.tkInviteRejectMsg
-            const viewActivityBtn = (
-                <Button {...{
-                    icon: 'eye',
-                    onClick: e => {
-                        e?.stopPropagation?.()
-                        return ActivityDetails.asModal({ activityId })
-                    },
-                    size: 'mini',
-                    title: textsCap.viewActivity,
-                }} />
+            const render = activity => (
+                <span>
+                    <Button {...{
+                        icon: 'eye',
+                        onClick: e => {
+                            e?.stopPropagation?.()
+                            return ActivityDetails.asModal({ activityId })
+                        },
+                        size: 'mini',
+                        title: textsCap.viewActivity,
+                    }} />
+                    {' ' + activity.name}
+                </span>
             )
             item.content = (
                 <div>
                     {senderIdBtn}
                     {` ${msg}:`}
                     <div style={{ fontWeight: 'bold' }}>
-                        {viewActivityBtn}
-                        {' ' + activityName}
+                        <ActivityName {...{ activityId, render }} />
                     </div>
-
                 </div>
             )
             return item

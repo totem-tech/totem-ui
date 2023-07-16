@@ -1,46 +1,48 @@
-import React, { useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useState } from 'react'
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
+import { showForm, showInfo } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import { confirm, showForm } from '../../services/modal'
 import { useRxSubject } from '../../utils/reactjs'
 import { getAll, rxLocations } from './location'
 import LocationForm, { inputNames } from './LocationForm'
 
-const textsCap = translated(
-	{
-		actions: 'actions',
-		add: 'add',
-		addressLine1: 'address line 1',
-		addressLine2: 'address line 2',
-		city: 'city',
-		country: 'country',
-		delete: 'delete',
-		emptyMessage: 'no locations available',
-		myLocations: 'my locations',
-		name: 'name',
-		postcode: 'postcode or zip',
-		state: 'state or province',
-	},
-	true
-)[1]
+const textsCap = {
+	actions: 'actions',
+	add: 'add',
+	addressLine1: 'address line 1',
+	addressLine2: 'address line 2',
+	city: 'city',
+	country: 'country',
+	delete: 'delete',
+	emptyMessage: 'no locations available',
+	myLocations: 'my locations',
+	name: 'name',
+	postcode: 'postcode or zip',
+	state: 'state or province',
+}
+translated(textsCap, true)
 
-export default function LocationsList(props = {}) {
-	const [initialValue] = useState(getAll)
-	const [locations] = useRxSubject(
+export default function LocationsList({
+	includePartners,
+	...props
+}) {
+	const [data = []] = useRxSubject(
 		rxLocations,
-		map => {
-			const locations = Array.from(map).map(([id, location]) => ({
-				...location,
-				id,
-			}))
-			if (props.includePartners) return locations
-			return locations.filter(loc => !loc[inputNames.partnerIdentity])
-		},
-		initialValue
+		// due to cache being disabled first time may receive undefined.
+		(map = getAll()) => Array
+			.from(map)
+			.map(([id, location]) => {
+				const ownLocation = !location[inputNames.partnerIdentity]
+				return !includePartners && !ownLocation
+					? null
+					: { ...location, id, }
+			})
+			.filter(Boolean)
 	)
-	const [listProps] = useState({
+	const [tableProps] = useState({
+		...props,
 		stackable: true,
 		columns: [
 			{ key: 'name', title: textsCap.name },
@@ -56,26 +58,24 @@ export default function LocationsList(props = {}) {
 				textAlign: 'center',
 				title: textsCap.actions,
 				content: ({ id }) => (
-					<Button
-						{...{
-							icon: 'pencil',
-							onClick: () =>
-								showForm(LocationForm, { autoSave: true, id }),
-						}}
-					/>
+					<Button {...{
+						icon: 'pencil',
+						onClick: () => showForm(
+							LocationForm,
+							{ autoSave: true, id }
+						),
+					}} />
 				),
 			},
 		],
-		topLeftMenu: [
-			{
-				content: textsCap.add,
-				icon: 'plus',
-				onClick: () => showForm(LocationForm),
-			},
-		],
+		topLeftMenu: [{
+			content: textsCap.add,
+			icon: 'plus',
+			onClick: () => showForm(LocationForm),
+		}],
 	})
 
-	return <DataTable {...{ ...props, ...listProps, data: locations }} />
+	return <DataTable {...{ ...tableProps, data }} />
 }
 LocationsList.propTypes = {
 	// whether to include partner locations
@@ -85,12 +85,12 @@ LocationsList.defaultProps = {
 	emptyMessage: textsCap.emptyMessage,
 	includePartners: false,
 }
-
-export const showLocations = (size, tableProps = {}) =>
-	confirm({
-		cancelButton: null,
-		confirmButton: null,
-		content: <LocationsList {...tableProps} />,
-		header: textsCap.myLocations,
-		size,
-	})
+LocationsList.asModal = (
+	props = {},
+	modalId,
+	modalProps = {}
+) => showInfo({
+	...modalProps,
+	content: <LocationsList {...props} />,
+	header: textsCap.myLocations,
+}, modalId)

@@ -5,13 +5,13 @@ import {
     subjectAsPromise,
     unsubscribe,
     useRxSubject,
-    useUnmount,
     useUnsubscribe
 } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import { deferred, isArr } from '../../utils/utils'
-import { get, rxSelected } from '../identity/identity'
+import { rxSelected } from '../identity/identity'
 import {
+    MODULE_KEY,
     blocksToDuration,
     query,
     rxDurtionPreference,
@@ -30,21 +30,30 @@ export const subscribe = ({
     save = false,
 }) => {
     if (!activityId && !identity) return
+    // prevent saving cache if 
+    if (isArr(identity) || isArr(activityId)) save = false
 
     const itemKey = [
+        'records',
+        `${manage ? 0 : 1}${archive ? 0 : 1}`,
         identity,
         activityId,
-        `${manage ? 0 : 1}${archive ? 0 : 1}`
     ]
+        .flat()
         .filter(Boolean)
         .join('_')
+
+    const rwCache = value => storage.cache(
+        MODULE_KEY,
+        itemKey,
+        value
+    )
     subjects[itemKey] ??= new BehaviorSubject(
         new Map(
             // load cached items
-            // storage.cache(
-            //     moduleKey,
-            //     itemKey
-            // )
+            !save
+                ? undefined
+                : rwCache()
         )
     )
     subscriptions[itemKey] ??= {}
@@ -71,10 +80,19 @@ export const subscribe = ({
     if (subscription.count > 1) return result
 
     const data = {}
-    const handleRecords = async (records = data.records) => {
-        const { activities, recordIds } = data
+    const handleRecords = async (newRecords) => {
+        let {
+            activities,
+            recordIds,
+            records
+        } = data
+        records = newRecords || records
         // ignore if already unsubscribed or not all data has been retrieved yet
-        if (unsubscribed || !records || !activities || !recordIds) return false
+        const ignore = unsubscribed
+            || !records
+            || !activities
+            || !recordIds
+        if (ignore) return false
 
         data.records = records
         const currentBlock = await subjectAsPromise(rxBlockNumber, x => x > 0)[0]
@@ -121,6 +139,7 @@ export const subscribe = ({
             }).filter(Boolean)
         )
 
+        save && rwCache(result)
         result.loaded = true
         subject.next(result)
     }
@@ -142,7 +161,7 @@ export const subscribe = ({
     subscription.pref = rxDurtionPreference.subscribe(() => handleRecords())
 
     // subscribe and fetch recordIds based on preference
-    const handleActivities = (activities = new Map()) => {
+    const handleActivities = deferred((activities = new Map()) => {
         if (unsubscribed) return
 
         data.activities = activities
@@ -152,22 +171,26 @@ export const subscribe = ({
                 .from(activities)
                 .map(([id, { isOwner }]) => isOwner && id)
                 .filter(Boolean)
+        const alreadySubscribed = JSON.stringify(data.target) === JSON.stringify(target)
+        // prevent unsubscribing and resubscribing for the same target (activityIds/identities)
+        if (alreadySubscribed) return
 
+        data.target = target
         unsubscribe(subscription.recordIds)
         const qr = query.record
         const queryFn = archive
             ? manage
-                ? qr.listByProjectArchive
+                ? qr.listByActivityArchive
                 : qr.listArchive
             : manage
-                ? qr.listByProject
+                ? qr.listByActivity
                 : qr.list
-        window.query = {
-            qr,
-            queryFn,
-            target,
-            multi: isArr(target)
-        }
+        // window.query = {
+        //     qr,
+        //     queryFn,
+        //     target,
+        //     multi: isArr(target)
+        // }
         // Retrieve list(s) of records either by identity or activity.
         // Target can be either a single idenity or activity, or an array of identities or activities.
         subscription.recordIds = queryFn(
@@ -177,7 +200,7 @@ export const subscribe = ({
         )
 
         return result
-    }
+    }, 100)
 
     // subscribe and fetch relevant activities
     unsubscribe(subscription.tkActivities)

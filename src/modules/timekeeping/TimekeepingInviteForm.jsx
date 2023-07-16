@@ -223,7 +223,7 @@ const handleSubmit = (
             }
         })
         isFn(onSubmit) && onSubmit(success, values)
-        // trigger an update of list of timekeeping projects
+        // trigger an update of list of Activities
         rxForceUpdate.next(workerAddress)
     }
     // queue itme to accept invitation of own identity
@@ -281,21 +281,18 @@ const handleSubmit = (
         {
             title: textsCap.formHeader,
             description: `${textsCap.invitee}: ${name}`,
-            then: isSelfInvite
+            then: !isSelfInvite
                 ? updateSelfInviteMsg(true)
-                : (success, err) => {
-                    if (success) return
-                    rxState.next({
-                        submitInProgress: false,
-                        loading: false,
-                        message: {
-                            header: textsCap.txFailed,
-                            content: `${err}`,
-                            icon: true,
-                            status: 'error',
-                        }
-                    })
-                },
+                : (success, err) => success && rxState.next({
+                    submitInProgress: false,
+                    loading: false,
+                    message: {
+                        header: textsCap.txFailed,
+                        content: `${err}`,
+                        icon: true,
+                        status: 'error',
+                    }
+                }),
             next: isSelfInvite
                 ? null
                 : isWorker

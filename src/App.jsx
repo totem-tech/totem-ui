@@ -39,6 +39,7 @@ const logoSrc = TotemButtonLogo
 
 // translate default error messages
 setMessages(translated(messages, true)[1])
+window.timer = require('./modules/timekeeping/Timer').default
 
 export default function App() {
 	useEffect(() => {

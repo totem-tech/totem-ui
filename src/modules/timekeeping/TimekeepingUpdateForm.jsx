@@ -5,16 +5,12 @@ import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder
 import { translated } from '../../utils/languageHelper'
 import { useRxState } from '../../utils/reactjs'
 import {
-    BLOCK_DURATION_SECONDS,
-    BLOCK_DURATION_REGEX,
-    durationToSeconds,
-} from '../../utils/time'
-import { query, statuses } from './timekeeping'
-import { DURATION_ZERO, handleSubmitTime, handleValidateDuration } from './TimekeepingForm'
-
-const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration)
-    ? 0
-    : parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
+    DURATION_ZERO,
+    durationToBlockCount,
+    query,
+    statuses
+} from './timekeeping'
+import { handleSubmitTime, validateDuration } from './TimekeepingForm'
 
 const textsCap = {
     errRecordNotFound: 'record not found',
@@ -207,17 +203,17 @@ const handleSubmit = (props, rxState) => async (_, formValues) => {
         props,
         rxState,
         activityId,
+        recordId,
         activityName,
         newValues,
         submitStatus,
         reason_code,
-        true,
     )
 }
 
 // validate duration and also check if duration has change
 const _handleValidateDuration = props => (e, _, values) => {
-    let err = handleValidateDuration(e, _, values)
+    let err = validateDuration(e, _, values)
     if (err) return err
 
     // require a value change if record was rejected or setting back to draft

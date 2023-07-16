@@ -15,7 +15,7 @@ import { textEllipsis } from '../../utils/utils'
 import { MOBILE, rxLayout } from '../../utils/window'
 // modules
 import UserContactList from '../contact/UserContactList'
-import { showLocations } from '../location/LocationsList'
+import LocationsList from '../location/LocationsList'
 import Balance from './Balance'
 import { rxIdentities, USAGE_TYPES } from './identity'
 import IdentityDetailsForm from './IdentityDetailsForm'
@@ -225,7 +225,7 @@ const getTableProps = isMobile => {
 					{
 						content: <BtnText>{textsCap.locations}</BtnText>,
 						icon: getIcon('building'),
-						onClick: () => showLocations(),
+						onClick: () => LocationsList.asModal(),
 					},
 					{
 						content: <BtnText>{textsCap.contacts}</BtnText>,

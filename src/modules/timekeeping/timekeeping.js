@@ -1,27 +1,25 @@
 
-import { BehaviorSubject, Subject } from 'rxjs'
-import PromisE from '../../utils/PromisE'
+import { BehaviorSubject } from 'rxjs'
 import storage from '../../utils/storageHelper'
-import { isObj, mapJoin, isFn, isDefined } from '../../utils/utils'
-import { getConnection, query as queryBlockchain } from '../../services/blockchain'
-import { fetchProjects, getProjects as getUserProjects } from '../activity/activity'
-import { getSelected } from '../identity/identity'
-import { BLOCK_DURATION_SECONDS, secondsToDuration } from '../../utils/time'
+import { isArr, isDefined } from '../../utils/utils'
+import { query as queryBlockchain } from '../../services/blockchain'
+import {
+    BLOCK_DURATION_REGEX,
+    BLOCK_DURATION_SECONDS,
+    durationToSeconds,
+    secondsToDuration
+} from '../../utils/time'
 
 // to sumbit a new time record must submit with this hash | DO NOT CHANGE
 export const NEW_RECORD_HASH = '0x40518ed7e875ba87d6c7358c06b1cac9d339144f8367a0632af7273423dd124e'
 export const MODULE_KEY = 'timekeeping'
-const queryPrefix = 'api.query.timekeeping.'
-const txPrefix = 'api.tx.timekeeping.'
 // transaction queue item type
 const TX_STORAGE = 'tx_storage'
 // read/write to module settings storage
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
 // read or write to cache storage
 const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value)
-const cacheKeyProjects = address => `projects-${address}`
-export const rxTimerInProgress = new BehaviorSubject(timerFormValues().inprogress)
-const rxProjects = new Subject()
+// const cacheKeyProjects = address => `projects-${address}`
 export const durationPreferences = {
     blocks: 'blocks',
     hhmmss: 'hhmmss',
@@ -30,6 +28,10 @@ export const durationPreferences = {
     hhmm15: 'hhmm15',
     hhmm30: 'hhmm30',
 }
+export const DURATION_ZERO = '00:00:00'
+export const durationToBlockCount = duration => !BLOCK_DURATION_REGEX.test(duration)
+    ? 0
+    : parseInt(durationToSeconds(duration) / BLOCK_DURATION_SECONDS)
 export const rxDurtionPreference = new BehaviorSubject(
     rw().timeConversion || durationPreferences.hhmmss
 )
@@ -78,188 +80,80 @@ export const blocksToDuration = (
         : Math.round(numMinutes / roundToMins) * roundToMins
     return secondsToDuration(numMinutes * 60)
 }
-
-// @forceUpdate updates only specified @recordIds in the projects list.
-//
-// Params:
-// @recordids   array: array of project IDs
-export const forceUpdate = async (recordIds, ownerAddress) => {
-    const updateProjects = await fetchProjects(recordIds, ownerAddress, true)
-    const projects = await getProjects()
-    Array.from(updateProjects)
-        .forEach(([recordId, project]) =>
-            projects.set(recordId, project)
-        )
-}
-
-/**
- * @name    timerFormValues
- * @summary read and write cached timekeeping form values in the local storage
- * 
- * @param   {Object}    values (optional)   if not an object, will simply return the cached values
- * 
- * @returns {Object}    values
- */
-export function timerFormValues(values) {
-    if (!isObj(values) && values !== null) return rwCache('formData') || {}
-
-    rxTimerInProgress.next(!!values?.inprogress)
-    values = rwCache('formData', values) || {}
-    return values
-}
-
-// getProjects retrieves projects along with relevant details owned by selected identity.
-// Retrieved data is cached in localStorage and only updated when list of projects changes in the blockchain
-// or manually triggered by invoking `getProjects(true)`.
-//
-// Params:
-// @forceUpdate     Boolean: (optional) whether to attempt to update cached data immediately instead of re-using cache.
-//                      Default: false
-// @callback        function: (optional) indicates whether to subscribe to changes on the list of projects.
-//                      If  a valid functin supplied, it will be invoked with the value whenever projects list changes.
-// 
-// Returns          Map: list of projects
-export const getProjects = async (forceUpdate, callback, timeout = 30000) => {
-    const config = getProjects
-    // auto update whenever user projects change
-    config.unsubscribeUP = config.unsubscribeUP || await getUserProjects(false, () => getProjects())
-
-    if (isFn(callback)) {
-        const interceptor = async (result) => {
-            // include user owned projects
-            result = mapJoin(await getUserProjects(), result)
-            callback(result)
-        }
-        const subscribed = rxProjects.subscribe(interceptor)
-        // makes sure query.worker.listWorkerProjects is subscribed
-        getProjects(forceUpdate).then(callback)
-        return () => subscribed.unsubscribe()
-    }
-    // similar process as service.project.getProjects
-    let result
-    const {
-        address: addressPrev,
-        unsubscribe,
-        updatePromise,
-    } = config
-    const { address } = getSelected() || {}
-    if (!address) return
-
-    const cacheKey = cacheKeyProjects(address)
-
-    if (!navigator.onLine) return new Map(rwCache(cacheKey) || [])
-    if (address !== addressPrev || !updatePromise || updatePromise.rejected) {
-        // selected identity changed
-        config.address = address
-        isFn(unsubscribe) && unsubscribe()
-        config.updatePromise = new PromisE((resolve, reject) => {
-            getConnection().then(async () => {
-                config.unsubscribe = await query.worker.listWorkerProjects(address, async (recordIds) => {
-                    try {
-                        const projects = await fetchProjects(recordIds, address)
-                        saveProjects(projects, address)
-                        resolve(projects)
-                    } catch (err) {
-                        reject(err)
-                    }
-                })
-            }, err => {
-                // reset update promise
-                config.updatePromise = null
-                // use cache if not connected
-                return resolve(new Map(rwCache(cacheKey) || []))
-            })
-
-        })
-    } else if (forceUpdate) {
-        // once-off update
-        config.updatePromise = fetchProjects(query.worker.listWorkerProjects(address), address)
-        // update rxProjects
-        config.updatePromise.then(projects => saveProjects(projects, address))
-    }
-
-    const promise = PromisE.timeout(getUserProjects(), config.updatePromise, timeout)
-    try {
-        const [ownedProjects, invitedProjects] = await promise
-        result = mapJoin(ownedProjects, invitedProjects)
-    } catch (err) {
-        // if timed out, return cached. Otherwise, throw error
-        if (!promise.timeout.rejected) throw err
-    }
-    return result || new Map(rwCache(cacheKey) || [])
-}
-
-// save projects to local storage and trigger change on `rxProjects`
-//
-// Params:
-// @projects        Map/2D Array
-// @ownerAddress    string: identity that owns the projects
-const saveProjects = (projects, ownerAddress) => {
-    if (!projects || !ownerAddress) return
-    const cacheKey = cacheKeyProjects(ownerAddress)
-    rwCache(cacheKey, projects)
-    // update rxProjects
-    rxProjects.next(projects)
-}
-
 export const query = {
     /*
      * Timekeeping project related queries
      */
-    project: {
+    activity: {
         // timestamp of the very first recorded time on a project
         firstSeen: (recordId, callback, multi) => queryBlockchain(
-            queryPrefix + 'projectFirstSeen',
+            query.activity.firstSeen_func,
             [recordId, callback].filter(isDefined),
             multi,
         ),
+        firstSeen_func: 'api.query.timekeeping.projectFirstSeen',
         // get total blocks booked in a project
         totalBlocks: (recordId, callback, multi) => queryBlockchain(
-            queryPrefix + 'totalBlocksPerProject',
+            query.activity.totalBlocks_func,
             [recordId, callback].filter(isDefined),
             multi,
-        )
+        ),
+        totalBlocks_func: 'api.query.timekeeping.totalBlocksPerProject'
     },
     /* 
      * Timekeeping record related queries
      */
     record: {
         // get details of timekeeping record(s)
-        get: (recordId, callback, multi) => queryBlockchain(
-            queryPrefix + 'timeRecord',
+        get: (recordId, callback) => queryBlockchain(
+            query.record.get_func,
             [recordId, callback].filter(isDefined),
-            multi,
+            isArr(recordId),
         ),
-        // check if worker is owner of the record | unused
-        isOwner: (recordId, workerAddress, callback, multi) => queryBlockchain(
-            queryPrefix + 'timeHashOwner',
-            [recordId, workerAddress, callback].filter(isDefined),
-            multi,
+        get_func: 'api.query.timekeeping.timeRecord',
+        /**
+         * @name    isOwner
+         * @summary fetch the owner identity of a time record
+         * 
+         * @param   {String|String[]} recordId 
+         * @param   {Function}        callback 
+         * 
+         * @returns {String|String[]}
+         */
+        isOwner: (recordId, callback) => queryBlockchain(
+            query.record.isOwner_func,
+            [recordId, callback].filter(isDefined),
+            isArr(recordId),
         ),
+        isOwner_func: 'api.query.timekeeping.timeHashOwner',
         // list of all recordIds by worker
-        list: (workerAddress, callback, multi) => queryBlockchain(
-            queryPrefix + 'workerTimeRecordsHashList',
+        list: (workerAddress, callback) => queryBlockchain(
+            query.record.list_func,
             [workerAddress, callback].filter(isDefined),
-            multi,
+            isArr(workerAddress),
         ),
+        list_func: 'api.query.timekeeping.workerTimeRecordsHashList',
         // list of all archived recordIds by worker
-        listArchive: (workerAddress, callback, multi) => queryBlockchain(
-            queryPrefix + 'workerTimeRecordsHashListArchive',
+        listArchive: (workerAddress, callback) => queryBlockchain(
+            query.record.listArchive_func,
             [workerAddress, callback].filter(isDefined),
-            multi,
+            isArr(workerAddress),
         ),
+        listArchive_func: 'api.query.timekeeping.workerTimeRecordsHashListArchive',
         // list of all record hashes in a project 
-        listByProject: (activityId, callback, multi) => queryBlockchain(
-            queryPrefix + 'projectTimeRecordsHashList',
+        listByActivity: (activityId, callback) => queryBlockchain(
+            query.record.listByActivity_func,
             [activityId, callback].filter(isDefined),
-            multi,
+            isArr(activityId),
         ),
+        listByActivity_func: 'api.query.timekeeping.projectTimeRecordsHashList',
         // list of all archived record hashes in a project 
-        listByProjectArchive: (activityId, callback, multi) => queryBlockchain(
-            queryPrefix + 'projectTimeRecordsHashListArchive',
+        listByActivityArchive: (activityId, callback, multi) => queryBlockchain(
+            query.record.listByActivityArchive_func,
             [activityId, callback].filter(isDefined),
             multi,
         ),
+        listByActivityArchive_func: 'api.query.timekeeping.projectTimeRecordsHashListArchive',
     },
     /*
      * Timekeeping worker related queries
@@ -267,42 +161,48 @@ export const query = {
     worker: {
         // status of invitation | DOES NOT WORK | deprecated
         accepted: (activityId, workerAddress, callback, multi) => queryBlockchain(
-            queryPrefix + 'workerProjectsBacklogStatus',
+            query.worker.accepted_func,
             [activityId, workerAddress, callback].filter(isDefined),
             multi,
         ),
+        accepted_func: 'api.query.timekeeping.workerProjectsBacklogStatus',
         // check if worker is banned. Result: undefined: not banned, object: banned
         banned: (activityId, callback, multi) => queryBlockchain(
-            queryPrefix + 'projectWorkersBanList',
+            query.worker.banned_func,
             [activityId, callback].filter(isDefined),
             multi,
         ),
+        banned_func: 'api.query.timekeeping.projectWorkersBanList',
         // workers that have been invited to but hasn't responded yet
         listInvited: (activityId, callback, multi) => queryBlockchain(
-            queryPrefix + 'projectInvitesList',
+            query.worker.listInvited_func,
             [activityId, callback].filter(isDefined),
             multi,
         ),
+        listInvited_func: 'api.query.timekeeping.projectInvitesList',
         // workers that has accepted invitation
         listWorkers: (activityId, callback, multi) => queryBlockchain(
-            queryPrefix + 'projectWorkersList',
+            query.worker.listWorkers_func,
             [activityId, callback].filter(isDefined),
             multi,
         ),
-        // projects that worker has been invited to or accepted
-        //
-        // Params:
-        // @workerAddress   string/array: array for multi query
-        // @callback        function: (optional) to subscribe to blockchain storage state changes
-        // @multi           boolean: (optional) indicates multiple storage states are being queried in a single request
-        //  
-        // returns          promise
-        listWorkerProjects: (workerAddress, callback, multi) => queryBlockchain(
-            queryPrefix + 'workerProjectsBacklogList',
+        listWorkers_func: 'api.query.timekeeping.projectWorkersList',
+        /**
+         * @name    listWorkerActivities
+         * @summary Activities that worker has been invited to or accepted
+         *
+         * @param   {String|Array}  workerAddress   identity
+         * @param   {Function}      callback        (optional) to subscribe to blockchain storage state changes
+         *  
+         * @returns {String[]|String[][]|Function}   Activity IDs or unsubscribe function
+         */
+        listWorkerActivities: (workerAddress, callback) => queryBlockchain(
+            query.worker.listWorkerActivities_func,
             [workerAddress, callback].filter(isDefined),
-            multi,
+            isArr(workerAddress),
         ),
-        // worker's total booked time (in blocks) accross all projects (unused!)
+        listWorkerActivities_func: 'api.query.timekeeping.workerProjectsBacklogList',
+        // worker's total booked time (in blocks) accross all activities (unused!)
         //
         // Params:
         // @workerAddress   string/array: array for multi query
@@ -311,24 +211,32 @@ export const query = {
         //  
         // Returns          promise
         totalBlocks: (workerAddress, callback, multi) => queryBlockchain(
-            queryPrefix + 'totalBlocksPerAddress',
+            query.worker.totalBlocks_func,
             [workerAddress, callback].filter(isDefined),
             multi,
         ),
+        totalBlocks_func: 'api.query.timekeeping.totalBlocksPerAddress',
         // worker's total booked time (in blocks) for a specific project
         //
         // Params:
         // @workerAddress   string/array: array for multi query
-        // @recordId        string/array: array for multi query
+        // @activityId       string/array: array for multi query
         // @callback        function: (optional) to subscribe to blockchain storage state changes
         // @multi           boolean: (optional) indicates multiple storage states are being queried in a single request
         //  
         // returns          promise
-        totalBlocksByProject: (workerAddress, recordId, callback, multi = false) => queryBlockchain(
-            queryPrefix + 'totalBlocksPerProjectPerAddress',
-            [workerAddress, recordId, callback].filter(isDefined),
-            multi,
+        totalBlocksByActivity: (workerAddress, activityId, callback) => queryBlockchain(
+            query.worker.totalBlocksByActivity_func,
+            [
+                isArr(activityId) && !isArr(workerAddress)
+                    ? activityId.map(() => workerAddress)
+                    : workerAddress,
+                activityId,
+                callback
+            ].filter(isDefined),
+            isArr(activityId),
         ),
+        totalBlocksByActivity_func: 'api.query.timekeeping.totalBlocksPerProjectPerAddress',
     },
 }
 
@@ -363,13 +271,15 @@ export const queueables = {
         ) => ({
             ...queueProps,
             address: ownerAddress,
-            func: txPrefix + 'authoriseTime',
+            func: 'api.tx.timekeeping.authoriseTime',
             type: TX_STORAGE,
             args: [
                 workerAddress,
                 activityId,
                 recordId,
-                accepted ? statuses.accept : statuses.reject,
+                accepted
+                    ? statuses.accept
+                    : statuses.reject,
                 reason || {
                     ReasonCodeKey: 0,
                     ReasonCodeTypeKey: 0
@@ -405,7 +315,7 @@ export const queueables = {
         ) => ({
             ...queueProps,
             address: address,
-            func: txPrefix + 'submitTime',
+            func: 'api.tx.timekeeping.submitTime',
             type: TX_STORAGE,
             args: [
                 activityId,
@@ -442,7 +352,7 @@ export const queueables = {
         ) => ({
             ...queueProps,
             address: workerAddress,
-            func: txPrefix + 'workerAcceptanceProject',
+            func: 'api.tx.timekeeping.workerAcceptanceProject',
             type: TX_STORAGE,
             args: [activityId, accepted],
         }),
@@ -461,7 +371,7 @@ export const queueables = {
         ) => ({
             ...queueProps,
             address: ownerAddress,
-            func: txPrefix + 'notifyProjectWorker',
+            func: 'api.tx.timekeeping.notifyProjectWorker',
             type: TX_STORAGE,
             args: [workerAddress, activityId],
         }),
@@ -480,7 +390,7 @@ export const queueables = {
         ) => ({
             ...queueProps,
             address: ownerAddress,
-            func: txPrefix + 'banWorker',
+            func: 'api.tx.timekeeping.banWorker',
             type: TX_STORAGE,
             args: [activityId, recordId],
         }),
@@ -500,7 +410,7 @@ export const queueables = {
         ) => ({
             ...queueProps,
             address: ownerAddress,
-            func: txPrefix + 'banWorker',
+            func: 'api.tx.timekeeping.banWorker',
             type: TX_STORAGE,
             args: [activityId, workerAddress],
         }),
@@ -514,29 +424,20 @@ setTimeout(() => {
         rw({ timeConversion: value })
     })
 
-    const existingValue = storage.settings.module('time-keeping')
-    if (!existingValue) return
-
-    // migrate to new module key
-    if (!!existingValue.formData) rwCache(existingValue.formData)
-    delete existingValue.formData
-    rw(existingValue)
-
-    // remove legacy module key
+    // remove legacy values
     storage.settings.module('time-keeping', null)
+    rwCache('formData', null)
 })
 
 export default {
     blocksToDuration,
     durationPreferences,
-    forceUpdate,
-    getProjects,
+    // forceUpdate,
+    // getProjects,
     MODULE_KEY,
     NEW_RECORD_HASH,
     query,
     queueables,
     rxDurtionPreference,
-    rxTimerInProgress,
     statuses,
-    timerFormValues,
 }

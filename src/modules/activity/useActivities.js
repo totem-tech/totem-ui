@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import chatClient from '../../utils/chatClient'
 import {
+    subjectAsPromise,
     unsubscribe,
     useRxSubject,
     useUnsubscribe
@@ -11,6 +12,7 @@ import {
     deferred,
     isArr,
     isFn,
+    isStr,
 } from '../../utils/utils'
 import { get as getIdentity, rxSelected } from '../identity/identity'
 import { getAddressName } from '../partner/partner'
@@ -23,6 +25,7 @@ import { query, statusTexts } from './activity'
 import { translated } from '../../utils/languageHelper'
 
 const textsCap = {
+    loading: 'loading...',
     unnamedActivity: 'unnamed activity',
 }
 translated(textsCap, true)
@@ -50,7 +53,41 @@ const typesFuncs = {
         )
     },
     [types.activities]: query.listByOwner,
-    [types.timekeeping]: tkQuery.worker.listWorkerProjects,
+    [types.timekeeping]: tkQuery.worker.listWorkerActivities,
+}
+
+/**
+ * @name    fetchById
+ * @summary fetch activity by ID(s)
+ * 
+ * @param   {String|String[]}   activityId
+ * @param   {Function}          modifier    (optional)
+ * 
+ * @returns {Object|Map|*}  activity|activities|result from modifier
+ */
+export const fetchById = async (activityId, modifier) => {
+    const [subject, unsubscribe] = subscribe(
+        activityId,
+        types.activityIds,
+        false
+    )
+    const activities = await subjectAsPromise(
+        subject,
+        (activities = new Map()) => !!activities.loaded
+    )[0]
+
+    unsubscribe?.()
+
+    if (isFn(modifier)) return modifier(activities, activityId)
+
+    return !isArr(activityId)
+        ? activities.get(activityId)
+        : new Map(
+            activityId.map(id => [
+                id,
+                activities.get(id)
+            ])
+        )
 }
 
 /**
@@ -60,15 +97,17 @@ const typesFuncs = {
  * @param   {Sting|Array} identity  (optional) identity or activityIds (if type is `types.activity`).
  *                                  Default: selected identity from the identities module
  * @param   {Sting}       type      (optional) type of activity (see `types`).
- *                                  Default: `activities`
+ *                                  Default: `activities`  (activities.loaded indicates all required data loaded)
  * 
  * @returns {Array} [BehaviorSubject, Function (unsubscribe)]
+ * 
+ * ToDo: listen to bonsai token changes and update off-chain activity data automatically. Remove onActivity????
  */
 export const subscribe = (
     identity,
-    type,
+    type = types.activities,
     save = false,
-    defer = 100,
+    defer = 300,
 ) => {
     identity ??= type !== types.activityIds && rxSelected.value
     const fetchActivityIds = typesFuncs[type] || typesFuncs[types.activities]
@@ -80,10 +119,9 @@ export const subscribe = (
     const itemKey = `${moduleKey}-${identity}`
     subjects[itemKey] ??= new BehaviorSubject(
         new Map(
-            storage.cache(
-                moduleKey,
-                itemKey
-            )
+            !save
+                ? undefined
+                : storage.cache(moduleKey, itemKey)
         )
     )
     subscriptions[itemKey] ??= {}
@@ -108,7 +146,7 @@ export const subscribe = (
     const result = [subject, unsub]
     // another listener already activated subscription for this identity.
     // the returned subject will be automatically updated for all listeners of this identity.
-    if (subscription.count > 1) return result
+    if (subscription.count > 1) result
 
     const data = {
         activities: null,
@@ -128,15 +166,19 @@ export const subscribe = (
             || !activityIds
             || !statusCodes
             || !totalBlocks
+            || !activities
         if (ignore) return
 
+        const loaded = !!activities || !activityIds.length
         // in case messaging service request takes longer or fails.
-        activities = activities || new Map(
-            activityIds.map(id =>
-                [id, { name: 'loading...' }]
-            )
+        activities = new Map(
+            activityIds.map(id => [
+                id,
+                activities.get(id) || { name: textsCap.loading }
+            ])
         )
 
+        // merge off-chain and on-chain data of each activity
         const mergeData = ([activityId, activity]) => {
             const status = statusCodes.get(activityId)
             activity.status = status
@@ -175,7 +217,7 @@ export const subscribe = (
                 .from(activities)
                 .map(mergeData)
         )
-        result.loaded = true
+        result.loaded = loaded
         subject.next(result)
 
         // write to cached storage
@@ -193,21 +235,28 @@ export const subscribe = (
         updateSubject()
     }
 
-
-    subscription.onActivity ??= chatClient.onActivity(handleActivityReceived)
-
-    console.log(subscription)
     // fetch activities from messaging service
     const fetchOffChainData = deferred(async () => {
         const { activityIds } = data
         if (unsubscribed || !activityIds) return
 
+        subscription.onActivity ??= chatClient.onActivity(handleActivityReceived)
+        if (!activityIds.length) {
+            // identity hasn't created any activities yet
+            data.activities = new Map()
+            data.statusCodes = new Map()
+            data.totalBlocks = new Map()
+            return updateSubject()
+        }
         const activities = await chatClient
             .projectsByHashes(activityIds)
             .then(([activities = new Map(), unknownIds = []]) => {
                 // Records that are not found in the off-chain database
                 unknownIds.forEach(activityId =>
-                    activities.set(activityId, {})
+                    activities.set(
+                        activityId,
+                        { name: textsCap.unnamedActivity }
+                    )
                 )
                 return activities
             })
@@ -219,7 +268,6 @@ export const subscribe = (
         if (unsubscribed) return
         data.activities = activities
 
-        subscription.onActivity ??= chatClient.onActivity(handleActivityReceived)
         updateSubject()
     }, 1000)
 
@@ -233,10 +281,27 @@ export const subscribe = (
             .filter(Boolean)
         data.activityIds = activityIds
 
-        if (!activityIds.length) return updateSubject()
+        // listen for and udpate activity details from messaging service
+        unsubscribe(subscription.forceUpdate)
+        subscription.forceUpdate = rxForceUpdate.subscribe(value => {
+            const ignore = unsubscribed
+                || !value
+                || identity !== value
+                || isArr(identity) && !identity.includes(value)
+            if (ignore) return
+
+            rxForceUpdate.next(null)
+            fetchOffChainData()
+        })
+
+        // listen for and update whenever duration display preferences changes
+        unsubscribe(subscription.durationPreference)
+        subscription.durationPreference = rxDurtionPreference.subscribe(updateSubject)
 
         // fetch title, description etc. from messaging service
         fetchOffChainData()
+
+        if (!activityIds.length) return
 
         // auto fetch status codes
         unsubscribe(subscription.status)
@@ -255,7 +320,7 @@ export const subscribe = (
 
         // auto fetch total blocks
         unsubscribe(subscription.totalBlocks)
-        subscription.totalBlocks = tkQuery.project.totalBlocks(
+        subscription.totalBlocks = tkQuery.activity.totalBlocks(
             activityIds,
             (arrTotalBlocks = []) => {
                 data.totalBlocks = new Map(
@@ -267,23 +332,6 @@ export const subscribe = (
             },
             true,
         )
-
-        // listen for and udpate activity details from messaging service
-        unsubscribe(subscription.forceUpdate)
-        subscription.forceUpdate = rxForceUpdate.subscribe(value => {
-            const ignore = unsubscribed
-                || !value
-                || identity !== value
-                || isArr(identity) && !identity.includes(value)
-            if (ignore) return
-
-            rxForceUpdate.next(null)
-            fetchOffChainData()
-        })
-
-        // listen for and update whenever duration display preferences changes
-        unsubscribe(subscription.durationPreference)
-        subscription.durationPreference = rxDurtionPreference.subscribe(updateSubject)
     }, defer)
 
     // first subscribe to retrieve list of activity IDs

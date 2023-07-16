@@ -24,27 +24,25 @@ import {
 	validationConf,
 } from './contact'
 
-const textsCap = translated(
-	{
-		emailLabel: 'email',
-		emailPlaceholder: 'enter email address',
-		headerCreate: 'new contact details',
-		headerUpdate: 'update contact details',
-		subheaderUpdate: 'changes will be auto-saved',
-		nameLabel: 'contact name',
-		namePlaceholder: 'enter a name for this contact',
-		partnerIdentityLabel: 'associated partner',
-		phoneCodeLabel: 'phone number',
-		phoneCodePlaceholder: 'country',
-		remove: 'remove',
-		removeContact: 'remove contact',
-		saveContact: 'save contact',
-		saved: 'saved',
-		update: 'update',
-		usedByIdentites: 'this contact is used by the following identities:',
-	},
-	true
-)[1]
+const textsCap = {
+	emailLabel: 'email',
+	emailPlaceholder: 'enter email address',
+	headerCreate: 'new contact details',
+	headerUpdate: 'update contact details',
+	subheaderUpdate: 'changes will be auto-saved',
+	nameLabel: 'contact name',
+	namePlaceholder: 'enter a name for this contact',
+	partnerIdentityLabel: 'associated partner',
+	phoneCodeLabel: 'phone number',
+	phoneCodePlaceholder: 'country',
+	remove: 'remove',
+	removeContact: 'remove contact',
+	saveContact: 'save contact',
+	saved: 'saved',
+	update: 'update',
+	usedByIdentites: 'this contact is used by the following identities:',
+}
+translated(textsCap, true)
 export const inputNames = {
 	autoSave: 'autoSave',
 	email: 'email',
@@ -229,11 +227,11 @@ export default function ContactForm(props) {
 					{
 						...validationConf.phoneNumber,
 						customMessages: {
-							lengthMin: null,
-							regex: null,
+							// hide these error messages
+							lengthMin: true,
+							regex: true,
 						},
 						label: <br />,
-						maxLength: validationConf.phoneNumber.maxLength,
 						name: inputNames.phoneNumber,
 						placeholder: '123456',
 						regex: /^[1-9][0-9\ ]+$/,
@@ -283,6 +281,7 @@ export default function ContactForm(props) {
 			onSubmit: (e, values) => {
 				!rxIsUpdate.value && rxIsUpdate.next(true)
 				const id = values[inputNames.id]
+
 				// save to separate local stoarge
 				save(values)
 
@@ -301,7 +300,11 @@ export default function ContactForm(props) {
 					success: true,
 				}
 				rxSetState.next(s)
-				isFn(onSubmit) && onSubmit(true, values, id)
+				isFn(onSubmit) && onSubmit(
+					true,
+					values,
+					id
+				)
 				rxAutoSave.value && setTimeout(() => rxSetState.next({
 					...s,
 					message: undefined,

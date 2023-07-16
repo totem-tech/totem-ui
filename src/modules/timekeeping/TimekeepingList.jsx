@@ -5,7 +5,7 @@ import uuid from 'uuid'
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { hashTypes, queueables as bcQueueables } from '../../services/blockchain'
-import { confirm, showForm } from '../../services/modal'
+import { confirm, confirmAsPromise, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
 import {
@@ -16,7 +16,7 @@ import {
 import { deferred, objClean } from '../../utils/utils'
 import identities, { rxIdentities } from '../identity/identity'
 import AddressName from '../partner/AddressName'
-import TimekeepingForm from './TimekeepingForm'
+import TimekeepingForm, { inputNames } from './TimekeepingForm'
 import TimekeepingUpdateForm from './TimekeepingUpdateForm'
 import SumDuration from './SumDuration'
 import { statuses, queueables } from './timekeeping'
@@ -362,7 +362,7 @@ const getInitialState = (props, rxRecords) => rxState => {
                 key: 'timer',
                 onClick: () => showForm(
                     TimekeepingForm,
-                    { activityId }
+                    { [inputNames.activityId]: activityId }
                 )
             },
             <SumDuration {...{
@@ -447,7 +447,7 @@ export const getActionButtons = ({
             hidden: !manage || !approved,
             icon: 'reply',
             loading: isBtnInprogress(textsCap.setAsDraft),
-            onClick: (record, recordId, records) => confirm({
+            onClick: () => confirmAsPromise({
                 content: <h3>{textsCap.setAsDraftDetailed}?</h3>,
                 onConfirm: () => handleSetAsDraft(
                     record,
@@ -616,7 +616,8 @@ const handleSetAsDraft = (record, recordId, btnTitle) => {
         total_blocks,
     } = record || {}
     // allow activity owner to be able to set record as draft ONLY IF approved
-    if (!approved || !identities.find(activityOwnerAddress)) return
+    console.log({ record })
+    if (!identities.find(activityOwnerAddress) || !approved) return
 
     const reason = {
         ReasonCodeKey: 0,

@@ -102,7 +102,7 @@ const TimekeepingSummaryList = React.memo(({
             && !!ids.length
             && query
                 .worker
-                .totalBlocksByProject(
+                .totalBlocksByActivity(
                     ids.map(() => identity),
                     ids,
                     totalBlocksArr => setState({

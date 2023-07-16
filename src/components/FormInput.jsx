@@ -31,6 +31,7 @@ import {
 	isSubjectLike,
 	objSetPropUndefined,
 	isDefined,
+	className,
 } from '../utils/utils'
 import validator, { TYPES } from '../utils/validator'
 import { rxInverted } from '../utils/window'
@@ -49,8 +50,8 @@ const Accordion_Content = React.memo(S_Accordion.Content)
 const Accordion_Title = React.memo(S_Accordion.Title)
 const Checkbox = React.memo(S_Checkbox)
 const Dropdown = React.memo(S_Dropdown)
-const Form_Field = React.memo(Form.Field)
-const Form_Input = React.memo(Form.Input)
+const Form_Field = Form.Field//React.memo()
+const Form_Input = S_Input//Form.Input// React.memo()
 const Form_Group = React.memo(Form.Group)
 const Icon = React.memo(S_ICON)
 const Input = React.memo(S_Input)
@@ -209,7 +210,6 @@ export class FormInput extends Component {
 			type,
 			validate,
 		} = this.props
-		if (this.props.name === 'workerAddress') console.log('workerAddress', data)
 		// for custom input types (eg: UserIdInput)
 		if (data.invalid) return isFn(onChange) && onChange(
 			event,
@@ -490,11 +490,20 @@ export class FormInput extends Component {
 		let inputEl = ''
 		if (hidden) return ''
 
+		const _error = ['dateinput', 'date'].includes(typeLC)
+			? false
+			: (message && message.status === statuses.ERROR)
+			|| !!error
+			|| !!invalid
 		// Remove attributes that are used by the form or Form.Field but
 		// shouldn't be used or may cause error when using with inputEl
 		let attrs = objWithoutKeys(
 			{
 				...this.props,
+				className: className([
+					this.props.className,
+					_error && 'error'
+				]),
 				key: name,
 				loading: loadingS || loading,
 				onBlur: (...args) => {
@@ -646,11 +655,7 @@ export class FormInput extends Component {
 		if (!isGroup) return (
 			<Form_Field {...{
 				...containerProps,
-				error: ['dateinput', 'date'].includes(typeLC)
-					? false
-					: (message && message.status === statuses.ERROR)
-					|| !!error
-					|| !!invalid,
+				error: _error,
 				key: this.key,
 				required,
 				style: {

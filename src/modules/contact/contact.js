@@ -1,12 +1,21 @@
 import uuid from 'uuid'
 import DataStorage from '../../utils/DataStorage'
 import { translated } from '../../utils/languageHelper'
-import { generateHash, isObj, objClean } from '../../utils/utils'
-import { TYPES, validate as _validate, validateObj } from '../../utils/validator'
+import {
+    generateHash,
+    isObj,
+    objClean
+} from '../../utils/utils'
+import {
+    TYPES,
+    validate as _validate,
+    validateObj
+} from '../../utils/validator'
 
-const textsCap = translated({
+const textsCap = {
     errInvalidPhone: 'invalid phone number',
-}, true)[1]
+}
+translated(textsCap, true)
 
 export const contacts = new DataStorage('totem_contacts')
 export const rxContacts = contacts.rxData
@@ -32,7 +41,7 @@ export const validationConf = {
     },
     id: {
         maxLength: 16,
-        minLength: 16,
+        minLength: 8,
         required: true,
         type: TYPES.string,
     },
@@ -62,6 +71,7 @@ export const validationConf = {
         type: TYPES.string,
     },
 }
+
 export const requiredKeys = Object
     .keys(validationConf)
     .filter(key => validationConf[key].required)
@@ -90,8 +100,10 @@ export const getAll = () => contacts.getAll()
  * 
  * @returns {String}
  */
-export const newId = seed => generateHash(seed || uuid.v1(), 'blake2', 32)
-    .replace('0x', '')
+export function newId(seed) {
+    return generateHash(seed || uuid.v1(), 'blake2', 32)
+        .replace('0x', '')
+}
 
 /**
  * @name    remove
@@ -149,6 +161,7 @@ export const set = (contact, replace = false, silent) => {
     }
 
     const { id } = contact
+    console.log({ id, contact })
     contact = {
         ...(replace ? {} : get(id)), // merge with existing entry if replace is falsy
         ...contact,
@@ -169,7 +182,10 @@ export const set = (contact, replace = false, silent) => {
 
     contacts.set(
         id,
-        objClean(contact, Object.keys(validationConf))
+        objClean(
+            contact,
+            Object.keys(validationConf)
+        )
     )
     return id
 }

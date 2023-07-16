@@ -7,7 +7,6 @@ import { showForm, showInfo } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import {
     Message,
-    UseHook,
     useQueryBlockchain,
 } from '../../utils/reactjs'
 import {
@@ -19,7 +18,7 @@ import {
     handleInvitation as handleTkInvite
 } from '../timekeeping/notificationHandlers'
 import InviteForm from '../timekeeping/TimekeepingInviteForm'
-import useActivities, { types } from './useActivities'
+import ActivityName from './ActivityName'
 
 const textsCap = {
     accepted: 'accepted',
@@ -114,24 +113,7 @@ ActivityTeamList.asModal = props => {
     if (!activityId) return
 
     // fetch activity and use the activity name as subheader
-    subheader ??= (
-        <UseHook {...{
-            hooks: [[
-                useActivities,
-                {
-                    activityIds: [activityId],
-                    type: types.activityIds,
-                }
-            ]],
-            render: ([[activities, _, unsubscribe]]) => {
-                if (!activities.loaded) return textsCap.loading
-
-                const name = activities?.get(activityId)?.name || ''
-                unsubscribe?.()
-                return name
-            }
-        }} />
-    )
+    subheader ??= <ActivityName {...{ activityId }} />
     return showInfo({
         content: <ActivityTeamList {...props} />,
         header,

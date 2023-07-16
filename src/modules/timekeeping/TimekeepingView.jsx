@@ -15,25 +15,20 @@ import storage from '../../utils/storageHelper'
 import { isArr, isStr } from '../../utils/utils'
 import useActivities from '../activity/useActivities'
 import { MODULE_KEY } from './timekeeping'
-import TimeKeepingForm from './TimekeepingForm'
+import TimeKeepingForm, { inputNames } from './TimekeepingForm'
 import TimekeepingList from './TimekeepingList'
 import TimekeepingSummaryList from './TimekeepingSummaryList'
 
 const textsCap = {
-    archive: 'archive',
-    createProjectOrRequestInvite: `create a new activity or request to be invited to some else's activity`,
     loading: 'loading...',
-    manage: 'manage',
     manageTeamTime: 'manage team records',
     manageArchive: 'team records archive',
     myRecords: 'my records',
     myRecordsArchive: 'my records archive',
     myTimeKeepingSummary: 'my timekeeping overview',
     overview: 'overview',
-    summary: 'summary',
     timer: 'timer',
-    unknown: 'unknown',
-    zeroActivities: 'please create an activity first'
+    zeroActivities: `create a new activity or request to be invited to some else's activity`,
 }
 translated(textsCap, true)
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
@@ -86,18 +81,16 @@ const TimekeepingView = React.memo(({
             return state
         }
     })
-    const message = activities === undefined
+    const message = !activities?.loaded
         ? {
             content: textsCap.loading,
             icon: true,
             status: 'loading',
         }
-        : !activities.size
-            ? {
-                content: textsCap.zeroActivities,
-                status: 'warning',
-            }
-            : null
+        : !activities.size && {
+            content: textsCap.zeroActivities,
+            status: 'warning',
+        }
     if (message) return <Message {...message} />
 
     const {
@@ -134,7 +127,7 @@ export default TimekeepingView
 
 const getInitialState = props => rxState => {
     let {
-        projectHash,
+        projectHash: activityId,
         viewOptions = rw().viewOptions
     } = props
     const style = { textAlign: 'left' }
@@ -192,7 +185,9 @@ const getInitialState = props => rxState => {
             content: textsCap.timer,
             icon: 'clock outline',
             key: 'timer',
-            onClick: () => showForm(TimeKeepingForm, { projectHash }),
+            onClick: () => showForm(TimeKeepingForm, {
+                [inputNames.activityId]: activityId,
+            }),
             style: { display: 'inline' }
         },
         viewOptions,

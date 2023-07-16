@@ -58,8 +58,8 @@ const ActivityList = React.memo(props => {
     const [activities, rxActivities] = useActivities()
     state.data = activities
     state.isMobile = isMobile
-    state.emptyMessage = activities
-        ? null
+    state.emptyMessage = activities?.loaded
+        ? undefined
         : {
             content: textsCap.loading,
             icon: true,
@@ -164,7 +164,7 @@ const getInitialState = rxState => {
                         icon: { name: 'eye' },
                         key: 'detials',
                         onClick: () => ActivityDetails.asModal({
-                            activity,
+                            // activity,
                             activityId,
                         }),
                         title: textsCap.viewDetails,
