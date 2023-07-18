@@ -37,7 +37,7 @@ import {
     queueables,
     statuses,
 } from './timekeeping'
-import timer from './Timer'
+import Timer from './Timer'
 import TimeKeepingInviteForm, { inputNames as invInputNames } from './TimekeepingInviteForm'
 import useTkActivities from './useTKActivities'
 
@@ -114,6 +114,22 @@ export const inputNames = {
     timervalues: 'timervalues',
     workerAddress: 'workerAddress',
 }
+export const timer = new Timer(
+    0,
+    1000,
+    false, // will only auto start if cached value indicates timer is already started
+    'timer',
+    [ // only save these properties
+        'activityId',
+        'breakCount',
+        'inprogress',
+        'manualEntry',
+        'tsFrom',
+        'tsStarted',
+        'tsStopped',
+        'workerAddress',
+    ]
+)
 
 const TimekeepingForm = React.memo(({
     closeText: closeTextP,

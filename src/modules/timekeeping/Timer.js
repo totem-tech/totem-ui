@@ -1,12 +1,17 @@
 import { BehaviorSubject } from 'rxjs'
 import storage from '../../utils/storageHelper'
 import { durationToSeconds, secondsToDuration } from '../../utils/time'
-import { isArr, isObj, isStr, objClean } from '../../utils/utils'
+import {
+    isArr,
+    isObj,
+    isStr,
+    objClean
+} from '../../utils/utils'
 import { MODULE_KEY } from './timekeeping'
 
 const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value)
 
-export class Timer {
+export default class Timer {
     constructor(
         initialValue = 0,
         interval = 1000,
@@ -191,20 +196,3 @@ export class Timer {
         })
     }
 }
-const timer = new Timer(
-    0,
-    1000,
-    false, // will only auto start if cached value indicates timer is already started
-    'timer',
-    [ // only save these properties
-        'activityId',
-        'breakCount',
-        'inprogress',
-        'manualEntry',
-        'tsFrom',
-        'tsStarted',
-        'tsStopped',
-        'workerAddress',
-    ]
-)
-export default timer

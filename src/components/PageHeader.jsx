@@ -29,8 +29,7 @@ import {
 	rxVisible as rxNotifVisible,
 	rxUnreadCount as rxUnreadNotifCount,
 } from '../modules/notification/notification'
-import TimekeepingForm from '../modules/timekeeping/TimekeepingForm'
-import timer from '../modules/timekeeping/Timer'
+import TimekeepingForm, { timer } from '../modules/timekeeping/TimekeepingForm'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
 import { toggleSidebarState } from '../services/sidebar'
