@@ -23,9 +23,12 @@ import {
 	rxLayout,
 } from './utils/window'
 import App from './App'
+import QueueItemStatus from './utils/reactjs/components/QueueItemStatus'
+import { rxOnSave } from './services/queue'
 
 // setup common components to use Semantic UI (where applicable)
 setupDefaults('semantic-ui-react', require('semantic-ui-react'))
+QueueItemStatus.defaultProps.rxOnSave = rxOnSave
 
 const urlParams = getUrlParam()
 const isSignUp = urlParams.hasOwnProperty('NewsletterSignup')

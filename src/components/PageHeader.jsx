@@ -365,7 +365,9 @@ export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
 			<Menu.Item
 				content={
 					<div style={{
-						bottom: 1,
+						bottom: isMobile
+							? 0
+							: 3,
 						color: 'grey',
 						left: 0,
 						position: 'absolute',

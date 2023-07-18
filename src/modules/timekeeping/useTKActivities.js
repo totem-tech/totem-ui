@@ -1,6 +1,10 @@
 import { useMemo } from 'react'
-import { BehaviorSubject } from 'rxjs'
-import { useRxSubject, useUnsubscribe } from '../../utils/reactjs'
+import { BehaviorSubject, SubjectLike } from 'rxjs'
+import {
+    useRxSubject,
+    useRxSubjectOrValue,
+    useUnsubscribe
+} from '../../utils/reactjs'
 import { copyRxSubject } from '../../utils/rx'
 import { mapJoin } from '../../utils/utils'
 import {
@@ -73,7 +77,7 @@ export const subscribe = (
  * @param   {Object}    p
  * @param   {Boolean}   p.includeOwned  (optional) if falsy, will only fetch activities where user is a team member.
  *                                      Default: `true`
- * @param   {String}    p.identity      (optional) user identity.
+ * @param   {String|SubjectLike}    p.identity      (optional) user identity.
  *                                      Default: selected identity from identities module
  * @param   {Boolean}   p.subjectOnly   (optional) if true, will only return RxJS the subject.
  * @param   {Function}  p.valueModifier (optional) callback to modify activities result.
@@ -84,13 +88,16 @@ export const subscribe = (
  */
 export default function useTkActivities({
     includeOwned = true,
-    identity,
+    identity = rxSelected,
     subjectOnly = false,
     valueModifier,
 } = {}) {
-    identity ??= useRxSubject(rxSelected)[0]
     const rxActivities = useMemo(() => new BehaviorSubject(new Map()), [])
-    const [unsubscribe, subscription] = useMemo(() => {
+    const [
+        _identity,
+        unsubscribe,
+        subscription
+    ] = useRxSubjectOrValue(identity, identity => {
         const [currentSubject, unsubscribe] = subscribe(identity, includeOwned) || []
         // current subject will change based on identity selected.
         // copy values from current subject to rxActivities.
@@ -98,10 +105,12 @@ export default function useTkActivities({
             rxActivities.next(value)
         )
         return [
+            identity,
             unsubscribe,
             subscription
         ]
-    }, [identity, includeOwned])
+    })
+
     // trigger unsubscribe onUnmount
     useUnsubscribe([unsubscribe, subscription])
     if (subjectOnly) return rxActivities
@@ -112,6 +121,6 @@ export default function useTkActivities({
         activities,
         rxActivities,
         unsubscribe,
-        identity
+        _identity
     ]
 }

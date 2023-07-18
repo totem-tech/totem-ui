@@ -35,7 +35,7 @@ import {
 } from './blockchain'
 import { setToast } from './toast'
 
-const textsCap = translated({
+const textsCap = {
     amount: 'amount',
     error: 'error',
     failed: 'failed',
@@ -59,7 +59,8 @@ const textsCap = translated({
     txTransferTitle: 'transfer funds',
     txTransferMissingArgs: `one or more of the following arguments is missing or invalid: 
         sender identity, recipient identity and amount`,
-}, true)[1]
+}
+translated(textsCap, true)
 const queue = new DataStorage('totem_queue-data', false)
 export const rxOnSave = new BehaviorSubject()
 /* Queue statuses */
@@ -70,6 +71,7 @@ const SUCCESS = 'success'
 // indicates task execution started
 const LOADING = 'loading'
 const REMOVED = 'removed'
+// indicates task execution is deferred because of either connection issues or maintenance mode
 const SUSPENDED = 'suspended'
 // Minimum balance required to make a transaction.
 // This is a guesstimated transaction fee. PolkadotJS V2 required to pre-calculate fee.
@@ -755,6 +757,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         task.txId,
     )
     setTimeout(() => rxOnSave.next({ rootTask, task }))
+    // rxOnSave.next({ rootTask, task })
     if (!done) return
 
     try {
@@ -767,7 +770,7 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     // execute next only if current task is successful
     if (isSuccess && isObj(task.next)) return _processTask(task.next, id, toastId)
 
-    // execution complete -> delete entire queue chain
+    // execution complete -> delete entire sub-queue chain
     queue.delete(id)
 }
 

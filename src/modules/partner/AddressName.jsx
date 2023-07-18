@@ -1,5 +1,8 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
+import { Button } from '../../components/buttons'
+import LabelCopy from '../../components/LabelCopy'
+import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
 import {
@@ -7,35 +10,35 @@ import {
     objWithoutKeys,
     textEllipsis,
 } from '../../utils/utils'
-import { Button } from '../../components/buttons'
-import LabelCopy from '../../components/LabelCopy'
-import { showForm } from '../../services/modal'
 import { rxIdentities } from '../identity/identity'
 import IdentityIcon from '../identity/IdentityIcon'
 import { rxPartners } from './partner'
 import PartnerForm, { inputNames } from './PartnerForm'
 import PartnerIcon from './PartnerIcon'
 
-const textsCap = translated({
+const textsCap = {
     addPartner: 'add partner',
-}, true)[1]
+}
+translated(textsCap, true)
 
 /**
  * @name    AddressName
  * @summary display name of the identity or partner along with appropriate icon. 
  * If not own identity or partner, will show a button to add as partner.
+ * 
  */
-const AddressName = React.memo(props => {
-    const {
-        address = '',
-        allowCopy,
-        Component,
-        ignoreAttributes,
-        maxLength,
-        name: partnerName,
-        style,
-        userId,
-    } = props
+const AddressName = React.memo(({
+    address = '',
+    allowCopy,
+    Component,
+    ignoreAttributes,
+    maxLength,
+    name: partnerName,
+    style,
+    styleAddButton,
+    userId,
+    ...props
+}) => {
     if (!isAddress(address)) return ''
 
     const [identity] = useRxSubject(rxIdentities, map => map.get(address))
@@ -52,7 +55,7 @@ const AddressName = React.memo(props => {
             onClick: e => {
                 e.preventDefault()
                 e.stopPropagation()
-                showForm(PartnerForm, {
+                return showForm(PartnerForm, {
                     values: {
                         [inputNames.address]: address,
                         [inputNames.name]: partnerName,
@@ -61,6 +64,7 @@ const AddressName = React.memo(props => {
                 })
             },
             size: 'mini',
+            style: styleAddButton,
             title: textsCap.addPartner,
         }} />
     )
@@ -97,11 +101,17 @@ const AddressName = React.memo(props => {
                     )
                     : name
                 : !allowCopy
-                    ? address
+                    ? textEllipsis(
+                        address,
+                        maxLength,
+                        3,
+                        false,
+                    )
                     : (
                         <LabelCopy {...{
                             content: name,
                             style: { padding: 7.5 },
+                            maxLength,
                             value: address,
                         }} />
                     )}
@@ -126,13 +136,7 @@ AddressName.prototype = {
 AddressName.defaultProps = {
     allowCopy: true,
     Component: 'span',
-    ignoreAttributes: [
-        'address',
-        'allowCopy',
-        'Component',
-        'ignoreAttributes',
-        'userId',
-    ],
+    ignoreAttributes: [],
     maxLength: 32,
 }
 export default AddressName

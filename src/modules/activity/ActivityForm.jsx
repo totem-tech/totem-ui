@@ -3,10 +3,10 @@ import PropTypes from 'prop-types'
 import { Button } from '../../components/buttons'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
-import { closeModal, confirm } from '../../services/modal'
-import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { iUseReducer } from '../../utils/reactjs'
+import { addToQueue, getById, QUEUE_TYPES, rxOnSave } from '../../services/queue'
+import { iUseReducer, useRxState } from '../../utils/reactjs'
 import {
+	deferred,
 	generateHash,
 	isFn,
 	objClean,
@@ -16,8 +16,11 @@ import { getIdentityOptions } from '../identity/getIdentityOptions'
 import { queueables } from './activity'
 import ActivityTeamList from './ActivityTeamList'
 import { rxForceUpdate } from './useActivities'
+import QueueItemStatus, { useQueueItemStatus } from '../../utils/reactjs/components/QueueItemStatus'
+import { BehaviorSubject } from 'rxjs'
+import { rxOnline } from '../../utils/window'
 
-let textsCap = {
+const textsCap = {
 	create: 'create',
 	description: 'description',
 	name: 'name',
@@ -33,16 +36,12 @@ let textsCap = {
 	ownerLabel: 'select the owner Identity for this Activity ',
 	ownerPlaceholder: 'select owner',
 	saveBONSAIToken: 'save BONSAI auth token',
-	saveDetailsTitle: 'save Activity details to messaging service',
-	submitErrorHeader: 'request failed',
-	submitQueuedMsg: 'your request has been added to background queue. You may close the dialog now.',
-	submitQueuedHeader: 'activity has been queued',
+	saveDetailsTitle: 'save activity details',
 	submitSuccessHeader: 'activity saved successfully',
 	submitTitleCreate: 'create activity',
 	submitTitleUpdate: 'update activity',
 }
-textsCap = translated(textsCap, true)[1]
-
+translated(textsCap, true)
 export const inputNames = {
 	description: 'description',
 	name: 'name',
@@ -53,60 +52,31 @@ export const bonsaiKeys = [
 	inputNames.name,
 	inputNames.ownerAddress,
 ]
+
 // Create or update activity form
 export default function ActivityForm(props) {
-	const [state] = iUseReducer(null, rxState => {
-		const { activityId, header, values = {} } = props
-		values.ownerAddress = values.ownerAddress || getSelected().address
-		const inputs = [
-			{
-				label: textsCap.nameLabel,
-				name: inputNames.name,
-				maxLength: 64,
-				minLength: 3,
-				placeholder: textsCap.namePlaceholder,
-				required: true,
-				type: 'text',
+	const [state] = useRxState(getInitialState(props))
+	const { rxQueueId, showTeamBtn } = state
+	const message = useQueueItemStatus(
+		rxQueueId,
+		// replace header and include a button below the success message to open the team list on a modal
+		message => message?.status !== 'success'
+			? message
+			: {
+				...message,
+				content: showTeamBtn,
+				header: textsCap.submitSuccessHeader,
 			},
-			{
-				disabled: !!activityId,
-				label: textsCap.ownerLabel,
-				name: inputNames.ownerAddress,
-				placeholder: textsCap.ownerPlaceholder,
-				required: true,
-				rxOptions: rxIdentities,
-				rxOptionsModifier: getIdentityOptions,
-				search: ['keywords'],
-				selection: true,
-				type: 'dropdown',
-			},
-			{
-				label: textsCap.descLabel,
-				name: inputNames.description,
-				maxLength: 160,
-				minLength: 3,
-				placeholder: textsCap.descPlaceholder,
-				required: true,
-				type: 'textarea',
-			},
-		]
-		const state = {
-			onSubmit: handleSubmit(props, rxState),
-			success: false,
-			header: header || (
-				activityId
-					? textsCap.formHeaderUpdate
-					: textsCap.formHeaderCreate
-			),
-			submitText: activityId
-				? textsCap.update
-				: textsCap.create,
-			inputs: fillValues(inputs, values),
-		}
-		return state
-	})
+	)
 
-	return <FormBuilder {...{ ...props, ...state }} />
+	if (message) state.message = message
+
+	return (
+		<FormBuilder {...{
+			...props,
+			...state,
+		}} />
+	)
 }
 ActivityForm.propTypes = {
 	activityId: PropTypes.string,
@@ -120,8 +90,83 @@ ActivityForm.defaultProps = {
 	size: 'tiny',
 }
 
+const getInitialState = props => rxState => {
+	const {
+		activityId,
+		header,
+		values = {}
+	} = props
+	const isCreate = !props.activityId
+	values.ownerAddress ??= getSelected().address
+	const inputs = [
+		{
+			label: textsCap.nameLabel,
+			name: inputNames.name,
+			maxLength: 64,
+			minLength: 3,
+			placeholder: textsCap.namePlaceholder,
+			required: true,
+			type: 'text',
+		},
+		{
+			disabled: !!activityId,
+			label: textsCap.ownerLabel,
+			name: inputNames.ownerAddress,
+			placeholder: textsCap.ownerPlaceholder,
+			required: true,
+			rxOptions: rxIdentities,
+			rxOptionsModifier: getIdentityOptions,
+			search: ['keywords'],
+			selection: true,
+			type: 'dropdown',
+		},
+		{
+			label: textsCap.descLabel,
+			name: inputNames.description,
+			maxLength: 160,
+			minLength: 3,
+			placeholder: textsCap.descPlaceholder,
+			required: true,
+			type: 'textarea',
+		},
+	]
+	const state = {
+		header: header || (
+			activityId
+				? textsCap.formHeaderUpdate
+				: textsCap.formHeaderCreate
+		),
+		inputs: fillValues(inputs, values),
+		// disable submit button if either name or description is unchanged when updating the Activity
+		onChange: deferred((_, newValues) => {
+			if (isCreate) return
+
+			const { submitDisabled } = rxState.value
+			const changed = key => newValues[key] !== values[key]
+			submitDisabled.changed = !changed(inputNames.description)
+				&& !changed(inputNames.name)
+			rxState.next({ submitDisabled })
+		}, 150),
+		onSubmit: handleSubmit(props, rxState),
+		rxQueueId: new BehaviorSubject(),
+		submitDisabled: {
+			changed: false,
+		},
+		submitText: activityId
+			? textsCap.update
+			: textsCap.create,
+		success: false,
+	}
+	return state
+}
+
 const handleSubmit = (props, rxState) => (e, values) => {
-	const { onSubmit, activityId: existingId } = props
+	const {
+		activityId: existingId,
+		modalId,
+		onSubmit,
+	} = props
+	const { rxQueueId } = rxState?.value || {}
 	const create = !existingId
 	const activityId = existingId || generateHash(values)
 	const tokenData = objClean(values, bonsaiKeys)
@@ -137,62 +182,21 @@ const handleSubmit = (props, rxState) => (e, values) => {
 	const description = `${textsCap.name}: ${activityName}`
 		+ '\n'
 		+ `${textsCap.description}: ${desc}`
-	const message = {
-		content: textsCap.submitQueuedMsg,
-		header: textsCap.submitQueuedHeader,
-		status: 'loading',
-		icon: true,
-	}
-	const handleTxError = (ok, err) => !ok && rxState.next({
-		message: {
-			content: `${err}`,
-			header: textsCap.submitErrorHeader,
-			icon: true,
-			status: 'error',
-		},
-		submitDisabled: false,
-	})
 
-	rxState.next({
-		message,
-		submitDisabled: true,
-		submitInProgress: true,
+	const handleTxError = ok => !ok && rxState.next({
+		...!ok && { showTeamBtn: null },
+		submitInProgress: false
 	})
 
 	const handleOffChainResult = (ok, err) => {
 		err = !ok && err
 		isFn(onSubmit) && onSubmit(ok, values)
-		rxState.next({
-			message: {
-				content: err || (
-					<Button {...{
-						content: textsCap.addTeamMembers,
-						onClick: e => {
-							// button is inside the form element.
-							// this prevents form being submitted.
-							e.preventDefault()
-							return ActivityTeamList.asModal({
-								activityId,
-								modalId: props?.modalId,
-								subheader: activityName,
-							})
-						},
-					}} />
-				),
-				header: err
-					? textsCap.submitErrorHeader
-					: textsCap.submitSuccessHeader,
-				icon: true,
-				status: !err
-					? 'success'
-					: 'warning',
-			},
-			submitDisabled: false,
-			submitInProgress: false,
-			success: !err,
-		})
+		handleTxError(ok)
+		if (!!err) return
+
+		rxState.next({ success: true })
 		// trigger cache update
-		!err && rxForceUpdate.next(`${ownerAddress}`)
+		rxForceUpdate.next(`${ownerAddress}`)
 	}
 
 	// save auth token to blockchain and then store data to off-chain DB
@@ -228,5 +232,30 @@ const handleSubmit = (props, rxState) => (e, values) => {
 		next: updateTask,
 	})
 
-	addToQueue(create ? createTask : updateTask)
+	rxState.next({
+		showTeamBtn: (
+			<Button {...{
+				content: textsCap.addTeamMembers,
+				onClick: e => {
+					// button is inside the form element.
+					// this prevents form being submitted.
+					e.preventDefault()
+					return ActivityTeamList.asModal({
+						activityId,
+						modalId,
+						subheader: activityName,
+					})
+				},
+			}} />
+		),
+		submitInProgress: true
+	})
+
+	const queueId = addToQueue(
+		create
+			? createTask
+			: updateTask
+	)
+	rxQueueId.next(queueId)
+
 }

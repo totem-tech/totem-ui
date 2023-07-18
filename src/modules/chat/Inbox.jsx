@@ -11,6 +11,7 @@ import client, {
 } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 import {
+    IGNORE_UPDATE_SYMBOL,
     Message,
     useIsMobile,
     useMount,
@@ -18,10 +19,6 @@ import {
     useRxSubjectOrValue
 } from '../../utils/reactjs'
 import { deferred, textEllipsis } from '../../utils/utils'
-import {
-    getLayout,
-    MOBILE,
-} from '../../utils/window'
 import {
     createInbox,
     getInboxUserIds,
@@ -103,7 +100,7 @@ export default function Inbox({ inboxKey }) {
     const [loaded] = useRxSubject(rxLoaded)
     const [messages = []] = useRxSubject(rxMsg, ([key = inboxKey] = []) => {
         // ignore if not 
-        if (!key || key !== inboxKey) return useRxSubject.IGNORE_UPDATE
+        if (!key || key !== inboxKey) return IGNORE_UPDATE_SYMBOL
 
         const msgs = getMessages(key)
         setTimeout(() => scrollToBottom(isMobile), 200)

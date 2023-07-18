@@ -1,23 +1,22 @@
-import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import React, { useState, useEffect } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
-import { useRxSubject } from '../../utils/reactjs'
-import { isArr, isMap, isValidNumber } from '../../utils/utils'
 import { Reveal } from '../../components/buttons'
-// services
 import { query } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
-import { unsubscribe } from '../../utils/reactjs'
-// modules
+import { IGNORE_UPDATE_SYMBOL, useRxSubject } from '../../utils/reactjs'
+import { unsubscribe } from '../../utils/rx'
+import { isArr, isValidNumber } from '../../utils/utils'
 import Currency from '../currency/Currency'
 import { rxIdentities } from './identity'
 
-const textsCap = translated({
+const textsCap = {
 	loadingAccBal: 'loading account balance',
 	locked: 'locked',
 	total: 'total',
-}, true)[1]
+}
+translated(textsCap, true)
 
 // cache balances and locks
 export const rxBalances = new BehaviorSubject(new Map())
@@ -42,7 +41,7 @@ export const Balance = React.memo(props => {
 			&& value !== oldValue
 		return update
 			? value
-			: useRxSubject.IGNORE_UPDATE
+			: IGNORE_UPDATE_SYMBOL
 	}
 	const isOwnIdentity = !!rxIdentities.value.get(address)
 	const balance = !isOwnIdentity

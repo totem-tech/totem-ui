@@ -4,7 +4,7 @@ import DataTable from '../../components/DataTable'
 import { findInput } from '../../components/FormBuilder'
 import Text from '../../components/Text'
 import { confirm, showForm, showInfo } from '../../services/modal'
-import { addToQueue } from '../../services/queue'
+import { addToQueue, rxOnSave } from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
 import { statuses, useIsMobile, useRxState } from '../../utils/reactjs'
 import { textEllipsis } from '../../utils/utils'
@@ -19,6 +19,7 @@ import ActivityForm from './ActivityForm'
 import ActivityReassignForm from './ActivityReassignForm'
 import ActivityTeamList from './ActivityTeamList'
 import useActivities from './useActivities'
+import QueueItemView from '../../utils/reactjs/components/QueueItemStatus'
 
 const textsCap = {
     areYouSure: 'are you sure?',

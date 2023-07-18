@@ -75,7 +75,7 @@ const textsCap = {
     inactiveWorkerMsg3: 'you are yet to accept or reject invitation to join this activity team.',
     inactiveWorkerMsg4: 'you must add yourself as a team member in order to start booking time to this activity.',
     invalidDuration: 'invalid duration',
-    invalidDurationMsgPart1: 'please enter a valid duration using the following format:',
+    invalidDurationMsgPart1: 'please enter a valid duration according to the following format:',
     manuallyEnterDuration: 'manually enter duration',
     msgSubmitted: 'your time record has been submitted for approval',
     msgSavedAsDraft: 'your time record has been saved as draft',
@@ -111,7 +111,6 @@ export const inputNames = {
     duration: 'duration',
     manualEntry: 'manualEntry',
     seconds: 'seconds',
-    timervalues: 'timervalues',
     workerAddress: 'workerAddress',
 }
 export const timer = new Timer(
@@ -119,15 +118,16 @@ export const timer = new Timer(
     1000,
     false, // will only auto start if cached value indicates timer is already started
     'timer',
-    [ // only save these properties
-        'activityId',
+    [ // only save these properties to the cache storage
+        inputNames.activityId,
+        inputNames.manualEntry,
+        inputNames.workerAddress,
+        // default timer properties
         'breakCount',
         'inprogress',
-        'manualEntry',
         'tsFrom',
         'tsStarted',
         'tsStopped',
-        'workerAddress',
     ]
 )
 
@@ -137,7 +137,13 @@ const TimekeepingForm = React.memo(({
     isMobile = useIsMobile(),
     ...props
 }) => {
-    const rxActivities = useTkActivities({ includeOwned: true, subjectOnly: true })
+    const conf = useMemo(() => ({
+        // makes sure the correct list of activites are retrieved even when the selected identity changes.
+        identity: timer.getValues()[inputNames.workerAddress],
+        includeOwned: true,
+        subjectOnly: true,
+    }), [])
+    const rxActivities = useTkActivities(conf)
     const rxValues = useMemo(() => new BehaviorSubject({}), [])
     const [state, _, rxState] = useRxState(
         getInitialState(
@@ -291,6 +297,13 @@ const getActivityOptions = (
                 description: (
                     <AddressName {...{
                         address: ownerAddress,
+                        allowCopy: false,
+                        maxLength: 21,
+                        // fixes alignment issue when add button is displayed
+                        styleAddButton: {
+                            padding: 5,
+                            marginTop: -3,
+                        },
                         title: textsCap.activityOwner,
                         userId,
                     }} />
@@ -757,7 +770,8 @@ const validateActiviy = (
                 {textsCap.inactiveWorkerMsg4}
                 <Button {...{
                     content: textsCap.addMyself,
-                    onClick: handleClick
+                    onClick: handleClick,
+                    size: 'mini',
                 }} />
             </div>
         )

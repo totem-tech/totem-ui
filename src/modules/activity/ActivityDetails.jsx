@@ -1,29 +1,28 @@
-import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
+import React, { useMemo } from 'react'
+import { ButtonGroup } from '../../components/buttons'
+import DataTableVertical from '../../components/DataTableVertical'
+import LabelCopy from '../../components/LabelCopy'
+import { rxBlockNumber } from '../../services/blockchain'
+import { showForm, showInfo } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import {
     Message,
     RxSubjectView,
-    UNSUBSCRIBE_SYMBOL,
     copyRxSubject,
     statuses,
     useQueryBlockchain,
     useRxSubjects,
 } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
-import { rxBlockNumber } from '../../services/blockchain'
-import { showForm, showInfo } from '../../services/modal'
-import { ButtonGroup } from '../../components/buttons'
-import DataTableVertical from '../../components/DataTableVertical'
-import LabelCopy from '../../components/LabelCopy'
+import { isMap, isPositiveInteger } from '../../utils/utils'
+import AddressName from '../partner/AddressName'
+import { blocksToDuration } from '../timekeeping/timekeeping'
 import TimekeepingList from '../timekeeping/TimekeepingList'
+import { statusTexts } from './activity'
 import ActivityForm from './ActivityForm'
 import ActivityTeamList from './ActivityTeamList'
 import useActivities, { types } from './useActivities'
-import AddressName from '../partner/AddressName'
-import { isMap, isStr } from '../../utils/utils'
-import { statusTexts } from './activity'
-import { blocksToDuration } from '../timekeeping/timekeeping'
 
 const textsCap = {
     activityIdLabel: 'activity ID',
@@ -192,16 +191,17 @@ const getState = ([
                         valueModifier: (
                             currentBlock,
                             prevResult,
+                            _,
+                            unsubscribe
                         ) => {
-                            // once a value is retrieved unsbuscribe from  subject to prevent unnecessary state update
-                            if (isStr(prevResult)) return UNSUBSCRIBE_SYMBOL
-
                             const result = currentBlock > 0
-                                ? firstSeen
+                                ? isPositiveInteger(firstSeen)
                                     ? blockToDate(firstSeen, currentBlock)
                                     : textsCap.never
                                 : null // not ready yet
 
+                            // once a value is retrieved unsbuscribe from  subject to prevent unnecessary state update
+                            result && unsubscribe()
                             return result
                         },
                     }} />
