@@ -432,10 +432,14 @@ const handleChatClient = async (id, rootTask, task, toastId) => {
     )
 
     try {
-        if (rxIsInMaintenanceMode.value || !rxIsConnected.value) {
+        const isMaintenance = rxIsInMaintenanceMode.value
+        if (isMaintenance || !rxIsConnected.value) {
             suspendedIds.push(id)
             _save(SUSPENDED)
-            console.log('Queue task execution suspended due to being offline. ID:', id)
+            const reason = isMaintenance
+                ? 'maintenance'
+                : 'disconnected'
+            console.log(`Queue task execution suspended. Reason: messaging service ${reason}. ID: ${id}`)
             return
         }
         // to make sure `client` variable isn't renamed when compiled
@@ -489,10 +493,10 @@ const handleTx = async (id, rootTask, task, toastId) => {
     if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR, textsCap.invalidFunc)
 
     // if browser is offline suspend execution of the task and auto-resume when back online
-    if (!navigator.onLine) {
+    if (!rxOnline.value) {
         suspendedIds.push(id)
         _save(SUSPENDED)
-        console.log('Queue task execution suspended due to being offline. ID:', id)
+        console.log('Queue task execution suspended. Reason: offline. ID:', id)
         return
     }
     try {
@@ -783,33 +787,36 @@ window.addEventListener('beforeunload', function (e) {
     e.returnValue = ''
 })
 const resumeSuspended = deferred(async () => {
+    // for (let i = suspendedIds.length - 1;i >= 0;i--) {
+
     for (let i = 0;i < suspendedIds.length;i++) {
         const id = suspendedIds[i]
         const task = queue.get(id)
-        const { type } = task
+        const { type } = task || {}
         const isChat = type === QUEUE_TYPES.CHATCLIENT
         const doResume = isChat
-            ? !rxIsInMaintenanceMode.value && rxIsConnected
+            ? !rxIsInMaintenanceMode.value && rxIsConnected.value
             : rxOnline.value
         if (!doResume) continue
 
-        // remove from suspendedIds
         if (!isChat) {
             // attempt to reconnect to blockchain, in case, first it failed.
             const { isConnected } = await getConnection(true)
             if (!isConnected) continue
         }
+        // remove from suspendedIds
         suspendedIds.splice(i, 1)
+        i-- // decrease `i` to reflect the change of length in the `suspendedIds` array
 
         console.log('Resuming task', id)
         // resume execution by checking each step starting from the top level task
         _processTask(task, id, task.toastId, true)
     }
 }, 300)
-// resume suspended tasks whenever browser is back online
-rxIsConnected.subscribe(resumeSuspended)
-rxIsInMaintenanceMode.subscribe(resumeSuspended)
-rxOnline.subscribe(resumeSuspended)
+// resume suspended tasks whenever status changes of the following
+rxIsConnected.subscribe(connected => connected && resumeSuspended())
+rxIsInMaintenanceMode.subscribe(active => !active && resumeSuspended())
+rxOnline.subscribe(online => online && resumeSuspended())
 
 export default {
     addToQueue,
