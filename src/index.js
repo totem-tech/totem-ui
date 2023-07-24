@@ -80,10 +80,8 @@ if (!window.isInIFrame && window.isDebug) {
 }
 
 const initPromise = PromisE.timeout((resolve, reject) => {
-
+	// initiate connection to blockchain and set default connection for useQueryBlockchain
 	useQueryBlockchain.defaultConnection = getConnection()
-	// initiate connection to blockchain
-	getConnection()
 	let countriesHash = generateHash(
 		Array.from(storage.countries.getAll()),
 		'blake2',

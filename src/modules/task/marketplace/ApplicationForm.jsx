@@ -4,7 +4,7 @@ import React from 'react'
 import FormBuilder, { fillValues } from '../../../components/FormBuilder'
 import { addToQueue, QUEUE_TYPES } from '../../../services/queue'
 import { translated } from '../../../utils/languageHelper'
-import { iUseReducer, statuses } from '../../../utils/reactjs'
+import { iUseReducer, statuses, useQueueItemStatus, useRxState } from '../../../utils/reactjs'
 import { generateHash, isFn } from '../../../utils/utils'
 import { TYPES, validate } from '../../../utils/validator'
 import { getIdentityOptions } from '../../identity/getIdentityOptions'
@@ -41,16 +41,23 @@ export const inputNames = {
     workerAddress: 'workerAddress',
 }
 export default function ApplicationForm(props) {
-    const [state] = iUseReducer(null, getInitialState(props))
+    const [state] = useRxState(getInitialState(props))
     const {
         subheader,
         title,
     } = props
+    const { message, rxQueueId } = state
+    const queueStatus = useQueueItemStatus(rxQueueId)
 
-    state.subheader = subheader
-        || title
-        && `${textsCap.title}: ${title}`
-    return <FormBuilder {...{ ...props, ...state }} />
+    return (
+        <FormBuilder {...{
+            ...state,
+            message: queueStatus || message,
+            subheader: subheader ?? (
+                title && `${textsCap.title}: ${title}`
+            )
+        }} />
+    )
 }
 ApplicationForm.propTypes = {
     proposalRequired: PropTypes.bool,
@@ -63,7 +70,7 @@ ApplicationForm.defaultProps = {
     header: textsCap.header,
 }
 
-const getInitialState = props => rxSetState => {
+const getInitialState = props => rxState => {
     const {
         proposalRequired = true,
         values = {},
@@ -156,12 +163,14 @@ const getInitialState = props => rxSetState => {
     ]
 
     return {
+        ...props,
         inputs: fillValues(inputs, values),
-        onSubmit: handleSubmit(rxSetState, props),
+        onSubmit: handleSubmit(rxState, props),
+        rxQueueId: new BehaviorSubject(),
     }
 }
 
-const handleSubmit = (rxSetState, props) => (_, values) => {
+const handleSubmit = (rxState, props) => (_, values) => {
     const { onSubmit, title } = props
     const taskId = values[inputNames.taskId]
     const linksArr = `${values[inputNames.links] || ''}`
@@ -171,7 +180,7 @@ const handleSubmit = (rxSetState, props) => (_, values) => {
     const pName = inputNames.proposal
     values[pName] = values[pName].trim()
 
-    rxSetState.next({
+    rxState.next({
         message: {
             content: textsCap.loading,
             icon: true,
@@ -180,7 +189,7 @@ const handleSubmit = (rxSetState, props) => (_, values) => {
     })
 
     const handleResult = (success, err) => {
-        rxSetState.next({
+        rxState.next({
             message: {
                 content: success
                     ? textsCap.successContent
@@ -198,7 +207,7 @@ const handleSubmit = (rxSetState, props) => (_, values) => {
 
     const func = queueableApis.marketApply
     const queueId = generateHash(taskId + func)
-    addToQueue({
+    const queueItem = {
         args: [{
             ...values,
             [inputNames.links]: linksArr,
@@ -209,5 +218,18 @@ const handleSubmit = (rxSetState, props) => (_, values) => {
         then: handleResult,
         title: textsCap.header,
         type: QUEUE_TYPES.CHATCLIENT,
-    }, queueId)
+    }
+    const onComplete = status => {
+        const success = status === statuses.success
+        rxState.next({
+            submitInProgress: false,
+            success,
+        })
+        onSubmit?.(success, values)
+    }
+    addToQueue(
+        queueItem,
+        onComplete,
+        queueId
+    )
 }

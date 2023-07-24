@@ -27,12 +27,13 @@ import FormInput from './FormInput'
 import { Invertible } from './Invertible'
 import IModal from './Modal'
 
-const textsCap = translated({
+const textsCap = {
 	cancel: 'cancel',
 	close: 'close',
 	submit: 'submit',
 	unexpectedError: 'an unexpected error occured',
-}, true)[1]
+}
+translated(textsCap, true)
 
 class FormBuilder extends Component {
 	constructor(props) {
@@ -392,7 +393,7 @@ class FormBuilder extends Component {
 					? closeText
 					: {}
 			closeProps.content = closeProps.content || (
-				isStr(closeText)
+				isStr(closeText) && !!closeText
 					? closeText
 					: submitInProgress || success || submitText === null
 						? textsCap.close

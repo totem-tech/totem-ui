@@ -19,7 +19,7 @@ import {
 } from '../../../services/modal'
 import {
     addToQueue,
-    checkComplete,
+    awaitComplete,
     QUEUE_TYPES,
 } from '../../../services/queue'
 // utils
@@ -288,7 +288,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         ? textsCap.acceptApplication
         : textsCap.rejectApplication
     const offChain = {
-        args: [data, null],
+        args: [data],
         description,
         func: queueableApis.marketApplyResponse,
         recordId: taskId,
@@ -337,7 +337,7 @@ const handleActionCb = (props, application) => async (_, accept) => {
         // prompt to add worker as a partner
         if (!!getPartner(workerAddress)) return openTaskForm()
 
-        showForm(PartnerForm, {
+        return showForm(PartnerForm, {
             subheader: textsCap.addPartner,
             onSubmit: done => done && openTaskForm(),
             values: {
@@ -348,7 +348,6 @@ const handleActionCb = (props, application) => async (_, accept) => {
             },
             warnBackup: false,
         })
-        return
     }
 
     // confirm before rejecting application
@@ -391,5 +390,5 @@ const handleActionCb = (props, application) => async (_, accept) => {
 
     // if rejected, no need to update onchain data
     const qid = addToQueue(offChain)
-    await checkComplete(qid, true)
+    await awaitComplete(qid)
 }

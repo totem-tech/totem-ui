@@ -91,7 +91,7 @@ function PageHeader(props) {
 		isLoggedIn => ([
 			(getUser() || {}).id,
 			isLoggedIn,
-		])
+		]),
 	)
 	const viewProps = {
 		...props,

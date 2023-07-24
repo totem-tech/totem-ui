@@ -47,7 +47,7 @@ const TK_ChildTypes = {
 
 /**
  * @name    handleInvitation
- * @summary respond to timekeeping invitation
+ * @summary worker responds to timekeeping invitation
  * 
  * @param   {String}    activityId
  * @param   {String}    workerAddress
@@ -82,13 +82,14 @@ export const handleInvitation = (
             content: textsCap.loadingData,
             size: 'mini',
         })
-        const activity = await fetchById(activityId)
+        const activity = await fetchById(activityId, { workerAddress })
         // close loading 
         closeModal(confirmId)
         if (!activity) return resolver(textsCap.activityNotFound)
 
         const {
             name: activityName,
+            ownerAddress,
             userId: activityOwnerId
         } = activity
         // find any notifications matching the for the specific invitation
@@ -127,6 +128,7 @@ export const handleInvitation = (
                     accepted,
                     projectHash: activityId,
                     projectName: activityName,// unused
+                    ownerAddress,
                     workerAddress,
                 },
                 err => resolver(err)
@@ -230,7 +232,9 @@ setTimeout(() => [
             const {
                 accepted,
                 projectHash: activityId,
+                workerAddress,
             } = data || {}
+            const ownerAddress = findIdentity(workerAddress)?.address
             const item = { icon: 'clock outline' }
             const msg = accepted
                 ? textsCap.tkInviteAcceptMsg
@@ -241,7 +245,11 @@ setTimeout(() => [
                         icon: 'eye',
                         onClick: e => {
                             e?.stopPropagation?.()
-                            return ActivityDetails.asModal({ activityId })
+                            return ActivityDetails.asModal({
+                                activityId,
+                                ownerAddress,
+                                workerAddress
+                            })
                         },
                         size: 'mini',
                         title: textsCap.viewActivity,
@@ -254,7 +262,12 @@ setTimeout(() => [
                     {senderIdBtn}
                     {` ${msg}:`}
                     <div style={{ fontWeight: 'bold' }}>
-                        <ActivityName {...{ activityId, render }} />
+                        <ActivityName {...{
+                            activityId,
+                            render,
+                            ownerAddress,
+                            workerAddress
+                        }} />
                     </div>
                 </div>
             )

@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { getConnection } from '../../../services/blockchain'
 import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../../utils/chatClient'
 import { translated } from '../../../utils/languageHelper'
 import {
     statuses,
     subjectAsPromise,
     unsubscribe,
+    useCallbackDeferred,
     useQueryBlockchain,
     useRxSubject,
 } from '../../../utils/reactjs'
-import { deferred } from '../../../utils/utils'
 import { query } from '../task'
 import { addDetailsToTask, processOrder } from '../useTasks'
 
@@ -30,12 +29,15 @@ const useSearch = (filter = {}) => {
             status: statuses.LOADING,
         }
     })
-    const { message: _msg } = useQueryBlockchain(...queryArgs)
-    const [search] = useState(() =>
-        deferred((filter, onResult, onError) => {
-            query.searchMarketplace(filter)
-                .then(onResult, onError)
-        }, 500)
+    const { message: _msg } = useQueryBlockchain(queryArgs)
+    const searchDeferred = useCallbackDeferred((
+        filter,
+        onResult,
+        onError
+    ) => query
+        .searchMarketplace(filter)
+        .then(onResult, onError),
+        500
     )
     let { keywords = '' } = filter
     keywords = keywords.trim()
@@ -71,7 +73,7 @@ const useSearch = (filter = {}) => {
                 })
             }
             setQueryArgs({
-                connection: getConnection(),
+                // connection: getConnection(),
                 func: 'api.query.orders.orders',
                 args: [taskIds],
                 multi: true,
@@ -81,7 +83,7 @@ const useSearch = (filter = {}) => {
         }
 
         // second, search & fetch marketplace tasks from messaging service
-        const doSearch = () => search(
+        const doSearch = () => searchDeferred(
             filter,
             handleResult,
             err => mounted && setResult({

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button as SemanticButton } from 'semantic-ui-react'
-import { iUseReducer } from '../../utils/reactjs'
+import { iUseReducer, useRxState } from '../../utils/reactjs'
 import { isBool, isFn } from '../../utils/utils'
 import { useInverted } from '../../utils/window'
 
@@ -13,7 +13,7 @@ import { useInverted } from '../../utils/window'
  * @returns {Element}
  */
 export const Button = React.memo(props => {
-	const [state, setState] = iUseReducer(null, { loading: false })
+	const [state, setState] = useRxState({ loading: false })
 	let {
 		color,
 		disabled,

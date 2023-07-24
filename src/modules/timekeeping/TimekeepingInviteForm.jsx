@@ -4,11 +4,14 @@ import { BehaviorSubject } from 'rxjs'
 import { Button } from 'semantic-ui-react'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { showForm } from '../../services/modal'
-import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { translated } from '../../utils/languageHelper'
-import { useRxState } from '../../utils/reactjs'
 import {
-    isFn,
+    addToQueue,
+    QUEUE_TYPES,
+    statuses
+} from '../../services/queue'
+import { translated } from '../../utils/languageHelper'
+import { useQueueItemStatus, useRxState } from '../../utils/reactjs'
+import {
     arrSort,
     textEllipsis,
     deferred
@@ -30,8 +33,6 @@ const textsCap = {
     partner: 'partner',
     activity: 'activity',
     activityLabel: 'select an activity',
-    addedToQueueDesc: 'invitation request has been added to background queue',
-    addedToQueue: 'added to queue',
     addPartner: 'add new partner',
     close: 'close',
     formHeader: 'Timekeeping - invitation to join the Team',
@@ -59,8 +60,16 @@ const TimeKeepingInviteForm = props => {
     const { activityId } = props
     const rxActivities = useActivities({ activityId, subjectOnly: true })
     const [state] = useRxState(getInitialState(props, rxActivities))
+    const { message, rxQueueId } = state
+    const queueStatus = useQueueItemStatus(rxQueueId)
 
-    return <FormBuilder {...{ ...props, ...state }} />
+    return (
+        <FormBuilder {...{
+            ...props,
+            ...state,
+            message: queueStatus || message
+        }} />
+    )
 }
 export default TimeKeepingInviteForm
 TimeKeepingInviteForm.defaultProps = {
@@ -156,16 +165,14 @@ const getInitialState = (props, rxActivities) => rxState => {
         },
     ]
     const state = {
-        submitDisabled: { workerAddress: false },
-        loading: false,
-        message: {},
+        inputs: fillValues(inputs, values),
         onSubmit: handleSubmit(
             props,
             rxState,
             rxActivities
         ),
-        success: false,
-        inputs: fillValues(inputs, values),
+        rxQueueId: new BehaviorSubject(),
+        submitDisabled: { workerAddress: false },
     }
     return state
 }
@@ -174,8 +181,9 @@ const handleSubmit = (
     props,
     rxState,
     rxActivities
-) => (e, values) => {
+) => async (_e, values) => {
     const { onSubmit } = props
+    const { rxQueueId } = rxState.value
     const {
         activityId,
         workerAddress
@@ -193,39 +201,8 @@ const handleSubmit = (
     const isSelfInvite = isWorker && workerAddress === ownerAddress
     const { name, userId } = workerIdentity
         || partners.get(workerAddress)
-    rxState.next({
-        submitInProgress: true,
-        loading: true,
-        message: {
-            content: textsCap.addedToQueueDesc,
-            header: textsCap.addedToQueue,
-            icon: true,
-            status: 'loading'
-        }
-    })
+    rxState.next({ submitInProgress: true })
 
-    // display/update self invite status message
-    const updateSelfInviteMsg = skipOnSuccess => success => {
-        // update message when 
-        if (skipOnSuccess && success) return
-        rxState.next({
-            submitInProgress: false,
-            loading: false,
-            success,
-            message: {
-                header: success
-                    ? textsCap.invitedAndAccepted
-                    : textsCap.txFailed,
-                icon: true,
-                status: success
-                    ? 'success'
-                    : 'error'
-            }
-        })
-        isFn(onSubmit) && onSubmit(success, values)
-        // trigger an update of list of Activities
-        rxForceUpdate.next(workerAddress)
-    }
     // queue itme to accept invitation of own identity
     const acceptInvitationTask = queueables.worker.accept(
         activityId,
@@ -234,7 +211,6 @@ const handleSubmit = (
         {
             title: textsCap.queueTitleOwnAccept,
             description: `${textsCap.identity}: ${name}`,
-            then: updateSelfInviteMsg(),
         }
     )
 
@@ -252,24 +228,6 @@ const handleSubmit = (
                 projectName: activityName,
                 workerAddress
             },
-            err => {
-                rxState.next({
-                    submitInProgress: false,
-                    loading: false,
-                    success: !err,
-                    message: {
-                        header: !err
-                            ? textsCap.inviteSuccess
-                            : textsCap.inviteSuccessNotifyFailed,
-                        content: err || '',
-                        icon: true,
-                        status: !err
-                            ? 'success'
-                            : 'warning',
-                    }
-                })
-                isFn(onSubmit) && onSubmit(!err, values)
-            }
         ],
     }
 
@@ -281,26 +239,26 @@ const handleSubmit = (
         {
             title: textsCap.formHeader,
             description: `${textsCap.invitee}: ${name}`,
-            then: !isSelfInvite
-                ? updateSelfInviteMsg(true)
-                : (success, err) => success && rxState.next({
-                    submitInProgress: false,
-                    loading: false,
-                    message: {
-                        header: textsCap.txFailed,
-                        content: `${err}`,
-                        icon: true,
-                        status: 'error',
-                    }
-                }),
             next: isSelfInvite
-                ? null
+                ? null // runtime will aceept the invitation automatically
                 : isWorker
                     ? acceptInvitationTask
                     : notifyWorkerTask,
         }
     )
-    addToQueue(inviteWorkerTask)
+    const onComplete = status => {
+        const success = status === statuses.SUCCESS
+        onSubmit?.(success, values)
+
+        rxState.next({
+            submitInProgress: false,
+            success,
+        })
+        // trigger an update of list of Activities for the worker address
+        rxForceUpdate.next(workerAddress)
+    }
+    // add to queue and set queue ID to display item status
+    rxQueueId.next(addToQueue(inviteWorkerTask, onComplete))
 }
 
 const validateWorker = rxState => async (_, { value }, values) => {
@@ -309,12 +267,12 @@ const validateWorker = rxState => async (_, { value }, values) => {
 
     const { inputs, submitDisabled } = rxState.value
     const activityId = values[inputNames.activityId]
-    const partnerIn = findInput(inputs, inputNames.workerAddress)
+    const workerIn = findInput(inputs, inputNames.workerAddress)
     const partner = partners.get(workerAddress)
     const { userId } = partner || {}
     // do not require user id if selected address belongs to user
     const missingUserId = !identities.get(workerAddress) && !userId
-    partnerIn.loading = !!activityId && !missingUserId
+    workerIn.loading = !!activityId && !missingUserId
     if (missingUserId) return {
         content: (
             <p>
@@ -327,7 +285,7 @@ const validateWorker = rxState => async (_, { value }, values) => {
                         showForm(PartnerForm, {
                             onSubmit: (_, { address, userId }) => {
                                 if (!userId) return
-                                const { rxValue } = partnerIn
+                                const { rxValue } = workerIn
                                 rxValue.next('')
                                 setTimeout(() => rxValue.next(`${address}`), 500)
                             },
@@ -339,7 +297,7 @@ const validateWorker = rxState => async (_, { value }, values) => {
         ),
         status: 'error'
     }
-    if (!partnerIn.loading) return
+    if (!workerIn.loading) return
 
     // disable submit button
     submitDisabled.workerAddress = true
@@ -350,6 +308,7 @@ const validateWorker = rxState => async (_, { value }, values) => {
             query.worker.listWorkers(activityId),
         ])
         .finally(() => submitDisabled.workerAddress = false)
+
     const accepted = acceptedAr.includes(workerAddress)
     const invited = invitedAr.includes(workerAddress)
     /*
@@ -358,14 +317,16 @@ const validateWorker = rxState => async (_, { value }, values) => {
      * true => invited and already accepted
      * false => invited but hasn't responded
      */
-    partnerIn.loading = false
+    workerIn.loading = false
     // allows (re-)invitation if user hasn't accepted (!== true) invitation
-    return (accepted || invited) && {
+    const msg = (accepted || invited) && {
         content: accepted
             ? textsCap.partnerAcceptedInvite
             : textsCap.partnerInvited,
         status: accepted
             ? 'error'
-            : 'warning'
+            : 'warning' //'info',//'warning',
     }
+    console.log('msg', msg)
+    return msg
 }

@@ -3,10 +3,14 @@ import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { findInput } from '../../components/FormBuilder'
 import Text from '../../components/Text'
-import { confirm, showForm, showInfo } from '../../services/modal'
-import { addToQueue, rxOnSave } from '../../services/queue'
+import { confirm, showForm } from '../../services/modal'
+import { addToQueue } from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
-import { statuses, useIsMobile, useRxState } from '../../utils/reactjs'
+import {
+    statuses,
+    useIsMobile,
+    useRxState
+} from '../../utils/reactjs'
 import { textEllipsis } from '../../utils/utils'
 import {
     openStatuses,
@@ -19,7 +23,6 @@ import ActivityForm from './ActivityForm'
 import ActivityReassignForm from './ActivityReassignForm'
 import ActivityTeamList from './ActivityTeamList'
 import useActivities from './useActivities'
-import QueueItemView from '../../utils/reactjs/components/QueueItemStatus'
 
 const textsCap = {
     areYouSure: 'are you sure?',
@@ -66,7 +69,6 @@ const ActivityList = React.memo(props => {
             icon: true,
             status: statuses.LOADING,
         }
-
     return <DataTable {...{ ...props, ...state }} />
 })
 export default ActivityList
@@ -164,10 +166,7 @@ const getInitialState = rxState => {
                     {
                         icon: { name: 'eye' },
                         key: 'detials',
-                        onClick: () => ActivityDetails.asModal({
-                            // activity,
-                            activityId,
-                        }),
+                        onClick: () => ActivityDetails.asModal({ activity, activityId }),
                         title: textsCap.viewDetails,
                     }
                 ]

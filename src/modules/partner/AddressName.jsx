@@ -26,12 +26,22 @@ translated(textsCap, true)
  * @summary display name of the identity or partner along with appropriate icon. 
  * If not own identity or partner, will show a button to add as partner.
  * 
+ * @param   {Object}   p           props
+ * @param   {String}   p.address    identity
+ * @param   {Boolean}  p.allowCopy  (optional) whether to add a button to copy the address
+ *                                  Default: `true`
+ * @param   {*}        p.Component  (optional) wrapper component
+ *                                  Default: `"span"`
+ * @param   {*}        p.maxLength  (optional) wrapper component
+ *                                  Default: `32`
+ * @param   {*}        p.name       (optional) partner name to be passed on to add partner form
+ * @param   {Object}   p.styleAddButton (optional) CSS styles for add partner button
+ * @param   {String}   p.userId     (optional) user ID to be passed on to add partner form
  */
 const AddressName = React.memo(({
     address = '',
     allowCopy,
     Component,
-    ignoreAttributes,
     maxLength,
     name: partnerName,
     style,
@@ -71,8 +81,7 @@ const AddressName = React.memo(({
 
     return (
         <Component {...{
-            ...objWithoutKeys(props, ignoreAttributes),
-            key: address,
+            ...props,
             style: {
                 whiteSpace: 'nowrap',
                 ...style,
@@ -110,7 +119,10 @@ const AddressName = React.memo(({
                     : (
                         <LabelCopy {...{
                             content: name,
-                            style: { padding: 7.5 },
+                            style: {
+                                display: 'inline',
+                                padding: 7.5,
+                            },
                             maxLength,
                             value: address,
                         }} />
@@ -126,7 +138,6 @@ AddressName.prototype = {
         PropTypes.string,
         PropTypes.elementType,
     ]).isRequired,
-    ignoreAttributes: PropTypes.arrayOf(PropTypes.string),
     maxLength: PropTypes.number,
     // @name (optional): a name to be prefilled when adding as partner
     name: PropTypes.string,
@@ -136,7 +147,6 @@ AddressName.prototype = {
 AddressName.defaultProps = {
     allowCopy: true,
     Component: 'span',
-    ignoreAttributes: [],
     maxLength: 32,
 }
 export default AddressName

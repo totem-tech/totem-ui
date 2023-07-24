@@ -1,16 +1,14 @@
 // *********
-// IMPORTANT NOTE the terminology "project" has been replaced by "activity" in the UI. 
+// IMPORTANT NOTE: the terminology "project" has been replaced by "activity" in the UI. 
 // It has not been replaced in all of the codes, yet.
 // *********
 import { hashTypes, query as queryBC } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
 
 export const MODULE_KEY = 'projects'
-const queryPrefix = 'api.query.projects.'
-const txPrefix = 'api.tx.projects.'
 // transaction queue item type
 const TX_STORAGE = 'tx_storage'
-// project status codes
+// activity status codes
 export const statusCodes = {
     open: 0,
     reopen: 100,
@@ -31,11 +29,11 @@ export const statusTexts = {
     unknown: 'unknown',
 }
 translated(statusTexts)
-// status codes that indicate project is open
+// status codes that indicate activity is open
 export const openStatuses = [statusCodes.open, statusCodes.reopen]
 
 export const query = {
-    // getOwner retrives the owner address of a project
+    // getOwner retrives the owner address of an Activity
     //
     // Params:
     // @recordId    string/array: array for multi query
@@ -43,12 +41,13 @@ export const query = {
     // @multi       boolean: (optional) indicates multiple storage states are being queried in a single request
     //
     // Returns Promise/function
-    getOwner: (recordId, callback, multi = false) => queryBC(
-        queryPrefix + 'projectHashOwner',
-        [recordId, callback].filter(Boolean),
+    getOwner: (activityId, callback, multi = false) => queryBC(
+        query.getOwner_func,
+        [activityId, callback].filter(Boolean),
         multi,
     ),
-    // listByOwner retrieves a list of project hashes owned by @address
+    getOwner_func: 'api.query.projects.projectHashOwner',
+    // listByOwner retrieves a list of activity IDs owned by @address
     //
     // Params:
     // @address     string/array: array for multi query
@@ -57,25 +56,27 @@ export const query = {
     //
     // Returns      promise
     listByOwner: (address, callback, multi = false) => queryBC(
-        queryPrefix + 'ownerProjectsList',
+        query.listByOwner_func,
         [address, callback].filter(Boolean),
         multi,
     ),
-    // status retrieves the status code of a project
+    listByOwner_func: 'api.query.projects.ownerProjectsList',
+    // retrieve the status code by Activity ID
     // params
     // @recordId    string/array: array for multi query
     // @callback    function: (optional) to subscribe to blockchain storage state changes
     // @multi       function: (optional) indicates multiple storage states are being queried in a single request
     //
     // Returns      promise
-    status: (recordId, callback, multi = false) => queryBC(
-        queryPrefix + 'projectHashStatus',
-        [recordId, callback].filter(Boolean),
+    status: (activityId, callback, multi = false) => queryBC(
+        query.status_func,
+        [activityId, callback].filter(Boolean),
         multi,
     ),
+    status_func: 'api.query.projects.projectHashStatus',
 }
 
-// queueables helps create queueable blockchain transactions relevant to projects.
+// queueables helps create queueable blockchain transactions relevant to activities.
 // Make sure to supply appropriate `title` and `descrption` properties to `@queueProps`
 // so that user can be notified by a toast message.
 //
@@ -86,86 +87,93 @@ export const query = {
 // }
 // queueService.addToQueue(queueables.add('', '', queueProps))
 export const queueables = {
-    // add a new project
+    // add a new Activity
     //
     // Params:
     // @ownerAddress    string
-    // @recordId        string: project ID
+    // @recordId        string: Activity ID
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns      object
-    add: (ownerAddress, recordId, queueProps = {}) => ({
+    add: (ownerAddress, activityId, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: txPrefix + 'addNewProject',
+        func: queueables.add_func,
         type: TX_STORAGE,
-        args: [recordId],
+        args: [activityId],
     }),
-    // transfer ownership of a project to a new owner address 
+    add_func: 'api.tx.projects.addNewProject',
+    // transfer ownership of an activity to a new owner address 
     //
     // Params:
-    // @ownerAddress    string: current owner of the project
+    // @ownerAddress    string: current owner of the activity
     // @newOwnerAddress string: address which will be the new owner
-    // @recordId        string: project ID
+    // @recordId        string: activity ID
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns          object
-    reassign: (ownerAddress, newOwnerAddress, recordId, queueProps = {}) => ({
+    reassign: (ownerAddress, newOwnerAddress, activityId, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: txPrefix + 'reassignProject',
+        func: queueables.reassign_func,
         type: TX_STORAGE,
-        args: [newOwnerAddress, recordId],
+        args: [newOwnerAddress, activityId],
     }),
-    // remove a project
+    reassign_func: 'api.tx.projects.reassignProject',
+    // remove an activity
     //
     // Params:
-    // @ownerAddress    string: current owner of the project
-    // @recordId        string  : project ID
+    // @ownerAddress    string: current owner of the activity
+    // @recordId        string: activity ID
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns          object
-    remove: (ownerAddress, recordId, queueProps = {}) => ({
+    remove: (ownerAddress, activityId, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: txPrefix + 'removeProject',
+        func: queueables.remove_func,
         type: TX_STORAGE,
-        args: [recordId],
+        args: [activityId],
     }),
-    // save BONSAI token for a project
+    remove_func: 'api.tx.projects.removeProject',
+    // save BONSAI token for an activity
     //
     // Params:
     // @ownerAddress    string
-    // @recordId        string: project ID
-    // @token           string: hash generated using project details
+    // @recordId        string: activity ID
+    // @token           string: hash generated using activity details
     //
     // Returns          object
-    saveBONSAIToken: (ownerAddress, recordId, token, queueProps = {}) => ({
+    saveBONSAIToken: (ownerAddress, activityId, token, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: 'api.tx.bonsai.updateRecord',
+        func: queueables.saveBONSAIToken_func,
         type: TX_STORAGE,
-        args: [hashTypes.projectHash, recordId, token],
+        args: [hashTypes.activityId, activityId, token],
     }),
-    // change project status
+    saveBONSAIToken_func: 'api.tx.bonsai.updateRecord',
+    // change activity status
     //
     // Params:
-    // @ownerAddress    string: current owner of the project
-    // @recordId        string: project ID
+    // @ownerAddress    string: current owner of the activity
+    // @recordId        string: activity ID
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns          object
-    setStatus: (ownerAddress, recordId, statusCode, queueProps = {}) => ({
+    setStatus: (ownerAddress, activityId, statusCode, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        func: txPrefix + 'setStatusProject',
+        func: queueables.setStatus_func,
         type: TX_STORAGE,
-        args: [recordId, statusCode],
+        args: [activityId, statusCode],
     }),
+    setStatus_func: 'api.tx.projects.setStatusProject',
 }
 export default {
+    MODULE_KEY,
     openStatuses,
-    statusCodes,
-    queueables,
     query,
+    queueables,
+    statusCodes,
+    statusTexts,
 }

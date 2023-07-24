@@ -1,24 +1,29 @@
-import React from 'react'
 import PropTypes from 'prop-types'
+import React from 'react'
+import { BehaviorSubject } from 'rxjs'
 import { Button } from '../../components/buttons'
 import FormBuilder, { fillValues } from '../../components/FormBuilder'
+import {
+	addToQueue,
+	newId,
+	QUEUE_TYPES
+} from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
-import { addToQueue, getById, QUEUE_TYPES, rxOnSave } from '../../services/queue'
-import { iUseReducer, useRxState } from '../../utils/reactjs'
+import {
+	useRxState,
+	useQueueItemStatus,
+	statuses
+} from '../../utils/reactjs'
 import {
 	deferred,
 	generateHash,
 	isFn,
 	objClean,
 } from '../../utils/utils'
-import { getSelected, rxIdentities } from '../identity/identity'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
+import { getSelected, rxIdentities } from '../identity/identity'
 import { queueables } from './activity'
 import ActivityTeamList from './ActivityTeamList'
-import { rxForceUpdate } from './useActivities'
-import QueueItemStatus, { useQueueItemStatus } from '../../utils/reactjs/components/QueueItemStatus'
-import { BehaviorSubject } from 'rxjs'
-import { rxOnline } from '../../utils/window'
 
 const textsCap = {
 	create: 'create',
@@ -36,7 +41,7 @@ const textsCap = {
 	ownerLabel: 'select the owner Identity for this Activity ',
 	ownerPlaceholder: 'select owner',
 	saveBONSAIToken: 'save BONSAI auth token',
-	saveDetailsTitle: 'save activity details',
+	saveDetailsTitle: 'save off-chain data',
 	submitSuccessHeader: 'activity saved successfully',
 	submitTitleCreate: 'create activity',
 	submitTitleUpdate: 'update activity',
@@ -57,24 +62,24 @@ export const bonsaiKeys = [
 export default function ActivityForm(props) {
 	const [state] = useRxState(getInitialState(props))
 	const { rxQueueId, showTeamBtn } = state
-	const message = useQueueItemStatus(
+	// when form is submitted rxQueueId & showTeamBtn is set and queue status (message) will be displayed automatically.
+	const queueStatus = useQueueItemStatus(
 		rxQueueId,
-		// replace header and include a button below the success message to open the team list on a modal
 		message => message?.status !== 'success'
 			? message
 			: {
+				// replace header and include a button below the success message to open the team list on a modal
 				...message,
 				content: showTeamBtn,
 				header: textsCap.submitSuccessHeader,
 			},
 	)
 
-	if (message) state.message = message
-
 	return (
 		<FormBuilder {...{
 			...props,
 			...state,
+			message: queueStatus || state.message
 		}} />
 	)
 }
@@ -155,12 +160,11 @@ const getInitialState = props => rxState => {
 		submitText: activityId
 			? textsCap.update
 			: textsCap.create,
-		success: false,
 	}
 	return state
 }
 
-const handleSubmit = (props, rxState) => (e, values) => {
+const handleSubmit = (props, rxState) => async (e, values) => {
 	const {
 		activityId: existingId,
 		modalId,
@@ -183,38 +187,19 @@ const handleSubmit = (props, rxState) => (e, values) => {
 		+ '\n'
 		+ `${textsCap.description}: ${desc}`
 
-	const handleTxError = ok => !ok && rxState.next({
-		...!ok && { showTeamBtn: null },
-		submitInProgress: false
-	})
-
-	const handleOffChainResult = (ok, err) => {
-		err = !ok && err
-		isFn(onSubmit) && onSubmit(ok, values)
-		handleTxError(ok)
-		if (!!err) return
-
-		rxState.next({ success: true })
-		// trigger cache update
-		rxForceUpdate.next(`${ownerAddress}`)
-	}
-
 	// save auth token to blockchain and then store data to off-chain DB
 	const updateTask = queueables.saveBONSAIToken(
 		ownerAddress,
 		activityId,
 		token,
 		{
-			title: textsCap.saveBONSAIToken,
+			title: `${title}: ${textsCap.saveBONSAIToken}`,
 			description: token,
-			then: handleTxError,
 			next: {
 				type: QUEUE_TYPES.CHATCLIENT,
 				func: 'project',
-				title: textsCap.saveDetailsTitle,
+				title: `${title}: ${textsCap.saveDetailsTitle}`,
 				description,
-				// address: ownerAddress,
-				then: handleOffChainResult,
 				args: [
 					activityId,
 					values,
@@ -224,14 +209,7 @@ const handleSubmit = (props, rxState) => (e, values) => {
 		},
 	)
 
-	// Send transaction to blockchain first, then add to external storage
-	const createTask = queueables.add(ownerAddress, activityId, {
-		title,
-		description,
-		then: handleTxError,
-		next: updateTask,
-	})
-
+	// update state and prevent re-submission unless execution is failed
 	rxState.next({
 		showTeamBtn: (
 			<Button {...{
@@ -248,14 +226,25 @@ const handleSubmit = (props, rxState) => (e, values) => {
 				},
 			}} />
 		),
-		submitInProgress: true
+		submitInProgress: true,
+		success: false,
 	})
 
-	const queueId = addToQueue(
-		create
-			? createTask
-			: updateTask
-	)
-	rxQueueId.next(queueId)
-
+	const onComplete = status => {
+		const success = status === statuses.success
+		rxState.next({
+			submitInProgress: false,
+			success,
+		})
+		onSubmit?.(success, values)
+	}
+	const queueItem = !create
+		? updateTask
+		: queueables.add(ownerAddress, activityId, {
+			title,
+			description,
+			next: updateTask,
+		})
+	// send to queue && set queue ID to display status message
+	rxQueueId.next(addToQueue(queueItem, onComplete))
 }

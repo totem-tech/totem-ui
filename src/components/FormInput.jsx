@@ -721,7 +721,7 @@ export class FormInput extends Component {
 				}}>
 					{inputEl}
 				</Form_Group>
-				<Message {...message} />
+				{message && <Message {...message} />}
 			</React.Fragment>
 		)
 		if (!isObj(accordion)) return groupEl

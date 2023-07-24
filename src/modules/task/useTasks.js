@@ -23,12 +23,14 @@ import {
 } from './task'
 import PromisE from '../../utils/PromisE'
 import { rxBlockNumber } from '../../services/blockchain'
-import { subjectAsPromise } from '../../utils/reactjs'
-import { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
-const textsCap = translated({
+import { subjectAsPromise, unsubscribe } from '../../utils/reactjs'
+import chatClient, { rxIsLoggedIn, rxIsRegistered } from '../../utils/chatClient'
+
+const textsCap = {
     errorHeader: 'failed to load tasks',
     loadingMsg: 'loading tasks',
-}, true)[1]
+}
+translated(textsCap, true)
 
 // @rsUpdater is used to force update off-chain task data. Expected value is array of Task IDs.
 // Use case: whenever off-chain task data (eg: title, description...) needs to be updated manually because PolkadotJS 
@@ -190,7 +192,11 @@ export default function useTasks(types = [], address, timeout = 5000) {
         setMessage(loadingMsg)
 
         query
-            .getTaskIds(types, address, handleTaskIds)
+            .getTaskIds(
+                types,
+                address,
+                handleTaskIds
+            )
             .then(
                 unsub => subs.taskIds2d = unsub,
                 setError,
@@ -207,15 +213,29 @@ export default function useTasks(types = [], address, timeout = 5000) {
     useEffect(() => {
         if (!address) return () => { }
 
+        const subscriptions = {}
         // listend for changes in rxUpdated and update task details from messaging service
-        const subscribed = rxUpdater.subscribe(async (taskIds) => {
+        subscriptions.rxUpdater = rxUpdater.subscribe(async (taskIds) => {
             if (!taskIds || !taskIds.length) return
 
             let msg = null
-            let newTasks = null
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
-                newTasks = addDetailsToTasks(address, tasks, detailsMap, taskIds)
+                const addDetails = () => {
+                    const newTasks = addDetailsToTasks(
+                        address,
+                        tasks,
+                        detailsMap,
+                        taskIds
+                    )
+                    newTasks && setTasks(newTasks)
+                }
+                subscriptions.onCRUD = chatClient.onCRUD(({ data, id, type }) => {
+                    if (type !== 'task' || !taskIds.includes(id)) return
+                    detailsMap.set(id, data)
+                    addDetails()
+                })
+                addDetails()
             } catch (err) {
                 //ignore error
                 console.error(err)
@@ -226,10 +246,9 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 }
             }
             setMessage(msg)
-            newTasks && setTasks(newTasks)
         })
 
-        return () => subscribed.unsubscribe()
+        return () => unsubscribe(subscriptions)
     }, [address, tasks, setTasks])
 
     return [tasks, message]

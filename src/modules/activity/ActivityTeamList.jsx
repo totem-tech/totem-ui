@@ -17,6 +17,7 @@ import AddressName from '../partner/AddressName'
 import {
     handleInvitation as handleTkInvite
 } from '../timekeeping/notificationHandlers'
+import { query } from '../timekeeping/timekeeping'
 import InviteForm from '../timekeeping/TimekeepingInviteForm'
 import ActivityName from './ActivityName'
 
@@ -34,7 +35,6 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-
 const ActivityTeamList = props => {
     const { activityId } = props
     const [
@@ -45,11 +45,11 @@ const ActivityTeamList = props => {
         getTableProps(props),
         {
             args: [activityId],
-            func: 'api.query.timekeeping.projectInvitesList',
+            func: activityId && query.worker.listInvited_func,
         },
         {
             args: [activityId],
-            func: 'api.query.timekeeping.projectWorkersList',
+            func: activityId && query.worker.listWorkers_func,
         }
     ], [activityId])
     const {
@@ -60,7 +60,6 @@ const ActivityTeamList = props => {
         message: msg2,
         result: workers = []
     } = useQueryBlockchain(workersQuery)
-
     if (msg1 || msg2) return <Message {...msg1 || msg2} />
 
     const data = [...workers, ...invitees].map((

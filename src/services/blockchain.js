@@ -57,9 +57,9 @@ export const denominations = Object.freeze({
 export const hashTypes = {
     /// 1000
     /// 2000
-    projectHash: 3000,
-    timeRecordHash: 4000,
-    taskHash: 5000,
+    activityId: 3000,
+    timeRecordId: 4000,
+    taskId: 5000,
     /// 5000
     /// 6000
     /// 7000

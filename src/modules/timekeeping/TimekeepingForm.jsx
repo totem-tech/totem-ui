@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { BehaviorSubject } from 'rxjs'
+import { Icon } from 'semantic-ui-react'
 import { Button, ButtonAcceptOrReject } from '../../components/buttons'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import DataTableVertical from '../../components/DataTableVertical'
@@ -9,6 +10,7 @@ import { confirmAsPromise, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
 import {
+    RxSubjectView,
     copyRxSubject,
     subjectAsPromise,
     useIsMobile,
@@ -23,10 +25,13 @@ import {
 import {
     className,
     isFn,
+    objClean,
     objWithoutKeys,
 } from '../../utils/utils'
 import { openStatuses, query as actQuery } from '../activity/activity'
+import ActivityDetails from '../activity/ActivityDetails'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
+import { get, getSelected, rxIdentities } from '../identity/identity'
 import AddressName from '../partner/AddressName'
 import { handleInvitation } from './notificationHandlers'
 import {
@@ -37,8 +42,8 @@ import {
     queueables,
     statuses,
 } from './timekeeping'
-import Timer from './Timer'
 import TimeKeepingInviteForm, { inputNames as invInputNames } from './TimekeepingInviteForm'
+import Timer from './Timer'
 import useTkActivities from './useTKActivities'
 
 const textsCap = {
@@ -102,6 +107,7 @@ const textsCap = {
     timerRunningMsg2: 'return here at anytime by clicking on the clock icon in the header.',
     transactionFailed: 'blockchain transaction failed!',
     updateFormHeader: 'update Record',
+    viewActivity: 'view activity details',
     workerBannedMsg: 'you are banned from this Activity!',
 }
 translated(textsCap, true)
@@ -137,27 +143,15 @@ const TimekeepingForm = React.memo(({
     isMobile = useIsMobile(),
     ...props
 }) => {
-    const conf = useMemo(() => ({
-        // makes sure the correct list of activites are retrieved even when the selected identity changes.
-        identity: timer.getValues()[inputNames.workerAddress],
-        includeOwned: true,
-        subjectOnly: true,
-    }), [])
-    const rxActivities = useTkActivities(conf)
-    const rxValues = useMemo(() => new BehaviorSubject({}), [])
-    const [state, _, rxState] = useRxState(
-        getInitialState(
-            props,
-            rxActivities,
-            rxValues
-        )
-    )
-    const values = useRxSubject(timer.rxValues)[0]
+    const [state, _, rxState] = useRxState(getInitialState(props))
     let {
+        activitiesQuery,
         closeText = closeTextP,
         inputs,
         message,
     } = state
+    const rxActivities = useTkActivities(activitiesQuery)
+    const values = useRxSubject(timer.rxValues)[0]
     const {
         tsStarted,
         tsStopped,
@@ -241,6 +235,9 @@ const TimekeepingForm = React.memo(({
                         ? textsCap.submit
                         : textsCap.start
                     : textsCap.stop,
+                disabled: inprogress
+                    ? false // prevents stop button being disabled
+                    : undefined,
                 icon: {
                     loading: inprogress,
                     name: !inprogress
@@ -289,6 +286,7 @@ const getActivityOptions = (
         .from(activities)
         .map(([activityId, activity]) => {
             const {
+                description,
                 name,
                 ownerAddress,
                 userId
@@ -297,7 +295,7 @@ const getActivityOptions = (
                 description: (
                     <AddressName {...{
                         address: ownerAddress,
-                        allowCopy: false,
+                        // allowCopy: false,
                         maxLength: 21,
                         // fixes alignment issue when add button is displayed
                         styleAddButton: {
@@ -315,14 +313,39 @@ const getActivityOptions = (
                     userId,
                     ownerAddress,
                 ].join(' '),
-                text: name,
-                title: activityId,
+                text: (
+                    <span>
+                        <RxSubjectView {...{
+                            subject: false, // will create rxHover using default value `false`
+                            valueModifier: (hovered, _, rxHover) => (
+                                <Icon {...{
+                                    className: 'no-margin',
+                                    color: hovered
+                                        ? 'blue'
+                                        : undefined,
+                                    name: 'eye',
+                                    onClick: e => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        return ActivityDetails.asModal({ activity, activityId })
+                                    },
+                                    onMouseEnter: () => rxHover?.next(true),
+                                    onMouseLeave: () => rxHover?.next(false),
+                                    style: { cursor: 'pointer' },
+                                    title: textsCap.viewActivity,
+                                }} />
+                            ),
+                        }} />
+                        {' ' + name}
+                    </span>
+                ),
+                title: `ID: ${activityId}\nDescription: ${description}`,
                 value: activityId,
             }
         })
-    activityIn.noResultsMessage = options.length === 0
-        ? textsCap.noActivityMsg
-        : undefined
+    activityIn.noResultsMessage = options?.length > 0
+        ? undefined
+        : textsCap.noActivityMsg
 
     // pre-select activity
     rxState.prefillDone ??= !!activityIn.rxValue.value
@@ -339,26 +362,23 @@ const getActivityOptions = (
 }
 const getInitialState = (
     props,
-    rxActivities,
-    rxValues
+    rxValues = new BehaviorSubject({}),
 ) => rxState => {
     const {
         projectHash: pph,
         activityId: pActivityId = pph
     } = props
     const values = timer.getValues()
-    let {
-        projectHash, // to be deprecated
-        activityId = projectHash,
-        breakCount,
-        inprogress,
-    } = values
+    const { breakCount, inprogress } = values
+    const activityId = values[inputNames.activityId]
+    const workerAddress = values[inputNames.workerAddress]
+        || getSelected().address
     values.duration = DURATION_ZERO
     values.breakCount = (breakCount || 0)
     values.projectHash = !!pActivityId && !inprogress
         ? pActivityId
         : activityId
-
+    const rxActivities = new BehaviorSubject(new Map())
     const rxManualEntry = copyRxSubject(
         timer.rxValues,
         null,
@@ -372,10 +392,34 @@ const getInitialState = (
         null,
         () => timer.getDuration(),
     )
+    const rxWorkerAddress = new BehaviorSubject(workerAddress)
     const inputs = [
         {
+            // disabled: () => {
+            //     const values = timer.getValues()
+            //     return values.inprogress && !!values[inputNames.workerAddress]
+            // },
+            label: textsCap.identity,
+            name: inputNames.workerAddress,
+            options: [],
+            required: true,
+            rxOptions: rxIdentities,
+            rxOptionsModifier: getIdentityOptions,
+            rxValue: rxWorkerAddress,
+            search: ['keywords'],
+            selection: true,
+            type: 'dropdown',
+            // validate: validateWorkerAddress(rxState)
+        },
+        {
             clearable: true,
-            disabled: !!pActivityId,
+            // disabled: !!pActivityId,
+            // disabled: () => {
+            //     if (!!pActivityId) return true
+
+            //     const values = timer.getValues()
+            //     return values.inprogress && !!values[inputNames.activityId]
+            // },
             label: textsCap.activity,
             name: inputNames.activityId,
             options: [],
@@ -389,17 +433,6 @@ const getInitialState = (
             selectOnNavigation: false,
             type: 'dropdown',
             validate: validateActiviy(rxState, rxActivities)
-        },
-        {
-            label: textsCap.identity,
-            name: inputNames.workerAddress,
-            options: [],
-            required: true,
-            rxValue: new BehaviorSubject(),
-            search: ['keywords'],
-            selection: true,
-            type: 'dropdown',
-            validate: validateWorkerAddress(rxState)
         },
         {
 
@@ -448,6 +481,13 @@ const getInitialState = (
         }),
     )
     const state = {
+        activitiesQuery: {
+            // makes sure the correct list of activites are retrieved even when the selected identity changes.
+            identity: rxWorkerAddress,
+            includeOwned: true,
+            subject: rxActivities,
+            subjectOnly: true,
+        },
         inputs: fillValues(
             inputs,
             // activityId to be filled after fetching activityId options.
@@ -478,10 +518,7 @@ const handleDurationChange = (_, values) => {
     timer.setTimeByDuration(duration)
 }
 
-const handleCancel = (
-    onClose,
-    rxState
-) => async (e, d) => {
+const handleCancel = (onClose, rxState) => async (e, d) => {
     const { inprogress } = timer.getValues()
     const confirmed = !inprogress || await confirmAsPromise({
         cancelButton: textsCap.noContinueTimer,
@@ -515,16 +552,12 @@ const handleReset = async (rxState, shouldConfirm) => {
 }
 
 const handleStartTimer = rxState => {
-    const { inputs, values } = rxState.value
-    timer.start({
-        workerAddress: values[inputNames.workerAddress]
-    })
-    const duraIn = findInput(inputs, inputNames.duration)
-    if (!duraIn.message) return
-
-    duraIn.message = null
-    rxState.next({ inputs })
-
+    const { values } = rxState.value
+    const tValues = objClean(values, [
+        inputNames.activityId,
+        inputNames.workerAddress,
+    ])
+    timer.start(tValues)
 }
 const handleSubmit = (
     props,
@@ -706,12 +739,13 @@ const validateActiviy = (
     rxActivities
 ) => async (_, _d, values) => {
     const activityId = values[inputNames.activityId]
-    // no activity has been selected
-    if (!activityId) return
-
     const workerAddress = values[inputNames.workerAddress]
+    // no activity has been selected
+    if (!activityId || !workerAddress) return
+
     const { inputs = [] } = rxState.value
     const activityIn = findInput(inputs, inputNames.activityId)
+    const workerIn = findInput(inputs, inputNames.workerAddress)
     const activity = rxActivities.value?.get?.(activityId)
     // activity non-existent in the options
     // this can happen if activityId is prefilled from previous sessions
@@ -720,6 +754,7 @@ const validateActiviy = (
         return
     }
 
+    const { ownerAddress } = activity
     // check if Activity status is open/reopened
     const statusCode = await actQuery.status(activityId)
     // Activity open status
@@ -732,58 +767,92 @@ const validateActiviy = (
         status: 'error',
     }
 
-    // fetch and populate workerAddress options
-    const workers = await query.worker.listWorkers(activityId)
-    const workerIn = findInput(inputs, inputNames.workerAddress)
-    const identityOptions = getIdentityOptions()
-    workerIn.options = identityOptions
-        .filter(x => workers.includes(x.value))
-    const gotOptions = workerIn.options.length > 0
-    if (!gotOptions) {
-        const isOwner = !!identityOptions.find(x =>
-            x.value === activity.ownerAddress
-        )
-        const msg = {
-            content: textsCap.inactiveWorkerHeader1,
-            icon: true,
-            status: 'error',
-        }
-        if (!isOwner) return msg
+    // check worker ban and invitation status
+    const [
+        banned = false,
+        invitees = [],
+        workers = []
+    ] = await Promise.all([
+        query.worker.banned(activityId, workerAddress),
+        query.worker.listInvited(activityId),
+        query.worker.listWorkers(activityId),
+    ])
+    const isWorker = workers.includes(workerAddress)
 
-        const handleClick = e => {
-            e.preventDefault()
-            const values = {}
-            values[invInputNames.activityId] = activityId
-            values[invInputNames.workerAddress] = activity.ownerAddress
-            return showForm(TimeKeepingInviteForm, {
-                closeOnSubmit: true,
-                inputsHidden: [invInputNames.addpartner],
-                onSubmit: ok => ok
-                    && workerIn
-                        .rxValue
-                        .next(activity.ownerAddress),
-                values,
-            })
-        }
-        msg.content = (
+    // user has been banned by activity owner
+    if (banned) return {
+        content: textsCap.workerBannedMsg,
+        icon: true,
+        status: 'error',
+    }
+    // save worker address, activityId... to cache storage
+    timer.rxValues.next(values)
+
+    // valid
+    if (isWorker) return
+
+    const isInvited = invitees.includes(workerAddress)
+    const isOwner = rxIdentities.value.get(ownerAddress)
+    let content, header
+
+    if (!isInvited && !isOwner) {
+        content = textsCap.inactiveWorkerMsg1
+        header = textsCap.inactiveWorkerHeader1
+        // check if any of the other identities have accepted and allow to select that identity?
+    } else if (isInvited) {
+        // user is yet to accept/reject invitation
+        content = (
+            // user has been invited to the activity and yet to accept the inivitation
+            <div>
+                {textsCap.inactiveWorkerMsg3} <br />
+                <ButtonAcceptOrReject
+                    onAction={async (_, accepted) => {
+                        const success = await handleInvitation(
+                            activityId,
+                            workerAddress,
+                            accepted
+                        )
+                        // force trigger change
+                        success && workerIn.rxValue?.next(activityId)
+                    }}
+                    style={{ marginTop: 10 }}
+                />
+            </div>
+        )
+        header = textsCap.inactiveWorkerHeader2
+    } else if (isOwner) {
+        content = (
+            // user is the owner
             <div>
                 {textsCap.inactiveWorkerMsg4}
                 <Button {...{
                     content: textsCap.addMyself,
-                    onClick: handleClick,
+                    onClick: e => {
+                        e.preventDefault()
+                        const values = {}
+                        values[invInputNames.activityId] = activityId
+                        values[invInputNames.workerAddress] = ownerAddress
+                        return showForm(TimeKeepingInviteForm, {
+                            closeOnSubmit: true,
+                            inputsHidden: [invInputNames.addpartner],
+                            onSubmit: ok => ok
+                                && activityIn
+                                    .rxValue
+                                    .next(activityId),
+                            values,
+                        })
+                    },
                     size: 'mini',
                 }} />
             </div>
         )
-        return msg
     }
-
-    const isValidWorker = workerAddress && !!workerIn.options
-        .find(x => x.value === workerAddress)
-    const newWorker = isValidWorker
-        ? workerAddress
-        : workerIn.options[0]?.value || null
-    newWorker && setTimeout(() => workerIn.rxValue.next(newWorker))
+    return {
+        content,
+        header,
+        icon: true,
+        status: 'error',
+    }
 }
 
 export const validateDuration = (_e, _d, values) => {
@@ -813,65 +882,4 @@ export const validateDuration = (_e, _d, values) => {
         icon: true,
         status: 'error',
     }
-}
-
-const validateWorkerAddress = rxState => async (_, _d, values) => {
-    const activityId = values[inputNames.activityId]
-    const workerAddress = values[inputNames.workerAddress]
-    const { inputs = [] } = rxState.value
-    const workerIn = findInput(inputs, inputNames.workerAddress)
-    if (!activityId || !workerAddress) return
-
-    // check worker ban and invitation status
-    const [
-        banned,
-        invitedAr,
-        acceptedAr
-    ] = await Promise.all([
-        query.worker.banned(activityId, workerAddress),
-        query.worker.listInvited(activityId),
-        query.worker.listWorkers(activityId),
-    ])
-    const invited = invitedAr.includes(workerAddress)
-    const accepted = acceptedAr.includes(workerAddress)
-    // workerIn.loading = false
-    workerIn.invalid = !!banned || !accepted
-
-    // user has been banned by activity owner
-    if (banned) return {
-        content: textsCap.workerBannedMsg,
-        icon: true,
-        status: 'error',
-    }
-
-    if (!accepted) return {
-        content: !invited
-            ? textsCap.inactiveWorkerMsg1
-            // user has been invited to the activity and yet to accept the inivitation
-            : (
-                <div>
-                    {textsCap.inactiveWorkerMsg3} <br />
-                    <ButtonAcceptOrReject
-                        onAction={async (_, accepted) => {
-                            const success = await handleInvitation(
-                                activityId,
-                                workerAddress,
-                                accepted
-                            )
-                            // force trigger change
-                            success && workerIn.rxValue?.next(activityId)
-                        }}
-                        style={{ marginTop: 10 }}
-                    />
-                </div>
-            ),
-        header: invited
-            ? textsCap.inactiveWorkerHeader2
-            : textsCap.inactiveWorkerHeader1,
-        icon: true,
-        status: 'error',
-    }
-
-    // save worker address, activityId... to cache storage
-    timer.rxValues.next(values)
 }

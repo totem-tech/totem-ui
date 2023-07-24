@@ -126,7 +126,6 @@ const getState = (props = {}) => ([
             content: () => (
                 <LabelCopy {...{
                     content: activityName,
-                    maxLength: 18,
                     value: activityId,
                 }} />
             ),
@@ -134,12 +133,16 @@ const getState = (props = {}) => ([
         },
         // user is assignee
         !manage && {
-            content: () => <AddressName address={activityOwnerAddress} />,
+            content: () => (
+                <AddressName {...{
+                    address: activityOwnerAddress,
+                    maxLength: 20,
+                }} />
+            ),
             title: textsCap.activityOwner,
         },
         {
             content: () => <AddressName address={workerAddress} />,
-
             title: textsCap.worker,
         },
         {

@@ -26,7 +26,7 @@ import {
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
 import { translated } from '../utils/languageHelper'
-import { subjectAsPromise } from '../utils/reactjs'
+import { IGNORE_UPDATE_SYMBOL, copyRxSubject, subjectAsPromise } from '../utils/reactjs'
 import { rxOnline } from '../utils/window'
 import {
     getConnection,
@@ -63,6 +63,7 @@ const textsCap = {
 translated(textsCap, true)
 const queue = new DataStorage('totem_queue-data', false)
 export const rxOnSave = new BehaviorSubject()
+export const rxPaused = new BehaviorSubject(false)
 /* Queue statuses */
 // indicates task failed
 const ERROR = 'error'
@@ -96,6 +97,11 @@ export const statuses = Object.freeze({
     SUCCESS,
     SUSPENDED,
 })
+const doneStatuses = [
+    ERROR,
+    REMOVED,
+    SUCCESS,
+]
 // translated version of the statuses
 export const statusTitles = Object.freeze({
     error: textsCap.error,
@@ -229,21 +235,21 @@ const VALID_KEYS = Object.freeze([
  *                          - undefined/falsy: task execution was never attempted. Typically the inital status.
  */
 
-const _processTask = (currentTask, id, toastId, allowRepeat) => {
-    toastId = toastId || uuid.v1()
+const _processTask = async (currentTask, id, toastId, allowResume) => {
+    toastId ??= newId()
     if (!isObj(currentTask)) return queue.delete(id)
 
     const next = currentTask.next
     switch (currentTask.status) {
         case SUCCESS:
             // execute `next` or delete queue item
-            if (isObj(next)) return _processTask(next, id, toastId, allowRepeat)
+            if (isObj(next)) return await _processTask(next, id, toastId, allowResume)
         case ERROR:
             return queue.delete(id)
         case LOADING:
         case SUSPENDED:
             // ignore task if allowRepeat is not truthy
-            if (!allowRepeat) return
+            if (!allowResume) return
             // reset status to attempt to execute again
             currentTask.status = undefined
             // continue with processing the task
@@ -257,23 +263,24 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
     currentTask.description = description || rootTask.description
     currentTask.silent = currentTask.silent || rootTask.silent
     currentTask.title = title || rootTask.title
-    currentTask.id = cid || uuid.v1()
+    currentTask.id = cid || newId()
     switch ((currentTask.type || '').toLowerCase()) {
         case QUEUE_TYPES.TX_TRANSFER:
             alert('deprecated queue type used: ', QUEUE_TYPES.TX_TRANSFER)
             // handleTxTransfer(id, rootTask, currentTask, toastId)
             break
         case QUEUE_TYPES.TX_STORAGE:
-            handleTx(id, rootTask, currentTask, toastId)
+            await handleTx(id, rootTask, currentTask, toastId)
             break
         case QUEUE_TYPES.CHATCLIENT:
-            handleChatClient(id, rootTask, currentTask, toastId)
+            await handleChatClient(id, rootTask, currentTask, toastId)
             break
         case QUEUE_TYPES.BLOCKCHAIN:
             alert('deprecated queue type used')
         default:
             // invalid queue type
             queue.delete(id)
+            rxOnSave.next({ rootTask, task: currentTask })
             break
     }
 }
@@ -290,17 +297,43 @@ const _processTask = (currentTask, id, toastId, allowRepeat) => {
  * 
  * @returns {String} supplied/newly generated ID
  */
-export const addToQueue = (queueItem, id, toastId = uuid.v1()) => {
-    id = id || uuid.v1()
+export const addToQueue = (queueItem, onComplete, id, toastId) => {
+    id ??= newId()
+    toastId ??= id
     // prevent adding the same task again
     if (queue.get(id)) return
 
     queueItem = objClean(queueItem, VALID_KEYS)
     queueItem.id = id
     queue.set(id, queueItem)
-    _processTask(queueItem, id, toastId)
+    isFn(onComplete) && awaitComplete(id).then(onComplete)
+    setTimeout(() => {
+        _processTask(queueItem, id, toastId)
+    }, 100)
     return id
 }
+
+/**
+ * @name    awaitComplete
+ * @summary wait until queue item completes execution (success/error) or removed.
+ * Queue item should already be added to the queue. Status checks rely on `rxOnSave` to receive updates.
+ * 
+ * @param   {String} id 
+ * 
+ * @returns {String} status
+ */
+export const awaitComplete = async id => await subjectAsPromise(
+    copyRxSubject(
+        rxOnSave,
+        new BehaviorSubject({ rootTask: queue.get(id) }),
+        ({ rootTask } = {}) => {
+            if (!rootTask || id !== rootTask?.id) return IGNORE_UPDATE_SYMBOL
+            return getStatus(id, rootTask)
+        },
+    ),
+    // only resovle if status is one of the following:
+    status => doneStatuses.includes(status),
+)[0]
 
 /**
  * @name    checkComplete
@@ -309,37 +342,9 @@ export const addToQueue = (queueItem, id, toastId = uuid.v1()) => {
  * @param   {String|Object} id   queue ID
  * @param   {Boolean}       wait whether to wait until queue item has completed execution (success/error)
  * 
- * @returns {Boolean|Promise}
+ * @returns {String|Promise}
  */
-export const checkComplete = (id, wait = false) => {
-    // wait until 
-    if (wait) return subjectAsPromise(
-        rxOnSave,
-        ({ rootTask = {} } = {}) => {
-            const match = rootTask.id === id
-                && checkComplete(id)
-            return match
-        }
-    )[0]
-
-    const queueItem = isStr(id)
-        ? queue.get(id)
-        : id
-    if (!queueItem) return true
-
-    const { next, status } = queueItem
-    const isComplete = [statuses.ERROR, statuses.SUCCESS]
-        .includes(status)
-    const hasChild = isObj(next)
-        && !!next.func
-        && Object
-            .values(QUEUE_TYPES)
-            .includes(next.type)
-
-    return !hasChild
-        ? isComplete
-        : checkComplete(next)
-}
+export const checkCompleted = id => doneStatuses.includes(getStatus(id))
 
 /**
  * @name    checkTxStatus
@@ -410,6 +415,34 @@ export const getByRecordId = recordId => {
     return queue
         .toArray()
         .find(([_, item]) => checkRID(item))
+}
+
+/**
+ * @name    getStatus
+ * @summary get the current status of queued item
+ * 
+ * @param   {String} id 
+ * @param   {Object} currentTask 
+ * 
+ * @returns {String}
+ */
+export const getStatus = (id, currentTask) => {
+    currentTask ??= queue.get(id)
+    if (!currentTask) return REMOVED
+
+    const { next, status } = currentTask
+    if (status === ERROR) return status
+
+    // check if a valid child task is available
+    const hasChild = isObj(next)
+        && !!next.func
+        && Object
+            .values(QUEUE_TYPES)
+            .includes(next.type)
+
+    return hasChild
+        ? getStatus(id, next) || LOADING // child hasn't started execution yet
+        : status
 }
 
 /**
@@ -548,7 +581,8 @@ const handleTx = async (id, rootTask, task, toastId) => {
         _save(
             txSuccess ? SUCCESS : ERROR,
             txSuccess ? result : textsCap.txFailed,
-            { after: balance })
+            { after: balance }
+        )
     } catch (err) {
         // retrieve and store account balance after execution
         try {
@@ -559,6 +593,8 @@ const handleTx = async (id, rootTask, task, toastId) => {
         }
     }
 }
+
+export const newId = () => uuid.v1()
 
 /**
  * @name    processArgs
@@ -640,9 +676,14 @@ export const remove = id => {
  * @name resumeQueue
  * @summary resume execution of queued tasks that are incomplete, partially complete or never started.
  */
-export const resumeQueue = () => queue.map(([id, task]) => {
-    _processTask(task, id, task.toastId, true)
-})
+export const resumeQueue = async () => {
+    const arr = queue.toArray()
+    for (let i = 0;i < arr.length;i++) {
+        const [id, task] = arr[i] || []
+        if (!id) continue
+        await _processTask(task, id, task.toastId, true)
+    }
+}
 
 /**
  * @name setMessage
@@ -688,7 +729,10 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => {
         ...msg,
         content,
         header,
-        status: task.status === SUSPENDED ? 'basic' : task.status,
+        icon: true,
+        status: task.status === SUSPENDED
+            ? 'basic'
+            : task.status,
     }, duration, id)
 }
 
@@ -709,7 +753,9 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => {
  * @param {Object}  balance for transactions will store `before` and `after` balances
  */
 const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, duration, resultOrError, balance) => {
-    const errMsg = status === ERROR ? resultOrError : null
+    const errMsg = status === ERROR
+        ? resultOrError
+        : null
     const done = [SUCCESS, ERROR].includes(status)
     const isSuccess = status === SUCCESS
     const isSuspended = status === SUSPENDED
@@ -724,7 +770,13 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
     // no need to display toast if status is suspended
     task.toastId = isSuspended
         ? toastId
-        : setMessage(task, msg, duration, toastId, silent)
+        : setMessage(
+            task,
+            msg,
+            duration,
+            toastId,
+            silent
+        )
     // store account balance before and after TX
     task.balance = { ...task.balance, ...balance }
 
@@ -761,7 +813,6 @@ const setToastNSave = (id, rootTask, task, status, msg = {}, toastId, silent, du
         task.txId,
     )
     setTimeout(() => rxOnSave.next({ rootTask, task }))
-    // rxOnSave.next({ rootTask, task })
     if (!done) return
 
     try {
@@ -787,8 +838,6 @@ window.addEventListener('beforeunload', function (e) {
     e.returnValue = ''
 })
 const resumeSuspended = deferred(async () => {
-    // for (let i = suspendedIds.length - 1;i >= 0;i--) {
-
     for (let i = 0;i < suspendedIds.length;i++) {
         const id = suspendedIds[i]
         const task = queue.get(id)
@@ -810,8 +859,10 @@ const resumeSuspended = deferred(async () => {
 
         console.log('Resuming task', id)
         // resume execution by checking each step starting from the top level task
-        _processTask(task, id, task.toastId, true)
+        await _processTask(task, id, task.toastId, true)
     }
+    // auto resume items queued previously but not completed
+    resumeSuspended.resumed ??= resumeQueue()
 }, 300)
 // resume suspended tasks whenever status changes of the following
 rxIsConnected.subscribe(connected => connected && resumeSuspended())
@@ -820,8 +871,11 @@ rxOnline.subscribe(online => online && resumeSuspended())
 
 export default {
     addToQueue,
-    checkComplete,
+    awaitComplete,
+    checkCompleted,
     getById,
+    getStatus,
+    newId,
     queue,
     QUEUE_TYPES,
     resumeQueue,

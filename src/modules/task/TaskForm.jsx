@@ -165,7 +165,7 @@ export const bonsaiKeys = [
 ]
 export const getBonsaiData = (values, ownerAddress) => {
     const dbValues = objClean(values, bonsaiKeys)
-    const tokenData = hashTypes.taskHash
+    const tokenData = hashTypes.taskId
         + ownerAddress
         + JSON.stringify(dbValues)
     const token = generateHash(tokenData)
@@ -866,7 +866,7 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
         ]
         : [
             ownerAddress,
-            hashTypes.taskHash,
+            hashTypes.taskId,
             taskId,
             token,
             extraProps,

@@ -562,7 +562,7 @@ const handleArchive = (recordId, archive = true, workerAddress) => {
     setBtnInprogress(recordId, title)
     const queueProps = bcQueueables.archiveRecord(
         workerAddress,
-        hashTypes.timeRecordHash,
+        hashTypes.timeRecordId,
         recordId,
         archive,
         {

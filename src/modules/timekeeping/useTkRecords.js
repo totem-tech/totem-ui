@@ -8,7 +8,11 @@ import {
     useUnsubscribe
 } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
-import { deferred, isArr } from '../../utils/utils'
+import {
+    deferred,
+    isAddress,
+    isArr
+} from '../../utils/utils'
 import { rxSelected } from '../identity/identity'
 import {
     MODULE_KEY,
@@ -99,6 +103,7 @@ export const subscribe = ({
         // due to connection delay or some other reason block number received after subscriber unsubscribed
         if (unsubscribed) return
 
+        const activityOwnerAddress = isAddress(identity) && identity
         const result = new Map(
             records.map((record, i) => {
                 // records no longer available in the blockchain storage
@@ -114,6 +119,7 @@ export const subscribe = ({
                 } = record
                 const recordId = recordIds[i]
                 const activity = activities.get(activityId)
+                console.log(activityId, { activities, activity })
                 const { name, ownerAddress } = activity || {}
 
                 return [
@@ -127,7 +133,7 @@ export const subscribe = ({
                         // acitivity info
                         activityId,
                         activityName: name || '',
-                        activityOwnerAddress: ownerAddress,
+                        activityOwnerAddress: ownerAddress || activityOwnerAddress,
                         // extra info
                         duration: blocksToDuration(total_blocks),
                         hash: recordId, // unused????
@@ -143,7 +149,7 @@ export const subscribe = ({
         result.loaded = true
         subject.next(result)
     }
-    const handleRecordIds = (recordIds = []) => {
+    const handleRecordIds = (recordIds = data.recordIds) => {
         if (unsubscribed) return
 
         // flatten the array, in case, records are being retrieved for multiple activities at the same time
@@ -164,6 +170,7 @@ export const subscribe = ({
     const handleActivities = deferred((activities = new Map()) => {
         if (unsubscribed) return
 
+        console.log({ activities })
         data.activities = activities
         const target = !manage
             ? identity
@@ -173,7 +180,7 @@ export const subscribe = ({
                 .filter(Boolean)
         const alreadySubscribed = JSON.stringify(data.target) === JSON.stringify(target)
         // prevent unsubscribing and resubscribing for the same target (activityIds/identities)
-        if (alreadySubscribed) return
+        if (alreadySubscribed) return handleRecordIds() // activity list updated > simply update the subject
 
         data.target = target
         unsubscribe(subscription.recordIds)
@@ -185,12 +192,6 @@ export const subscribe = ({
             : manage
                 ? qr.listByActivity
                 : qr.list
-        // window.query = {
-        //     qr,
-        //     queryFn,
-        //     target,
-        //     multi: isArr(target)
-        // }
         // Retrieve list(s) of records either by identity or activity.
         // Target can be either a single idenity or activity, or an array of identities or activities.
         subscription.recordIds = queryFn(
@@ -198,8 +199,6 @@ export const subscribe = ({
             handleRecordIds,
             isArr(target)
         )
-
-        return result
     }, 100)
 
     // subscribe and fetch relevant activities

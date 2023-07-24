@@ -23,7 +23,7 @@ import blockchain from './services/blockchain'
 import './services/KeyboardShortcuts'
 import filePaths from './services/languageFiles'
 import modal from './services/modal'
-import queue, { resumeQueue } from './services/queue'
+import queue from './services/queue'
 import sidebar, { sidebarItems } from './services/sidebar'
 import toast from './services/toast'
 // utils
@@ -78,20 +78,14 @@ export default function App() {
 			}
 		}
 
-		window.queryBlockchain = (func, args, multi) => blockchain.query(
+		window.queryBlockchain = (func, args, multi, print = true) => blockchain.query(
 			func,
 			args,
 			multi,
-			true,
+			print,
 		)
 
 		queryBlockchain().then(api => (window.api = api))
-
-		if (!queueResumed) {
-			// resume any incomplete queued tasks
-			queueResumed = true
-			setTimeout(() => resumeQueue(), 1000)
-		}
 
 		// make sure all notification handlers are imported
 		filePaths

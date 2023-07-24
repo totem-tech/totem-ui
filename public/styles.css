@@ -432,8 +432,8 @@ form.ui.form div.field>label {
 	margin: 0 -.5em 1em;
 }
 
+/* fix for secondary form input group */
 .ui.form .fields.form-group>.field>.field {
-	/* fix for secondary form input group */
 	margin-top: 0;
 	padding: 0;
 }
@@ -471,6 +471,11 @@ body.mobile .fields.form-group>.field:not(:last-child) {
 .accordion .message>.content,
 .accordion .message>.content>.content {
 	padding: initial !important;
+}
+
+/* Fix for SemanticUI css hiding input message */
+.ui.form .warning.message[status="warning"] {
+	display: block;
 }
 
 /* checkbox/radios: bold text when checked */

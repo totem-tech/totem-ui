@@ -16,8 +16,9 @@ import {
 } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import { isMap, isPositiveInteger } from '../../utils/utils'
+import { get as getIdentity } from '../identity/identity'
 import AddressName from '../partner/AddressName'
-import { blocksToDuration } from '../timekeeping/timekeeping'
+import { blocksToDuration, query } from '../timekeeping/timekeeping'
 import TimekeepingList from '../timekeeping/TimekeepingList'
 import { statusTexts } from './activity'
 import ActivityForm from './ActivityForm'
@@ -46,27 +47,38 @@ const textsCap = {
 translated(textsCap, true)
 
 function ActivityDetails(props) {
-    let { activity, activityId } = props
-    const activityIds = useMemo(() => [activityId].filter(Boolean), [activityId])
+    let {
+        activity,
+        activityId,
+        ownerAddress,
+        workerAddress,
+    } = props
+    const activitiesQuery = useMemo(() => ({
+        activityIds: workerAddress || ownerAddress
+            ? undefined
+            : [activityId],
+        identity: ownerAddress || workerAddress,
+        subjectOnly: true,
+        type: ownerAddress
+            ? types.activities
+            : workerAddress
+                ? types.timekeeping
+                : types.activityIds,
+    }), [])
+    const firstSeenQuery = useMemo(() => ({
+        func: !!activityId && query.activity.firstSeen_func,
+        args: [activityId],
+        subscribe: false,
+        subjectOnly: true,
+    }), [activityId])
+
+    // fetch and retrieve the block number Activity was first seen (first time a time record was submitted) 
+    const rxFirstSeenResult = useQueryBlockchain(firstSeenQuery)
     activity = !!activity
         ? activity
         : !activityId
             ? null
-            : useActivities({
-                activityIds: activityIds,
-                subjectOnly: true,
-                type: types.activityIds,
-                valueModifier: map => map.get(activityId),
-            })
-
-    // fetch and retrieve the block number Activity was first seen (first time a time record was submitted) 
-    const rxFirstSeenResult = useQueryBlockchain({
-        func: !!activityIds.length
-            && 'api.query.timekeeping.projectFirstSeen',
-        args: activityIds,
-        subscribe: false,
-        subjectOnly: true,
-    })
+            : useActivities(activitiesQuery)
 
     const [{
         columns,
@@ -121,6 +133,8 @@ ActivityDetails.propTypes = {
     activity: PropTypes.object,
     activityId: PropTypes.string.isRequired,
     modalId: PropTypes.string,
+    ownerAddress: PropTypes.string,
+    workerAddress: PropTypes.string,
 }
 ActivityDetails.asModal = (props = {}) => {
     let { activityId, modalId } = props
@@ -137,7 +151,7 @@ export default ActivityDetails
 
 const getState = ([
     props = {},
-    activity = new Map(),
+    activity,
     firstSeenResult = {}
 ] = []) => {
     const {
@@ -210,66 +224,68 @@ const getState = ([
             title: textsCap.firstSeenLabel,
         },
     ]
-    const buttons = [
-        {
-            // view team button
-            content: <div>{textsCap.team}</div>,
-            icon: { name: 'group' },
-            key: 'workers',
-            onClick: () => ActivityTeamList.asModal({
-                activityId,
-                modalId,
-                subheader: name,
-            }),
-            title: textsCap.viewTeam,
-        },
-        {
-            // view time records button
-            content: <div>{textsCap.records}</div>,
-            icon: 'clock outline',
-            key: 'records',
-            name: 'records',
-            onClick: () => showInfo({
-                content: (
-                    <TimekeepingList {...{
-                        activityId: activityId,
-                        hideTimer: true,
-                        // isMobile: true,
-                        isOwner: true,
-                        manage: true,
-                        projectName: name,
-                        ownerAddress: ownerAddress,
-                        topGrid: {
-                            left: { computer: 12 },
-                            right: { computer: 4 },
-                        },
-                    }} />
-                ),
-                collapsing: false,
-                confirmButton: null,
-                cancelButton: null,
-                header: name,
-                subheader: textsCap.timeRecords,
-            }),
-            title: textsCap.viewRecords,
-            type: 'Button',
-        },
-        {
-            // edit activity button
-            content: <div>{textsCap.update}</div>,
-            key: 'edit',
-            icon: 'pencil',
-            onClick: () => showForm(
-                ActivityForm,
-                {
+    const buttons = !getIdentity(ownerAddress)
+        ? []
+        : [
+            {
+                // view team button
+                content: <div>{textsCap.team}</div>,
+                icon: { name: 'group' },
+                key: 'workers',
+                onClick: () => ActivityTeamList.asModal({
                     activityId,
-                    values: activity,
-                },
-                modalId
-            ),
-            title: textsCap.editActitity,
-        }
-    ].filter(Boolean)
+                    modalId,
+                    subheader: name,
+                }),
+                title: textsCap.viewTeam,
+            },
+            {
+                // view time records button
+                content: <div>{textsCap.records}</div>,
+                icon: 'clock outline',
+                key: 'records',
+                name: 'records',
+                onClick: () => showInfo({
+                    content: (
+                        <TimekeepingList {...{
+                            activityId: activityId,
+                            hideTimer: true,
+                            // isMobile: true,
+                            isOwner: true,
+                            manage: true,
+                            projectName: name,
+                            ownerAddress: ownerAddress,
+                            topGrid: {
+                                left: { computer: 12 },
+                                right: { computer: 4 },
+                            },
+                        }} />
+                    ),
+                    collapsing: false,
+                    confirmButton: null,
+                    cancelButton: null,
+                    header: name,
+                    subheader: textsCap.timeRecords,
+                }),
+                title: textsCap.viewRecords,
+                type: 'Button',
+            },
+            {
+                // edit activity button
+                content: <div>{textsCap.update}</div>,
+                key: 'edit',
+                icon: 'pencil',
+                onClick: () => showForm(
+                    ActivityForm,
+                    {
+                        activityId,
+                        values: activity,
+                    },
+                    modalId
+                ),
+                title: textsCap.editActitity,
+            }
+        ].filter(Boolean)
 
     return {
         buttons: activity && buttons || [],

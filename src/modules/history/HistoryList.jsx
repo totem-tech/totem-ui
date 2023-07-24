@@ -8,7 +8,7 @@ import {
     showForm,
 } from '../../services/modal'
 import {
-    checkComplete,
+    checkCompleted,
     remove as removeQueueItem,
     statuses,
 } from '../../services/queue'
@@ -30,7 +30,7 @@ import {
 } from './history'
 import HistoryItemDetailsForm from './HistoryItemDetailsForm'
 
-const textsCap = translated({
+const textsCap = {
     action: 'action',
     balanceAfterTx: 'account balance after transaction',
     balanceBeforeTx: 'account balance before transaction',
@@ -65,7 +65,8 @@ const textsCap = translated({
     title: 'title',
     txId: 'transaction ID',
     type: 'type',
-}, true)[1]
+}
+translated(textsCap, true)
 
 export default function HistoryList(props) {
     const [state] = useRxSubject(rxLayout, layout => {
@@ -137,9 +138,9 @@ export default function HistoryList(props) {
                         {
                             icon: 'trash',
                             // negative: true,
-                            onClick: () => {
+                            onClick: async () => {
                                 const { groupId } = item
-                                const isComplete = checkComplete(groupId)
+                                const isComplete = checkCompleted(groupId)
                                 confirm({
                                     content: !isComplete
                                         ? textsCap.removeWarning

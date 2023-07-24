@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Button } from 'semantic-ui-react'
 //utils
 import storage from '../../utils/storageHelper'
-import { copyToClipboard, isFn, objClean } from '../../utils/utils'
+import { isFn, objClean } from '../../utils/utils'
 // components
 import FormBuilder, {
 	fillValues,

@@ -6,7 +6,7 @@ import { translated } from '../../utils/languageHelper'
 import { confirmAsPromise } from '../../services/modal'
 import {
 	addToQueue,
-	checkComplete,
+	awaitComplete,
 	QUEUE_TYPES,
 	statuses as queueStatuses,
 } from '../../services/queue'
@@ -273,7 +273,7 @@ export const handleUpdateStatus = async (address, taskIds, statusCode, queueTitl
 				title: queueTitle,
 			},
 		)
-		await checkComplete(addToQueue(queueItem), true)
+		await awaitComplete(addToQueue(queueItem))
 	})
 	await Promise.all(promises)
 		.catch(console.log)
@@ -339,7 +339,7 @@ setTimeout(() =>
 						{' '}
 						{getTaskDetailsBtn(taskId)}
 						<div>
-							<IdentityIcon {...{ address, usageType }} /> 
+							<IdentityIcon {...{ address, usageType }} />
 							{textsCap.yourIdentity}: {name}
 						</div>
 						<ButtonAcceptOrReject {...{
@@ -435,7 +435,7 @@ setTimeout(() =>
 						</div>
 						<div>
 							<b>{textsCap.yourIdentity}: </b>
-							<IdentityIcon {...{address, usageType }} /> {name}
+							<IdentityIcon {...{ address, usageType }} /> {name}
 						</div>
 					</div>
 				)
@@ -450,7 +450,7 @@ setTimeout(() =>
 			handler: (id, notification = {}, { senderIdBtn }) => {
 				const {
 					data: {
-						applications = 1, 
+						applications = 1,
 						taskId,
 					} = {},
 				} = notification
@@ -465,7 +465,7 @@ setTimeout(() =>
 						</div>
 					</div>
 				)
-				return {content, icon}
+				return { content, icon }
 			},
 		},
 		{
@@ -483,7 +483,7 @@ setTimeout(() =>
 						{getTaskDetailsBtn(taskId)}
 					</div>
 				)
-				return {content, icon}
+				return { content, icon }
 			},
 		},
 	].forEach((x) => setItemViewHandler(x.type, x.childType, x.handler))
