@@ -150,7 +150,7 @@ export const subscribe = ({
         subject.next(result)
     }
     const handleRecordIds = (recordIds = data.recordIds) => {
-        if (unsubscribed) return
+        if (unsubscribed || !recordIds) return
 
         // flatten the array, in case, records are being retrieved for multiple activities at the same time
         data.recordIds = recordIds.flat()
