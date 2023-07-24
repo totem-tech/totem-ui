@@ -327,6 +327,5 @@ const validateWorker = rxState => async (_, { value }, values) => {
             ? 'error'
             : 'warning' //'info',//'warning',
     }
-    console.log('msg', msg)
     return msg
 }

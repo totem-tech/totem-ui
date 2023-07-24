@@ -119,7 +119,6 @@ export const subscribe = ({
                 } = record
                 const recordId = recordIds[i]
                 const activity = activities.get(activityId)
-                console.log(activityId, { activities, activity })
                 const { name, ownerAddress } = activity || {}
 
                 return [
@@ -170,7 +169,6 @@ export const subscribe = ({
     const handleActivities = deferred((activities = new Map()) => {
         if (unsubscribed) return
 
-        console.log({ activities })
         data.activities = activities
         const target = !manage
             ? identity

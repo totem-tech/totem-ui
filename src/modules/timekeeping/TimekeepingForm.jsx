@@ -23,6 +23,7 @@ import {
     dateToBlock,
 } from '../../utils/time'
 import {
+    arrSort,
     className,
     isFn,
     objClean,
@@ -31,7 +32,7 @@ import {
 import { openStatuses, query as actQuery } from '../activity/activity'
 import ActivityDetails from '../activity/ActivityDetails'
 import { getIdentityOptions } from '../identity/getIdentityOptions'
-import { get, getSelected, rxIdentities } from '../identity/identity'
+import { getSelected, rxIdentities } from '../identity/identity'
 import AddressName from '../partner/AddressName'
 import { handleInvitation } from './notificationHandlers'
 import {
@@ -358,7 +359,7 @@ const getActivityOptions = (
     loading
         && activities.loaded
         && setTimeout(() => rxState.next({ loading: false }))
-    return options
+    return arrSort(options, 'search')
 }
 const getInitialState = (
     props,
@@ -745,12 +746,11 @@ const validateActiviy = (
 
     const { inputs = [] } = rxState.value
     const activityIn = findInput(inputs, inputNames.activityId)
-    const workerIn = findInput(inputs, inputNames.workerAddress)
     const activity = rxActivities.value?.get?.(activityId)
     // activity non-existent in the options
     // this can happen if activityId is prefilled from previous sessions
     if (!activity) {
-        setTimeout(() => activityIn.rxValue?.next(null))
+        setTimeout(() => activityIn.rxValue.next(null))
         return
     }
 
@@ -795,6 +795,11 @@ const validateActiviy = (
     const isOwner = rxIdentities.value.get(ownerAddress)
     let content, header
 
+    const triggerRevalidate = () => {
+        const { rxValue } = activityIn
+        rxValue.next(null)
+        setTimeout(() => rxValue.next(activityId), 100)
+    }
     if (!isInvited && !isOwner) {
         content = textsCap.inactiveWorkerMsg1
         header = textsCap.inactiveWorkerHeader1
@@ -813,7 +818,7 @@ const validateActiviy = (
                             accepted
                         )
                         // force trigger change
-                        success && workerIn.rxValue?.next(activityId)
+                        success && triggerRevalidate()
                     }}
                     style={{ marginTop: 10 }}
                 />
@@ -832,13 +837,11 @@ const validateActiviy = (
                         const values = {}
                         values[invInputNames.activityId] = activityId
                         values[invInputNames.workerAddress] = ownerAddress
+
                         return showForm(TimeKeepingInviteForm, {
                             closeOnSubmit: true,
                             inputsHidden: [invInputNames.addpartner],
-                            onSubmit: ok => ok
-                                && activityIn
-                                    .rxValue
-                                    .next(activityId),
+                            onSubmit: ok => ok && triggerRevalidate(),
                             values,
                         })
                     },
