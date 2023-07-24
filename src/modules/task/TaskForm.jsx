@@ -19,6 +19,7 @@ import {
     subjectAsPromise,
     useRxSubject,
     statuses,
+    useQueueItemStatus,
 } from '../../utils/reactjs'
 import {
     blockToDate,
@@ -67,7 +68,6 @@ const textsCap = {
     bountyPlaceholder: 'enter bounty amount',
     close: 'close',
     conversionErrorHeader: 'currency conversion failed',
-    createFailed: 'failed to create task',
     createSuccess: 'task created successfully',
     currency: 'currency',
     deadlineLabel: 'deadline to accept task',
@@ -112,7 +112,6 @@ const textsCap = {
     tagsPlaceholder: 'enter tags',
     title: 'title',
     titlePlaceholder: 'enter a very short task description',
-    updateFailed: 'failed to create task',
     updatePartner: 'update partner',
     updateSuccess: 'task created successfully',
 }
@@ -173,24 +172,37 @@ export const getBonsaiData = (values, ownerAddress) => {
 }
 
 export default function TaskForm(props) {
+    const [state] = useRxState(getInitialState(props), {})
+    const {
+        isUpdate,
+        message,
+        rxQueueId
+    } = state
+    const queueStatus = useQueueItemStatus(rxQueueId, message => ({
+        ...message,
+        ...message.status === 'success' && {
+            content: '',
+            header: isUpdate
+                ? textsCap.updateSuccess
+                : textsCap.createSuccess,
+        }
+    }))
     const {
         taskId,
         values = {},
     } = props
     const { allowEdit = true, deadline } = values
-    const [state] = useRxState(getInitialState(props), {})
     const [deadlinePassed] = !taskId
         ? [false]
         : useRxSubject(
             rxBlockNumber,
-            block => deadline > 0
-                && block >= deadline,
+            block => deadline > 0 && block >= deadline,
         )
-    const formProps = { ...props, ...state }
 
     return (
         <FormBuilder {...{
-            ...formProps,
+            ...state,
+            message: queueStatus || message,
             ...(allowEdit === false || deadlinePassed) && {
                 inputsDisabled: Object.values(inputNames),
                 message: {
@@ -467,6 +479,7 @@ const getInitialState = props => rxState => {
         },
     ]
     const state = {
+        ...props,
         bountyDeferred: PromisE.deferred(),
         disabled: true,
         header: header || (
@@ -476,25 +489,6 @@ const getInitialState = props => rxState => {
                     ? textsCap.publishOrder
                     : textsCap.formHeader
         ),
-        isUpdate,
-        loading: {
-            currencies: true,
-            onMount: true,
-        },
-        submitDisabled: {
-            isClosed: (values || {}).isClosed,
-            unchanged: !!taskId,
-        },
-        // disables submit button if values unchanged
-        // ToDo: not working due to isClose value change somewhere!!!!
-        onChange: !!taskId && deferred((_, newValues) => {
-            const { oldValues, submitDisabled } = rxState.value
-            if (!oldValues) return
-            newValues = objClean(newValues, Object.values(inputNames))
-            submitDisabled.unchanged = JSON.stringify(oldValues) === JSON.stringify(newValues)
-            rxState.next({ submitDisabled })
-        }, 300),
-        onSubmit: handleSubmit(props, rxState),
         inputs: fillValues(
             inputs,
             objWithoutKeys(values, [
@@ -506,6 +500,26 @@ const getInitialState = props => rxState => {
             true,
             true,
         ),
+        isUpdate,
+        loading: {
+            currencies: true,
+            onMount: true,
+        },
+        // disables submit button if values unchanged
+        // ToDo: not working due to isClose value change somewhere!!!!
+        onChange: !!taskId && deferred((_, newValues) => {
+            const { oldValues, submitDisabled } = rxState.value
+            if (!oldValues) return
+            newValues = objClean(newValues, Object.values(inputNames))
+            submitDisabled.unchanged = JSON.stringify(oldValues) === JSON.stringify(newValues)
+            rxState.next({ submitDisabled })
+        }, 300),
+        onSubmit: handleSubmit(props, rxState),
+        rxQueueId: new BehaviorSubject(),
+        submitDisabled: {
+            isClosed: (values || {}).isClosed,
+            unchanged: !!taskId,
+        },
     }
 
     const init = async () => {
@@ -774,7 +788,7 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
             owner = getSelected().address,
         } = {},
     } = props || {}
-    const { isUpdate } = rxState.value
+    const { isUpdate, rxQueueId } = rxState.value
     // convert deadline & dueDate string date to block number
     const currentBlock = await subjectAsPromise(rxBlockNumber)[0]
     const deadlineN = inputNames.deadline
@@ -805,36 +819,6 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
     const nameSaveTask = 'saveTask'
     const queueId = uuid.v1()
     const orderType = values[inputNames.orderType]
-    const handleResult = isLastInQueue => (success, err) => {
-        if (!isLastInQueue && success) return
-        rxState.next({
-            closeText: success
-                ? textsCap.close
-                : undefined,
-            loading: false,
-            message: {
-                content: !success && `${err} `, // error can be string or Error object.
-                header: success
-                    ? isUpdate
-                        ? textsCap.updateSuccess
-                        : textsCap.createSuccess
-                    : isUpdate
-                        ? textsCap.updateFailed
-                        : textsCap.createFailed,
-                icon: true,
-                status: success
-                    ? 'success'
-                    : 'error',
-            },
-            submitInProgress: false,
-            success,
-        })
-
-        // force `useTask` hook to update the off-chain data for this task only
-        taskId = taskId || (getById(queueId) || { data: [] }).data[0]
-        isHash(taskId) && rxUpdater.next([taskId])
-        isFn(onSubmit) && onSubmit(success, values, taskId)
-    }
     const fn = !isUpdate
         ? queueables.saveSpfso
         : bcQueueables.bonsaiSaveToken
@@ -844,7 +828,6 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
         title: !isUpdate
             ? textsCap.formHeader
             : textsCap.formHeaderUpdate,
-        then: handleResult(false),
     }
     const queueProps = fn.apply(null, !isUpdate
         ? [
@@ -880,7 +863,6 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
         func: queueableApis.updateDetails,
         name: nameSaveTask,
         recordId: taskId,
-        then: handleResult(true),
         title: textsCap.saveOffChainData,
         type: QUEUE_TYPES.CHATCLIENT,
         args: [
@@ -952,11 +934,30 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
 
     rxState.next({
         closeText: textsCap.close,
-        loading: true,
         submitInProgress: true,
     })
-    // add requests to the queue
-    addToQueue(queueProps)
+    const onComplete = status => {
+        const success = status === 'success'
+        rxState.next({
+            closeText: success
+                ? textsCap.close
+                : undefined,
+            submitInProgress: false,
+        })
+
+        // when a task is created the ID will be returned from the runtime and saved in the history.
+        // in that case extract the ID from saved history item
+        taskId ??= (getById(queueId) || { data: [] }).data[0]
+        // force `useTask` hook to update the off-chain data for this task only
+        isHash(taskId) && rxUpdater.next([taskId])
+        isFn(onSubmit) && onSubmit(
+            success,
+            values,
+            taskId
+        )
+    }
+    // add requests to the queue and set queueId to display progress as message
+    rxQueueId.next(addToQueue(queueProps, onComplete))
 }
 
 const handleTagsAddCb = (rxValue, rxOptions) => (_, { value = '' }) => {

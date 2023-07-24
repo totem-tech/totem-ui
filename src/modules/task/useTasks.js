@@ -38,6 +38,7 @@ translated(textsCap, true)
 //      After creating and updating the task using the TaskForm
 // Example usage: rxUpdater.next(['0x...'])
 export const rxUpdater = new Subject()
+chatClient.onCRUD(({ id, type }) => type === 'task' && rxUpdater.next([id]))
 
 /**
  * @name getCached
@@ -219,23 +220,15 @@ export default function useTasks(types = [], address, timeout = 5000) {
             if (!taskIds || !taskIds.length) return
 
             let msg = null
+            let newTasks
             try {
                 const detailsMap = await query.getDetailsByTaskIds(taskIds)
-                const addDetails = () => {
-                    const newTasks = addDetailsToTasks(
-                        address,
-                        tasks,
-                        detailsMap,
-                        taskIds
-                    )
-                    newTasks && setTasks(newTasks)
-                }
-                subscriptions.onCRUD = chatClient.onCRUD(({ data, id, type }) => {
-                    if (type !== 'task' || !taskIds.includes(id)) return
-                    detailsMap.set(id, data)
-                    addDetails()
-                })
-                addDetails()
+                newTasks = addDetailsToTasks(
+                    address,
+                    tasks,
+                    detailsMap,
+                    taskIds
+                )
             } catch (err) {
                 //ignore error
                 console.error(err)
@@ -246,6 +239,7 @@ export default function useTasks(types = [], address, timeout = 5000) {
                 }
             }
             setMessage(msg)
+            newTasks && setTasks(newTasks)
         })
 
         return () => unsubscribe(subscriptions)
