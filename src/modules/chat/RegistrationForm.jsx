@@ -164,12 +164,14 @@ const handleSubmit = (props, setState) => async (_, values) => {
 	const address = rxSelected.value
 
 	setState({ submitInProgress: true })
-	const err = await client.register(
-		userId,
-		secret,
-		address,
-		referredBy
-	)
+	const err = await client
+		.register(
+			userId,
+			secret,
+			address,
+			referredBy
+		)
+		.catch(err => err)
 	const success = !err
 	const message = {
 		content: err,

@@ -2,11 +2,22 @@
  * Queue service to queue requests and transactions to be re-/executed in the background
  */
 import React from 'react'
-import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
+import uuid from 'uuid'
+import {
+    getClient,
+    rxIsConnected,
+    rxIsInMaintenanceMode,
+} from '../utils/chatClient'
 import DataStorage from '../utils/DataStorage'
+import { translated } from '../utils/languageHelper'
 import { getTxFee, signAndSend } from '../utils/polkadotHelper'
 import PromisE from '../utils/PromisE'
+import {
+    IGNORE_UPDATE_SYMBOL,
+    copyRxSubject,
+    subjectAsPromise
+} from '../utils/reactjs'
 import { BLOCK_DURATION_SECONDS } from '../utils/time'
 import {
     deferred,
@@ -18,16 +29,9 @@ import {
     isValidNumber,
     objClean,
 } from '../utils/utils'
-import {
-    getClient,
-    rxIsConnected,
-    rxIsInMaintenanceMode,
-} from '../utils/chatClient'
+import { rxOnline } from '../utils/window'
 import { save as addToHistory } from '../modules/history/history'
 import { find as findIdentity, getSelected } from '../modules/identity/identity'
-import { translated } from '../utils/languageHelper'
-import { IGNORE_UPDATE_SYMBOL, copyRxSubject, subjectAsPromise } from '../utils/reactjs'
-import { rxOnline } from '../utils/window'
 import {
     getConnection,
     query,
@@ -55,10 +59,9 @@ const textsCap = {
     processArgsFailed: 'failed to process dynamic task argument',
     txFailed: 'transaction failed',
     txForeignIdentity: 'cannot create a transaction from an identity that does not belong to you!',
-    txInvalidSender: 'invalid or no sender address supplied',
-    txTransferTitle: 'transfer funds',
-    txTransferMissingArgs: `one or more of the following arguments is missing or invalid: 
-        sender identity, recipient identity and amount`,
+    // txInvalidSender: 'invalid or no sender address supplied',
+    // txTransferTitle: 'transfer funds',
+    // txTransferMissingArgs: `one or more of the following arguments is missing or invalid: sender identity, recipient identity and amount`,
 }
 translated(textsCap, true)
 const queue = new DataStorage('totem_queue-data', false)
@@ -522,7 +525,7 @@ const handleTx = async (id, rootTask, task, toastId) => {
     )
 
     // make sure identity is owned by user and a transaction can be created
-    if (!identity) return _save(ERROR, textsCap.txForeignIdentity)
+    if (!identity || !identity.uri) return _save(ERROR, textsCap.txForeignIdentity)
     if (!isStr(func) || !func.startsWith('api.tx.')) return _save(ERROR, textsCap.invalidFunc)
 
     // if browser is offline suspend execution of the task and auto-resume when back online

@@ -150,6 +150,7 @@ export default [
     "./src/modules/task/notificationHandlers.jsx",
     "./src/modules/task/task.js",
     "./src/modules/task/useTask.js",
+    "./src/modules/task/useTasks copy.js",
     "./src/modules/task/useTasks.js",
     "./src/modules/timekeeping/RecordDetails.jsx",
     "./src/modules/timekeeping/SumDuration.jsx",

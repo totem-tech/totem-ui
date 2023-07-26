@@ -38,6 +38,7 @@ translated(textsCap, true)
 //      After creating and updating the task using the TaskForm
 // Example usage: rxUpdater.next(['0x...'])
 export const rxUpdater = new Subject()
+chatClient.onCRUD(({ id, type }) => type === 'task' && rxUpdater.next([id]))
 
 /**
  * @name getCached
@@ -274,15 +275,6 @@ const addDetailsToTasks = (address, tasks, detailsMap, uniqueTaskIds, save = tru
     return newTasks
 }
 
-/**
- * @name    addDetailsToTask
- * @summary merge on-chain and off-chain data of a task
- * 
- * @param   {Object}    task 
- * @param   {Object}    details 
- * 
- * @returns {Object}
- */
 export const addDetailsToTask = (task = {}, details = {}) => {
     const _task = { ...task, ...details }
     const {
@@ -389,4 +381,3 @@ rxNewNotification.subscribe(([id, notification]) => {
 
     rxUpdater.next([taskId])
 })
-chatClient.onCRUD(({ id, type }) => type === 'task' && rxUpdater.next([id]))

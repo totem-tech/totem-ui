@@ -34,7 +34,6 @@ import { className } from './utils/utils'
 import { messages, setMessages } from './utils/validator'
 import windowService, { rxGridColumns, gridClasses } from './utils/window'
 
-let queueResumed = false
 const logoSrc = TotemButtonLogo
 
 // translate default error messages
