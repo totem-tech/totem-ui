@@ -369,9 +369,11 @@ class FormBuilder extends Component {
 					disabled,
 					icon,
 					loading: !success && (submitInProgress || sLoading),
-					onClick: (...args) => isFn(onClick)
-						? onClick(...args)
-						: handleSubmit(...args),
+					onClick: (e, ...args) => {
+						e.preventDefault()
+						isFn(onClick) && onClick(e, ...args)
+						handleSubmit(e, ...args)
+					},
 					positive: isBool(positive) ? positive : true,
 					style: {
 						// float: !modal ? 'right' : undefined,
@@ -491,15 +493,7 @@ class FormBuilder extends Component {
 						{submitBtn}
 					</Modal.Actions>
 				)}
-				{!!msg && (
-					<Message {...{
-						...message,
-						style: {
-							display: 'flex',
-							...message.style,
-						}
-					}} />
-				)}
+				{!!msg && <Message {...message} />}
 			</IModal>
 		)
 	}
@@ -830,9 +824,11 @@ const styles = {
 		zIndex: 1, // for modals without header
 	},
 	messageInline: {
+		display: 'flex',
 		padding: 15,
 	},
 	messageModal: {
+		display: 'flex',
 		margin: 0,
 		borderTopLeftRadius: 0,
 		borderTopRightRadius: 0,

@@ -24,7 +24,7 @@ let textsCap = {
 	areYouSure: 'are you sure?',
 	cityLabel: 'city',
 	cityPlaceholder: 'enter your city',
-	countryLabel: 'country',
+	countryLabel: 'country code',
 	countryPlaceholder: 'select your country',
 	formHeaderCreate: 'add new location',
 	formHeaderUpdate: 'update location',

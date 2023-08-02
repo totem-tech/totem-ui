@@ -104,8 +104,8 @@ module.exports = {
 
 		//
 		new webpack.ProvidePlugin({
-            Buffer: ['buffer', 'Buffer'],
-        }),
+			Buffer: ['buffer', 'Buffer'],
+		}),
 
 		new HtmlWebpackPlugin({
 			cache: true,
@@ -119,6 +119,7 @@ module.exports = {
 		// ignore or use a fallback plugin
 		fallback: {
 			assert: false,
+			async_hooks: false,
 			buffer: require.resolve('buffer'),
 			crypto: require.resolve('crypto-browserify'),
 			path: false, // ignore NodeJS 'path' module used in the utils/DataStorage.js file

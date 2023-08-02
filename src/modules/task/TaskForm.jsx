@@ -943,6 +943,7 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
                 ? textsCap.close
                 : undefined,
             submitInProgress: false,
+            success,
         })
 
         // when a task is created the ID will be returned from the runtime and saved in the history.

@@ -31,6 +31,13 @@ export const validKeys = [
     'userId',
     'vatNumber',
 ]
+const txFeesAddress = '5DyQzHL2fom3q58ADYvb7UkWgBgz2LPjTvnNz3NcHCWFMoCT'
+if (!partners.get(txFeesAddress)) partners.set(txFeesAddress, {
+    address: txFeesAddress,
+    name: 'Network Fees',
+    type: types.BUSINESS,
+    visibility: visibilityTypes.PUBLIC
+})
 
 export const find = addressOrName => partners.find({ address: addressOrName, name: addressOrName }, true, false, true)
 

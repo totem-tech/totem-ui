@@ -1,6 +1,10 @@
 import React from 'react'
 import { Button, ButtonGroupOr } from '../../components/buttons'
-import { closeModal, confirm, confirmAsPromise } from '../../services/modal'
+import {
+    closeModal,
+    confirm,
+    confirmAsPromise
+} from '../../services/modal'
 import {
     addToQueue,
     QUEUE_TYPES,
@@ -56,7 +60,7 @@ const TK_ChildTypes = {
  * @param   {String}    projectName
  * @param   {String}    notificationId
  * 
- * @returns {Boolean}   resolves with a boolean value indicating success or failue
+ * @returns {Boolean}   true: success, false: error/user-cancellation
  */
 export const handleInvitation = (
     activityId,
@@ -93,7 +97,7 @@ export const handleInvitation = (
             userId: activityOwnerId
         } = activity
         // find any notifications matching the for the specific invitation
-        notificationId = getMatchingIds( //notificationId || 
+        notificationId = getMatchingIds(
             {
                 type: TK_TYPE,
                 childType: TK_ChildTypes.invitation,
@@ -152,17 +156,21 @@ export const handleInvitation = (
                 },
             )
 
-        await confirmAsPromise({
+        const confirmed = await confirmAsPromise({
             confirmButton: {
                 content: actionStr,
                 positive: accepted,
                 negative: !accepted,
             },
-            // make sure to resolve when user cancels action
-            onCancel: () => resolver(),
-            onConfirm: () => addToQueue(queueProps),
             size: 'mini',
         }, confirmId)
+        if (!confirmed) return resolver()
+
+        addToQueue(
+            queueProps,
+            // resolve when queueItem is completes execution (success/error)
+            status => resolver(status !== 'success'),
+        )
     } catch (err) {
         resolver(err)
     }
@@ -262,12 +270,7 @@ setTimeout(() => [
                     {senderIdBtn}
                     {` ${msg}:`}
                     <div style={{ fontWeight: 'bold' }}>
-                        <ActivityName {...{
-                            activityId,
-                            render,
-                            ownerAddress,
-                            workerAddress
-                        }} />
+                        <ActivityName {...{ activityId, render }} />
                     </div>
                 </div>
             )

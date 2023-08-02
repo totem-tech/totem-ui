@@ -82,6 +82,8 @@ export default function NotificationItem({
                 margin: 0,
                 textAlign: 'left',
             },
+            _childType: childType,
+            _type: type,
         }} />
     )
 }

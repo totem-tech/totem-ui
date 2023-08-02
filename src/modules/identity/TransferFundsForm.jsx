@@ -93,20 +93,22 @@ translated(textsCap, true)
 // notification type
 const TRANSFER_TYPE = 'transfer'
 
+export const inputNames = {
+    amountReceived: 'amountReceived',
+    amountSent: 'amountSent',
+    currencyReceived: 'currencyReceived',
+    currencySent: 'currencySent',
+    from: 'from',
+    to: 'to',
+    txFee: 'txFeeHTML'
+}
+
 export default class TransferFundsForm extends Component {
     constructor(props) {
         super(props)
 
         const { values = {} } = props
-        this.names = {
-            amountReceived: 'amountReceived',
-            amountSent: 'amountSent',
-            currencyReceived: 'currencyReceived',
-            currencySent: 'currencySent',
-            from: 'from',
-            to: 'to',
-            txFee: 'txFeeHTML'
-        }
+        this.names = inputNames
         this.rxAddress = copyRxSubject(rxSelected)
         this.rxCurrencies = new BehaviorSubject()
         this.rxCurrencyReceived = new BehaviorSubject(rxSelectedCurrency.value)
@@ -486,7 +488,7 @@ TransferFundsForm.propTypes = {
     })
 }
 TransferFundsForm.defaultProps = {
-    inputsDisabled: ['from'],
+    inputsDisabled: [inputNames.from],
     header: textsCap.queueTitle,
     size: 'tiny',
     submitText: textsCap.send,

@@ -168,23 +168,12 @@ export const updateCurrencies = async () => {
         if (updatePromise) return await updatePromise
 
         const cached = rwCache().currencies
-        // messaging service is not connected
-        if (!rxIsConnected.value) {
-            // return existing list if available
-
-            if (cached && cached.length) return cached
-
-            // wait till connected
-            await subjectAsPromise(rxIsConnected, true)[0]
-        }
-
-        // if in maintenance mode wait for it to be switched off
-        rxIsInMaintenanceMode.value
-            && await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
         const p = fetchCurrencies(cached)
         // only use timeout if there is cached data available.
         // First time load must retrieve full list of currencies.
         const tp = !!cached && PromisE.timeout(p, 3000)
+            // if request fails resolve with cached value
+            .catch(() => cached)
         updateCurrencies.updatePromise = p
 
         return await (tp || p)

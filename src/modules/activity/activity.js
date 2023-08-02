@@ -95,7 +95,11 @@ export const queueables = {
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns      object
-    add: (ownerAddress, activityId, queueProps = {}) => ({
+    add: (
+        ownerAddress,
+        activityId,
+        queueProps = {}
+    ) => ({
         ...queueProps,
         address: ownerAddress,
         func: queueables.add_func,
@@ -112,7 +116,12 @@ export const queueables = {
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns          object
-    reassign: (ownerAddress, newOwnerAddress, activityId, queueProps = {}) => ({
+    reassign: (
+        ownerAddress,
+        newOwnerAddress,
+        activityId,
+        queueProps = {}
+    ) => ({
         ...queueProps,
         address: ownerAddress,
         func: queueables.reassign_func,
@@ -128,7 +137,11 @@ export const queueables = {
     // @queueProps      string: provide task specific properties (eg: description, title, then, next...)
     //
     // returns          object
-    remove: (ownerAddress, activityId, queueProps = {}) => ({
+    remove: (
+        ownerAddress,
+        activityId,
+        queueProps = {}
+    ) => ({
         ...queueProps,
         address: ownerAddress,
         func: queueables.remove_func,
@@ -144,12 +157,21 @@ export const queueables = {
     // @token           string: hash generated using activity details
     //
     // Returns          object
-    saveBONSAIToken: (ownerAddress, activityId, token, queueProps = {}) => ({
+    saveBONSAIToken: (
+        ownerAddress,
+        activityId,
+        token,
+        queueProps = {}
+    ) => ({
         ...queueProps,
         address: ownerAddress,
         func: queueables.saveBONSAIToken_func,
         type: TX_STORAGE,
-        args: [hashTypes.activityId, activityId, token],
+        args: [
+            hashTypes.activityId,
+            activityId,
+            token
+        ],
     }),
     saveBONSAIToken_func: 'api.tx.bonsai.updateRecord',
     // change activity status

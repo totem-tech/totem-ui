@@ -39,7 +39,7 @@ const useLedgerAcPostings = (address, ledgerAccount, postingModifier) => {
                     entryId, //hash
                     id: postingIds[i],
                     isCredit,
-                    amount: amount && eval(amount), // convert hex to number
+                    amount: Number(amount) || 0, // convert hex to number
                 }
                 return isFn(postingModifier)
                     ? postingModifier(posting)
@@ -50,9 +50,11 @@ const useLedgerAcPostings = (address, ledgerAccount, postingModifier) => {
         // subscribe and retrieve details by posting IDs
         const handlePostingIds = (ids = []) => {
             if (!mounted) return
+
             postingIds = ids
             unsubscribe(subscriptions.postingDetails)
             if (!ids.length) return setData(new Map())
+
             subscriptions.postingDetails = query.postingDetail(
                 ids.map(() => address),
                 ids.map(() => ledgerAccount),

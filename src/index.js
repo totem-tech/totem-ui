@@ -12,6 +12,7 @@ import { subjectAsPromise, useQueryBlockchain } from './utils/reactjs'
 import storage from './utils/storageHelper'
 import {
 	generateHash,
+	isArr,
 	isArrLike,
 	isError,
 } from './utils/utils'
@@ -25,6 +26,7 @@ import {
 import App from './App'
 import QueueItemStatus from './utils/reactjs/components/QueueItemStatus'
 import { rxOnSave } from './services/queue'
+import { updateCurrencies } from './modules/currency/currency'
 
 // setup common components to use Semantic UI (where applicable)
 setupDefaults('semantic-ui-react', require('semantic-ui-react'))
@@ -91,17 +93,10 @@ const initPromise = PromisE.timeout((resolve, reject) => {
 	client.onConnect(async () => {
 		await PromisE.delay(100)
 		await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
-		// Retrieve a list of countries and store in the browser local storage
-		const countries = await client
-			.countries(countriesHash)
-			.catch(() => null) // retrieve failed. retry on reconnect
-		if (countries !== null) {
-			countriesChecked = true
-			if (countries.size === 0) return
 
-			storage.countries.setAll(countries, true)
-			countriesHash = generateHash(Array.from(countries), 'blake2', 256)
-			console.log('Countries list updated', countries)
+		if (!countriesChecked) {
+			const currencyList = await updateCurrencies()
+			countriesChecked = countriesChecked || isArr(currencyList) && currencyList.length > 0
 		}
 
 		// check and update selected language texts

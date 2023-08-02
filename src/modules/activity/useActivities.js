@@ -270,7 +270,6 @@ export const subscribe = (
         }
         const activities = await chatClient
             .projectsByHashes(activityIds)
-            .then(([activities = new Map()]) => activities)
             .catch(err => {
                 const result = new Map()
                 result.error = err

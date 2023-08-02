@@ -60,6 +60,7 @@ export default function App() {
 			window.services = {
 				activity,
 				blockchain,
+				chat: require('./utils/chatClient'),
 				chatClient,
 				currency,
 				history: require('./modules/history/history'),

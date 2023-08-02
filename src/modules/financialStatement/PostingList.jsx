@@ -1,31 +1,31 @@
-import React, { useState } from 'react'
 import PropTypes from 'prop-types'
+import React, { useState } from 'react'
 import { Button } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import { rxBlockNumber } from '../../services/blockchain'
 import { translated } from '../../utils/languageHelper'
-import { useRxSubject } from '../../utils/reactjs'
+import { useIsMobile } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
-import { MOBILE, rxLayout } from '../../utils/window'
 import Currency from '../currency/Currency'
 import { currencyDefault } from '../currency/currency'
 import AddressName from '../partner/AddressName'
 import useLedgerAcPostings from './useLedgerAcPostings'
 
-const textsCap = translated({
+const textsCap = {
     actions: 'actions',
     credit: 'credit',
     date: 'date',
     debit: 'debit',
     partner: 'partner',
     postingId: 'posting ID',
-}, true)[0]
+}
+translated(textsCap, true)
 
 const PostingList = props => {
     const { address, ledgerAccount } = props
     if (!address || !ledgerAccount) return ''
 
-    const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+    const isMobile = useIsMobile()
     const [state] = useState(() => ({
         columns: [
             !isMobile && {
@@ -36,7 +36,12 @@ const PostingList = props => {
             },
             {
                 collapsing: true,
-                content: ({ partnerAddress }) => <AddressName {...{ address: partnerAddress }} />,
+                content: ({ partnerAddress }) => (
+                    <AddressName {...{
+                        address: partnerAddress,
+                        maxLength: 15,
+                    }} />
+                ),
                 draggableValueKey: 'partnerAddress',
                 key: 'partnerAddress',
                 textAlign: 'left',
@@ -98,7 +103,7 @@ PostingList.propTypes = {
 const getActions = (posting) => (
     <Button {...{
         icon: 'eye',
-        onClick: () => setTimeout(() => alert('To be implemented'))
+        onClick: () => setTimeout(() => alert('To be implemented')) | console.log({ posting })
     }} />
 )
 

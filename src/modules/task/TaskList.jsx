@@ -58,7 +58,7 @@ import {
 import TaskDetails from './TaskDetails'
 import TaskForm, { inputNames } from './TaskForm'
 
-let textsCap = {
+const textsCap = {
     acceptInvoice: 'accept invoice',
     acceptInvoiceDesc: 'accept the invoice and pay the assignee?',
     acceptInvoiceTitle: 'task - accept invoice',
@@ -99,7 +99,7 @@ let textsCap = {
     view: 'view',
     viewDetails: 'view details',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export const listTypes = Object.freeze({
     approver: 'approver',
