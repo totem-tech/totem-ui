@@ -68,6 +68,7 @@ export default function NotificationItem({
                     ? msg.icon
                     : { name: 'bell outline' },
             className: 'list-item',
+            notification_type: key,
             onClick: () => !isLoading && toggleRead(id),
             onDismiss: e => e.stopPropagation() | remove(id),
             status: read
@@ -82,8 +83,6 @@ export default function NotificationItem({
                 margin: 0,
                 textAlign: 'left',
             },
-            _childType: childType,
-            _type: type,
         }} />
     )
 }

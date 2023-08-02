@@ -1,7 +1,6 @@
 import React from 'react'
-import { Button } from 'semantic-ui-react'
 import { isArr } from '../../utils/utils'
-import { ButtonAcceptOrReject } from '../../components/buttons'
+import { Button, ButtonAcceptOrReject } from '../../components/buttons'
 import { translated } from '../../utils/languageHelper'
 import { confirmAsPromise } from '../../services/modal'
 import {
@@ -25,7 +24,7 @@ import {
 import TaskDetails from './TaskDetails'
 import IdentityIcon from '../identity/IdentityIcon'
 
-let textsCap = {
+const textsCap = {
 	assignedTaskMsg: 'assigned a task to you.',
 	dispute: 'dispute',
 	invoiceAccept: 'accept task invoice and pay assignee',
@@ -51,7 +50,7 @@ let textsCap = {
 	mpRejected: 'rejected your marketplace task application'
 
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 const icon = 'tasks'
 // Notification type
 const TASK_TYPE = 'task'
@@ -284,10 +283,11 @@ const getTaskDetailsBtn = (taskId, props) => (
 		icon: 'eye',
 		onClick: e => {
 			e.preventDefault()
+			e.stopPropagation()
 			TaskDetails.asModal({ taskId })
 		},
-		size: 'tiny',
-		style: { padding: 3 },
+		size: 'mini',
+		// style: { padding: 3 },
 		title: textsCap.viewTask,
 		...props,
 	}} />
@@ -368,7 +368,7 @@ setTimeout(() =>
 					<div>
 						{senderIdBtn} {accepted ? textsCap.taskAccepted : textsCap.taskRejected}
 						<div>
-							<i>{taskTitle || taskId}</i>
+							{getTaskDetailsBtn(taskId)}<i>{taskTitle}</i>
 						</div>
 					</div>
 				)
@@ -415,7 +415,12 @@ setTimeout(() =>
 			type: TASK_TYPE,
 			handler: (id, notification = {}, { senderIdBtn }) => {
 				const { data = {} } = notification
-				const { disputed, fulfillerAddress, taskId, taskTitle } = data
+				const {
+					disputed,
+					fulfillerAddress,
+					taskId,
+					taskTitle
+				} = data
 				const { address, name, usageType } = getIdentity(fulfillerAddress)
 				// invalid task or task is not assigned to user's identity
 				if (!name || !taskId) return remove(id)

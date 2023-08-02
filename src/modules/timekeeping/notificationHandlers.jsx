@@ -252,7 +252,7 @@ setTimeout(() => [
                     <Button {...{
                         icon: 'eye',
                         onClick: e => {
-                            e?.stopPropagation?.()
+                            e.preventDefault()
                             return ActivityDetails.asModal({
                                 activityId,
                                 ownerAddress,
