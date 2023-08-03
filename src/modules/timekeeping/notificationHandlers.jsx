@@ -240,24 +240,25 @@ setTimeout(() => [
             const {
                 accepted,
                 projectHash: activityId,
-                workerAddress,
+                ownerAddress,
             } = data || {}
-            const ownerAddress = findIdentity(workerAddress)?.address
+            const isOwner = !!findIdentity(ownerAddress)?.address
             const item = { icon: 'clock outline' }
             const msg = accepted
                 ? textsCap.tkInviteAcceptMsg
                 : textsCap.tkInviteRejectMsg
+            const activityQueryParams = {
+                activityId,
+                ownerAddress: isOwner && ownerAddress || undefined,
+            }
             const render = activity => (
                 <span>
                     <Button {...{
                         icon: 'eye',
                         onClick: e => {
                             e.preventDefault()
-                            return ActivityDetails.asModal({
-                                activityId,
-                                ownerAddress,
-                                workerAddress
-                            })
+                            e.stopPropagation()
+                            return ActivityDetails.asModal(activityQueryParams)
                         },
                         size: 'mini',
                         title: textsCap.viewActivity,
@@ -270,7 +271,7 @@ setTimeout(() => [
                     {senderIdBtn}
                     {` ${msg}:`}
                     <div style={{ fontWeight: 'bold' }}>
-                        <ActivityName {...{ activityId, render }} />
+                        <ActivityName {...{ ...activityQueryParams, render }} />
                     </div>
                 </div>
             )

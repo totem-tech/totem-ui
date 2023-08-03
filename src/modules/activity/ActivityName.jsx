@@ -22,6 +22,7 @@ translated(textsCap, true)
  */
 const ActivityName = ({
     activityId,
+    debug,
     ownerAddress,
     render,
     subscribe = true,
@@ -43,6 +44,7 @@ const ActivityName = ({
             const activity = activities?.get(activityId)
             const { name = '' } = activity || {}
             !subscribe && unsubscribe?.()
+            if (debug) console.log({ activityId, activity, activities })
             return isFn(render)
                 ? render(activity, activityId)
                 : name
