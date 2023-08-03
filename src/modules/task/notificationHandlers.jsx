@@ -274,22 +274,30 @@ export const handleUpdateStatus = async (address, taskIds, statusCode, queueTitl
 		)
 		await awaitComplete(addToQueue(queueItem))
 	})
-	await Promise.all(promises)
+	await Promise
+		.all(promises)
 		.catch(console.log)
 }
 
-const getTaskDetailsBtn = (taskId, props) => (
+const getTaskDetailsBtn = (taskId, isMarket) => (
 	<Button {...{
 		icon: 'eye',
 		onClick: e => {
 			e.preventDefault()
 			e.stopPropagation()
-			TaskDetails.asModal({ taskId })
+			return TaskDetails.asModal(
+				{ taskId },
+				// {
+				// 	size:
+				// 		isMarket
+				// 			? 'small'
+				// 			: 'tiny'
+				// }
+			)
 		},
 		size: 'mini',
 		// style: { padding: 3 },
 		title: textsCap.viewTask,
-		...props,
 	}} />
 )
 // set task related notification item view handlers
@@ -322,10 +330,11 @@ setTimeout(() =>
 					accepted,
 					id,
 				)
-				let msg
+				let msg, isMarket
 				switch (purpose) {
 					case 1:
 						msg = textsCap.mpAccepted
+						isMarket = true
 						break
 					default:
 						msg = textsCap.assignedTaskMsg
@@ -337,7 +346,7 @@ setTimeout(() =>
 						{senderIdBtn}
 						{` ${msg || ''}`.toLowerCase()}
 						{' '}
-						{getTaskDetailsBtn(taskId)}
+						{getTaskDetailsBtn(taskId, isMarket)}
 						<div>
 							<IdentityIcon {...{ address, usageType }} />
 							{textsCap.yourIdentity}: {name}
@@ -366,7 +375,11 @@ setTimeout(() =>
 
 				const content = (
 					<div>
-						{senderIdBtn} {accepted ? textsCap.taskAccepted : textsCap.taskRejected}
+						{senderIdBtn}
+						{' '}
+						{accepted
+							? textsCap.taskAccepted
+							: textsCap.taskRejected}
 						<div>
 							{getTaskDetailsBtn(taskId)}<i>{taskTitle}</i>
 						</div>
@@ -421,9 +434,9 @@ setTimeout(() =>
 					taskId,
 					taskTitle
 				} = data
-				const { address, name, usageType } = getIdentity(fulfillerAddress)
+				const { address, name, usageType } = getIdentity(fulfillerAddress) || {}
 				// invalid task or task is not assigned to user's identity
-				if (!name || !taskId) return remove(id)
+				if (!address || !name || !taskId) return remove(id)
 
 				const content = (
 					<div>

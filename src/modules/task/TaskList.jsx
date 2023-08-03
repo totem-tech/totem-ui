@@ -478,20 +478,14 @@ const getTableProps = (options) => {
     } = options
     const actionsCol = {
         collapsing: true,
-        content: ({ description = '' }, taskId) => (
+        content: (_, taskId) => (
             <Button {...{
                 content: isMobile
                     ? textsCap.viewDetails
                     : undefined,
                 fluid: isMobile,
                 icon: 'eye',
-                onClick: () => TaskDetails
-                    .asModal({ taskId }, {
-                        size: description.length > 500
-                            ? undefined
-                            : 'tiny'
-                    })
-                    .catch(console.warn),
+                onClick: () => TaskDetails.asModal({ taskId }),
                 title: textsCap.view,
             }} />
         ),
@@ -508,10 +502,18 @@ const getTableProps = (options) => {
             title: textsCap.createdAt,
         },
         {
-            content: ({ isMarket, title }, _1, _2, { isMobile }) => (
+            content: ({ description, isMarket, title }, _1, _2, { isMobile }) => (
                 <span style={{ fontSize: isMobile ? '110%' : undefined }}>
                     {isOwnedList && isMarket && adIcon}
                     {title}
+                    <div style={{ color: 'grey' }}>
+                        {!isMobile && textEllipsis(
+                            description,
+                            isMarket ? 100 : 50,
+                            3,
+                            false
+                        )}
+                    </div>
                 </span>
             ),
             draggableValueKey: 'title',
@@ -600,13 +602,15 @@ const getTableProps = (options) => {
         {
             content: ({ tags = [] }) => (
                 <Tags {...{
-                    onDragStart: isMarketplace && (e => {
-                        // add prefix: "tag:" to search by tag
-                        e.dataTransfer.setData(
-                            'Text',
-                            `tag:${e.target.textContent}`,
-                        )
-                    }),
+                    onDragStart: !isMarketplace
+                        ? undefined
+                        : (e, tag) => {
+                            // add prefix: "tag:" to search by tag
+                            e.dataTransfer.setData(
+                                'Text',
+                                `tag:${tag}`,
+                            )
+                        },
                     tags,
                 }} />
             ),

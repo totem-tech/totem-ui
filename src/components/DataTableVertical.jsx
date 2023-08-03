@@ -86,7 +86,7 @@ const DataTableVertical = React.memo(props => {
                 paddingRight: i === maxLen - 1
                     ? padding
                     : undefined,
-                ...columns[0].style,
+                // ...columns[0].style,
             },
         }))
 

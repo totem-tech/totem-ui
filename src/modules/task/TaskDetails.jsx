@@ -28,7 +28,7 @@ import TaskForm from './TaskForm'
 import { getAssigneeView, getStatusView } from './TaskList'
 import useTask from './useTask'
 
-let textsCap = {
+const textsCap = {
     amount: 'bounty amount',
     approvalStatus: 'approval status',
     approver: 'approver',
@@ -46,7 +46,7 @@ let textsCap = {
     updateTask: 'update task',
     updated: 'updated',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export default function TaskDetails(props = {}) {
     const { modalId, taskId } = props
@@ -80,11 +80,12 @@ export default function TaskDetails(props = {}) {
         const showOwnerId = !isMarket || userIsOwner
         const isMobile = rxLayout.value === MOBILE
         const width = !isMobile && description.length > 300
-            ? 190
+            ? 150
             : undefined
         const style = {
-            minWidth: width,
+            minWidth: 150,
         }
+        const headerProps = { style }
         const columns = [
             {
                 content: ({ taskId }) => (
@@ -94,7 +95,6 @@ export default function TaskDetails(props = {}) {
                     }} />
                 ),
                 key: 'id',
-                style,
                 title: textsCap.id,
             },
             {
@@ -192,7 +192,7 @@ export default function TaskDetails(props = {}) {
                 key: 'tsUpdated',
                 title: textsCap.updated,
             },
-        ]
+        ].map(x => ({ ...x, headerProps }))
         const tableProps = {
             columns,
             data: new Map([[taskId, { ..._task, blockNum }]]),
@@ -260,6 +260,7 @@ TaskDetails.asModal = (props = {}, modalProps, modalId) => {
     return showInfo({
         collapsing: true,
         header: textsCap.header,
+        size: 'tiny',
         ...modalProps,
         content: <TaskDetails {...{ ...props, modalId }} />,
     }, modalId)

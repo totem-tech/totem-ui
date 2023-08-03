@@ -13,6 +13,7 @@ import {
 import { translated } from '../utils/languageHelper'
 import PromisE from '../utils/PromisE'
 import {
+	CharacterCount,
 	Message,
 	isMemo,
 	statuses,
@@ -37,7 +38,6 @@ import validator, { TYPES } from '../utils/validator'
 import { rxInverted } from '../utils/window'
 import { randomHex } from '../services/blockchain'
 import { Button } from './buttons'
-import CharacterCount from './CharacterCount'
 import CheckboxGroup from './CheckboxGroup'
 import DateInput from './DateInput'
 import { Invertible } from './Invertible'
