@@ -1,8 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import { showForm } from '../../services/modal'
+import client from '../../utils/chatClient'
 import { ss58Decode, addressToStr } from '../../utils/convert'
+import { translated } from '../../utils/languageHelper'
 import PromisE from '../../utils/PromisE'
+import { UseHook, useInverted } from '../../utils/reactjs'
 import {
 	deferred,
 	isFn,
@@ -10,14 +15,8 @@ import {
 	objHasKeys,
 	isObj,
 	objClean,
+	textEllipsis,
 } from '../../utils/utils'
-import FormBuilder, {
-	fillValues,
-	findInput,
-} from '../../components/FormBuilder'
-import { showForm } from '../../services/modal'
-import { translated } from '../../utils/languageHelper'
-import client from '../../utils/chatClient'
 import {
 	contacts as contactStorage,
 	newId as newContactId,
@@ -29,6 +28,7 @@ import ContactForm, {
 } from '../contact/ContactForm'
 import BackupForm from '../gettingStarted/BackupForm'
 import { rxIdentities } from '../identity/identity'
+import { getIdentityOptions } from '../identity/getIdentityOptions'
 import locations, {
 	newId as newLocationId,
 	requiredKeys as locationRequiredKeys,
@@ -48,13 +48,12 @@ import {
 	visibilityTypes,
 } from './partner'
 import PartnerIcon from './PartnerIcon'
-import { getIdentityOptions } from '../identity/getIdentityOptions'
 
 const textsCap = {
 	addressAdditionLabel: 'use',
-	addressLabel: 'search for Company or Identity',
+	addressLabel: 'Company or partner Identity',
 	addressEmptySearchMessage: 'enter a compnay name to search',
-	addressPlaceholder: 'search by company details or identity',
+	addressPlaceholder: 'search by company name or enter identity',
 	addressValidationMsg1:
 		'partner already exists with the following name:',
 	addressValidationMsg2: 'please enter a valid Totem Identity',
@@ -191,6 +190,7 @@ export default class PartnerForm extends Component {
 		}
 		this.state.inputs = [
 			{
+				disabled: values => values[inputNames.visibility] === visibilityTypes.PUBLIC,
 				inline: true,
 				label: textsCap.typeLabel,
 				name: inputNames.type,
@@ -277,8 +277,7 @@ export default class PartnerForm extends Component {
 				value: tags || [],
 			},
 			{
-				disabled:
-					this.doUpdate && visibility === visibilityTypes.PUBLIC,
+				disabled: this.doUpdate && visibility === visibilityTypes.PUBLIC,
 				inline: true,
 				label: textsCap.visibilityLabel,
 				name: inputNames.visibility,
@@ -616,13 +615,31 @@ export default class PartnerForm extends Component {
 		addressIn.loading = true
 		this.setState({ inputs })
 
-		const OptionText = React.memo(({ name, subText }) => (
+		const OptionText = React.memo(({ name, subText = '' }) => (
 			<div>
 				<PartnerIcon visibility={visibilityTypes.PUBLIC} />
 				{' ' + name}
-				<div style={{ color: '#ccc' }}>
-					<small>{subText}</small>
-				</div>
+				<UseHook {...{
+					hook: useInverted,
+					render: inverted => (
+						<div style={{
+							color: inverted
+								? '#ccc'
+								: 'grey',
+							fontWeight: 'bold',
+							paddingLeft: 20,
+						}}>
+							<small>
+								{textEllipsis(
+									subText,
+									100,
+									3,
+									false
+								)}
+							</small>
+						</div>
+					)
+				}} />
 			</div>
 		))
 
@@ -662,7 +679,7 @@ export default class PartnerForm extends Component {
 						const subText = ar
 							.map(x => `${x || ''}`.trim())
 							.filter(Boolean)
-							.map((x, i) => `${x}${i >= ar.length - 1 ? '' : x.endsWith(',') ? '' : ','} `)
+							.join(', ')
 						return {
 							company, // keep
 							hash,
