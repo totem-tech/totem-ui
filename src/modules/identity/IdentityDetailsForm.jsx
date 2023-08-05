@@ -1,32 +1,19 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import { BehaviorSubject } from 'rxjs'
 import LabelCopy from '../../components/LabelCopy'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { confirmAsPromise } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import {
-	RxSubjectView,
-	UseHook,
-	copyRxSubject,
-	useQueryBlockchain,
-	useRxState
-} from '../../utils/reactjs'
+import { useRxState } from '../../utils/reactjs'
 import storage from '../../utils/storageHelper'
-import {
-	className,
-	isFn,
-	objClean
-} from '../../utils/utils'
+import { isFn, objClean } from '../../utils/utils'
 import Balance from './Balance'
 import {
 	get,
 	getSelected,
 	remove,
-	rxIdentities,
-	USAGE_TYPES,
 } from './identity'
-import IdentityForm, { UseDeloiteVerified, getDeloitteId } from './IdentityForm'
+import IdentityForm from './IdentityForm'
 import IdentityIcon from './IdentityIcon'
 
 const textsCap = {
@@ -98,8 +85,6 @@ const getInitialState = props => rxState => {
 		usageType
 	} = identity
 
-	// create an RxJS subject that automatically copies identity from identities storage
-	const rxIsDeloitteVerified = new BehaviorSubject(false)
 	const inputs = [
 		{
 			content: (
@@ -217,6 +202,7 @@ const getInitialState = props => rxState => {
 		headerIcon: (
 			<IdentityIcon {...{
 				address,
+				formProps: null,
 				size: 'large',
 				usageType,
 			}} />

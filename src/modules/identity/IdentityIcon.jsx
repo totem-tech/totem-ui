@@ -25,7 +25,7 @@ const IdentityIcon = (props) => {
     const {
         address,
         deloitteVerified,
-        formProps = {},
+        formProps = {}, // if null will not open form on click
         size,
         style,
         usageType,
@@ -72,7 +72,7 @@ const IdentityIcon = (props) => {
         titlePrefix = ''
     }
 
-    const handleClick = !address
+    const handleClick = !address || formProps === null
         ? undefined
         : e => {
             e.preventDefault()
@@ -101,23 +101,21 @@ const IdentityIcon = (props) => {
                 ]),
                 color,
                 onDragStart: e => {
-                    setHovered(false)
+                    handleClick && setHovered(false)
                     e.stopPropagation()
                     e.dataTransfer.setData('Text', ut)
                 },
                 onClick: handleClick,
-                onMouseEnter: isMobile || !address
-                    ? undefined
-                    : () => setHovered(true),
-                onMouseLeave: isMobile || !address
-                    ? undefined
-                    : () => setHovered(false),
+                ...!isMobile && !!handleClick && {
+                    onMouseEnter: () => setHovered(true),
+                    onMouseLeave: () => setHovered(false),
+                },
                 name: hovered
                     ? 'pencil'
                     : name,
                 size,
                 style: {
-                    cursor: address
+                    cursor: handleClick
                         ? 'pointer'
                         : undefined,
                     fontSize: size

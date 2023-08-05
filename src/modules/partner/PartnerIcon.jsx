@@ -82,7 +82,7 @@ const PartnerIcon = props => {
         titlePrefix = ''
     }
 
-    const handleClick = !address
+    const handleClick = !address || formProps === null
         ? undefined
         : e => {
             e.preventDefault()
@@ -117,18 +117,16 @@ const PartnerIcon = props => {
                     e.dataTransfer.setData('Text', _type)
                 },
                 onClick: handleClick,
-                onMouseEnter: isMobile || !address
-                    ? undefined
-                    : () => setHovered(true),
-                onMouseLeave: isMobile || !address
-                    ? undefined
-                    : () => setHovered(false),
+                ...!isMobile && !!handleClick && {
+                    onMouseEnter: () => setHovered(true),
+                    onMouseLeave: () => setHovered(false),
+                },
                 name: hovered
                     ? 'pencil'
                     : name,
                 size,
                 style: {
-                    cursor: address
+                    cursor: handleClick
                         ? 'pointer'
                         : undefined,
                     fontSize: size

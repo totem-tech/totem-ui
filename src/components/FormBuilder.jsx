@@ -39,10 +39,9 @@ class FormBuilder extends Component {
 	constructor(props) {
 		super(props)
 
-		const prefix = 'form__'
+		const prefix = 'form_'
 		let {
-			modalId,
-			id = modalId || newId('form__'), // Form ID
+			id = newId(prefix), // Form ID
 			inputs,
 			open,
 			rxValues = new BehaviorSubject(),
@@ -266,7 +265,6 @@ class FormBuilder extends Component {
 			loading,
 			message: msg,
 			modal,
-			modalId,
 			onClose,
 			onOpen,
 			open,
@@ -302,10 +300,6 @@ class FormBuilder extends Component {
 		inputs = inputs.map(this.addInterceptor(values))
 		if (success && closeOnSubmit) {
 			modalOpen = false
-			if (modalId) {
-				closeModal(modalId)
-				return ''
-			}
 			isFn(onClose) && onClose({}, {})
 		}
 		msg = sMsg || msg

@@ -18,7 +18,8 @@ import { useInverted } from '../utils/window'
  * @summary	
  * 
  * @param	{String|*}	children    if not string, it will be stringified.
- * @param   {Sting|*}   Component   (optonal) Default: `span`
+ * @param   {Sting|*}   Component   (optonal) wrapper component for matched strings
+ *                                  Default: `span`
  * @param   {String|*}  content     alternative to `children`
  * @param   {Function}  replacer    (optional) callback to replace the matched values
  * @param	{RegExp}	regex		(optional) Regular expression to match texts to be replaced.

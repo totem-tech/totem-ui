@@ -14,7 +14,6 @@ const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
 export const types = Object.freeze({
     BUSINESS: 'business',
-    DELOITTE: 'deloitte',
     PERSONAL: 'personal',
 })
 export const visibilityTypes = {

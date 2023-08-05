@@ -6,14 +6,13 @@ import imgDeloitteSignup from '../../assets/deloitte/signup-for-deloitte.svg'
 import { Button } from '../../components/buttons'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { hashTypes, query, queueables } from '../../services/blockchain'
-import { confirmAsPromise, showForm } from '../../services/modal'
+import { confirmAsPromise, newId, showForm } from '../../services/modal'
 import { addToQueue, awaitComplete } from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
 import PromisE from '../../utils/PromisE'
 import {
 	RxSubjectView,
 	UseHook,
-	copyRxSubject,
 	statuses,
 	useQueryBlockchain
 } from '../../utils/reactjs'
@@ -26,6 +25,10 @@ import {
 	className,
 	generateHash,
 } from '../../utils/utils'
+import {
+	inputNames as activityInputNames,
+	handleSubmit as handleActivitySubmitCb
+} from '../activity/ActivityForm'
 import {
 	get as getContact,
 	getAll as getContacts,
@@ -41,16 +44,11 @@ import {
 import LocationForm from '../location/LocationForm'
 import { getAllTags } from '../partner/partner'
 import {
-	inputNames as activityInputNames,
-	handleSubmit as handleActivitySubmitCb
-} from '../activity/ActivityForm'
-import {
 	addFromUri,
 	DERIVATION_PATH_PREFIX,
 	find,
 	generateUri,
 	get,
-	rxIdentities,
 	set,
 	USAGE_TYPES,
 } from './identity'
@@ -96,7 +94,10 @@ const textsCap = {
 	vatNumberPlaceholder: 'VAT registration number',
 
 
-	deloitteSignupNotQualified: 'in order to signup for Deloitte Digital ID, you must fill-in all the fields in the business information section.',
+	deloitteBonsaiTitle: 'signup for Deloitte Digital ID',
+	deloitteIdConfirm: 'you are about to create a Deloitte Digital ID for your idenitty. ',
+	deloitteIdSignupNotQualified: 'in order to signup for Deloitte Digital ID, you must fill-in all the fields in the business information section.',
+	proceed: 'proceed',
 }
 translated(textsCap, true)
 
@@ -242,29 +243,25 @@ export default class IdentityForm extends Component {
 							<RxSubjectView {...{
 								subject: rxDeloitteSignupStatus,
 								valueModifier: status => status !== 'success' && (
-									<Button {...{
-										onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
-										style: {
-											background: 'transparent',
-											margin: '-5px 0 8px',
-											padding: 0,
-											width: '100%',
-										},
-									}}>
-										<img {...{
-											className: className([
-												'ui image',
-												status && 'disabled',
-											]),
-											src: imgDeloitteSignup,
+									<div style={{ textAlign: 'center' }}>
+										<Button {...{
+											onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
 											style: {
-												height: 'auto',
-												margin: 'auto',
+												borderRadius: 12,
+												margin: '-5px 0 8px',
+												padding: 0,
 												width: '60%',
 											},
-											title: 'test'
-										}} />
-									</Button>
+										}}>
+											<img {...{
+												className: className([
+													'ui image',
+													status && 'disabled',
+												]),
+												src: imgDeloitteSignup,
+											}} />
+										</Button>
+									</div>
 								)
 							}} />
 						)
@@ -367,6 +364,7 @@ export default class IdentityForm extends Component {
 			headerIcon: (
 				<IdentityIcon {...{
 					address,
+					formProps: null,
 					size: 'large',
 					usageType,
 				}} />
@@ -376,6 +374,9 @@ export default class IdentityForm extends Component {
 				? textsCap.autoSaved
 				: undefined,
 			message,
+			modalId: !address
+				? undefined
+				: newId('form_', address),
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
 			rxValues,
@@ -744,7 +745,7 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 		if (!allow) return await confirmAsPromise({
 			cancelButton: textsCap.ok,
 			confirmButton: null,
-			content: textsCap.deloitteSignupNotQualified,
+			content: textsCap.deloitteIdSignupNotQualified,
 			size: 'mini'
 		})
 
@@ -769,7 +770,7 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 		]
 		const finalHash = generateHash(hashList.join(''))
 		const deloitteId = getDeloitteId(address)
-		const activityPromise = new Promise(async (resolve) => {
+		const createActivity = () => new Promise(async (resolve) => {
 			try {
 				// check if an existing record was already created
 				const exists = await query('api.query.bonsai.isValidRecord', [deloitteId])
@@ -805,8 +806,15 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 				resolve(false)
 			}
 		})
-		const activityCreated = await activityPromise
-		console.log({ activityCreated })
+		const confirmed = await confirmAsPromise({
+			confirmButton: {
+				content: textsCap.proceed,
+				positive: true,
+			},
+			content: textsCap.deloitteIdConfirm,
+			size: 'mini',
+		})
+		const activityCreated = confirmed && await createActivity()
 		if (!activityCreated) return rxInprogress.next(false)
 
 		const queueId = addToQueue(
@@ -817,7 +825,7 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 				finalHash,
 				{
 					description: address,
-					title: 'Signup for Deloitte Digital ID',
+					title: textsCap.deloitteBonsaiTitle,
 				}
 			)
 		)
@@ -825,7 +833,7 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 		const success = status === 'success'
 		rxInprogress.next(success && status)
 
-		if (!success) return
+		// if (!success) return
 		// // update identity and store deloitteId obwith with 
 		// set(address, {
 		// 	deloitteId: {

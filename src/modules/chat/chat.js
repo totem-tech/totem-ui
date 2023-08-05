@@ -20,6 +20,7 @@ import {
     isArr,
     isDefined,
     isObj,
+    isPositiveInteger,
     isValidNumber,
 } from '../../utils/utils'
 import {
@@ -163,12 +164,25 @@ export function getUnreadCount() {
 }
 
 // get/set limit per inbox
-export const historyLimit = limit => {
+export const historyLimit = (limit, applyNow) => {
+    const update = isPositiveInteger(limit)
     limit = rw(
-        !isValidNumber(limit)
+        !update
             ? undefined
             : { historyLimit: limit }
     ).historyLimit
+    if (update && applyNow) {
+        const newHistory = new Map()
+        Array.from(chatHistory.getAll())
+            .forEach(([inboxKey, messages = []]) =>
+                newHistory.set(
+                    inboxKey,
+                    messages.slice(-limit)
+                )
+            )
+        chatHistory.setAll(newHistory, true)
+        rxInboxListChanged.deferred()
+    }
     return isDefined(limit)
         ? limit
         : DEFAULT_LIMIT
@@ -230,11 +244,13 @@ export const removeInbox = (inboxKey, permanent = false, removeMessages = perman
     )
     rxInboxListChanged.deferred()
     rxOpenInboxKey.next()
-    removeMessages && removeInboxMessages(inboxKey)
+    removeMessages && removeInboxMessages(inboxKey, permanent)
 }
 
-export const removeInboxMessages = inboxKey => {
-    chatHistory.set(inboxKey, [])
+export const removeInboxMessages = (inboxKey, permanent) => {
+    !permanent
+        ? chatHistory.set(inboxKey, [])
+        : chatHistory.delete(inboxKey)
     rxInboxListChanged.deferred()
 }
 
@@ -406,6 +422,7 @@ setTimeout(() => {
     // remove unwanted inbox created due to previous bug where an inbox would be created even though
     // `null` supplied to `createInbox` function
     removeInbox('null', true, true)
+    removeInbox('undefined', true, true)
 
     const allSettings = rw().inbox || {}
     const { id: userId } = getUser() || {}

@@ -1,10 +1,8 @@
 import React, { Component } from 'react'
-// components
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
-// modules
+import { Embolden } from '../components/StringReplace'
 import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
-import client from '../utils/chatClient'
 import {
     rxSelected as rxSelectedCurrency,
     setSelected as setSelectedCurrency
@@ -12,16 +10,15 @@ import {
 import { asInput } from '../modules/currency/CurrencyDropdown'
 import { limit as historyItemsLimit } from '../modules/history/history'
 import TimekeepingSettings from '../modules/timekeeping/TimekeepingSettings'
-// services
 import { nodes, nodesDefault, setNodes } from '../services/blockchain'
+import { confirm, confirmAsPromise } from '../services/modal'
+import client from '../utils/chatClient'
 import {
     getSelected as getSelectedLang,
     languages,
     setSelected as setSelectedLang,
     translated,
 } from '../utils/languageHelper'
-import { confirm, confirmAsPromise } from '../services/modal'
-// utils
 import { copyRxSubject } from '../utils/reactjs'
 import {
     arrSort,
@@ -29,8 +26,14 @@ import {
     isObj
 } from '../utils/utils'
 import { gridColumns } from '../utils/window'
+import { BehaviorSubject } from 'rxjs'
 
-let textsCap = {
+const textsCap = {
+    applyLater: 'apply later',
+    applyNow: 'apply now!',
+    chatHistoryWarning1: 'click on "Apply now!" button to purge excess messages from each inbox immediately.',
+    chatHistoryWarning1a: 'you may want to create a back up before doing so.',
+    chatHistoryWarning2: 'click on "Apply later" button to apply changes as you send or receive new messages for each inbox.',
     chatLimitLabel: 'messages per chat',
     column: 'column',
     columns: 'columns',
@@ -69,7 +72,7 @@ let textsCap = {
     _header: 'keyboard shortcuts',
     _subheader: 'not available when an input field is on focus',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 const savedMsg = {
     content: textsCap.saved,
     status: 'success',
@@ -146,6 +149,7 @@ export default class SettingsForm extends Component {
         const values = {}
         values[inputNames.nodeUrl] = this.connectedNodeUrl
         this.rxCurrency = copyRxSubject(rxSelectedCurrency)
+        this.rxChatHistoryLimit = new BehaviorSubject(chatHistoryLimit())
         this.state = {
             values,
             submitText: null,
@@ -206,9 +210,9 @@ export default class SettingsForm extends Component {
                             text: limit || textsCap.unlimited,
                             value: limit,
                         })),
+                    rxValue: this.rxChatHistoryLimit,
                     selection: true,
                     type: 'dropdown',
-                    value: chatHistoryLimit(),
                 },
                 {
                     label: textsCap.gridLabel,
@@ -265,9 +269,50 @@ export default class SettingsForm extends Component {
         this.setInputMessage('currency', savedMsg)
     }
 
-    handleChatLimitChange = (_, values) => {
-        const chatMsgLimit = values[inputNames.chatMsgLimit]
-        chatHistoryLimit(chatMsgLimit)
+    handleChatLimitChange = async (_, values) => {
+        const newLimit = values[inputNames.chatMsgLimit]
+        // ignore first time triggered automatically due to using RxJS subject.
+        const existingLimit = chatHistoryLimit()
+        if (newLimit === existingLimit) return
+
+        let save = false
+        const applyNow = await confirmAsPromise({
+            cancelButton: {
+                content: textsCap.applyLater,
+                onClick: () => save = true,
+                primary: true,
+            },
+            confirmButton: {
+                content: textsCap.applyNow,
+                onClick: () => save = true,
+                negative: true,
+            },
+            content: (
+                <div>
+                    <p>
+                        <Embolden {...{
+                            content: textsCap.chatHistoryWarning2,
+                            keepQuotes: true
+                        }} />
+                    </p>
+                    <p>
+                        <Embolden {...{
+                            content: textsCap.chatHistoryWarning1,
+                            keepQuotes: true
+                        }} />
+                        <b> {textsCap.chatHistoryWarning1a}</b>
+                    </p>
+                    <p style={{ color: 'red' }}>
+                        <b>{textsCap.chatLimitLabel}: {newLimit}</b>
+                    </p>
+                </div>
+            ),
+            size: 'mini'
+        })
+        // confirm dialog closed without clicking on confirm or cancel button
+        if (!save) return this.rxChatHistoryLimit.next(existingLimit)
+
+        chatHistoryLimit(newLimit, applyNow)
         this.setInputMessage('chatMsgLimit', savedMsg)
     }
 
@@ -279,7 +324,12 @@ export default class SettingsForm extends Component {
 
     handleHistoryLimitChange = (_, values) => {
         const limit = values[inputNames.historyLimit]
-        historyItemsLimit(limit === textsCap.unlimited ? null : limit, true)
+        historyItemsLimit(
+            limit === textsCap.unlimited
+                ? null
+                : limit,
+            true
+        )
         this.setInputMessage('historyLimit', savedMsg)
     }
 

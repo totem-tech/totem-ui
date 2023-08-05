@@ -334,18 +334,18 @@ export const showForm = (FormComponent, props = {}, modalId, focusRef) => {
     if (!isFn(FormComponent) && !isMemo(FormComponent)) return
     const { onClose } = props
     // grab the default modalId if already defined in the defualtProps
-    const prefix = 'form__'
+    const prefix = 'form_'
     modalId = modalId
-        || (FormComponent.defaultProps || {}).modalId
+        || FormComponent.defaultProps.modalId
         || newId(prefix)
+    const handleClose = () => closeModal(modalId)
     const form = (
         <FormComponent {...{
             ...props,
             key: generateHash(),
             modal: true,
-            modalId,
             open: true,
-            onClose: () => closeModal(modalId),
+            onClose: handleClose,
         }} />
     )
     if (!focusRef) setTimeout(() => {
