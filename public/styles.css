@@ -716,6 +716,11 @@ body.inverted .dropdown>.menu>.message {
 	color: white !important;
 }
 
+/* Fixes text being messy when dropdown option contains description */
+.ui.dropdown>.menu>.item>.description+.text {
+	display: inline-block;
+}
+
 /* input acton/label */
 body.inverted .ui.input.label>.label,
 body.inverted .ui.input.action>.button {
