@@ -190,15 +190,18 @@ setTimeout(() => [
                 return ''
             }
 
-            const { name, usageType } = identity
-
+            const {
+                address,
+                name,
+                usageType
+            } = identity
             item.content = (
                 <div>
                     {senderIdBtn} {textsCap.tkInvitationMsg}<br />
                     {textsCap.yourIdentity}:
                     <b>
                         {' '}
-                        <IdentityIcon {...{ usageType }} />
+                        <IdentityIcon {...{ address, usageType }} />
                         {' ' + name}
                     </b>
                     <br />

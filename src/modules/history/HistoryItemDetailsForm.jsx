@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
+import React, { useState, useEffect } from 'react'
 import { Icon } from 'semantic-ui-react'
-import { copyToClipboard, isObj } from '../../utils/utils'
-import { format } from '../../utils/time'
 import DataTable from '../../components/DataTable'
 import FormBuilder, { findInput } from '../../components/FormBuilder'
 import JSONView from '../../components/JSONView'
-import { translated } from '../../utils/languageHelper'
-import { statusTitles } from '../../services/queue'
-import { query } from '../../services/blockchain'
 import LabelCopy from '../../components/LabelCopy'
+import { query } from '../../services/blockchain'
+import { statusTitles } from '../../services/queue'
+import { translated } from '../../utils/languageHelper'
+import { format } from '../../utils/time'
+import { isObj } from '../../utils/utils'
 import { currencyDefault } from '../currency/currency'
 
-// Read-only form
-const textsCap = translated({
+const textsCap = {
     action: 'action',
     advanced: 'advanced',
     balances: 'balances',
@@ -54,8 +53,10 @@ const textsCap = translated({
     name: 'name',
     type: 'type',
     value: 'value',
-}, true)[1]
+}
+translated(textsCap, true)
 
+// Read-only form
 export default function HistoryItemDetailsForm(props) {
     const { values = {} } = props
     const {

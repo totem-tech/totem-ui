@@ -22,13 +22,14 @@ import { setToast } from './toast'
 
 export const rxBlockNumber = new BehaviorSubject()
 const MODULE_KEY = 'blockchain'
-const textsCap = translated({
+const textsCap = {
     invalidApiPromise: 'ApiPromise instance required',
     invalidApiFunc: 'invalid API function',
     invalidMultiQueryArgs: 'failed to process arguments for multi-query',
     nodeConnectionErr: 'failed to connect to Totem blockchain network',
     nodeConntimeoutMsg: 'blockchain connection taking longer than expected',
-}, true)[1]
+}
+translated(textsCap, true)
 let config = {
     primary: 'Ktx',
     unit: 'Transactions',
@@ -231,7 +232,11 @@ export const queueables = {
     bonsaiSaveToken: (ownerAddress, recordTypeCode, recordId, token, queueProps = {}) => ({
         ...queueProps,
         address: ownerAddress,
-        args: [recordTypeCode, recordId, token],
+        args: [
+            recordTypeCode,
+            recordId,
+            token
+        ],
         func: 'api.tx.bonsai.updateRecord',
         recordId,
         type: QUEUE_TYPES.TX_STORAGE,

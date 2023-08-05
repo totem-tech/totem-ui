@@ -51,10 +51,10 @@ export const getIdentityOptions = (
                 valueModifier: selected => (
                     <span title={selected === address && textsCap.selected || ''}>
                         <IdentityIcon {...{
+                            address,
                             color: selected === address
                                 ? 'orange'
                                 : 'grey',
-                            address,
                             formProps: isObj(formProps) && formProps || {},
                             key: address,
                             usageType,

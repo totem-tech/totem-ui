@@ -307,14 +307,14 @@ const IConfirm = props => {
  * @name    get
  * @summary get modal elememnt by it's ID
  * 
- * @param {String} modalId 
+ * @param {String} modalId
  * 
  * @returns {Element}
  */
 export const get = modalId => modals.get(modalId)
 
-export const newId = (prefix = 'modal_', seed) => prefix
-    + generateHash(seed, 'blake2', 32)
+export const newId = (prefix = 'modal_', input) => prefix
+    + generateHash(input, 'blake2', 32)
         .replace('0x', '')
 
 /**

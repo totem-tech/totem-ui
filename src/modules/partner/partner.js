@@ -1,5 +1,11 @@
 import DataStorage from '../../utils/DataStorage'
-import { textEllipsis, arrUnique, objHasKeys, isAddress, objClean } from '../../utils/utils'
+import {
+    textEllipsis,
+    arrUnique,
+    objHasKeys,
+    isAddress,
+    objClean
+} from '../../utils/utils'
 import contacts from '../contact/contact'
 import identities from '../identity/identity'
 import locations from '../location/location'
@@ -8,6 +14,7 @@ const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
 export const types = Object.freeze({
     BUSINESS: 'business',
+    DELOITTE: 'deloitte',
     PERSONAL: 'personal',
 })
 export const visibilityTypes = {

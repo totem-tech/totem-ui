@@ -779,7 +779,7 @@ const handleBountyChangeCb = (props, rxState) => deferred((_, values) => {
         .then(handleBountyResult, handleErr)
 }, 100)
 
-const handleSubmit = (props = {}, rxState) => async (_, values) => {
+export const handleSubmit = (props = {}, rxState) => async (_, values) => {
     let {
         onSubmit,
         purpose,
@@ -930,7 +930,11 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
         header: textsCap.publishToMarketPlace,
         size: 'mini',
     })
-    if (!confirmed) return
+    if (!confirmed) return isFn(onSubmit) && onSubmit(
+        false,
+        values,
+        null
+    )
 
     rxState.next({
         closeText: textsCap.close,
@@ -958,7 +962,8 @@ const handleSubmit = (props = {}, rxState) => async (_, values) => {
         )
     }
     // add requests to the queue and set queueId to display progress as message
-    rxQueueId.next(addToQueue(queueProps, onComplete))
+    addToQueue(queueProps, onComplete, queueId)
+    rxQueueId?.next?.(queueId)
 }
 
 const handleTagsAddCb = (rxValue, rxOptions) => (_, { value = '' }) => {

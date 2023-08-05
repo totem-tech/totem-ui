@@ -2,34 +2,55 @@ import { validateMnemonic } from 'bip39'
 import PropTypes from 'prop-types'
 import React, { Component } from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { Button } from 'semantic-ui-react'
-
+import imgDeloitteSignup from '../../assets/deloitte/signup-for-deloitte.svg'
+import { Button } from '../../components/buttons'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
-import { showForm } from '../../services/modal'
-
+import { hashTypes, query, queueables } from '../../services/blockchain'
+import { confirmAsPromise, showForm } from '../../services/modal'
+import { addToQueue, awaitComplete } from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
 import PromisE from '../../utils/PromisE'
-import { statuses } from '../../utils/reactjs'
+import {
+	RxSubjectView,
+	UseHook,
+	copyRxSubject,
+	statuses,
+	useQueryBlockchain
+} from '../../utils/reactjs'
 import {
 	isFn,
 	arrUnique,
 	deferred,
 	objHasKeys,
 	isBool,
+	className,
+	generateHash,
 } from '../../utils/utils'
-
-import { getAll as getContacts, rxContacts } from '../contact/contact'
+import {
+	get as getContact,
+	getAll as getContacts,
+	rxContacts
+} from '../contact/contact'
 import ContactForm from '../contact/ContactForm'
 import BackupForm from '../gettingStarted/BackupForm'
-import { getAll as getLocations, rxLocations } from '../location/location'
+import {
+	get as getLocation,
+	getAll as getLocations,
+	rxLocations
+} from '../location/location'
 import LocationForm from '../location/LocationForm'
 import { getAllTags } from '../partner/partner'
+import {
+	inputNames as activityInputNames,
+	handleSubmit as handleActivitySubmitCb
+} from '../activity/ActivityForm'
 import {
 	addFromUri,
 	DERIVATION_PATH_PREFIX,
 	find,
 	generateUri,
 	get,
+	rxIdentities,
 	set,
 	USAGE_TYPES,
 } from './identity'
@@ -72,6 +93,9 @@ const textsCap = {
 	validSeedRequired: 'please enter a valid seed',
 	vatNumberLabel: 'VAT number',
 	vatNumberPlaceholder: 'VAT registration number',
+
+
+	deloitteSignupNotQualified: 'in order to signup for Deloitte Digital ID, you must fill-in all the fields in the business information section.',
 }
 translated(textsCap, true)
 
@@ -85,6 +109,7 @@ export const inputNames = Object.freeze({
 	...requiredFields,
 	businessInfo: 'businessInfo',
 	contactId: 'contactId',
+	btnDeloitte: 'btnDeloitte',
 	locationId: 'locationId',
 	registeredNumber: 'registeredNumber',
 	restore: 'restore',
@@ -120,6 +145,8 @@ export default class IdentityForm extends Component {
 				? textsCap.headerUpdate
 				: textsCap.headerCreate
 		)
+		const rxValues = new BehaviorSubject()
+		const rxDeloitteSignupStatus = new BehaviorSubject()
 		const inputs = [
 			{
 				hidden: this.doUpdate,
@@ -205,6 +232,46 @@ export default class IdentityForm extends Component {
 				type: 'dropdown',
 				search: true,
 				selection: true,
+			},
+			{
+				content: (
+					<UseDeloiteVerified {...{
+						address,
+						render: isVerified => !isVerified && (
+							<RxSubjectView {...{
+								subject: rxDeloitteSignupStatus,
+								valueModifier: status => status !== 'success' && (
+									<Button {...{
+										onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
+										style: {
+											background: 'transparent',
+											margin: '-5px 0 8px',
+											padding: 0,
+											width: '100%',
+										},
+									}}>
+										<img {...{
+											className: className([
+												'ui image',
+												status && 'disabled',
+											]),
+											src: imgDeloitteSignup,
+											style: {
+												height: 'auto',
+												margin: 'auto',
+												width: '60%',
+											},
+											title: 'test'
+										}} />
+									</Button>
+								)
+							}} />
+						)
+					}} />
+				),
+				hidden: !address,
+				name: inputNames.btnDeloitte,
+				type: 'html',
 			},
 			{
 				accordion: {
@@ -298,16 +365,19 @@ export default class IdentityForm extends Component {
 			header: this.header,
 			headerIcon: (
 				<IdentityIcon {...{
+					address,
 					size: 'large',
 					usageType,
 				}} />
 			),
+			inputs: fillValues(inputs, this.values),
 			subheader: this.doUpdate && autoSave
 				? textsCap.autoSaved
 				: undefined,
 			message,
 			onChange: this.handleFormChange,
 			onSubmit: this.handleSubmit,
+			rxValues,
 			submitText: submitText || submitText === null
 				? submitText
 				: this.doUpdate
@@ -318,14 +388,24 @@ export default class IdentityForm extends Component {
 						? textsCap.restore
 						: textsCap.create,
 			success: false,
-			inputs: fillValues(inputs, this.values),
 		}
+
+		const setStateOrg = this.setState.bind(this)
+		this.setState = (...args) => this.mounted && setStateOrg(...args)
+	}
+
+	componentWillMount() {
+		this.mounted = true
+	}
+	componentWillUnmount() {
+		this.mounted = false
 	}
 
 	deferredSave = deferred((address, values) => {
 		try {
 			set(address, values)
 		} catch (err) {
+			console.log('Failed to save identity', err)
 			this.setState({
 				message: {
 					content: `${err}`,
@@ -334,7 +414,7 @@ export default class IdentityForm extends Component {
 				}
 			})
 		}
-	}, 500)
+	}, 300)
 
 	deferredUriValidate = PromisE.deferred()
 
@@ -460,7 +540,7 @@ export default class IdentityForm extends Component {
 
 		const address = values[inputNames.address]
 		this.deferredSave(address, values)
-	}, 500)
+	}, 100)
 
 	handleLocationCreate = (success, _, id) => {
 		if (!success) return
@@ -630,3 +710,151 @@ IdentityForm.defaultProps = {
 	size: 'tiny',
 	warnBackup: true,
 }
+
+/**
+ * 1. Generate individual hashes for all required data points
+ * 2. Generate the `finalHash` by concatenating the individual hashes
+ * 3. Generate a deterministic ID for Deloitte Digital ID as follows: 
+ *    generateHash(`Deloitte.Digital.ID-${address}`)
+ * 4. Create a placeholder Activity using the deterministic ID.
+ *    This is required as a workaround for the following error:
+ *    "ErrorUnknownType (bonsai):  This is an unknown record type"
+ * 5. Use the same ID to save the `finalHash` as a Bonsai Token
+ * 6. In the partners list use this ID to check if address is Deloitte Verified
+ */
+export const getDeloitteId = address => generateHash(`Deloitte.Digital.ID-${address}`)
+
+const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
+	try {
+		e.preventDefault()
+		const values = rxValues.value
+		const address = values[inputNames.address]
+		const name = values[inputNames.name]
+		const location = getLocation(values[inputNames.locationId])
+		const contact = getContact(values[inputNames.contactId])
+		const regNum = values[inputNames.registeredNumber]
+		const vat = values[inputNames.vatNumber]
+		const allow = address
+			&& name
+			&& location
+			&& contact // email required. phone optional.
+			&& regNum
+			&& vat
+		if (!allow) return await confirmAsPromise({
+			confirmButton: null,
+			content: textsCap.deloitteSignupNotQualified
+		})
+
+		rxInprogress.next(true)
+
+		const {
+			email,
+			phoneCode,
+			phoneNumber,
+		} = contact
+		const phone = phoneCode && phoneNumber
+			? `${phoneCode}${phoneNumber}`
+			: undefined
+		const hashList = [
+			generateHash(address),
+			generateHash(name),
+			generateHash(location),
+			generateHash(phone),
+			generateHash(email),
+			generateHash(regNum),
+			generateHash(vat),
+		]
+		const finalHash = generateHash(hashList.join(''))
+		const deloitteId = getDeloitteId(address)
+		const activityPromise = new Promise(async (resolve) => {
+			try {
+				// check if an existing record was already created
+				const exists = await query('api.query.bonsai.isValidRecord', [deloitteId])
+				const activityValues = {
+					[activityInputNames.ownerAddress]: address,
+					[activityInputNames.name]: 'Placeholder Activity for Deloitte Digital ID',
+					[activityInputNames.description]: 'CAUTION: DO NOT UPDATE THIS ACTIVITY.\nUpdating this activity will invalidate your Deloitte Digital ID verification.',
+				}
+				const activityFormProps = {
+					activityId: deloitteId,
+					create: !exists, // if already exists, just update it
+					onSubmit: success => resolve(!!success),
+				}
+				const dummyRxState = new BehaviorSubject({})
+				console.log({
+					address,
+					name,
+					location,
+					phone,
+					email,
+					regNum,
+					vat,
+					finalHash,
+					activityValues,
+				})
+				await handleActivitySubmitCb(
+					activityFormProps,
+					dummyRxState
+				)({}, activityValues)
+
+			} catch (err) {
+				alert(`Unexpected error occured.\n${err.toString()}`)
+				resolve(false)
+			}
+		})
+		const activityCreated = await activityPromise
+		console.log({ activityCreated })
+		if (!activityCreated) return rxInprogress.next(false)
+
+		const queueId = addToQueue(
+			queueables.bonsaiSaveToken(
+				address,
+				hashTypes.activityId,
+				deloitteId,
+				finalHash,
+				{
+					description: address,
+					title: 'Signup for Deloitte Digital ID',
+				}
+			)
+		)
+		const status = await awaitComplete(queueId)
+		const success = status === 'success'
+		rxInprogress.next(success && status)
+
+		if (!success) return
+		// // update identity and store deloitteId obwith with 
+		// set(address, {
+		// 	deloitteId: {
+		// 		finalHash,
+		// 		hashList,
+		// 		recordId: deterministicId,
+		// 	},
+		// })
+	} catch (err) {
+		console.log({ err })
+	}
+}
+
+export const UseDeloiteVerified = ({
+	address,
+	render
+}) => !address
+		? render(false)
+		: (
+			<UseHook {...{
+				args: [{
+					args: [
+						// determinictic id for deloitte
+						getDeloitteId(address)
+					],
+					func: 'api.query.bonsai.isValidRecord',
+				}],
+				hook: useQueryBlockchain,
+				render: ({
+					message,
+					isLoading = message?.status === 'loading',
+					result: isVerified
+				} = {}) => render(!!isVerified, isLoading),
+			}} />
+		)

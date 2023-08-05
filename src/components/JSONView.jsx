@@ -134,7 +134,7 @@ JSONView.propTypes = {
     //        - maxLength: on mobile view 11, otherwise 17.
     // Default: true
     asEl: PropTypes.bool,
-    data: PropTypes.any.isRequired,
+    data: PropTypes.any,
     maxLength: PropTypes.number,
 }
 JSONView.defaultProps = {

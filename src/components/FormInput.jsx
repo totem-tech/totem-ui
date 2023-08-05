@@ -165,14 +165,13 @@ export class FormInput extends Component {
 			rxValue,
 			rxValueModifier,
 		} = this.props
-		this.subscriptions.rxValue = isSubjectLike(rxValue)
-			&& rxValue.subscribe(value => {
-				value = isFn(rxValueModifier)
-					? rxValueModifier(value)
-					: value
-				if (this.value === value) return
-				this.handleChange({}, { ...this.props, value })
-			})
+		this.subscriptions.rxValue = isSubjectLike(rxValue) && rxValue.subscribe(value => {
+			value = isFn(rxValueModifier)
+				? rxValueModifier(value)
+				: value
+			if (this.value === value) return
+			this.handleChange({}, { ...this.props, value })
+		})
 		this.subscriptions.rxOptions = isSubjectLike(rxOptions)
 			&& rxOptions.subscribe(async options => {
 				options = !isFn(rxOptionsModifier)

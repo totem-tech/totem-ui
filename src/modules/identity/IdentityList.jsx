@@ -1,19 +1,14 @@
 import React from 'react'
 import { Icon } from 'semantic-ui-react'
-// components
 import { Button, ButtonGroup } from '../../components/buttons'
 import DataTable from '../../components/DataTable'
 import Tags from '../../components/Tags'
-// services
 import { showForm } from '../../services/modal'
-// utils
 import storage from '../../utils/storageHelper'
 import { format } from '../../utils/time'
-import { useRxSubject } from '../../utils/reactjs'
+import { useIsMobile, useRxSubject } from '../../utils/reactjs'
 import { translated } from '../../utils/languageHelper'
 import { textEllipsis } from '../../utils/utils'
-import { MOBILE, rxLayout } from '../../utils/window'
-// modules
 import UserContactList from '../contact/UserContactList'
 import LocationsList from '../location/LocationsList'
 import Balance from './Balance'
@@ -23,7 +18,7 @@ import IdentityForm from './IdentityForm'
 import IdentityIcon from './IdentityIcon'
 import IdentityShareForm from './IdentityShareForm'
 
-let textsCap = {
+const textsCap = {
 	actions: 'actions',
 	balance: 'balance',
 	contacts: 'contacts',
@@ -40,10 +35,10 @@ let textsCap = {
 	txAllocations: 'transaction balance',
 	updateIdentity: 'update your identity',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export default function IdentityList(props) {
-	const [isMobile] = useRxSubject(rxLayout, l => l === MOBILE)
+	const isMobile = useIsMobile()
 	const [data] = useRxSubject(rxIdentities, map => {
 		const settings = storage
 			.settings
@@ -220,7 +215,18 @@ const getTableProps = isMobile => {
 					{
 						content: <BtnText>{textsCap.create}</BtnText>,
 						icon: getIcon('plus'),
-						onClick: () => showForm(IdentityForm),
+						onClick: () => {
+							let modalId
+							const showDetails = (values) => showForm(
+								IdentityDetailsForm,
+								{ values },
+								modalId
+							)
+							modalId = showForm(IdentityForm, {
+								// open details form immediately after creating the identity
+								onSubmit: (ok, values) => ok && showDetails(values),
+							})
+						},
 					},
 					{
 						content: <BtnText>{textsCap.locations}</BtnText>,

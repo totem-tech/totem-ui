@@ -1,43 +1,69 @@
 import PropTypes from 'prop-types'
 import React, { useState } from 'react'
 import { Icon } from 'semantic-ui-react'
+import imgDeloitteVerified from '../../assets/deloitte/deloitte-verified-icon.svg'
 import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import { objWithoutKeys } from '../../utils/utils'
-import { MOBILE, rxLayout } from '../../utils/window'
+import { useIsMobile } from '../../utils/reactjs'
+import { className } from '../../utils/utils'
+import { UseDeloiteVerified } from '../identity/IdentityForm'
 import { types, visibilityTypes } from './partner'
 import PartnerForm from './PartnerForm'
 
-let textsCap = {
+const textsCap = {
     business: 'business',
+    deloitte: 'Partner identity is Deloitte verified!',
     partner: 'partner',
     personal: 'personal',
     public: 'public',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 const PartnerIcon = props => {
-    const [hovered, setHovered] = useState(false)
     const {
         address,
+        deloitteVerified,
         formProps = {},
         size,
         style,
         type,
         visibility,
+        ...propsRest
     } = props
-    const isPublic = visibilityTypes.PUBLIC === visibility
+    if (address && deloitteVerified === undefined) return (
+        <UseDeloiteVerified {...{
+            address,
+            render: (isVerified, isLoading) => isLoading
+                ? (
+                    <Icon {...{
+                        name: 'spinner',
+                        loading: true,
+                    }} />
+                )
+                : (
+                    <PartnerIcon {...{
+                        ...props,
+                        deloitteVerified: isVerified,
+                    }} />
+                )
+        }} />
+    )
+    const isMobile = useIsMobile()
+    const [hovered, setHovered] = useState(false)
+    const isPublic = !deloitteVerified
+        && visibilityTypes.PUBLIC === visibility
     const _type = isPublic
         ? visibilityTypes.PUBLIC
         : type
-    const isMobile = rxLayout.value === MOBILE
-    let color = 'grey', name, title
+    let name, title, cls
+    let color = 'grey'
+    let titlePrefix = textsCap.partner
 
     switch (_type) {
         case types.BUSINESS:
             name = 'building outline'
             title = textsCap.business
-            break;
+            break
         default:
         case types.PERSONAL:
             name = 'user circle outline'
@@ -48,6 +74,12 @@ const PartnerIcon = props => {
             name = 'certificate'
             title = textsCap.public
             break;
+    }
+
+    if (deloitteVerified) {
+        cls = !hovered && 'deloitte'
+        title = `${textsCap.deloitte} (${title})`
+        titlePrefix = ''
     }
 
     const handleClick = !address
@@ -65,41 +97,50 @@ const PartnerIcon = props => {
             })
         }
     return !name ? '' : (
-        <Icon {...{
-            className: 'no-margin',
-            color,
-            onDragStart: e => {
-                setHovered(false)
-                e.stopPropagation()
-                e.dataTransfer.setData('Text', _type)
-            },
-            onClick: handleClick,
-            onMouseEnter: isMobile || !address
-                ? undefined
-                : () => setHovered(true),
-            onMouseLeave: isMobile || !address
-                ? undefined
-                : () => setHovered(false),
-            ...objWithoutKeys(props, [
-                'address',
-                'formProps',
-                'type',
-                'visibility',
-            ]),
-            name: hovered
-                ? 'pencil'
-                : name,
-            style: {
-                cursor: address
-                    ? 'pointer'
-                    : undefined,
-                fontSize: size
+
+        <>
+            {deloitteVerified && (
+                <style {...{
+                    children: `i.icon.${cls} { content: url(${imgDeloitteVerified}) }`
+                }} />
+            )}
+            <Icon {...{
+                ...propsRest,
+                className: className([
+                    'no-margin',
+                    cls,
+                ]),
+                color,
+                onDragStart: e => {
+                    setHovered(false)
+                    e.stopPropagation()
+                    e.dataTransfer.setData('Text', _type)
+                },
+                onClick: handleClick,
+                onMouseEnter: isMobile || !address
                     ? undefined
-                    : '110%',
-                ...style,
-            },
-            title: `${textsCap.partner} (${title})`,
-        }} />
+                    : () => setHovered(true),
+                onMouseLeave: isMobile || !address
+                    ? undefined
+                    : () => setHovered(false),
+                name: hovered
+                    ? 'pencil'
+                    : name,
+                size,
+                style: {
+                    cursor: address
+                        ? 'pointer'
+                        : undefined,
+                    fontSize: size
+                        ? undefined
+                        : '110%',
+                    ...style,
+                },
+                title: !titlePrefix
+                    ? title
+                    : `${titlePrefix} (${title})`,
+            }} />
+        </>
     )
 }
 PartnerIcon.propTypes = {

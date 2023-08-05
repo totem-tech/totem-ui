@@ -165,6 +165,7 @@ export default class PartnerForm extends Component {
 			),
 			headerIcon: (
 				<PartnerIcon {...{
+					address,
 					size: 'large',
 					type,
 					visibility,

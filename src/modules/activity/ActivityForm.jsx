@@ -164,14 +164,14 @@ const getInitialState = props => rxState => {
 	return state
 }
 
-const handleSubmit = (props, rxState) => async (e, values) => {
+export const handleSubmit = (props, rxState) => async (_e, values) => {
 	const {
 		activityId: existingId,
+		create = !existingId,
 		modalId,
 		onSubmit,
 	} = props
 	const { rxQueueId } = rxState?.value || {}
-	const create = !existingId
 	const activityId = existingId || generateHash(values)
 	const tokenData = objClean(values, bonsaiKeys)
 	const token = generateHash(tokenData)
@@ -246,5 +246,6 @@ const handleSubmit = (props, rxState) => async (e, values) => {
 			next: updateTask,
 		})
 	// send to queue && set queue ID to display status message
-	rxQueueId.next(addToQueue(queueItem, onComplete))
+	const queueId = addToQueue(queueItem, onComplete)
+	rxQueueId?.next?.(queueId)
 }
