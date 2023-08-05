@@ -99,7 +99,6 @@ export default [
     "./src/modules/history/HistoryList.jsx",
     "./src/modules/history/history.js",
     "./src/modules/identity/Balance.jsx",
-    "./src/modules/identity/IdentityDetailsForm copy.jsx",
     "./src/modules/identity/IdentityDetailsForm.jsx",
     "./src/modules/identity/IdentityForm.jsx",
     "./src/modules/identity/IdentityIcon.jsx",

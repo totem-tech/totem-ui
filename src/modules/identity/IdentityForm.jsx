@@ -69,6 +69,7 @@ const textsCap = {
 	generate: 'generate',
 	identity: 'identity',
 	name: 'name',
+	ok: 'OK',
 	personal: 'personal',
 	restore: 'restore',
 	seed: 'seed',
@@ -741,8 +742,10 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 			&& regNum
 			&& vat
 		if (!allow) return await confirmAsPromise({
+			cancelButton: textsCap.ok,
 			confirmButton: null,
-			content: textsCap.deloitteSignupNotQualified
+			content: textsCap.deloitteSignupNotQualified,
+			size: 'mini'
 		})
 
 		rxInprogress.next(true)
