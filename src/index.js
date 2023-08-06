@@ -8,23 +8,27 @@ import './services/language' // setup language for build mode
 import { getConnection } from './services/blockchain'
 import client, { rxIsInMaintenanceMode, rxIsRegistered } from './utils/chatClient'
 import PromisE from './utils/PromisE'
-import { subjectAsPromise, useQueryBlockchain } from './utils/reactjs'
 import storage from './utils/storageHelper'
 import {
 	generateHash,
 	isArr,
 	isArrLike,
 	isError,
+	isMap
 } from './utils/utils'
 import { fetchNSaveTexts } from './utils/languageHelper'
-import { setupDefaults } from './utils/reactjs'
+import {
+	QueueItemStatus,
+	setupDefaults,
+	subjectAsPromise,
+	useQueryBlockchain
+} from './utils/reactjs'
 import {
 	getUrlParam,
 	MOBILE,
 	rxLayout,
 } from './utils/window'
 import App from './App'
-import QueueItemStatus from './utils/reactjs/components/QueueItemStatus'
 import { rxOnSave } from './services/queue'
 import { updateCurrencies } from './modules/currency/currency'
 
@@ -89,14 +93,26 @@ const initPromise = PromisE.timeout((resolve, reject) => {
 		'blake2',
 		256
 	)
-	let translationChecked, countriesChecked
+	let translationChecked, countriesChecked, currencyChecked
 	client.onConnect(async () => {
-		await PromisE.delay(100)
-		await subjectAsPromise(rxIsInMaintenanceMode, false)[0]
-
 		if (!countriesChecked) {
+			const countriesMap = await client
+				.countries(countriesHash)
+				.catch(() => {
+					console.log('Failed to retrieve countries list', err)
+					return null // ignore error
+				})
+			countriesChecked = isMap(countriesMap) && countriesMap.size > 0
+			countriesChecked && storage.countries.setAll(countriesMap)
+		}
+
+		if (!currencyChecked) {
 			const currencyList = await updateCurrencies()
-			countriesChecked = countriesChecked || isArr(currencyList) && currencyList.length > 0
+				.catch(err => {
+					console.log('Failed to update currency list', err)
+					return null // ignore error
+				})
+			currencyChecked = isArr(currencyList) && currencyList.length > 0
 		}
 
 		// check and update selected language texts
