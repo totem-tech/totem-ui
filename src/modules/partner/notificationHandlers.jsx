@@ -18,14 +18,13 @@ import {
 } from '../location/location'
 import { inputNames as locInputNames } from '../location/LocationForm'
 import {
-	// remove,
+	remove,
 	rxVisible,
 	setItemViewHandler,
 } from '../notification/notification'
 import AddressName from './AddressName'
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
-const remove = () => { }
 
 const textsCap = {
 	addPartner: 'add partner',
