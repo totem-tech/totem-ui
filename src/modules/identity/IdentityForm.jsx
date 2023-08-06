@@ -95,7 +95,7 @@ const textsCap = {
 
 
 	deloitteBonsaiTitle: 'signup for Deloitte Digital ID',
-	deloitteIdConfirm: 'you are about to create a Deloitte Digital ID for your idenitty. ',
+	deloitteIdConfirm: 'you are about to create a Deloitte Digital ID for your identity. ',
 	deloitteIdSignupNotQualified: 'in order to signup for Deloitte Digital ID, you must fill-in all the fields in the business information section.',
 	proceed: 'proceed',
 }
@@ -235,43 +235,6 @@ export default class IdentityForm extends Component {
 				search: true,
 				selection: true,
 			},
-			// {
-			// 	content: (
-			// 		<UseDeloiteVerified {...{
-			// 			address,
-			// 			render: isVerified => !isVerified && (
-			// 				<RxSubjectView {...{
-			// 					subject: rxDeloitteSignupStatus,
-			// 					valueModifier: status => status !== 'success' && (
-			// 						<div style={{ textAlign: 'center' }}>
-			// 							<Button {...{
-			// 								onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
-			// 								style: {
-			// 									borderRadius: 12,
-			// 									margin: '-5px 0 8px',
-			// 									padding: 0,
-			// 									width: '60%',
-			// 								},
-			// 							}}>
-			// 								<img {...{
-			// 									className: className([
-			// 										'ui image',
-			// 										status && 'disabled',
-			// 									]),
-			// 									src: imgDeloitteSignup,
-			// 								}} />
-			// 							</Button>
-			// 						</div>
-			// 					)
-			// 				}} />
-			// 			)
-			// 		}} />
-			// 	),
-			// 	hidden: !address,
-			// 	name: inputNames.btnDeloitte,
-			// 	type: 'html',
-			// },
-
 			{
 				content: (
 					<UseDeloiteVerified {...{

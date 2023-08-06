@@ -1,4 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs'
+import client from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
 import PromisE from '../../utils/PromisE'
 import storage from '../../utils/storageHelper'
 import {
@@ -9,9 +11,6 @@ import {
     isValidDate,
     isValidNumber,
 } from '../../utils/utils'
-import client, { rxIsConnected, rxIsInMaintenanceMode } from '../../utils/chatClient'
-import { translated } from '../../utils/languageHelper'
-import { subjectAsPromise } from '../../utils/reactjs'
 
 const [texts, textsCap] = translated({
     invalidCurency: 'invalid or unsupported currency supplied',
@@ -25,7 +24,7 @@ const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || {}
 let lastUpdated = null
 const updateFrequencyMs = 24 * 60 * 60 * 1000
 // default currency
-export const currencyDefault = 'TOTEM'
+export const currencyDefault = '≜USD' //'TOTEM'
 // RxJS Subject to keep track of selected currencly changes
 export const rxSelected = new BehaviorSubject(getSelected())
 // Only triggered when currency list is updated

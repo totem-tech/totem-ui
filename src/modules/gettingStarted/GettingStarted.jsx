@@ -42,9 +42,10 @@ const texts = translated({
 	quickGuidePara1: `
 		Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
 		and Timekeeping Modules as well as make basic transfers of your transaction allocations balance using the Transfer Module.`,
-	quickGuidePara2: `
-		Most of what you do in the application will consume Totem Transactions ($TOTEM for short) from your balance but don't worry, we are nice open source people, and we'll give you plenty to get you started.
-	`,
+	// quickGuidePara2: `
+	// 	Most of what you do in the application will consume Totem Transactions ($TOTEM for short) from your balance but don't worry, we are nice open source people, and we'll give you plenty to get you started.
+	// `,
+	quickGuidePara2: `Most of what you do in the application will consume "Totem Credits" from your balance but don't worry, we are nice open source people, and we'll give you plenty to get you started.`,
 	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
 	restoreTitle: 'Got a backup of an existing account?',
 	restoreBtnTitle: 'Restore backup',
