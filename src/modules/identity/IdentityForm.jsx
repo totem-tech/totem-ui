@@ -709,7 +709,7 @@ IdentityForm.propTypes = {
 IdentityForm.defaultProps = {
 	autoSave: true,
 	closeOnSubmit: true,
-	size: 'tiny',
+	size: 'mini',
 	warnBackup: true,
 }
 
