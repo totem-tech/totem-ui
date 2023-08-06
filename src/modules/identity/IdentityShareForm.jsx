@@ -294,7 +294,7 @@ const handleSubmit = (rxSetState, props = {}) => (_, values) => {
 				data.registeredNumber = identity[n.registeredNumber]
 				break
 			case n.vatNumber:
-				data.registeredNumber = identity[n.vatNumber]
+				data.vatNumber = identity[n.vatNumber]
 				break
 		}
 	})

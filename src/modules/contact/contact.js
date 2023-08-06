@@ -161,7 +161,6 @@ export const set = (contact, replace = false, silent) => {
     }
 
     const { id } = contact
-    console.log({ id, contact })
     contact = {
         ...(replace ? {} : get(id)), // merge with existing entry if replace is falsy
         ...contact,

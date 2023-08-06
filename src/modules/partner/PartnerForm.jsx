@@ -135,7 +135,7 @@ export default class PartnerForm extends Component {
 			type,
 			visibility
 		} = values
-		const query = { partnerIdentity: address }
+		const query = { [locationInputNames.partnerIdentity]: address }
 		const [locationId, location] = Array.from(
 			!address
 				? new Map()
@@ -147,6 +147,7 @@ export default class PartnerForm extends Component {
 					1,
 				)
 		)[0] || []
+		console.log({ locationId, location })
 		this.locationId = locationId
 		const contact = (address && contactStorage.find(query)) || undefined
 		this.contactId = contact && contact.id || undefined
@@ -244,7 +245,7 @@ export default class PartnerForm extends Component {
 				name: inputNames.name,
 				placeholder: textsCap.namePlaceholder,
 				required: true,
-				rxValue: new BehaviorSubject(''),
+				rxValue: new BehaviorSubject(values[inputNames.registeredNumber] || ''),
 				type: 'text',
 				validate: this.validateName,
 			},
@@ -578,7 +579,7 @@ export default class PartnerForm extends Component {
 				: 'text'
 			// hide visitibity if company selected as it is already "public"
 			// only hide registration number if selected company contains a number
-			regNumIn.value = cReg || ''
+			com && regNumIn.rxValue.next(cReg || '')
 			regNumIn.readOnly = !!cReg
 			const locationFormHtml = findInput(inputs, inputNames.locationFormHtml)
 			const draftAddr = (this.locationDraft || {})[locationInputNames.partnerIdentity]

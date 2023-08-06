@@ -2,7 +2,7 @@ import React from 'react'
 import { ButtonAcceptOrReject, UserID } from '../../components/buttons'
 import { confirm, showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
-import { hasValue, isObj } from '../../utils/utils'
+import { deferred, hasValue, isObj } from '../../utils/utils'
 import {
 	get as getContact,
 	newId as newContactId,
@@ -18,13 +18,14 @@ import {
 } from '../location/location'
 import { inputNames as locInputNames } from '../location/LocationForm'
 import {
-	remove,
+	// remove,
 	rxVisible,
 	setItemViewHandler,
 } from '../notification/notification'
 import AddressName from './AddressName'
 import { get } from './partner'
 import PartnerForm from './PartnerForm'
+const remove = () => { }
 
 const textsCap = {
 	addPartner: 'add partner',
@@ -72,7 +73,7 @@ const handleIdentityReceived = (
 			const existingContact = getContact(contactId)
 			let partnerSaved = false
 			// remove the location if partner wasn't added
-			const handleOnClose = () => {
+			const handleOnClose = deferred(() => {
 				if (partnerSaved) return
 				// partner wasn't saved/updated but location already exists -> restore to location to original values
 				existingLocation
@@ -82,9 +83,9 @@ const handleIdentityReceived = (
 				existingContact
 					? saveContact(contactDetails, true, true)
 					: removeContact(contactId)
-			}
+			}, 100)
 			if (hasLocation) {
-				const savedId = saveLocation(
+				saveLocation(
 					{
 						...existingLocation,
 						...location,
@@ -116,9 +117,9 @@ const handleIdentityReceived = (
 					userId: senderId,
 				},
 				onSubmit: success => {
+					partnerSaved = !!success
 					// partner wasn't created
 					if (!success) return handleOnClose()
-					partnerSaved = true
 					// remove notification
 					remove(id)
 					// hide notifications

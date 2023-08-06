@@ -3,10 +3,13 @@ import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
 import '../public/styles.css' // global styles
 import './utils/log' // setup debug logger // keep it above all non-NPM imports
+import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
-import './services/language' // setup language for build mode 
+import { updateCurrencies } from './modules/currency/currency'
 import { getConnection } from './services/blockchain'
-import client, { rxIsInMaintenanceMode, rxIsRegistered } from './utils/chatClient'
+import './services/language' // will setup language when in build mode 
+import { rxOnSave } from './services/queue'
+import client, { rxIsRegistered } from './utils/chatClient'
 import PromisE from './utils/PromisE'
 import storage from './utils/storageHelper'
 import {
@@ -28,9 +31,6 @@ import {
 	MOBILE,
 	rxLayout,
 } from './utils/window'
-import App from './App'
-import { rxOnSave } from './services/queue'
-import { updateCurrencies } from './modules/currency/currency'
 
 // setup common components to use Semantic UI (where applicable)
 setupDefaults('semantic-ui-react', require('semantic-ui-react'))

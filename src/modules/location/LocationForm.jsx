@@ -17,7 +17,7 @@ import identities from '../identity/identity'
 import partners from '../partner/partner'
 import { get, remove, set } from './location'
 
-let textsCap = {
+const textsCap = {
 	addressLine1Label: 'address line 1',
 	addressLine1Placeholder: 'Eg: 123A Street',
 	addressLine2Label: 'address line 2',
@@ -44,7 +44,7 @@ let textsCap = {
 	usedByIdentities: 'this location is used by the following identities:',
 	usedByPartners: 'this location is used by the following partners:',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export const requiredFields = {
 	city: 'city',
