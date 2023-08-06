@@ -29,6 +29,7 @@ import {
 	rxVisible as rxNotifVisible,
 	rxUnreadCount as rxUnreadNotifCount,
 } from '../modules/notification/notification'
+import { DURATION_ZERO } from '../modules/timekeeping/timekeeping'
 import TimekeepingForm, { timer } from '../modules/timekeeping/TimekeepingForm'
 import { showForm } from '../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../services/queue'
@@ -37,8 +38,10 @@ import { setToast } from '../services/toast'
 import {
 	getUser,
 	rxFaucetEnabled,
+	rxIsConnected,
 	rxIsInMaintenanceMode,
 	rxIsLoggedIn,
+	rxIsRegistered,
 } from '../utils/chatClient'
 import {
 	getSelected as getSelectedLang,
@@ -60,7 +63,6 @@ import {
 	setInvertedBrowser,
 	useInverted,
 } from '../utils/window'
-import { DURATION_ZERO } from '../modules/timekeeping/timekeeping'
 
 const textsCap = {
 	addressCopied: 'your identity copied to clipboard',
@@ -83,22 +85,23 @@ translated(textsCap, true)
 let copiedMsgId
 export const rxIdentityListVisible = new BehaviorSubject(false)
 
+
 function PageHeader(props) {
 	const [identityOptions] = useRxSubject(rxIdentities, getIdentityOptions)
 	const isMobile = useIsMobile()
-	const [[userId, isLoggedIn]] = useRxSubject(
-		rxIsLoggedIn,
-		isLoggedIn => ([
-			(getUser() || {}).id,
-			isLoggedIn,
-		]),
-	)
+	const isConnected = useRxSubject(rxIsConnected)[0]
+	const [isRegistered, userId] = useRxSubject(rxIsRegistered, isRegistered => ([
+		isRegistered,
+		(getUser() || {}).id,
+	]))[0]
+	const isLoggedIn = useRxSubject(rxIsLoggedIn)[0]
 	const viewProps = {
 		...props,
 		userId,
+		isConnected,
 		isLoggedIn,
 		isMobile,
-		isRegistered: !!userId,
+		isRegistered,
 		identityOptions,
 		onCopy: () => {
 			const { address } = getSelected()
@@ -136,6 +139,7 @@ const PageHeaderView = React.memo(props => {
 	const inverted = useInverted()
 	const [invBrowser, setInvBrowser] = useState(() => setInvertedBrowser())
 	const {
+		isConnected,
 		isLoggedIn,
 		isMobile,
 		isRegistered,
@@ -148,7 +152,14 @@ const PageHeaderView = React.memo(props => {
 		identityOptions,
 	} = props
 	const selected = getSelected() || {}
-	const buttons = <HeaderMenuButtons {...{ isLoggedIn, isMobile, isRegistered }} />
+	const buttons = (
+		<HeaderMenuButtons {...{
+			isConnected,
+			isLoggedIn,
+			isMobile,
+			isRegistered
+		}} />
+	)
 	const langCode = getSelectedLang() || ''
 	const topBar = (
 		<Menu
@@ -161,7 +172,11 @@ const PageHeaderView = React.memo(props => {
 				width: '100%',
 			}}
 		>
-			<Menu.Item onClick={!isRegistered || !isMobile ? undefined : toggleSidebarState}>
+			<Menu.Item onClick={
+				!isRegistered || !isMobile
+					? undefined
+					: toggleSidebarState
+			}>
 				<Image size='mini' src={logoSrc} />
 			</Menu.Item>
 			<Menu.Menu position='right'>
@@ -314,7 +329,11 @@ const PageHeaderView = React.memo(props => {
 	)
 })
 
-export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
+export const HeaderMenuButtons = React.memo(({
+	isConnected,
+	isLoggedIn,
+	isMobile
+}) => {
 	const [timerInprogress] = useRxSubject(timer.rxInprogress)
 	const [unreadMsgCount] = useRxSubject(rxUnreadMsgCount)
 	const [unreadNotifCount] = useRxSubject(rxUnreadNotifCount)
@@ -445,7 +464,9 @@ export const HeaderMenuButtons = React.memo(({ isLoggedIn, isMobile }) => {
 					color: maintenanceMode
 						? 'yellow'
 						: !isLoggedIn
-							? 'red'
+							? isConnected
+								? 'grey'
+								: 'red'
 							: unreadMsgCount > 0
 								? 'blue'
 								: undefined,

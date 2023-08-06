@@ -235,6 +235,43 @@ export default class IdentityForm extends Component {
 				search: true,
 				selection: true,
 			},
+			// {
+			// 	content: (
+			// 		<UseDeloiteVerified {...{
+			// 			address,
+			// 			render: isVerified => !isVerified && (
+			// 				<RxSubjectView {...{
+			// 					subject: rxDeloitteSignupStatus,
+			// 					valueModifier: status => status !== 'success' && (
+			// 						<div style={{ textAlign: 'center' }}>
+			// 							<Button {...{
+			// 								onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
+			// 								style: {
+			// 									borderRadius: 12,
+			// 									margin: '-5px 0 8px',
+			// 									padding: 0,
+			// 									width: '60%',
+			// 								},
+			// 							}}>
+			// 								<img {...{
+			// 									className: className([
+			// 										'ui image',
+			// 										status && 'disabled',
+			// 									]),
+			// 									src: imgDeloitteSignup,
+			// 								}} />
+			// 							</Button>
+			// 						</div>
+			// 					)
+			// 				}} />
+			// 			)
+			// 		}} />
+			// 	),
+			// 	hidden: !address,
+			// 	name: inputNames.btnDeloitte,
+			// 	type: 'html',
+			// },
+
 			{
 				content: (
 					<UseDeloiteVerified {...{
@@ -245,6 +282,7 @@ export default class IdentityForm extends Component {
 								valueModifier: status => status !== 'success' && (
 									<div style={{ textAlign: 'center' }}>
 										<Button {...{
+											disabled: !address,
 											onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
 											style: {
 												borderRadius: 12,
@@ -267,7 +305,7 @@ export default class IdentityForm extends Component {
 						)
 					}} />
 				),
-				hidden: !address,
+				// hidden: !address,
 				name: inputNames.btnDeloitte,
 				type: 'html',
 			},
