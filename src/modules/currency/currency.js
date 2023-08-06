@@ -24,7 +24,8 @@ const rwCache = (key, value) => storage.cache(MODULE_KEY, key, value) || {}
 let lastUpdated = null
 const updateFrequencyMs = 24 * 60 * 60 * 1000
 // default currency
-export const currencyDefault = '≜USD' //'TOTEM'
+export const currencyDefault = 'TOTEM'
+export const defaultSelected = '≜USD'
 // RxJS Subject to keep track of selected currencly changes
 export const rxSelected = new BehaviorSubject(getSelected())
 // Only triggered when currency list is updated
@@ -133,7 +134,8 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
 
 // get selected currency code
 export function getSelected() {
-    return rw().selected || currencyDefault
+    const selected = rw().selected || defaultSelected
+    return selected
 }
 
 // get list of currencies 
@@ -156,7 +158,7 @@ export const setSelected = async (currency) => {
         ? { selected: currency }
         : undefined
     newValue && rxSelected.next(currency)
-    return rw(newValue).selected || currencyDefault
+    return rw(newValue).selected || defaultSelected
 }
 
 export const updateCurrencies = async () => {
