@@ -6,16 +6,9 @@ const Dotenv = require('dotenv-webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CompressionPlugin = require("compression-webpack-plugin");
 
+const regexp_src = new RegExp(path.resolve(__dirname, './src'))
+const regexp_utils = new RegExp(path.resolve(__dirname, './src/utils'))
 const plugins = [
-	// compress build
-	// new CompressionPlugin({
-	// 	algorithm: "gzip",
-	// 	compressionOptions: {
-	// 		chunkSize: 300000,
-	// 		level: 9,
-	// 		filename: '[path][base].js'
-	// 	},
-	// }),
 	// Copy static assets
 	new CopyWebpackPlugin({
 		patterns: [
@@ -55,12 +48,25 @@ const plugins = [
 		Buffer: ['buffer', 'Buffer'],
 	}),
 
+	// automatically includes bundled CSS & JS files into index.html
 	new HtmlWebpackPlugin({
 		cache: true,
 		hash: true,
 		minify: 'auto',
 		template: 'public/index.html',
 	}),
+
+	// compress build
+	// new CompressionPlugin({
+	// 	algorithm: "gzip",
+	// 	compressionOptions: {
+	// 		// chunkSize: 300000,
+	// 		level: 9,
+	// 	},
+	// 	deleteOriginalAssets: true,
+	// 	exclude: 'index.html',
+	// 	filename: '[path][base]',
+	// }),
 ]
 module.exports = {
 	devServer: {
@@ -149,8 +155,6 @@ module.exports = {
 		},
 	},
 	// create chunks
-	// everything inside src/ will be a single file (app.js)
-
 	optimization: {
 		moduleIds: 'named',
 		runtimeChunk: 'single',
@@ -160,23 +164,8 @@ module.exports = {
 			// maxSize: 300000, // 300kb
 			// minSize: 100000, //100kb
 			cacheGroups: {
-				// app: {
-				// 	// maxSize: 100000, // 300kb
-				// 	// minSize: 20000, //100kb
-				// 	test: /[\\/]src[\\/]([a-zA-Z0-9]+[\\/])/,
-				// 	name(module) {
-				// 		// get the name. E.g. node_modules/packageName/not/this/part.js
-				// 		// or node_modules/packageName
-				// 		const packageName = module.context.match(/[\\/]src[\\/](.*?)([\\/]|$)/)[1]
-
-				// 		console.log('app-test', module.context)
-				// 		// one single file for all modules
-				// 		return 'app'
-				// 	},
-				// },
+				// bundle all NPM modules into single vendor.[hash].js file
 				vendor: {
-					// maxSize: 300000, // 300kb
-					// minSize: 20000, // 20kb
 					test: /[\\/]node_modules[\\/]/,
 					name(module) {
 						// get the name. E.g. node_modules/packageName/not/this/part.js
@@ -188,6 +177,18 @@ module.exports = {
 						// return 'vendor'
 						// npm package names are URL-safe, but some servers don't like @ symbols
 						return `vendor.${packageName.replace('@', '')}`
+					},
+				},
+				// bundle everything inside src (excluding src/utils) into app.[hash].js
+				// bundle everything inside src/utils into utils.[hash].js
+				app: {
+					test: regexp_src,
+					name(module) {
+						const isUtils = regexp_utils.test(module.context)
+
+						return isUtils
+							? 'utils'
+							: 'app'
 					},
 				},
 			},

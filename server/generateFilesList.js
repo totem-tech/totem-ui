@@ -2,6 +2,7 @@ const fs = require('fs')
 /*
  * Automate building list of files for translation
  */
+const isProd = process.env.NODE_ENV === 'production'
 const src = './src'
 const exts = ['js', 'jsx']
 const exclude = [
@@ -36,7 +37,7 @@ const hasExtension = (extensions = []) => (path = '') => {
     }
     return false
 }
-getPaths(
+!isProd && getPaths(
     src,
     exts,
     exclude

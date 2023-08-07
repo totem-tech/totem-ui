@@ -18,7 +18,7 @@ const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
 const HTTP_REDIRECT = process.env.HTTP_REDIRECT !== 'FALSE'
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
 const mode = process.env.NODE_ENV
-const isProd = mode === 'production'
+// const isProd = mode === 'production'
 const pullEndpoints = process.env.GIT_PULL_ENDPOINTS
 const secondaryPages = (process.env.PAGES || '')
 	.split(',')
@@ -126,44 +126,4 @@ const setupPullEndpoints = () => {
 }
 setupPullEndpoints()
 
-// /*
-//  * Automate building list of files for translation
-//  */
-// const src = './src'
-// const exts = ['js', 'jsx']
-// const exclude = [
-// 	'./src/assets',
-// 	'./src/legacies',
-// 	'./src/utils',
-// ]
-// const destFile = './src/services/languageFiles.js'
-// const isDir = path => fs.lstatSync(path).isDirectory()
-// const getPaths = async (dir, extensions, exclude = []) => {
-// 	let result = []
-// 	if (exclude.includes(dir)) return []
-// 	if (!isDir(dir)) return [dir]
-
-// 	const files = fs.readdirSync(dir)
-// 	for (let i = 0;i < files.length;i++) {
-// 		result.push(await getPaths(
-// 			`${dir}/${files[i]}`,
-// 			extensions,
-// 			exclude,
-// 		))
-// 	}
-
-// 	return result.flat().filter(hasExtension(extensions))
-// }
-// const hasExtension = (extensions = []) => (path = '') => {
-// 	if (!path) return false
-// 	for (let i = 0;i < extensions.length;i++) {
-// 		if (path.endsWith(extensions[i])) return true
-// 	}
-// 	return false
-// }
-// !isProd && getPaths(src, exts, exclude).then(files => {
-// 	const fileContents = `export default ${JSON.stringify(files, null, 4)}`
-// 	// create a js file that exports the files array 
-// 	fs.writeFileSync(destFile, fileContents)
-// })
 require('./generateFilesList')
