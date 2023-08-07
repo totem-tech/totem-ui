@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { BehaviorSubject } from 'rxjs'
 import DataTable from '../components/DataTable'
 import FormBuilder, { findInput } from '../components/FormBuilder'
 import { Embolden } from '../components/StringReplace'
@@ -12,21 +13,19 @@ import { limit as historyItemsLimit } from '../modules/history/history'
 import TimekeepingSettings from '../modules/timekeeping/TimekeepingSettings'
 import { nodes, nodesDefault, setNodes } from '../services/blockchain'
 import { confirm, confirmAsPromise } from '../services/modal'
-import client from '../utils/chatClient'
 import {
     getSelected as getSelectedLang,
     languages,
     setSelected as setSelectedLang,
     translated,
 } from '../utils/languageHelper'
-import { copyRxSubject } from '../utils/reactjs'
+import { copyRxSubject } from '../utils/rx'
 import {
     arrSort,
     deferred,
     isObj
 } from '../utils/utils'
 import { gridColumns } from '../utils/window'
-import { BehaviorSubject } from 'rxjs'
 
 const textsCap = {
     applyLater: 'apply later',
@@ -336,7 +335,7 @@ export default class SettingsForm extends Component {
     handleLanguageChange = async (_, values) => {
         const languageCode = values[inputNames.languageCode]
         const changed = getSelectedLang() !== languageCode
-        const updated = await setSelectedLang(languageCode, client)
+        const updated = await setSelectedLang(languageCode)
         const reloadRequired = changed || updated
         if (!reloadRequired) return
 

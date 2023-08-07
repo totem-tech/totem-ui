@@ -4,7 +4,7 @@
 	"description": "Totem Meccano UI",
 	"main": "./src/index.js",
 	"scripts": {
-		"build": "webpack --mode production",
+		"build": "rm -rf dist/* && webpack --mode production",
 		"dev": "env NODE_ENV=development npm-run-all --parallel webpack-dev server",
 		"prod": "env NODE_ENV=production npm-run-all --parallel webpack-prod server-prod",
 		"serve": "node server/index.js",
@@ -41,6 +41,7 @@
 		"@babel/preset-env": "^7.20.2",
 		"@babel/preset-react": "^7.18.6",
 		"babel-loader": "^9.1.2",
+		"compression-webpack-plugin": "^10.0.0",
 		"copy-webpack-plugin": "^11.0.0",
 		"css-loader": "^6.7.3",
 		"dotenv-webpack": "^8.0.1",

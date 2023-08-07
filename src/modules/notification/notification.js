@@ -1,5 +1,5 @@
 import { BehaviorSubject, Subject } from 'rxjs'
-import TotemLogo from '../../assets/totem-button-grey.png'
+import TotemLogo from '../../assets/logos/button-288-colour.png'
 import { addToQueue, QUEUE_TYPES, rxOnSave } from '../../services/queue'
 import client, { getUser, rxIsLoggedIn } from '../../utils/chatClient'
 import DataStorage from '../../utils/DataStorage'

@@ -95,7 +95,7 @@ const initPromise = PromisE.timeout((resolve, reject) => {
 	)
 	let translationChecked, countriesChecked, currencyChecked
 	client.onConnect(async () => {
-		console.log('Messaging service connected')
+		console.log(new Date().toISOString().slice(11, 19), 'Messaging service connected')
 		if (!countriesChecked) {
 			const countriesMap = await client
 				.countries(countriesHash)

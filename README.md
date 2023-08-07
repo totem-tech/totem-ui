@@ -5,7 +5,7 @@
 
 Inside this repo you will find a very first proof of concept - it is by no means a finished product, or ready for market, but it demonstrates a new world of  accounting capabilities that, as far as we know, has not yet been explored in the blockchain space.
 
-![Totem vision using Polkadot](src/assets/totem-polkadot-40.png)
+![Totem vision using Polkadot](readme-assets/totem-polkadot-40.png)
 
 ## Acheivements so far!
 
@@ -22,7 +22,7 @@ All we ask is that nobody judges because this is very early days.
 
 ## Latest Build State
 
-![Totem vision using Polkadot](src/assets/screenshot-2019-06-03.png)
+![Totem vision using Polkadot](readme-assets/screenshot-2019-06-03.png)
 
 ## Contacts
 

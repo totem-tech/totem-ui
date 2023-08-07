@@ -1,7 +1,7 @@
 import React from 'react'
-import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
+import uuid from 'uuid'
 // Views (including lists and forms)
 import ActivityList from '../modules/activity/ActivityList'
 import AssetFormView from '../modules/assets/AssetsFormView'
@@ -21,6 +21,7 @@ import UtilitiesView from '../views/UtilitiesView'
 import RewardsView from '../modules/rewards/RewardsView'
 // import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
+import TaskList from '../modules/task/TaskList'
 import { rxIsRegistered } from '../utils/chatClient'
 import DataStorage from '../utils/DataStorage'
 import { translated } from '../utils/languageHelper'
@@ -37,7 +38,6 @@ import {
     rxLayout,
     setClass,
 } from '../utils/window'
-import TaskList from '../modules/task/TaskList'
 
 const textsCap = translated({
     crowdloanTitle: 'Crowdloan DApp',
@@ -384,7 +384,7 @@ export const sidebarItems = [
         subHeader: textsCap.historySubheader
     },
     {
-        content: SettingsForm,
+        content: (props) => <SettingsForm {...props} />,
         contentProps: { style: { maxWidth: 350 } },
         icon: 'cogs',
         name: 'settings',
