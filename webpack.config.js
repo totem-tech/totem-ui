@@ -8,14 +8,14 @@ const CompressionPlugin = require("compression-webpack-plugin");
 
 const plugins = [
 	// compress build
-	new CompressionPlugin({
-		algorithm: "gzip",
-		compressionOptions: {
-			chunkSize: 300000,
-			level: 9,
-			filename: '[path][base].js'
-		},
-	}),
+	// new CompressionPlugin({
+	// 	algorithm: "gzip",
+	// 	compressionOptions: {
+	// 		chunkSize: 300000,
+	// 		level: 9,
+	// 		filename: '[path][base].js'
+	// 	},
+	// }),
 	// Copy static assets
 	new CopyWebpackPlugin({
 		patterns: [
@@ -183,8 +183,8 @@ module.exports = {
 						// or node_modules/packageName
 						const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1]
 
-						// return 'vendor'
 						// one single file for all modules
+						return 'vendor'
 						// return 'vendor'
 						// npm package names are URL-safe, but some servers don't like @ symbols
 						return `vendor.${packageName.replace('@', '')}`

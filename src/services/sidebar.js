@@ -384,7 +384,7 @@ export const sidebarItems = [
         subHeader: textsCap.historySubheader
     },
     {
-        content: (props) => <SettingsForm {...props} />,
+        content: props => <SettingsForm {...props} />,
         contentProps: { style: { maxWidth: 350 } },
         icon: 'cogs',
         name: 'settings',
