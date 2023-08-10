@@ -16,7 +16,7 @@ import {
 import { setToast } from '../../services/toast'
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { iUseReducer, statuses } from '../../utils/reactjs'
+import { RxSubjectView, UseHook, iUseReducer, statuses, useIsMobile, useRxState } from '../../utils/reactjs'
 import storage, { backup } from '../../utils/storageHelper'
 import {
 	copyToClipboard,
@@ -25,7 +25,6 @@ import {
 	isFn,
 	isHex,
 } from '../../utils/utils'
-import { MOBILE, rxLayout } from '../../utils/window'
 import contact from '../contact/contact'
 import identity from '../identity/identity'
 import location from '../location/location'
@@ -37,7 +36,7 @@ import {
 } from './GettingStarted'
 import { encryptBackup, generatePassword } from '.'
 
-let textsCap = {
+const textsCap = {
 	backupLater: 'backup later',
 	backupNow: 'backup now',
 	backupConfirmHeader: 'confirm backup',
@@ -115,7 +114,7 @@ let textsCap = {
 	warnCriticalB: 'you may be at risk of losing your funds!',
 	yesProceed: 'yes, proceed!',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 const inputNames = {
 	step: 'confirmed',
 	downloadData: 'downloadData',
@@ -134,139 +133,27 @@ export const steps = {
 }
 
 export default function BackupForm(props) {
-	const [state] = iUseReducer(null, rxState => {
-		const { onSubmit, reload, values = {} } = props
+	const [state] = useRxState(rxState => {
+		const { values = {} } = props
 		const rxPassword = new BehaviorSubject('')
 		const rxPasswordGen = new BehaviorSubject('')
 		if ((values.confirmed || '').toLowerCase() !== steps.confirmed) {
 			values.confirmed = steps.unconfirmed
 		}
-		const filename = backup.generateFilename()
-		const isMobile = rxLayout.value === MOBILE
-		const confirmBackupTypes = [
-			textsCap.contacts,
-			textsCap.history,
-			textsCap.identities,
-			textsCap.locations,
-			textsCap.notifications,
-			textsCap.partners,
-			textsCap.chatMessages,
-			textsCap.settings,
-			textsCap.userCredentials,
-		]
-
-		const handleConfirmChange = deferred((_, values) => {
-			const step = values[inputNames.step]
-			const skipPassword = values[inputNames.skipPassword] === true
-			const isDownload = step === steps.download
-			let downloadData = isDownload && backup.download(
-				filename,
-				data => skipPassword
-					? data
-					: encryptBackup(data, values[inputNames.password]),
+		const rxFileName = new BehaviorSubject('')
+		const elFileName = <RxSubjectView subject={rxFileName} />
+		const rxStep = new BehaviorSubject(steps.unconfirmed)
+		const rxUserName = new BehaviorSubject()
+		rxIsRegistered.subscribe(() =>
+			rxUserName.next(
+				`${(getUser() || {}).id || ''}@${window.location.host}`
 			)
-			const ddIn = findInput(inputs, inputNames.downloadData)
-			// store downloaded data for confirmation
-			ddIn && ddIn.rxValue.next(downloadData)
-
-			// update form header
-			const header = step === steps.unconfirmed
-				? textsCap.headerUnconfirmed
-				: step === steps.confirmed
-					? textsCap.headerConfirmed
-					: textsCap.headerDownload
-			rxState.next({ header })
-		}, 50)
-
-		// on file select, check if the uploaded file matches the downloaded file
-		const handleFileSelected = (e, _, values) => new Promise(resolve => {
-			try {
-				const file = e.target.files[0]
-				const name = e.target.value
-				var reader = new FileReader()
-				if (name && !name.endsWith('.json')) throw textsCap.invalidFileType
-
-				reader.onload = file => {
-					try {
-						const { data, hash, timestamp } = values[inputNames.downloadData] || {}
-						const password = values[inputNames.password]
-						const redirectTo = values[inputNames.redirectTo]
-						const hashUpload = generateHash(
-							file.target.result,
-							'blake2',
-							256,
-						)
-						const matched = hash === hashUpload
-						setTimeout(() => resolve(!matched && textsCap.backupFileInvalid))
-
-						if (!matched) {
-							file.target.value = null // reset file
-							return
-						}
-
-						// update timestamp of identities and partners
-						backup.updateFileBackupTS(timestamp)
-
-						// set as verified
-						findInput(inputs, inputNames.step)
-							.rxValue
-							.next(steps.verified)
-
-						// update getting started active step if necessary
-						!!rxIsRegistered.value && saveActiveStep(stepIndexes.backup + 1)
-
-						const message = {
-							content: (
-								<div>
-									{textsCap.backupSuccessContent}
-									<br />
-									<br />
-									{reload && (
-										<div style={{ color: 'red' }}>
-											<big>
-												<ButtonDelayed El='span'>
-													{textsCap.reloadingPage}
-												</ButtonDelayed>
-											</big>
-										</div>
-									)}
-								</div>
-							),
-							header: textsCap.backupSuccessHeader,
-							status: statuses.SUCCESS,
-						}
-						rxState.next({ message, success: true })
-						// additionally show toast in case form message is out of sight (ie: on mobile)
-						setToast(message, 5000, 'BackupForm')
-						isFn(onSubmit) && onSubmit(true, values)
-
-						if (redirectTo) {
-							window.location.href = redirectTo
-						} else if (reload) {
-							// reload page to make sure user's password is prompted to be saved/updated by browser
-							setTimeout(() => window.location.reload(true), 3000)
-						}
-					} catch (err) {
-						console.error(err)
-						rxState.next({
-							message: {
-								content: `${err}`,
-								status: statuses.ERROR,
-							}
-						})
-					}
-				}
-				reader.readAsText(file)
-			} catch (err) {
-				resolve(err)
-			}
-		})
-
+		)
 		const inputs = [
 			{
 				name: 'username',
 				type: 'hidden',
-				value: `${(getUser() || {}).id || ''}@${window.location.host}`,
+				rxValue: rxUserName,
 			},
 			{
 				action: {
@@ -309,8 +196,6 @@ export default function BackupForm(props) {
 				criteriaHeader: textsCap.passwordCrHeader,
 				// hide regex error message
 				customMessages: { regex: true },
-				// // delay before showing error message
-				// defer: 500,
 				hidden: values => values[inputNames.step] !== steps.confirmed
 					|| values[inputNames.skipPassword] === true,
 				inlineLabel: {
@@ -319,25 +204,11 @@ export default function BackupForm(props) {
 						className: 'no-margin',
 						name: 'random',
 					},
-					onClick: e => {
-						e.preventDefault()
-						e.stopPropagation()
-						const pw = generatePassword()
-						rxPasswordGen.next(pw)
-						rxPassword.next(pw)
-						copyToClipboard(pw)
-						const msg = {
-							content: textsCap.passwordCopiedToCB,
-							status: statuses.SUCCESS,
-						}
-						setToast(msg, 0, 'generated-password')
-					},
+					onClick: handleGeneratePw(rxPassword, rxPasswordGen),
 					style: { cursor: 'pointer' },
 					title: textsCap.passwordBtnTitle,
 				},
 				label: textsCap.passwordLabel,
-				// maxLength: 64,
-				// minLength: 8,
 				name: inputNames.password,
 				// trigger a change on the password confirm input to force re-validation
 				onChange: (_, values) => {
@@ -347,7 +218,7 @@ export default function BackupForm(props) {
 					const pwConfirmIn = findInput(inputs, inputNames.passwordConfirm)
 					// first set a placeholder password, otherwise, RxJS won't register it as a change
 					pwConfirmIn.rxValue.next('-'.repeat(pwConfirm.length))
-					// set back the original value
+					// set back the original password
 					setTimeout(() => pwConfirmIn.rxValue.next(pwConfirm), 100)
 				},
 				placeholder: textsCap.passwordPlaceholder,
@@ -389,13 +260,20 @@ export default function BackupForm(props) {
 				label: textsCap.skipPasswordLabel,
 				hidden: values => values[inputNames.step] !== steps.confirmed,
 				name: inputNames.skipPassword,
+				// update filename to include/exclude "encrypted" at the end
+				onChange: (_, values) => rxFileName.next(
+					backup.generateFilename(
+						values[inputNames.skipPassword] !== true
+					)
+				),
+				rxValue: new BehaviorSubject(false),
 				toggle: true,
 				type: 'checkbox',
 			},
 			{
 				name: inputNames.step,
-				onChange: handleConfirmChange,
-				rxValue: new BehaviorSubject('no'),
+				onChange: handleConfirmChange(rxState, rxFileName),
+				rxValue: rxStep,
 				type: 'hidden',
 			},
 			{
@@ -416,7 +294,17 @@ export default function BackupForm(props) {
 					<div>
 						{textsCap.confirmBackupContent1} {textsCap.confirmBackupContent2}
 						<ul>
-							{confirmBackupTypes
+							{[
+								textsCap.contacts,
+								textsCap.history,
+								textsCap.identities,
+								textsCap.locations,
+								textsCap.notifications,
+								textsCap.partners,
+								textsCap.chatMessages,
+								textsCap.settings,
+								textsCap.userCredentials,
+							]
 								.sort()
 								.map((str, i) => (
 									<li key={i}>{str}</li>
@@ -443,54 +331,42 @@ export default function BackupForm(props) {
 						<p>
 							{textsCap.fileName}:
 							<br />
-							<b style={{ color: 'green' }}>{filename}</b>
+							<b style={{ color: 'green' }}>{elFileName}</b>
 						</p>
 
-						{!isMobile && (
-							<p>{textsCap.backupFileLabelDetailsDesktop}</p>
-						)}
+						<UseHook {...{
+							hook: useIsMobile,
+							render: isMobile => !isMobile && <p>{textsCap.backupFileLabelDetailsDesktop}</p>,
+						}} />
 					</div>
 				),
 				name: inputNames.file,
 				type: 'file',
-				validate: handleFileSelected,
+				validate: validateFileSelected(
+					rxState,
+					rxStep,
+					props
+				),
 			},
 			{
 				content: textsCap.downloadFailed,
 				hidden: values => values[inputNames.step] !== steps.download,
 				name: 'download-text',
 				negative: true,
-				onClick: () => {
-					const downloadData = findInput(inputs, inputNames.downloadData).value
-					const { data } = downloadData || {}
-					if (!isHex(data)) throw new Error(textsCap.invalidData)
-
-					copyToClipboard(data)
-					confirm({
-						confirmButton: textsCap.done,
-						content: (
-							<div>
-								{textsCap.manualBkp0}
-								<ol>
-									<li>{textsCap.manualBkp1}</li>
-									<li>{textsCap.manualBkp2}</li>
-									<li>
-										{textsCap.manualBkp3} <br />
-										<b>{filename}</b>
-									</li>
-								</ol>
-							</div>
-						),
-						header: textsCap.manualBkpHeader,
-						size: 'tiny',
-					})
-				},
+				onClick: handleDownloadTextClick(rxState),
 				type: 'button',
 			},
 		]
 
 		return {
 			...props,
+			// close/cancel button
+			closeText: values => ({
+				content: values[inputNames] === steps.unconfirmed
+					? textsCap.backupLater
+					: textsCap.close,
+				negative: false,
+			}),
 			inputs: fillValues(inputs, values || {}),
 			onClose: (...args) => {
 				let { values: { redirectTo } = {} } = props
@@ -500,107 +376,9 @@ export default function BackupForm(props) {
 					window.location.href = redirectTo.href
 				} catch (err) { }
 			},
-			onSubmit: null, // trigger onSubmit locally
+			onSubmit: null, // trigger onSubmit manually in the getSubmitText()
+			submitText: getSubmitText(rxStep, rxPassword, rxPasswordGen),
 			values: { ...props.values },
-			closeText: values => ({
-				content: values[inputNames] === steps.unconfirmed
-					? textsCap.backupLater
-					: textsCap.close,
-				negative: false,
-			}),
-			submitText: (values, formProps, disabled) => {
-				const { success } = formProps
-				// hide submit button when download is completed
-				if (success) return null
-
-				const btn = { disabled }
-				const stepIn = findInput(inputs, inputNames.step)
-				switch (values[inputNames.step]) {
-					default:
-					case steps.unconfirmed:
-						// initial info text displayed
-						btn.content = textsCap.backupNow
-						btn.primary = true
-						btn.onClick = () => stepIn.rxValue.next(steps.confirmed)
-						break
-					case steps.confirmed:
-						// user enters password
-						btn.content = textsCap.proceed
-						const skipPassword = values[inputNames.skipPassword] === true
-						btn.primary = !skipPassword
-						btn.negative = skipPassword
-						btn.onClick = () => {
-							const proceed = () => stepIn.rxValue.next(steps.download)
-							const skipPassword = values[inputNames.skipPassword] === true
-							const shouldConfirm = rxPasswordGen.value
-								&& rxPasswordGen.value === rxPassword.value
-								|| skipPassword
-							if (!shouldConfirm) return proceed()
-
-							confirm({
-								cancelButton: textsCap.goBack,
-								confirmButton: (
-									<ButtonDelayed {...{
-										negative: skipPassword,
-										seconds: skipPassword ? 15 : 10,
-									}}>
-										{textsCap.yesProceed}
-									</ButtonDelayed>
-								),
-								content: (
-									<div style={{ whiteSpace: 'pre-line' }}>
-										<Text {...{
-											color: 'red',
-											invertedColor: 'orange',
-											style: { fontWeight: 'bold' },
-										}}>
-											{!skipPassword
-												? textsCap.passwordCopiedToCB
-												: textsCap.skipPasswordWarn1}
-										</Text>
-										<br />
-										<br />
-										{!skipPassword
-											? textsCap.passwordGenWarnContent
-											: [
-												textsCap.skipPasswordWarn2,
-												textsCap.skipPasswordWarn3,
-												'\n\n',
-												textsCap.skipPasswordWarn4,
-												textsCap.skipPasswordWarn5,
-											].join(' ')}
-									</div>
-								),
-								header: (
-									<span {...{
-										className: 'header',
-										style: {
-											// overrides the background color defined in the <Text /> component
-											background: undefined,
-											// overrides the text capitalization on modal header
-											textTransform: 'initial',
-										},
-									}}>
-										{!skipPassword
-											? textsCap.passwordGenWarnHeader
-											: textsCap.skipPasswordWarn0}
-									</span>
-								),
-								onConfirm: proceed,
-								size: 'mini',
-							})
-						}
-						break
-					case steps.download:
-						// download and verify
-						btn.content = textsCap.downloadAgain
-						btn.icon = 'download'
-						btn.positive = false
-						btn.onClick = () => stepIn.rxValue.next('no')
-						break
-				}
-				return btn
-			},
 		}
 	})
 
@@ -757,6 +535,261 @@ BackupForm.checkAndWarn = async (
 		})
 	})
 }
+
+const getSubmitText = (rxStep, rxPassword, rxPasswordGen) => (values, formProps, disabled) => {
+	const { success } = formProps
+	// hide submit button when download is completed
+	if (success) return null
+
+	const btn = { disabled }
+	switch (values[inputNames.step]) {
+		default:
+		case steps.unconfirmed:
+			// initial info text displayed
+			btn.content = textsCap.backupNow
+			btn.primary = true
+			btn.onClick = () => rxStep.next(steps.confirmed)
+			break
+		case steps.confirmed:
+			// user enters password
+			btn.content = textsCap.proceed
+			const skipPassword = values[inputNames.skipPassword] === true
+			btn.primary = !skipPassword
+			btn.negative = skipPassword
+			btn.onClick = () => {
+				const proceed = () => rxStep.next(steps.download)
+				const skipPassword = values[inputNames.skipPassword] === true
+				const shouldConfirm = rxPasswordGen.value
+					&& rxPasswordGen.value === rxPassword.value
+					|| skipPassword
+
+				if (!shouldConfirm) return proceed()
+
+				confirm({
+					cancelButton: textsCap.goBack,
+					confirmButton: (
+						<ButtonDelayed {...{
+							negative: skipPassword,
+							seconds: skipPassword ? 15 : 10,
+						}}>
+							{textsCap.yesProceed}
+						</ButtonDelayed>
+					),
+					content: (
+						<div style={{ whiteSpace: 'pre-line' }}>
+							<Text {...{
+								color: 'red',
+								invertedColor: 'orange',
+								style: { fontWeight: 'bold' },
+							}}>
+								{!skipPassword
+									? textsCap.passwordCopiedToCB
+									: textsCap.skipPasswordWarn1}
+							</Text>
+							<br />
+							<br />
+							{!skipPassword
+								? textsCap.passwordGenWarnContent
+								: [
+									textsCap.skipPasswordWarn2,
+									textsCap.skipPasswordWarn3,
+									'\n\n',
+									textsCap.skipPasswordWarn4,
+									textsCap.skipPasswordWarn5,
+								].join(' ')}
+						</div>
+					),
+					header: (
+						<span {...{
+							className: 'header',
+							style: {
+								// overrides the background color defined in the <Text /> component
+								background: undefined,
+								// overrides the text capitalization on modal header
+								textTransform: 'initial',
+							},
+						}}>
+							{!skipPassword
+								? textsCap.passwordGenWarnHeader
+								: textsCap.skipPasswordWarn0}
+						</span>
+					),
+					onConfirm: proceed,
+					size: 'mini',
+				})
+			}
+			break
+		case steps.download:
+			// download and verify
+			btn.content = textsCap.downloadAgain
+			btn.icon = 'download'
+			btn.positive = false
+			btn.onClick = () => rxStep.next(steps.unconfirmed)
+			break
+	}
+	return btn
+}
+
+const handleConfirmChange = (rxState, rxFileName) => deferred((_, values) => {
+	const { inputs = [] } = rxState.value
+	const step = values[inputNames.step]
+	const password = values[inputNames.password]
+	const encrypted = values[inputNames.skipPassword] !== true
+	const isDownload = step === steps.download
+	const downloadData = isDownload && backup.download(
+		rxFileName.value,
+		data => !encrypted
+			? data
+			: encryptBackup(data, password),
+		encrypted,
+	)
+	const ddIn = findInput(inputs, inputNames.downloadData)
+	// store downloaded data for confirmation
+	ddIn.rxValue.next(downloadData)
+
+	// update form header
+	const header = step === steps.unconfirmed
+		? textsCap.headerUnconfirmed
+		: step === steps.confirmed
+			? textsCap.headerConfirmed
+			: textsCap.headerDownload
+	rxState.next({ header })
+}, 50)
+
+const handleDownloadTextClick = rxState => () => {
+	const { inputs = [] } = rxState.value
+	const downloadData = findInput(inputs, inputNames.downloadData).value
+	const { data } = downloadData || {}
+	if (!isHex(data)) throw new Error(textsCap.invalidData)
+
+	// copy the entire backup string to clipboard so that user can save it to a file manually
+	copyToClipboard(data)
+
+	return confirmAsPromise({
+		confirmButton: textsCap.done,
+		content: (
+			<div>
+				{textsCap.manualBkp0}
+				<ol>
+					<li>{textsCap.manualBkp1}</li>
+					<li>{textsCap.manualBkp2}</li>
+					<li>
+						{textsCap.manualBkp3} <br />
+						<b>{elFileName}</b>
+					</li>
+				</ol>
+			</div>
+		),
+		header: textsCap.manualBkpHeader,
+		size: 'tiny',
+	})
+}
+
+// generate a password, copy it to clipboard and show a toast message
+const handleGeneratePw = (rxPassword, rxPasswordGen) => e => {
+	e.preventDefault()
+	e.stopPropagation()
+	const pw = generatePassword()
+	rxPasswordGen.next(pw)
+	rxPassword.next(pw)
+	copyToClipboard(pw)
+	const msg = {
+		content: textsCap.passwordCopiedToCB,
+		status: statuses.SUCCESS,
+	}
+	setToast(
+		msg,
+		0,
+		'generated-password', // use predefined ID to prevent showing same toast multiple times
+	)
+	return pw
+}
+
+// on file select, check if the uploaded file matches the downloaded file
+const validateFileSelected = (
+	rxState,
+	rxStep,
+	props
+) => (e, _, values) => new Promise(resolve => {
+	try {
+		const { onSubmit, reload } = props
+		const file = e.target.files[0]
+		const name = e.target.value
+		var reader = new FileReader()
+		if (name && !name.endsWith('.json')) throw textsCap.invalidFileType
+
+		reader.onload = file => {
+			try {
+				const { hash, timestamp } = values[inputNames.downloadData] || {}
+				const redirectTo = values[inputNames.redirectTo]
+				const hashUpload = generateHash(
+					file.target.result,
+					'blake2',
+					256,
+				)
+				const matched = hash === hashUpload
+				setTimeout(() => resolve(!matched && textsCap.backupFileInvalid))
+
+				if (!matched) {
+					file.target.value = null // reset file
+					return
+				}
+
+				// update timestamp of identities and partners
+				backup.updateFileBackupTS(timestamp)
+
+				// set as verified
+				rxStep.next(steps.verified)
+
+				// update getting started active step if necessary
+				!!rxIsRegistered.value && saveActiveStep(stepIndexes.backup + 1)
+
+				const message = {
+					content: (
+						<div>
+							{textsCap.backupSuccessContent}
+							<br />
+							<br />
+							{reload && (
+								<div style={{ color: 'red' }}>
+									<big>
+										<ButtonDelayed El='span'>
+											{textsCap.reloadingPage}
+										</ButtonDelayed>
+									</big>
+								</div>
+							)}
+						</div>
+					),
+					header: textsCap.backupSuccessHeader,
+					status: statuses.SUCCESS,
+				}
+				rxState.next({ message, success: true })
+				// additionally show toast in case form message is out of sight (ie: on mobile)
+				setToast(message, 5000, 'BackupForm')
+				isFn(onSubmit) && onSubmit(true, values)
+
+				if (redirectTo) {
+					window.location.href = redirectTo
+				} else if (reload) {
+					// reload page to make sure user's password is prompted to be saved/updated by browser
+					setTimeout(() => window.location.reload(true), 3000)
+				}
+			} catch (err) {
+				console.error(err)
+				rxState.next({
+					message: {
+						content: `${err}`,
+						status: statuses.ERROR,
+					}
+				})
+			}
+		}
+		reader.readAsText(file)
+	} catch (err) {
+		resolve(err)
+	}
+})
 
 setTimeout(() => {
 	// prevent check if user is not registered

@@ -68,6 +68,16 @@ const serverApp = https.createServer({
 }, app)
 serverApp.listen(HTTPS_PORT, () => console.log('\nApp https web server listening on port ', HTTPS_PORT))
 
+const executeCmd = async (cmd, args) => {
+	const result = spawnSync(cmd, args)
+	const { error, stderr } = result
+	const err = error
+		? error.message
+		: '' //stderr.toString()
+	if (err) throw new Error(err.split('Error: '))
+	return result
+}
+
 const setupPullEndpoints = () => {
 	const endpoints = (pullEndpoints || '')
 		.split(',')
@@ -75,15 +85,6 @@ const setupPullEndpoints = () => {
 		.filter(Boolean)
 	if (!endpoints.length) return
 
-	const executeCmd = async (cmd, args) => {
-		const result = spawnSync(cmd, args)
-		const { error, stderr } = result
-		const err = error
-			? error.message
-			: '' //stderr.toString()
-		if (err) throw new Error(err.split('Error: '))
-		return result
-	}
 	for (let endpoint of endpoints) {
 		endpoint = endpoint.split(':')
 		let [

@@ -70,8 +70,16 @@ const plugins = [
 ]
 module.exports = {
 	devServer: {
-		static: path.join(__dirname, 'dist'),
 		hot: true,
+		port: process.env.HTTPS_PORT || 8080,
+		// server: {
+		// 	type: 'https',
+		// 	options: {
+		// 		cert: process.env.CertPath || './sslcert/fullchain.pem',
+		// 		key: process.env.KeyPath || './sslcert/privkey.pem',
+		// 	},
+		// },
+		static: path.join(__dirname, 'dist'),
 	},
 	devtool: 'eval-source-map',
 	entry: {

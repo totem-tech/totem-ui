@@ -147,7 +147,6 @@ export default class PartnerForm extends Component {
 					1,
 				)
 		)[0] || []
-		console.log({ locationId, location })
 		this.locationId = locationId
 		const contact = (address && contactStorage.find(query)) || undefined
 		this.contactId = contact && contact.id || undefined
