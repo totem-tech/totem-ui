@@ -198,6 +198,7 @@ export class FormInput extends Component {
 
 	handleChange = (event = {}, data = {}) => {
 		const {
+			preservecursor = 'yes',
 			criteria = [],
 			criteriaHeader,
 			customMessages,
@@ -341,12 +342,14 @@ export class FormInput extends Component {
 			}
 			this.setMessage(data.invalid, message)
 			try {
-				isFn(setSelectionRange) && event
-					.target
-					.setSelectionRange(
-						selectionStart,
-						selectionEnd,
-					)
+				preservecursor === 'yes'
+					&& isFn(setSelectionRange)
+					&& event
+						.target
+						.setSelectionRange(
+							selectionStart,
+							selectionEnd,
+						)
 			} catch (_) { } // ignore unsupported
 		}
 

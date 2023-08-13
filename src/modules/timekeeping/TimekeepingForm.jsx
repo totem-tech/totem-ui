@@ -52,6 +52,7 @@ import {
 import TimeKeepingInviteForm, { inputNames as invInputNames } from './TimekeepingInviteForm'
 import Timer from './Timer'
 import useTkActivities from './useTKActivities'
+import FormInput from '../../components/FormInput'
 
 const textsCap = {
     activity: 'activity',
@@ -260,11 +261,13 @@ const TimekeepingForm = React.memo(({
                     : undefined,
                 icon: {
                     loading: inprogress,
-                    name: !inprogress && !batch
-                        ? done
-                            ? 'thumbs up'
-                            : 'play'
-                        : 'clock outline',
+                    name: batch
+                        ? 'thumbs up'
+                        : !inprogress
+                            ? done
+                                ? 'thumbs up'
+                                : 'play'
+                            : 'clock outline',
                     style: {
                         fontSize: 25,
                         height: 25,
@@ -402,6 +405,8 @@ const getInitialState = (props, rxValues) => rxState => {
         : activityId
     const rxActivities = new BehaviorSubject(new Map())
     const rxBatch = new BehaviorSubject(false)
+    const rxBatchData = new BehaviorSubject(new Map())
+    // preserve batch & batchData to local storage
     rxBatch.subscribe(
         deferred(
             batch => timer.rxValues.next({
@@ -410,7 +415,6 @@ const getInitialState = (props, rxValues) => rxState => {
             300,
         )
     )
-    const rxBatchData = new BehaviorSubject(new Map())
     rxBatchData.subscribe(
         deferred(
             data => timer.rxValues.next({
@@ -475,6 +479,7 @@ const getInitialState = (props, rxValues) => rxState => {
             validate: validateActiviy(rxState, rxActivities)
         },
         {
+            disabled: values => !values[inputNames.activityId] || !values[inputNames.workerAddress],
             name: inputNames.batch,
             options: [{
                 key: 'a',
@@ -526,134 +531,141 @@ const getInitialState = (props, rxValues) => rxState => {
         },
         {
             content: (
-                <RxSubjectView {...{
-                    subject: rxBatchData,
-                    valueModifier: data => (
-                        <DataTable {...{
-                            columns: [
-                                {
-                                    collapsing: true,
-                                    content: ({ tsStarted = '', ...rest }, id) => (
-                                        <div>
-                                            <input {...{
-                                                onChange: e => rxBatchData.next(
-                                                    new Map(
-                                                        rxBatchData.value.set(id, {
-                                                            ...rest,
-                                                            tsStarted: e.target.value,
-                                                        })
-                                                    )
-                                                ),
-                                                step: 1, // enables seconds
-                                                style: {
-                                                    border: 'none',
-                                                    borderRadius: 0,
-                                                    height: 42,
-                                                },
-                                                type: 'datetime-local',
-                                                value: tsStarted,
-                                            }} />
-                                        </div>
-                                    ),
-                                    key: 'tsStarted',
-                                    style: { padding: 0 },
-                                    title: textsCap.startTime,
-                                },
-                                {
-                                    collapsing: true,
-                                    content: ({ duration = '', ...rest }, id) => (
-                                        <input {...{
-                                            onChange: e => rxBatchData.next(
+                <DataTable {...{
+                    key: 'datatable',
+                    columns: [
+                        {
+                            collapsing: true,
+                            content: ({ tsStarted = '', ...rest }, id) => (
+                                <div>
+                                    <FormInput {...{
+                                        key: id,
+                                        name: 'tsStarted',
+                                        onChange: e => {
+                                            const newTsStarted = e?.target?.value
+                                            newTsStarted && rxBatchData.next(
                                                 new Map(
                                                     rxBatchData.value.set(id, {
                                                         ...rest,
-                                                        duration: e.target.value,
+                                                        tsStarted: newTsStarted,
                                                     })
                                                 )
-                                            ),
-                                            step: 1, // enables seconds
-                                            style: {
-                                                border: 'none',
-                                                borderRadius: 0,
-                                                height: 42,
-                                            },
-                                            type: 'time',
-                                            value: duration,
-                                        }} />
-                                    ),
-                                    key: 'duration',
-                                    style: { padding: 0 },
-                                    title: textsCap.duration,
-                                },
-                                {
-                                    collapsing: true,
-                                    content: (_, key) => (
-                                        <Button {...{
-                                            circular: true,
-                                            // disabled: data.size <= 1,
-                                            icon: 'minus',
-                                            onClick: e => {
-                                                e.preventDefault()
-                                                const map = rxBatchData.value
-                                                map.delete(key)
-                                                rxBatchData.next(map)
-                                            },
-                                            style: { margin: 0 },
-                                            title: 'Remove'
-                                        }} />
-                                    ),
-                                    key: 'id',
-                                    style: { padding: 0 },
-                                    textAlign: 'center',
-                                },
-                            ],
-                            data,
-                            defaultSort: 'id',
-                            emptyMessage: null,
-                            perPage: 10,
-                            searchable: false,
-                            // tableProps: {
-                            // unstackable: false,
-                            // },
-                            topLeftMenu: [
-                                {
-                                    content: 'Import CSV',
-                                    icon: 'file excel outline',
-                                    onClick: async (_si, _d, e) => {
-                                        e.preventDefault()
-                                        const data = await importFromFile()
-                                        if (!isArr(data)) return
-
-                                        const map = rxBatchData.value
-                                        data.forEach(entry =>
-                                            map.set(entry.tsStarted, {
-                                                ...entry,
-                                                tsStarted: tsToLocalString(entry.tsStarted)
-                                            })
-                                        )
+                                            )
+                                        },
+                                        preservecursor: 'no',
+                                        step: 1, // enables seconds
+                                        style: {
+                                            border: 'none',
+                                            borderRadius: 0,
+                                            height: 42,
+                                        },
+                                        type: 'datetime-local',
+                                        value: tsStarted,
+                                    }} />
+                                </div>
+                            ),
+                            key: 'tsStarted',
+                            style: { padding: 0 },
+                            title: textsCap.startTime,
+                        },
+                        {
+                            collapsing: true,
+                            content: ({ duration = '', ...rest }, id) => (
+                                <FormInput {...{
+                                    key: id,
+                                    name: 'duration',
+                                    onChange: e => {
+                                        const newDuration = e.target.value
                                         rxBatchData.next(
-                                            new Map(map)
+                                            new Map(
+                                                rxBatchData.value.set(id, {
+                                                    ...rest,
+                                                    duration: newDuration,
+                                                })
+                                            )
                                         )
-                                    }
-                                },
-                                {
-                                    content: 'Add line',
-                                    icon: 'plus',
-                                    onClick: (_si, _d, e) => {
-                                        e.preventDefault()
-                                        addBatchLine()
                                     },
-                                }
-                            ],
-                        }} />
-                    ),
+                                    preservecursor: 'no',
+                                    step: 1, // enables seconds
+                                    style: {
+                                        border: 'none',
+                                        borderRadius: 0,
+                                        height: 42,
+                                    },
+                                    type: 'time',
+                                    value: duration,
+                                }} />
+                            ),
+                            key: 'duration',
+                            style: { padding: 0 },
+                            title: textsCap.duration,
+                        },
+                        {
+                            collapsing: true,
+                            content: (_, key) => (
+                                <Button {...{
+                                    circular: true,
+                                    icon: 'minus',
+                                    onClick: e => {
+                                        e.preventDefault()
+                                        const map = rxBatchData.value
+                                        map.delete(key)
+                                        rxBatchData.next(map)
+                                    },
+                                    style: { margin: 0 },
+                                    title: 'Remove'
+                                }} />
+                            ),
+                            key: 'id',
+                            style: { padding: 0 },
+                            textAlign: 'center',
+                        },
+                    ],
+                    data: rxBatchData,
+                    defaultSort: 'id',
+                    emptyMessage: null,
+                    perPage: 10,
+                    searchable: false,
+                    // tableProps: {
+                    // unstackable: false,
+                    // },
+                    topLeftMenu: [
+                        {
+                            content: 'Import CSV',
+                            icon: 'file excel outline',
+                            onClick: async (_si, _d, e) => {
+                                e.preventDefault()
+                                const importedData = await importFromFile()
+                                if (!isArr(importedData)) return
+
+                                const map = rxBatchData.value
+                                importedData.forEach(entry =>
+                                    map.set(entry.tsStarted, {
+                                        ...entry,
+                                        tsStarted: tsToLocalString(entry.tsStarted)
+                                    })
+                                )
+                                rxBatchData.next(
+                                    new Map(map)
+                                )
+                            }
+                        },
+                        {
+                            content: 'Add line',
+                            icon: 'plus',
+                            onClick: (_si, _d, e) => {
+                                e.preventDefault()
+                                addBatchLine()
+                            },
+                        }
+                    ],
                 }} />
             ),
             hidden: values => !values[inputNames.batch],
             name: inputNames.batchData,
             rxValue: rxBatchData,
             type: 'html',
-            validate: (e, data) => console.log('validate', { e, data }) || 'validate batch duration',
+            // validate: (e, data) => console.log('validate', { e, data }) || 'validate batch duration',
             widths: 16,
         }
     ]
@@ -670,7 +682,7 @@ const getInitialState = (props, rxValues) => rxState => {
         map.set(id, {
             id,
             duration: isEmpty
-                && values[inputNames.duration].slice()
+                && values[inputNames.duration]
                 || DURATION_ZERO,
             tsStarted: tsToLocalString(ts),
         })
@@ -763,22 +775,27 @@ const importFromFile = () => new Promise((resolve) => {
             reader.onload = file => {
                 try {
                     const content = file.target.result
-                    data = csvToArr(
-                        content,
-                        ['tsStarted', 'duration']
-                    ).filter(x => {
-                        const valid = isValidDate(x.tsStarted)
-                            && isValidDate(`2000-01-01T${x.duration}`)
-                        if (valid) {
-                            x.tsStarted = new Date(x.tsStarted).toISOString()
-                        }
-                        return valid
-                    })
+                    const keys = ['tsStarted', 'duration']
+                    data = csvToArr(content, keys)
+                        .filter(x => {
+                            const valid = isValidDate(x.tsStarted)
+                                && isValidDate(`2000-01-01T${x.duration}`)
+                            if (valid) {
+                                x.tsStarted = new Date(x.tsStarted).toISOString()
+                            }
+                            return valid
+                        })
+                        .map(x => objClean(x, keys))
                     if (!data.length) {
                         file.target.value = null // reset file
                         return resolveValidate()
                     }
                     resolveValidate()
+
+                    setTimeout(() => {
+                        resolve(data)
+                        closeModal(modalId)
+                    }, 100)
                 } catch (err) {
                     rejectValidate(err)
                 }
@@ -797,14 +814,11 @@ const importFromFile = () => new Promise((resolve) => {
         validate: validateFileSelected,
     }]
     modalId = showForm(FormBuilder, {
+        closeText: null,
         header: `${textsCap.timekeeping}: import CSV file`,
         inputs,
         onClose: () => resolve(),
-        onSubmit: () => {
-            resolve(data)
-            closeModal(modalId)
-        },
-        submitText: 'Import',
+        submitText: null,
     })
 })
 
@@ -833,6 +847,7 @@ const handleStartTimer = rxState => {
     ])
     timer.start(tValues)
 }
+
 const handleSubmit = (
     props,
     rxState,
@@ -1027,7 +1042,9 @@ const tsToLocalString = ts => {
             false
         )
     )
-    return ar.slice(0, 3).join('-') + ' ' + ar.slice(3).join(':')
+    return ar.slice(0, 3).join('-')
+        + 'T'
+        + ar.slice(3).join(':')
 }
 
 const validateActiviy = (

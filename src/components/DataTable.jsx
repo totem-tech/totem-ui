@@ -21,6 +21,7 @@ import {
 	isObj,
 	hasValue,
 	isInteger,
+	isSubjectLike,
 } from '../utils/utils'
 import { translated } from '../utils/languageHelper'
 import {
@@ -79,14 +80,18 @@ export default class DataTable extends Component {
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
+
 	componentWillMount() {
 		this._mounted = true
+		const { data: rxData } = this.props
 		this.subscriptions = {}
 		this.subscriptions.layout = rxLayout.subscribe(layout => {
 			const isMobile = layout === MOBILE
 			if (this.state.isMobile === isMobile) return
 			this.setState({ isMobile })
 		})
+		if (!isSubjectLike(rxData)) return
+		this.subscriptions.data = rxData.subscribe(data => this.setState({ data }))
 	}
 
 	componentWillUnmount = () => {
@@ -371,7 +376,7 @@ export default class DataTable extends Component {
 
 	getTopContent(totalRows, selectedIndexes) {
 		let {
-			data,
+			data: dataP,
 			keywords: keywordsP,
 			searchable,
 			searchHideOnEmpty,
@@ -381,6 +386,7 @@ export default class DataTable extends Component {
 			topLeftMenu: actionButtons,
 			topRightMenu: menuOnSelect,
 		} = this.props
+		const { data = dataP } = this.state
 		const {
 			isMobile,
 			keywords = keywordsP,
@@ -581,7 +587,8 @@ export default class DataTable extends Component {
 	}
 
 	handleSelectAll(selectedIndexes) {
-		const { data, onRowSelect } = this.props
+		const { data: dataP, onRowSelect } = this.props
+		const { data = dataP } = this.state
 		const total = data.size || data.length
 		const n = selectedIndexes.length
 		selectedIndexes = n === total || (n > 0 && n < total)
@@ -594,7 +601,7 @@ export default class DataTable extends Component {
 	render() {
 		let {
 			containerProps = {},
-			data,
+			data: dataP,
 			emptyMessage,
 			footerContent,
 			keywords: keywordsP,
@@ -603,6 +610,7 @@ export default class DataTable extends Component {
 			style,
 			tableProps,
 		} = this.props
+		const { data = dataP } = this.state
 		let {
 			keywords,
 			pageNo,
