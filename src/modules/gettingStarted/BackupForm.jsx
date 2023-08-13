@@ -16,7 +16,13 @@ import {
 import { setToast } from '../../services/toast'
 import { getUser, rxIsRegistered } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
-import { RxSubjectView, UseHook, iUseReducer, statuses, useIsMobile, useRxState } from '../../utils/reactjs'
+import {
+	RxSubjectView,
+	UseHook,
+	statuses,
+	useIsMobile,
+	useRxState
+} from '../../utils/reactjs'
 import storage, { backup } from '../../utils/storageHelper'
 import {
 	copyToClipboard,
@@ -226,7 +232,6 @@ export default function BackupForm(props) {
 				required: true,
 				rxValue: rxPassword,
 				type: 'password',
-
 			},
 			{
 				autoComplete: 'new-password',

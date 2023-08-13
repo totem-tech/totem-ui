@@ -45,17 +45,7 @@ export default function App() {
 		// For debug only.
 		const isProd = window.location.host === 'totem.live'
 		if (!isProd) {
-			window.utils = {
-				convert: require('./utils/convert'),
-				generatePassword,
-				naclHelper: require('./utils/naclHelper'),
-				polkadotHelper: require('./utils/polkadotHelper'),
-				PromisE: require('./utils/PromisE').default,
-				rx: require('./utils/rx'),
-				time: require('./utils/time'),
-				utils: require('./utils/utils'),
-				validator: require('./utils/validator'),
-			}
+			window.BehaviorSubject = require('rxjs').BehaviorSubject
 			window.DataStorage = require('./utils/DataStorage')
 			window.services = {
 				activity,
@@ -75,6 +65,17 @@ export default function App() {
 				timeKeeping,
 				toast,
 				window: windowService,
+			}
+			window.utils = {
+				convert: require('./utils/convert'),
+				generatePassword,
+				naclHelper: require('./utils/naclHelper'),
+				polkadotHelper: require('./utils/polkadotHelper'),
+				PromisE: require('./utils/PromisE').default,
+				rx: require('./utils/rx'),
+				time: require('./utils/time'),
+				utils: require('./utils/utils'),
+				validator: require('./utils/validator'),
 			}
 		}
 

@@ -117,10 +117,12 @@ export default class DataTable extends Component {
 		)
 		const footer = footerContent && (
 			<div {...{
-				children: footerContent,
+				// children: footerContent,
 				key: 'footer-content',
 				style: { float: !!paginator ? 'left' : '' },
-			}} />
+			}}>
+				{footerContent}
+			</div>
 		)
 		return [paginator, footer].filter(Boolean)
 	}
@@ -707,7 +709,7 @@ export default class DataTable extends Component {
 
 							<Table.Body className='table-body'>{rows}</Table.Body>
 
-							{!!footerContent || totalPages > 1 && (
+							{(!!footerContent || totalPages > 1) && (
 								<Table.Footer>
 									<Table.Row>
 										<Table.HeaderCell colSpan={columnsVisible.length + 1}>

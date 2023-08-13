@@ -6,6 +6,8 @@ const Dotenv = require('dotenv-webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CompressionPlugin = require("compression-webpack-plugin");
 
+const sslCert = process.env.CertPath || './sslcert/fullchain.pem'
+const sslKey = process.env.KeyPath || './sslcert/privkey.pem'
 const regexp_src = new RegExp(path.resolve(__dirname, './src'))
 const regexp_utils = new RegExp(path.resolve(__dirname, './src/utils'))
 const plugins = [
@@ -72,13 +74,13 @@ module.exports = {
 	devServer: {
 		hot: true,
 		port: process.env.HTTPS_PORT || 8080,
-		// server: {
-		// 	type: 'https',
-		// 	options: {
-		// 		cert: process.env.CertPath || './sslcert/fullchain.pem',
-		// 		key: process.env.KeyPath || './sslcert/privkey.pem',
-		// 	},
-		// },
+		server: {
+			type: 'https',
+			options: {
+				cert: sslCert,
+				key: sslKey,
+			},
+		},
 		static: path.join(__dirname, 'dist'),
 	},
 	devtool: 'eval-source-map',

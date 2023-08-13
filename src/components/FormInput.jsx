@@ -57,7 +57,7 @@ const Icon = React.memo(S_ICON)
 const Input = React.memo(S_Input)
 const TextArea = React.memo(S_Textarea)
 
-const errMsgs = translated({
+const errMsgs = {
 	decimals: 'maximum number of decimals allowed',
 	email: 'please enter a valid email address',
 	fileType: 'invalid file type selected',
@@ -72,7 +72,9 @@ const errMsgs = translated({
 	required: 'required field',
 	readOnlyField: 'read only field',
 	url: 'invalid URL',
-}, true)[1]
+	validateError: 'unexpected error occured during input validation.'
+}
+translated(errMsgs, true)[1]
 const validationTypes = Object.values(TYPES)
 // properties exclude from being used in the DOM
 const NON_ATTRIBUTES = Object.freeze([
@@ -430,7 +432,20 @@ export class FormInput extends Component {
 			if (!isPromise(result)) return result
 
 			this.setState({ loading: true })
-			result = await result
+			result = await result.catch(err => (
+				<div>
+					{errMsgs.validateError}
+					<br />
+					<pre style={{
+						background: '#cdcdcd',
+						border: '1px solid #cdcdcd',
+						padding: '10px 25px',
+						whiteSpace: 'preWrap',
+					}}>
+						{`${err}`}
+					</pre>
+				</div>
+			))
 			this.setState({ loading: false })
 			return result
 		}

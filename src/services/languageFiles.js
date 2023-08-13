@@ -153,6 +153,7 @@ export default [
     "./src/modules/task/useTasks.js",
     "./src/modules/timekeeping/RecordDetails.jsx",
     "./src/modules/timekeeping/SumDuration.jsx",
+    "./src/modules/timekeeping/TimekeepingForm copy.jsx",
     "./src/modules/timekeeping/TimekeepingForm.jsx",
     "./src/modules/timekeeping/TimekeepingInviteForm.jsx",
     "./src/modules/timekeeping/TimekeepingList.jsx",

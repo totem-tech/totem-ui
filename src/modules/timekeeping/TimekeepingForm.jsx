@@ -3,11 +3,13 @@ import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Icon } from 'semantic-ui-react'
 import { Button, ButtonAcceptOrReject } from '../../components/buttons'
+import DataTable from '../../components/DataTable'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import DataTableVertical from '../../components/DataTableVertical'
 import { rxBlockNumber } from '../../services/blockchain'
-import { confirmAsPromise, showForm } from '../../services/modal'
+import { closeModal, confirmAsPromise, showForm } from '../../services/modal'
 import { addToQueue } from '../../services/queue'
+import { csvToArr } from '../../utils/convert'
 import { translated } from '../../utils/languageHelper'
 import {
     RxSubjectView,
@@ -25,9 +27,13 @@ import {
 import {
     arrSort,
     className,
+    deferred,
+    isArr,
     isFn,
+    isValidDate,
     objClean,
     objWithoutKeys,
+    strFill,
 } from '../../utils/utils'
 import { openStatuses, query as actQuery } from '../activity/activity'
 import ActivityDetails from '../activity/ActivityDetails'
@@ -49,7 +55,9 @@ import useTkActivities from './useTKActivities'
 
 const textsCap = {
     activity: 'activity',
+    batchTime: 'import or batch input time',
     close: 'close',
+    description: 'description',
     duration: 'duration',
     error: 'error',
     identity: 'identity',
@@ -73,7 +81,9 @@ const textsCap = {
     checkingActivityStatus: 'checking activity status...',
     errRejectedDurationUnchanged: 'rejected record requires duration change in order to re-sumbit',
     finishedAt: 'finished at',
+    format: 'format',
     goBack: 'go Back',
+    id: 'ID',
     inactiveActivitySelected: 'this Activity is no longer open!',
     inactiveWorkerHeader1: 'you are not part of this Team! Request an invitation',
     inactiveWorkerHeader2: 'action required',
@@ -82,6 +92,7 @@ const textsCap = {
     inactiveWorkerMsg4: 'you must add yourself as a team member in order to start booking time to this activity.',
     invalidDuration: 'invalid duration',
     invalidDurationMsgPart1: 'please enter a valid duration according to the following format:',
+    invalidFile: 'Invalid file selected! Please select a CSV file with the following columns:',
     manuallyEnterDuration: 'manually enter duration',
     msgSubmitted: 'your time record has been submitted for approval',
     msgSavedAsDraft: 'your time record has been saved as draft',
@@ -100,6 +111,7 @@ const textsCap = {
     selectOpenActivity: 'please select an open Activity',
     saveAsDraft: 'save as draft',
     startedAt: 'started at',
+    startTime: 'start time',
     submitForApproval: 'submit for approval',
     submitConfirmationMsg: 'please verify the following information and click "Proceed" to submit your time record',
     submitTime: 'submit time',
@@ -115,6 +127,8 @@ translated(textsCap, true)
 
 export const inputNames = {
     activityId: 'activityId',
+    batch: 'batch',
+    batchData: 'batchData',
     duration: 'duration',
     manualEntry: 'manualEntry',
     seconds: 'seconds',
@@ -130,6 +144,8 @@ export const timer = new Timer(
         inputNames.manualEntry,
         inputNames.workerAddress,
         // default timer properties
+        'batch',
+        'batchData',
         'breakCount',
         'inprogress',
         'tsFrom',
@@ -154,6 +170,7 @@ const TimekeepingForm = React.memo(({
     const rxActivities = useTkActivities(activitiesQuery)
     const values = useRxSubject(timer.rxValues)[0]
     const {
+        batch,
         tsStarted,
         tsStopped,
         inprogress,
@@ -161,7 +178,7 @@ const TimekeepingForm = React.memo(({
     } = values
     const done = tsStopped || manualEntry
     const duraIn = findInput(inputs, inputNames.duration)
-
+    console.log({ batch })
     const disabled = manualEntry || inprogress
     duraIn.inlineLabel = {
         className: className({ disabled }),
@@ -231,17 +248,19 @@ const TimekeepingForm = React.memo(({
                 rxActivities
             ),
             submitText: {
-                content: !inprogress
-                    ? done
-                        ? textsCap.submit
-                        : textsCap.start
-                    : textsCap.stop,
-                disabled: inprogress
+                content: batch
+                    ? textsCap.submit
+                    : !inprogress
+                        ? done
+                            ? textsCap.submit
+                            : textsCap.start
+                        : textsCap.stop,
+                disabled: inprogress && !batch
                     ? false // prevents stop button being disabled
                     : undefined,
                 icon: {
                     loading: inprogress,
-                    name: !inprogress
+                    name: !inprogress && !batch
                         ? done
                             ? 'thumbs up'
                             : 'play'
@@ -292,21 +311,49 @@ const getActivityOptions = (
                 ownerAddress,
                 userId
             } = activity
-            return {
-                description: (
-                    <AddressName {...{
-                        address: ownerAddress,
-                        // allowCopy: false,
-                        maxLength: 21,
-                        // fixes alignment issue when add button is displayed
-                        styleAddButton: {
-                            padding: 5,
-                            marginTop: -3,
-                        },
-                        title: textsCap.activityOwner,
-                        userId,
+            const addressName = (
+                <AddressName {...{
+                    address: ownerAddress,
+                    // allowCopy: false,
+                    maxLength: 21,
+                    // fixes alignment issue when add button is displayed
+                    styleAddButton: {
+                        padding: 5,
+                        marginTop: -3,
+                    },
+                    title: textsCap.activityOwner,
+                    userId,
+                }} />
+            )
+            const renderIcon = (hovered, _, rxHover) => (
+                <Icon {...{
+                    className: 'no-margin',
+                    color: hovered
+                        ? 'blue'
+                        : undefined,
+                    name: 'eye',
+                    onClick: e => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        return ActivityDetails.asModal({ activity, activityId })
+                    },
+                    onMouseEnter: () => rxHover?.next(true),
+                    onMouseLeave: () => rxHover?.next(false),
+                    style: { cursor: 'pointer' },
+                    title: textsCap.viewActivity,
+                }} />
+            )
+            const text = (
+                <span>
+                    <RxSubjectView {...{
+                        subject: false, // will create rxHover using default value `false`
+                        valueModifier: renderIcon,
                     }} />
-                ),
+                    {' ' + name}
+                </span>
+            )
+            return {
+                description: addressName,
                 key: activityId,
                 search: [
                     name,
@@ -314,33 +361,8 @@ const getActivityOptions = (
                     userId,
                     ownerAddress,
                 ].join(' '),
-                text: (
-                    <span>
-                        <RxSubjectView {...{
-                            subject: false, // will create rxHover using default value `false`
-                            valueModifier: (hovered, _, rxHover) => (
-                                <Icon {...{
-                                    className: 'no-margin',
-                                    color: hovered
-                                        ? 'blue'
-                                        : undefined,
-                                    name: 'eye',
-                                    onClick: e => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        return ActivityDetails.asModal({ activity, activityId })
-                                    },
-                                    onMouseEnter: () => rxHover?.next(true),
-                                    onMouseLeave: () => rxHover?.next(false),
-                                    style: { cursor: 'pointer' },
-                                    title: textsCap.viewActivity,
-                                }} />
-                            ),
-                        }} />
-                        {' ' + name}
-                    </span>
-                ),
-                title: `ID: ${activityId}\nDescription: ${description}`,
+                text,
+                title: `${textsCap.id}: ${activityId}\n${textsCap.description}: ${description}`,
                 value: activityId,
             }
         })
@@ -361,15 +383,14 @@ const getActivityOptions = (
         && setTimeout(() => rxState.next({ loading: false }))
     return arrSort(options, 'search')
 }
-const getInitialState = (
-    props,
-    rxValues = new BehaviorSubject({}),
-) => rxState => {
+const getInitialState = (props, rxValues) => rxState => {
     const {
         projectHash: pph,
         activityId: pActivityId = pph
     } = props
+    rxValues ??= new BehaviorSubject({})
     const values = timer.getValues()
+    values[inputNames.batchData] = new Map(values[inputNames.batchData] || [])
     const { breakCount, inprogress } = values
     const activityId = values[inputNames.activityId]
     const workerAddress = values[inputNames.workerAddress]
@@ -380,6 +401,24 @@ const getInitialState = (
         ? pActivityId
         : activityId
     const rxActivities = new BehaviorSubject(new Map())
+    const rxBatch = new BehaviorSubject(false)
+    rxBatch.subscribe(
+        deferred(
+            batch => timer.rxValues.next({
+                [inputNames.batch]: batch
+            }),
+            300,
+        )
+    )
+    const rxBatchData = new BehaviorSubject(new Map())
+    rxBatchData.subscribe(
+        deferred(
+            data => timer.rxValues.next({
+                [inputNames.batchData]: data,
+            }),
+            300,
+        )
+    )
     const rxManualEntry = copyRxSubject(
         timer.rxValues,
         null,
@@ -436,9 +475,23 @@ const getInitialState = (
             validate: validateActiviy(rxState, rxActivities)
         },
         {
+            name: inputNames.batch,
+            options: [{
+                key: 'a',
+                label: textsCap.batchTime,
+                value: true,
+            }],
+            onChange: (_, values) => !!values[inputNames.batch] && addBatchLine(true),
+            rxValue: rxBatch,
+            toggle: true,
+            type: 'checkbox-group'
+        },
+        {
 
             autoComplete: 'off',
-            hidden: values => !values[inputNames.activityId] || !values[inputNames.workerAddress],
+            hidden: values => values[inputNames.batch]
+                || !values[inputNames.activityId]
+                || !values[inputNames.workerAddress],
             labelPosition: 'left',
             label: textsCap.duration,
             labelDetails: 'hh:mm:ss',
@@ -451,14 +504,14 @@ const getInitialState = (
             type: 'text',
             validate: validateDuration,
         },
-        { // keep the duration input synced with timer
+        { // keeps the duration input synced with timer
             hidden: true,
             name: inputNames.seconds,
             onChange: (_, values) => !values[inputNames.manualEntry]
                 && rxDuration.next(timer.getDuration()),
             rxValue: timer.rxInterval,
         },
-        {
+        { // keeps duration input in-sync with manually entry startus
             hidden: true,
             disabled: () => timer.rxInprogress.value,
             multiple: false,
@@ -471,8 +524,161 @@ const getInitialState = (
             rxValue: rxManualEntry,
             type: 'checkbox-group',
         },
+        {
+            content: (
+                <RxSubjectView {...{
+                    subject: rxBatchData,
+                    valueModifier: data => (
+                        <DataTable {...{
+                            columns: [
+                                {
+                                    collapsing: true,
+                                    content: ({ tsStarted = '', ...rest }, id) => (
+                                        <div>
+                                            <input {...{
+                                                onChange: e => rxBatchData.next(
+                                                    new Map(
+                                                        rxBatchData.value.set(id, {
+                                                            ...rest,
+                                                            tsStarted: e.target.value,
+                                                        })
+                                                    )
+                                                ),
+                                                step: 1, // enables seconds
+                                                style: {
+                                                    border: 'none',
+                                                    borderRadius: 0,
+                                                    height: 42,
+                                                },
+                                                type: 'datetime-local',
+                                                value: tsStarted,
+                                            }} />
+                                        </div>
+                                    ),
+                                    key: 'tsStarted',
+                                    style: { padding: 0 },
+                                    title: textsCap.startTime,
+                                },
+                                {
+                                    collapsing: true,
+                                    content: ({ duration = '', ...rest }, id) => (
+                                        <input {...{
+                                            onChange: e => rxBatchData.next(
+                                                new Map(
+                                                    rxBatchData.value.set(id, {
+                                                        ...rest,
+                                                        duration: e.target.value,
+                                                    })
+                                                )
+                                            ),
+                                            step: 1, // enables seconds
+                                            style: {
+                                                border: 'none',
+                                                borderRadius: 0,
+                                                height: 42,
+                                            },
+                                            type: 'time',
+                                            value: duration,
+                                        }} />
+                                    ),
+                                    key: 'duration',
+                                    style: { padding: 0 },
+                                    title: textsCap.duration,
+                                },
+                                {
+                                    collapsing: true,
+                                    content: (_, key) => (
+                                        <Button {...{
+                                            circular: true,
+                                            // disabled: data.size <= 1,
+                                            icon: 'minus',
+                                            onClick: e => {
+                                                e.preventDefault()
+                                                const map = rxBatchData.value
+                                                map.delete(key)
+                                                rxBatchData.next(map)
+                                            },
+                                            style: { margin: 0 },
+                                            title: 'Remove'
+                                        }} />
+                                    ),
+                                    key: 'id',
+                                    style: { padding: 0 },
+                                    textAlign: 'center',
+                                },
+                            ],
+                            data,
+                            defaultSort: 'id',
+                            emptyMessage: null,
+                            perPage: 10,
+                            searchable: false,
+                            // tableProps: {
+                            // unstackable: false,
+                            // },
+                            topLeftMenu: [
+                                {
+                                    content: 'Import CSV',
+                                    icon: 'file excel outline',
+                                    onClick: async (_si, _d, e) => {
+                                        e.preventDefault()
+                                        const data = await importFromFile()
+                                        if (!isArr(data)) return
+
+                                        const map = rxBatchData.value
+                                        data.forEach(entry =>
+                                            map.set(entry.tsStarted, {
+                                                ...entry,
+                                                tsStarted: tsToLocalString(entry.tsStarted)
+                                            })
+                                        )
+                                        rxBatchData.next(
+                                            new Map(map)
+                                        )
+                                    }
+                                },
+                                {
+                                    content: 'Add line',
+                                    icon: 'plus',
+                                    onClick: (_si, _d, e) => {
+                                        e.preventDefault()
+                                        addBatchLine()
+                                    },
+                                }
+                            ],
+                        }} />
+                    ),
+                }} />
+            ),
+            hidden: values => !values[inputNames.batch],
+            name: inputNames.batchData,
+            rxValue: rxBatchData,
+            type: 'html',
+            validate: (e, data) => console.log('validate', { e, data }) || 'validate batch duration',
+            widths: 16,
+        }
     ]
-    // makes sure all the valeus from the timer is available in the rxValues
+    const addBatchLine = (onlyIfEmpty = false) => {
+        const values = rxValues.value
+        const map = rxBatchData.value
+        const isEmpty = !map.size
+        if (onlyIfEmpty && !isEmpty) return
+
+        const ts = !isEmpty || !values.tsStarted
+            ? new Date()
+            : new Date(values.tsStarted)
+        const id = new Date().toISOString()
+        map.set(id, {
+            id,
+            duration: isEmpty
+                && values[inputNames.duration].slice()
+                || DURATION_ZERO,
+            tsStarted: tsToLocalString(ts),
+        })
+        rxBatchData.next(map)
+    }
+
+    // makes sure all the values from the timer is available in the rxValues
+    // remove??
     copyRxSubject(
         timer.rxValues,
         rxValues,
@@ -507,18 +713,6 @@ const getInitialState = (
     return state
 }
 
-const handleDurationChange = (_, values) => {
-    if (!values[inputNames.manualEntry]) return
-
-    const duration = values[inputNames.duration]
-    const ignore = !duration
-        || duration === DURATION_ZERO
-        || !BLOCK_DURATION_REGEX.test(duration)
-    if (ignore) return
-
-    timer.setTimeByDuration(duration)
-}
-
 const handleCancel = (onClose, rxState) => async (e, d) => {
     const { inprogress } = timer.getValues()
     const confirmed = !inprogress || await confirmAsPromise({
@@ -534,8 +728,87 @@ const handleCancel = (onClose, rxState) => async (e, d) => {
     isFn(onClose) && onClose(e, d)
 }
 
-const handleReset = async (rxState, shouldConfirm) => {
+const handleDurationChange = (_, values) => {
+    if (!values[inputNames.manualEntry]) return
 
+    const duration = values[inputNames.duration]
+    const ignore = !duration
+        || duration === DURATION_ZERO
+        || !BLOCK_DURATION_REGEX.test(duration)
+    if (ignore) return
+
+    timer.setTimeByDuration(duration)
+}
+
+const importFromFile = () => new Promise((resolve) => {
+    let data, modalId
+    const validateFileSelected = (e) => new Promise((resolveValidate, rejectValidate) => {
+        try {
+            const file = e.target.files[0]
+            const name = e.target.value
+            var reader = new FileReader()
+            if (!name || !name.endsWith('.csv')) throw {
+                content: (
+                    <div style={{ textAlign: 'left' }}>
+                        {textsCap.invalidFile}
+                        <ul>
+                            <li>{textsCap.startTime} ({textsCap.format}: YYYY-MM-DD HH:mm:ss)</li>
+                            <li>{textsCap.duration} ({textsCap.format}: HH:mm:ss)</li>
+                        </ul>
+                    </div>
+                ),
+                status: 'error'
+            }
+
+            reader.onload = file => {
+                try {
+                    const content = file.target.result
+                    data = csvToArr(
+                        content,
+                        ['tsStarted', 'duration']
+                    ).filter(x => {
+                        const valid = isValidDate(x.tsStarted)
+                            && isValidDate(`2000-01-01T${x.duration}`)
+                        if (valid) {
+                            x.tsStarted = new Date(x.tsStarted).toISOString()
+                        }
+                        return valid
+                    })
+                    if (!data.length) {
+                        file.target.value = null // reset file
+                        return resolveValidate()
+                    }
+                    resolveValidate()
+                } catch (err) {
+                    rejectValidate(err)
+                }
+            }
+            reader.readAsText(file)
+        } catch (err) {
+            resolveValidate(err)
+        }
+    })
+    const inputs = [{
+        accept: '.csv',
+        label: 'Select a file',
+        name: 'file',
+        required: true,
+        type: 'file',
+        validate: validateFileSelected,
+    }]
+    modalId = showForm(FormBuilder, {
+        header: `${textsCap.timekeeping}: import CSV file`,
+        inputs,
+        onClose: () => resolve(),
+        onSubmit: () => {
+            resolve(data)
+            closeModal(modalId)
+        },
+        submitText: 'Import',
+    })
+})
+
+const handleReset = async (rxState, shouldConfirm) => {
     const { values = {} } = rxState.value
     const { tsStarted } = values
     const doConfirm = shouldConfirm && tsStarted
@@ -565,6 +838,7 @@ const handleSubmit = (
     rxState,
     rxActivities
 ) => async (_, values) => {
+    if (values.batch) return alert('Batch submit to be implemented')
     const tValues = timer.getValues()
     const {
         tsStopped,
@@ -733,6 +1007,27 @@ export const handleSubmitTime = async (
         },
     })
 
+}
+
+const tsToLocalString = ts => {
+    ts = new Date(ts)
+    const ar = [
+        ts.getFullYear(),
+        ts.getMonth(),
+        ts.getDate(),
+        ts.getHours(),
+        ts.getMinutes(),
+        ts.getSeconds(),
+    ]
+    ar.forEach((x, i) =>
+        ar[i] = strFill(
+            x,
+            i === 0 ? 4 : 2,
+            '0',
+            false
+        )
+    )
+    return ar.slice(0, 3).join('-') + ' ' + ar.slice(3).join(':')
 }
 
 const validateActiviy = (

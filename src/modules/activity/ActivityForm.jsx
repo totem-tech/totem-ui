@@ -168,7 +168,7 @@ export const handleSubmit = (props, rxState) => async (_e, values) => {
 	const {
 		activityId: existingId,
 		create = !existingId,
-		modalId,
+		onClose,
 		onSubmit,
 	} = props
 	const { rxQueueId } = rxState?.value || {}
@@ -218,9 +218,10 @@ export const handleSubmit = (props, rxState) => async (_e, values) => {
 					// button is inside the form element.
 					// this prevents form being submitted.
 					e.preventDefault()
+					// if on a modal, close it
+					isFn(onClose) && onClose()
 					return ActivityTeamList.asModal({
 						activityId,
-						modalId,
 						subheader: activityName,
 					})
 				},
