@@ -171,7 +171,7 @@ export class FormInput extends Component {
 			value = isFn(rxValueModifier)
 				? rxValueModifier(value)
 				: value
-			if (this.value === value) return
+			if (this.ignoreUpdate || this.value === value) return
 			this.handleChange({}, { ...this.props, value })
 		})
 		this.subscriptions.rxOptions = isSubjectLike(rxOptions)
@@ -333,13 +333,13 @@ export class FormInput extends Component {
 			&& { content: err, status: statuses.ERROR }
 		const triggerChange = () => {
 			data.invalid = !!err
-			isFn(onChange) && onChange(event, data, this.props)
-			this.value = data.value
 			if (isSubjectLike(rxValue)) {
 				// prevent going to handleChange again
 				this.ignoreUpdate = true
 				rxValue.next(data.value)
 			}
+			isFn(onChange) && onChange(event, data, this.props)
+			this.value = data.value
 			this.setMessage(data.invalid, message)
 			try {
 				preservecursor === 'yes'

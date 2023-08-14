@@ -7,7 +7,11 @@ import DataTable from '../../components/DataTable'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import DataTableVertical from '../../components/DataTableVertical'
 import { rxBlockNumber } from '../../services/blockchain'
-import { closeModal, confirmAsPromise, showForm } from '../../services/modal'
+import {
+    closeModal,
+    confirmAsPromise,
+    showForm
+} from '../../services/modal'
 import { addToQueue, awaitComplete } from '../../services/queue'
 import { csvToArr } from '../../utils/convert'
 import { translated } from '../../utils/languageHelper'
@@ -29,7 +33,6 @@ import {
 import {
     arrSort,
     className,
-    deferred,
     isArr,
     isFn,
     isValidDate,
@@ -231,6 +234,7 @@ const TimekeepingForm = React.memo(({
             ? 0.7
             : undefined,
     }
+
 
     return (
         <FormBuilder {...{
@@ -720,7 +724,6 @@ const getInitialState = (props, rxValues) => rxState => {
         rxBatchData,
         rxQueueId: new BehaviorSubject(),
         rxValues,
-        submitDisabled: false,
         values,
     }
 
@@ -860,7 +863,12 @@ const handleSubmit = (
     rxState,
     rxActivities
 ) => async (_, values) => {
-    const { rxBatchData, rxQueueId } = rxState.value
+    const {
+        message,
+        rxBatchData,
+        rxQueueId
+    } = rxState.value
+    message && rxState.next({ message: null })
     rxQueueId.value && rxQueueId.next(null) // reset any previous failed queue ID
     const {
         batch = false,
@@ -885,72 +893,84 @@ const handleSubmit = (
         ?.value
         ?.get
         ?.(activityId)
+    if (!activity) return rxState.next({
+        message: {
+            header: textsCap.selectActivity,
+            status: 'error',
+        }
+    })
+
     const records = !batch
         ? [{
             ...values,
             ...tValues,
             duration: timer.getDuration(),
         }]
-        : [...batchData]
-            .map(([_batchItemId, { duration, tsStarted }]) => {
-                const ignore = !!batch && (
-                    !duration
-                    || !BLOCK_DURATION_REGEX.test(duration || '')
-                    || DURATION_ZERO === duration
-                    || !isValidDate(tsStarted)
-                )
-                if (ignore) return
-                return {
-                    ...values,
-                    ...tValues,
-                    _batchItemId,
-                    duration,
-                    tsStarted,
-                }
-            }).filter(Boolean)
-    if (!activity || !records.length) return
+        : [...batchData].map(([_batchItemId, record]) => {
+            // add missing seconds
+            let { duration, tsStarted } = record
+            if (duration?.length === 5) duration += ':00'
+            const ignore = !!batch && (
+                !duration
+                || !tsStarted
+                || !BLOCK_DURATION_REGEX.test(duration)
+                || DURATION_ZERO === duration
+                || !isValidDate(tsStarted)
+            )
+            return {
+                ...values,
+                ...tValues,
+                _batchItemId,
+                duration,
+                tsStarted,
+            }
+        }).filter(Boolean)
+    if (!records.length) return
 
     const shouldConfirm = records.length > 1
-    if (shouldConfirm) await confirmAsPromise(
-        {
-            header: `${textsCap.msgCreateRecord} (${records.length})?`,
-            confirmButton: {
-                content: textsCap.proceed,
-                positive: true,
+    if (shouldConfirm) {
+        const confirmed = await confirmAsPromise(
+            {
+                header: `${textsCap.msgCreateRecord} (${records.length})?`,
+                confirmButton: {
+                    content: textsCap.proceed,
+                    positive: true,
+                },
+                content: (
+                    <DataTable {...{
+                        columns: [
+                            {
+                                content: ({ tsStarted }) => format(
+                                    tsStarted,
+                                    true,
+                                    false,
+                                    true
+                                ),
+                                key: 'tsStarted',
+                                textAlign: 'center',
+                                title: textsCap.startTime,
+                            },
+                            {
+                                key: 'duration',
+                                textAlign: 'center',
+                                title: textsCap.duration,
+                            },
+                        ],
+                        containerProps: {
+                            style: { margin: 0 },
+                        },
+                        data: records,
+                        perPage: 100,
+                        searchable: false,
+                    }} />
+                ),
+                size: 'tiny'
             },
-            content: (
-                <DataTable {...{
-                    columns: [
-                        {
-                            content: ({ tsStarted }) => format(
-                                tsStarted,
-                                true,
-                                false,
-                                true
-                            ),
-                            key: 'tsStarted',
-                            textAlign: 'center',
-                            title: textsCap.startTime,
-                        },
-                        {
-                            key: 'duration',
-                            textAlign: 'center',
-                            title: textsCap.duration,
-                        },
-                    ],
-                    containerProps: {
-                        style: { margin: 0 },
-                    },
-                    data: records,
-                    perPage: 100,
-                    searchable: false,
-                }} />
-            ),
-            size: 'tiny'
-        },
-        null,
-        { style: { padding: 0 } },
-    )
+            null,
+            { style: { padding: 0 } },
+        )
+        if (!confirmed) return
+    }
     const results = []
     for (let i = 0;i < records.length;i++) {
         const record = records[i]

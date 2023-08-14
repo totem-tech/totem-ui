@@ -201,7 +201,7 @@ class FormBuilder extends Component {
 				await formOnChange(
 					event,
 					values,
-					formInvalid
+					formInvalid,
 				)
 			}
 		} catch (err) {
@@ -324,6 +324,7 @@ class FormBuilder extends Component {
 				values,
 				this.props,
 				shouldDisable,
+				checkFormInvalid(inputs, values, [], 'render'),
 			)
 		const handleSubmit = (...args) => !shouldDisable && this.handleSubmit(...args)
 		if (submitText !== null) {
@@ -718,7 +719,7 @@ export const inputsForEach = (inputs = [], callback) => {
  *
  * @returns	{Boolean}
  */
-export const checkInputInvalid = (formValues = {}, input, inputsHidden = []) => {
+export const checkInputInvalid = (formValues = {}, input, inputsHidden = [], debugTag) => {
 	let {
 		_invalid,
 		groupValues,
@@ -733,7 +734,6 @@ export const checkInputInvalid = (formValues = {}, input, inputsHidden = []) => 
 		value,
 	} = input || {}
 	type = (type || 'text').toLowerCase()
-
 	// ignore if hidden
 	const isHidden = inputsHidden.includes(name) || type === 'hidden'
 		? true
@@ -769,7 +769,6 @@ export const checkInputInvalid = (formValues = {}, input, inputsHidden = []) => 
 		: !hasValue(value) && gotSubject
 			? rxValue.value
 			: value
-
 	return isCheckbox && required
 		? !value
 		: !hasValue(value)
@@ -783,12 +782,13 @@ export const checkInputInvalid = (formValues = {}, input, inputsHidden = []) => 
  *
  * @returns	{Boolean}
  */
-export const checkFormInvalid = (inputs = [], values = {}, inputsHidden = []) => {
+export const checkFormInvalid = (inputs = [], values = {}, inputsHidden = [], debugTag) => {
 	const input = inputs.find(input =>
 		checkInputInvalid(
 			values,
 			input,
 			inputsHidden,
+			debugTag,
 		)
 	)
 	return !!input
