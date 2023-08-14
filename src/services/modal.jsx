@@ -260,7 +260,13 @@ export const confirm = (confirmProps, modalId, contentProps = {}, focusConfirm =
  * 
  * @returns {Promise}       promise will reject only if there was an uncaught error 
  */
-export const confirmAsPromise = (confirmProps, modalId, ...args) => new PromisE((resolve, reject) => {
+export const confirmAsPromise = (
+    confirmProps,
+    modalId,
+    contentProps,
+    focusConfirm,
+    ...args
+) => new PromisE((resolve, reject) => {
     try {
         confirmProps = !isStr(confirmProps)
             ? confirmProps
@@ -277,7 +283,13 @@ export const confirmAsPromise = (confirmProps, modalId, ...args) => new PromisE(
         }
         confirmProps.onCancel = resolver(false, onCancel)
         confirmProps.onConfirm = resolver(true, onConfirm)
-        confirm(confirmProps, modalId, ...args)
+        confirm(
+            confirmProps,
+            modalId,
+            contentProps,
+            focusConfirm,
+            ...args
+        )
     } catch (err) {
         reject(err)
     }

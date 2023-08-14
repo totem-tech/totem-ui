@@ -8,7 +8,7 @@ import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder
 import DataTableVertical from '../../components/DataTableVertical'
 import { rxBlockNumber } from '../../services/blockchain'
 import { closeModal, confirmAsPromise, showForm } from '../../services/modal'
-import { addToQueue } from '../../services/queue'
+import { addToQueue, awaitComplete } from '../../services/queue'
 import { csvToArr } from '../../utils/convert'
 import { translated } from '../../utils/languageHelper'
 import {
@@ -16,6 +16,7 @@ import {
     copyRxSubject,
     subjectAsPromise,
     useIsMobile,
+    useQueueItemStatus,
     useRxState,
     useRxSubject
 } from '../../utils/reactjs'
@@ -23,6 +24,7 @@ import {
     BLOCK_DURATION_REGEX,
     blockToDate,
     dateToBlock,
+    format,
 } from '../../utils/time'
 import {
     arrSort,
@@ -54,26 +56,24 @@ import Timer from './Timer'
 import useTkActivities from './useTKActivities'
 import FormInput from '../../components/FormInput'
 
+const sampleCSVFilePath = '/sample-batch-time.csv'
 const textsCap = {
     activity: 'activity',
     batchTime: 'import or batch input time',
     close: 'close',
     description: 'description',
     duration: 'duration',
-    error: 'error',
     identity: 'identity',
     no: 'no',
     proceed: 'proceed',
     start: 'start',
     stop: 'stop',
     submit: 'submit',
-    success: 'success',
     timekeeping: 'timekeeping',
     yes: 'yes',
     wallet: 'wallet',
 
     activityOwner: 'activity owner',
-    addedToQueue: 'added to queue',
     addMyself: 'add myself',
     areYouSure: 'are you sure?',
     blockEnd: 'end block',
@@ -96,14 +96,12 @@ const textsCap = {
     invalidFile: 'Invalid file selected! Please select a CSV file with the following columns:',
     manuallyEnterDuration: 'manually enter duration',
     msgSubmitted: 'your time record has been submitted for approval',
-    msgSavedAsDraft: 'your time record has been saved as draft',
-    newRecord: 'new Record',
+    msgCreateRecord: 'create new time record',
+    msgUpdateRecord: 'update time record',
     noActivityMsg: 'create a new activity or ask to be invited to the Team',
     noContinueTimer: 'no, continue timer',
     numberOfBlocks: 'number of blocks',
     numberOfBreaks: 'number of breaks',
-    requestQueuedMsg1: 'request has been added to queue.',
-    requestQueuedMsg2: 'you will be notified of the progress shortly.',
     resetTimer: 'reset the Timer',
     // resetTimerWarning: 'you are about to reset your timer.',
     resumeTimer: 'resume the timer',
@@ -119,7 +117,6 @@ const textsCap = {
     timerStarted: 'timer started',
     timerRunningMsg1: 'you may now close the dialog.',
     timerRunningMsg2: 'return here at anytime by clicking on the clock icon in the header.',
-    transactionFailed: 'blockchain transaction failed!',
     updateFormHeader: 'update Record',
     viewActivity: 'view activity details',
     workerBannedMsg: 'you are banned from this Activity!',
@@ -167,7 +164,19 @@ const TimekeepingForm = React.memo(({
         closeText = closeTextP,
         inputs,
         message,
+        rxQueueId,
     } = state
+    // when form is submitted rxQueueId is set and queue status (message) will be displayed automatically.
+    const queueStatus = useQueueItemStatus(
+        rxQueueId,
+        message => message?.status !== 'success'
+            ? message
+            : {
+                // replace header and include a button below the success message to open the team list on a modal
+                ...message,
+                content: textsCap.msgSubmitted,
+            },
+    )
     const rxActivities = useTkActivities(activitiesQuery)
     const values = useRxSubject(timer.rxValues)[0]
     const {
@@ -179,7 +188,6 @@ const TimekeepingForm = React.memo(({
     } = values
     const done = tsStopped || manualEntry
     const duraIn = findInput(inputs, inputNames.duration)
-    console.log({ batch })
     const disabled = manualEntry || inprogress
     duraIn.inlineLabel = {
         className: className({ disabled }),
@@ -235,14 +243,16 @@ const TimekeepingForm = React.memo(({
                 onClick: handleCancel(onClose, rxState),
             },
             inputs,
-            message: !inprogress
-                ? message
-                : {
-                    content: `${textsCap.timerRunningMsg1} ${textsCap.timerRunningMsg2}`,
-                    header: textsCap.timerStarted,
-                    icon: true,
-                    status: 'info'
-                },
+            message: queueStatus || (
+                !inprogress
+                    ? message
+                    : {
+                        content: `${textsCap.timerRunningMsg1} ${textsCap.timerRunningMsg2}`,
+                        header: textsCap.timerStarted,
+                        icon: true,
+                        status: 'info'
+                    }
+            ),
             onSubmit: handleSubmit(
                 props,
                 rxState,
@@ -407,22 +417,12 @@ const getInitialState = (props, rxValues) => rxState => {
     const rxBatch = new BehaviorSubject(false)
     const rxBatchData = new BehaviorSubject(new Map())
     // preserve batch & batchData to local storage
-    rxBatch.subscribe(
-        deferred(
-            batch => timer.rxValues.next({
-                [inputNames.batch]: batch
-            }),
-            300,
-        )
-    )
-    rxBatchData.subscribe(
-        deferred(
-            data => timer.rxValues.next({
-                [inputNames.batchData]: data,
-            }),
-            300,
-        )
-    )
+    rxBatch.subscribe(batch => timer.rxValues.next({
+        [inputNames.batch]: batch
+    }))
+    rxBatchData.subscribe(data => timer.rxValues.next({
+        [inputNames.batchData]: data,
+    }))
     const rxManualEntry = copyRxSubject(
         timer.rxValues,
         null,
@@ -717,6 +717,8 @@ const getInitialState = (props, rxValues) => rxState => {
         ),
         // set loading status until activity options are loaded
         loading: true,
+        rxBatchData,
+        rxQueueId: new BehaviorSubject(),
         rxValues,
         submitDisabled: false,
         values,
@@ -808,6 +810,11 @@ const importFromFile = () => new Promise((resolve) => {
     const inputs = [{
         accept: '.csv',
         label: 'Select a file',
+        labelDetails: (
+            <a href={sampleCSVFilePath} download>
+                Download sample file.
+            </a>
+        ),
         name: 'file',
         required: true,
         type: 'file',
@@ -853,7 +860,12 @@ const handleSubmit = (
     rxState,
     rxActivities
 ) => async (_, values) => {
-    if (values.batch) return alert('Batch submit to be implemented')
+    const { rxBatchData, rxQueueId } = rxState.value
+    rxQueueId.value && rxQueueId.next(null) // reset any previous failed queue ID
+    const {
+        batch = false,
+        batchData = new Map()
+    } = values
     const tValues = timer.getValues()
     const {
         tsStopped,
@@ -861,12 +873,11 @@ const handleSubmit = (
         manualEntry
     } = tValues
     // pause timer
-    if (inprogress) return timer.pause()
+    if (!batch && inprogress) return timer.pause()
 
     const done = tsStopped || manualEntry
     // start/resume timer
-    if (!done) return handleStartTimer(rxState)
-
+    if (!batch && !done) return handleStartTimer(rxState)
     // proceed to submit time
     const activityId = values[inputNames.activityId]
     // make sure the activity ID is available in the activity options
@@ -874,19 +885,100 @@ const handleSubmit = (
         ?.value
         ?.get
         ?.(activityId)
-    activity && await handleSubmitTime(
-        props,
-        rxState,
-        activityId,
-        NEW_RECORD_HASH, // specific ID used to indicate creation of new time record
-        activity.name,
-        {
+    const records = !batch
+        ? [{
             ...values,
             ...tValues,
             duration: timer.getDuration(),
+        }]
+        : [...batchData]
+            .map(([_batchItemId, { duration, tsStarted }]) => {
+                const ignore = !!batch && (
+                    !duration
+                    || !BLOCK_DURATION_REGEX.test(duration || '')
+                    || DURATION_ZERO === duration
+                    || !isValidDate(tsStarted)
+                )
+                if (ignore) return
+                return {
+                    ...values,
+                    ...tValues,
+                    _batchItemId,
+                    duration,
+                    tsStarted,
+                }
+            }).filter(Boolean)
+    if (!activity || !records.length) return
+
+    const shouldConfirm = records.length > 1
+    if (shouldConfirm) await confirmAsPromise(
+        {
+            header: `${textsCap.msgCreateRecord} (${records.length})?`,
+            confirmButton: {
+                content: textsCap.proceed,
+                positive: true,
+            },
+            content: (
+                <DataTable {...{
+                    columns: [
+                        {
+                            content: ({ tsStarted }) => format(
+                                tsStarted,
+                                true,
+                                false,
+                                true
+                            ),
+                            key: 'tsStarted',
+                            textAlign: 'center',
+                            title: textsCap.startTime,
+                        },
+                        {
+                            key: 'duration',
+                            textAlign: 'center',
+                            title: textsCap.duration,
+                        },
+                    ],
+                    containerProps: {
+                        style: { margin: 0 },
+                    },
+                    data: records,
+                    perPage: 100,
+                    searchable: false,
+                }} />
+            ),
+            size: 'tiny'
         },
-        statuses.submit
+        null,
+        { style: { padding: 0 } },
     )
+    const results = []
+    for (let i = 0;i < records.length;i++) {
+        const record = records[i]
+        const { _batchItemId } = record
+        const success = await handleSubmitTime(
+            props,
+            rxState,
+            activityId,
+            NEW_RECORD_HASH, // specific ID used to indicate creation of new time record
+            activity.name,
+            record,
+            statuses.submit,
+            undefined,
+            !shouldConfirm,
+        ).catch(_ => false)
+        results.push(success)
+        if (!batch) continue
+
+        if (!rxBatchData || !_batchItemId || !success) continue
+
+        // if success, remove item from table
+        rxBatchData.value.delete(_batchItemId)
+        rxBatchData.next(
+            new Map(rxBatchData.value)
+        )
+    }
+    // clear timer and from values if all success
+    results.every(x => x === true) && setTimeout(() => handleReset(rxState))
 }
 
 export const handleSubmitTime = async (
@@ -898,11 +990,14 @@ export const handleSubmitTime = async (
     values,
     status,
     reason,
+    doConfirm = true
 ) => {
-    const blockNumber = await subjectAsPromise(rxBlockNumber)[0]
+    const isUpdate = recordId && recordId !== NEW_RECORD_HASH
     const { onSubmit } = props
+    const { rxQueueId } = rxState.value
+    const blockNumber = await subjectAsPromise(rxBlockNumber)[0]
     const {
-        breakCount,
+        breakCount = 0,
         duration,
         workerAddress,
 
@@ -926,30 +1021,6 @@ export const handleSubmitTime = async (
             status: 'error',
         }
     })
-    const handleResult = success => {
-        isFn(onSubmit) && onSubmit(success, values)
-        rxState.next({
-            closeText: undefined,
-            message: {
-                content: success
-                    ? status === statuses.draft
-                        ? textsCap.msgSavedAsDraft
-                        : textsCap.msgSubmitted
-                    : textsCap.transactionFailed,
-                header: success
-                    ? textsCap.success
-                    : textsCap.error,
-                icon: true,
-                status: success
-                    ? 'success'
-                    : 'error',
-            },
-            submitInProgress: false,
-            success,
-        })
-
-        success && setTimeout(() => handleReset(rxState))
-    }
     const qDesc = `${textsCap.activity}: ${activityName} | ${textsCap.duration}: ${values.duration}`
     const queueProps = queueables.record.save(
         workerAddress,
@@ -963,9 +1034,10 @@ export const handleSubmitTime = async (
         blockEnd,
         breakCount,
         {
-            title: textsCap.newRecord,
+            title: !isUpdate
+                ? textsCap.msgCreateRecord
+                : textsCap.msgUpdateRecord,
             description: qDesc,
-            then: handleResult,
         }
     )
 
@@ -991,7 +1063,7 @@ export const handleSubmitTime = async (
             }],
         }} />
     )
-    const confirmed = await confirmAsPromise({
+    const confirmed = !doConfirm || await confirmAsPromise({
         collapsing: true,
         cancelButton: textsCap.goBack,
         confirmButton: (
@@ -1008,20 +1080,24 @@ export const handleSubmitTime = async (
     // send task to queue service
     if (!confirmed) return
 
-    // execute the transaction
-    addToQueue(queueProps)
-
     rxState.next({
         closeText: textsCap.close,
+        message: null,
         submitInProgress: true,
-        message: {
-            content: `${textsCap.requestQueuedMsg1} ${textsCap.requestQueuedMsg2}`,
-            header: textsCap.addedToQueue,
-            status: 'loading',
-            icon: true
-        },
+        success: false,
     })
-
+    // execute the transaction
+    const queueId = addToQueue(queueProps)
+    rxQueueId.next(queueId)
+    // wait until the transaction is completed
+    const success = await awaitComplete(queueId) === 'success'
+    rxState.next({
+        closeText: undefined,
+        submitInProgress: false,
+        success,
+    })
+    isFn(onSubmit) && onSubmit(success, values)
+    return success
 }
 
 const tsToLocalString = ts => {

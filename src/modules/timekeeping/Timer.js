@@ -121,6 +121,7 @@ export default class Timer {
         this.rxInterval.next(0)
         this.rxValues.next({
             ...extraValues,
+            batchData: new Map(),
             breakCount: 0,
             inprogress: false,
             tsStopped: null,

@@ -24,6 +24,7 @@ const plugins = [
 			'./public/mstile-150x150.png',
 			'./public/safari-pinned-tab.svg',
 			'./public/site.webmanifest',
+			'./public/sample-batch-time.csv', // sample file for Timekeeping batch import
 			// {
 			//   from: path.resolve(__dirname, 'public/'),
 			//   // to: './dist',

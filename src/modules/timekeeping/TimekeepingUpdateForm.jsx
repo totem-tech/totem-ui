@@ -3,7 +3,7 @@ import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
 import { translated } from '../../utils/languageHelper'
-import { useRxState } from '../../utils/reactjs'
+import { useQueueItemStatus, useRxState } from '../../utils/reactjs'
 import {
     DURATION_ZERO,
     durationToBlockCount,
@@ -77,6 +77,9 @@ const textsCap = {
     transactionFailed: 'blockchain transaction failed!',
     updateFormHeader: 'update Record',
     workerBannedMsg: 'permission denied',
+
+    msgSavedAsDraft: 'your time record has been saved as draft',
+    msgSubmitted: 'your time record has been submitted for approval',
 }
 translated(textsCap, true)
 
@@ -88,8 +91,32 @@ const inputNames = {
 
 const TimekeepingUpdateForm = props => {
     const [state] = useRxState(getInitialState(props))
+    const {
+        message,
+        rxQueueId,
+        submitStatus
+    } = state
+    // when form is submitted rxQueueId & submitStatus are set & queue status (message) will be displayed automatically.
+    const queueStatus = useQueueItemStatus(
+        rxQueueId,
+        message => message?.status !== 'success'
+            ? message
+            : {
+                // replace header and include a button below the success message to open the team list on a modal
+                ...message,
+                content: submitStatus === statuses.draft
+                    ? textsCap.msgSavedAsDraft
+                    : textsCap.msgSubmitted,
+            },
+    )
 
-    return <FormBuilder {...{ ...props, ...state }} />
+    return (
+        <FormBuilder {...{
+            ...props,
+            ...state,
+            message: queueStatus || message,
+        }} />
+    )
 }
 export default TimekeepingUpdateForm
 TimekeepingUpdateForm.defaultProps = {
@@ -158,6 +185,7 @@ const getInitialState = props => rxState => {
             true
         ),
         onSubmit: handleSubmit(props, rxState),
+        rxQueueId: new BehaviorSubject(),
         values: values,
     }
     return state
@@ -178,6 +206,8 @@ const handleStatusChange = rxState => (_, values) => {
 }
 
 const handleSubmit = (props, rxState) => async (_, formValues) => {
+    const { rxQueueId } = rxState.value
+    rxQueueId.value && rxQueueId.next(null) // reset any previous failed queue ID
     const duration = formValues[inputNames.duration]
     const submitStatus = formValues[inputNames.submitStatus]
     const {
@@ -199,6 +229,7 @@ const handleSubmit = (props, rxState) => async (_, formValues) => {
         breakCount: nr_of_breaks || 0,
         duration,
     }
+    rxState.next({ submitStatus })
     await handleSubmitTime(
         props,
         rxState,
