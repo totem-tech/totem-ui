@@ -1,5 +1,5 @@
-Start time (YYYY-MM-DD HH:mm:ss),Duration (HH:mm:ss),Remarks
-2023-07-07 09:00,08:00:00,Start time in local time zone
-2023-07-08 09:00,08:00,Duration without seconds
-2023-07-09 09:00,08:00:00,
-2023-07-10T09:00:00Z,09:00:00,Start time in UTC format
+Start time (YYYY-MM-DD HH:mm:ss),End time (YYYY-MM-DD HH:mm:ss),Duration (HH:mm:ss),Remarks
+2023-07-07 09:00,2023-07-07 17:00,08:00:00,Start time in local time zone
+2023-07-08 09:00,2023-07-08 16:00,07:00,Duration without seconds
+2023-07-09 09:00,2023-07-09 13:00,06:00:00,
+2023-07-10T09:00:00Z,2023-07-10T18:00:00Z,09:00:00,Start time in UTC format

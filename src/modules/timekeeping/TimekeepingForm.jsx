@@ -83,6 +83,7 @@ const textsCap = {
     blockStart: 'start block',
     cancelWarning: 'you have a running timer. Would you like to stop and exit?',
     checkingActivityStatus: 'checking activity status...',
+    endTime: 'end time',
     errRejectedDurationUnchanged: 'rejected record requires duration change in order to re-sumbit',
     finishedAt: 'finished at',
     format: 'format',
@@ -305,7 +306,7 @@ TimekeepingForm.defaultProps = {
     header: textsCap.timekeeping,
     // prevents multiple modal being open
     modalId: 'TimekeepingForm',
-    size: 'tiny',
+    size: 'small',
 }
 TimekeepingForm.propTypes = {
     activityId: PropTypes.string,
@@ -574,6 +575,40 @@ const getInitialState = (props, rxValues) => rxState => {
                         },
                         {
                             collapsing: true,
+                            content: ({ tsStopped = '', ...rest }, id) => (
+                                <div>
+                                    <FormInput {...{
+                                        key: id,
+                                        name: 'tsStopped',
+                                        onChange: e => {
+                                            const tsStopped = e?.target?.value
+                                            tsStopped && rxBatchData.next(
+                                                new Map(
+                                                    rxBatchData.value.set(id, {
+                                                        ...rest,
+                                                        tsStopped: tsStopped,
+                                                    })
+                                                )
+                                            )
+                                        },
+                                        preservecursor: 'no',
+                                        step: 1, // enables seconds
+                                        style: {
+                                            border: 'none',
+                                            borderRadius: 0,
+                                            height: 42,
+                                        },
+                                        type: 'datetime-local',
+                                        value: tsStopped,
+                                    }} />
+                                </div>
+                            ),
+                            key: 'tsStopped',
+                            style: { padding: 0 },
+                            title: textsCap.endTime,
+                        },
+                        {
+                            collapsing: true,
                             content: ({ duration = '', ...rest }, id) => (
                                 <FormInput {...{
                                     key: id,
@@ -614,7 +649,7 @@ const getInitialState = (props, rxValues) => rxState => {
                                         e.preventDefault()
                                         const map = rxBatchData.value
                                         map.delete(key)
-                                        rxBatchData.next(map)
+                                        rxBatchData.next(new Map(map))
                                     },
                                     style: { margin: 0 },
                                     title: 'Remove'
@@ -646,7 +681,10 @@ const getInitialState = (props, rxValues) => rxState => {
                                 importedData.forEach(entry =>
                                     map.set(entry.tsStarted, {
                                         ...entry,
-                                        tsStarted: tsToLocalString(entry.tsStarted)
+                                        tsStarted: tsToLocalString(entry.tsStarted),
+                                        tsStopped: entry.tsStopped
+                                            ? tsToLocalString(entry.tsStopped)
+                                            : undefined
                                     })
                                 )
                                 rxBatchData.next(
@@ -770,6 +808,7 @@ const importFromFile = () => new Promise((resolve) => {
                         {textsCap.invalidFile}
                         <ul>
                             <li>{textsCap.startTime} ({textsCap.format}: YYYY-MM-DD HH:mm:ss)</li>
+                            <li>{textsCap.endTime} ({textsCap.format}: YYYY-MM-DD HH:mm:ss)</li>
                             <li>{textsCap.duration} ({textsCap.format}: HH:mm:ss)</li>
                         </ul>
                     </div>
@@ -780,13 +819,15 @@ const importFromFile = () => new Promise((resolve) => {
             reader.onload = file => {
                 try {
                     const content = file.target.result
-                    const keys = ['tsStarted', 'duration']
+                    const keys = ['tsStarted', 'tsStopped', 'duration']
                     data = csvToArr(content, keys)
                         .filter(x => {
                             const valid = isValidDate(x.tsStarted)
+                                && isValidDate(x.tsStopped)
                                 && isValidDate(`2000-01-01T${x.duration}`)
                             if (valid) {
                                 x.tsStarted = new Date(x.tsStarted).toISOString()
+                                x.tsStopped = new Date(x.tsStopped).toISOString()
                             }
                             return valid
                         })
@@ -870,10 +911,7 @@ const handleSubmit = (
     } = rxState.value
     message && rxState.next({ message: null })
     rxQueueId.value && rxQueueId.next(null) // reset any previous failed queue ID
-    const {
-        batch = false,
-        batchData = new Map()
-    } = values
+    const { batch = false } = values
     const tValues = timer.getValues()
     const {
         tsStopped,
@@ -900,22 +938,30 @@ const handleSubmit = (
         }
     })
 
+    console.log({ values: values.batchData, rx: rxBatchData.value })
+
     const records = !batch
         ? [{
             ...values,
             ...tValues,
             duration: timer.getDuration(),
         }]
-        : [...batchData].map(([_batchItemId, record]) => {
+        : [...rxBatchData.value].map(([_batchItemId, record]) => {
             // add missing seconds
-            let { duration, tsStarted } = record
+            let {
+                duration,
+                tsStarted,
+                tsStopped,
+            } = record
             if (duration?.length === 5) duration += ':00'
             const ignore = (
                 !duration
                 || !tsStarted
+                || !tsStopped
                 || !BLOCK_DURATION_REGEX.test(duration)
                 || DURATION_ZERO === duration
                 || !isValidDate(tsStarted)
+                || !isValidDate(tsStopped)
             )
             return !ignore && {
                 ...values,
@@ -923,6 +969,7 @@ const handleSubmit = (
                 _batchItemId,
                 duration,
                 tsStarted,
+                tsStopped,
             }
         }).filter(Boolean)
     if (!records.length) return
@@ -944,9 +991,20 @@ const handleSubmit = (
                                     tsStarted,
                                     true,
                                     false,
-                                    true
+                                    false
                                 ),
                                 key: 'tsStarted',
+                                textAlign: 'center',
+                                title: textsCap.startTime,
+                            },
+                            {
+                                content: ({ tsStopped }) => format(
+                                    tsStopped,
+                                    true,
+                                    false,
+                                    false
+                                ),
+                                key: 'tsStopped',
                                 textAlign: 'center',
                                 title: textsCap.startTime,
                             },
@@ -1016,6 +1074,7 @@ export const handleSubmitTime = async (
     const { onSubmit } = props
     const { rxQueueId } = rxState.value
     const blockNumber = await subjectAsPromise(rxBlockNumber)[0]
+    console.log('before', { ...values })
     const {
         breakCount = 0,
         duration,
@@ -1043,7 +1102,7 @@ export const handleSubmitTime = async (
     })
     const qDesc = [
         `${textsCap.activity}: ${activityName}`,
-        `${textsCap.startTime}: ${format(tsStarted, true, false, true)}`,
+        `${textsCap.startTime}: ${format(tsStarted, true, false, false)}`,
         `${textsCap.duration}: ${values.duration}`
     ].join('\n')
 
@@ -1065,6 +1124,10 @@ export const handleSubmitTime = async (
             description: qDesc,
         }
     )
+    console.log({
+        startedAt: blockToDate(blockNumber, blockStart),
+        finishedAt: blockToDate(blockNumber, blockEnd),
+    })
 
     const content = (
         <DataTableVertical {...{
@@ -1083,8 +1146,8 @@ export const handleSubmitTime = async (
                 duration,
                 numberOfBlocks: blockCount,
                 numberOfBreaks: breakCount,
-                startedAt: blockToDate(blockNumber, blockStart),
-                finishedAt: blockToDate(blockNumber, blockEnd),
+                startedAt: format(tsStarted, true, false, false),
+                finishedAt: format(tsStopped, true, false, false),
             }],
         }} />
     )
