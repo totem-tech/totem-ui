@@ -50,13 +50,20 @@ export const rxCurrencies = new Subject()
  *                      @toCurrency      Object
  *                  ]
  */
-export const convertTo = async (amount = 0, from, to, decimals, dateOrROE, decimalOverhead = 2) => {
-    from = from === networkCurrency
-        ? currencyDefault
-        : from
-    to = to === networkCurrency
-        ? currencyDefault
-        : to
+export const convertTo = async (
+    amount = 0,
+    from,
+    to,
+    decimals,
+    dateOrROE,
+    decimalOverhead = 2
+) => {
+    // from = from === networkCurrency
+    //     ? currencyDefault
+    //     : from
+    // to = to === networkCurrency
+    //     ? currencyDefault
+    //     : to
     const currencies = await getCurrencies()
     const USD = 'USD'
     let fromCurrency, toCurrency, usdEntry
@@ -119,7 +126,6 @@ export const convertTo = async (amount = 0, from, to, decimals, dateOrROE, decim
 
 const fetchCurrencies = async (cached = rwCache().currencies) => {
     const hash = generateHash(cached)
-
     let currencies = await client.currencyList(hash)
 
     // currencies list is the same as in the server => use cached
@@ -140,8 +146,9 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
 
 // get selected currency code
 export function getSelected() {
-    const selected = rw().selected || currencyDefault
-    return selected
+    const { selected } = rw()
+    console.log({ selected })
+    return selected || currencyDefault
 }
 
 // get list of currencies 
@@ -164,13 +171,15 @@ export const setSelected = async (currency) => {
         ? { selected: currency }
         : undefined
     newValue && rxSelected.next(currency)
-    return rw(newValue).selected || currencyDefault
+    const { selected } = rw(newValue)
+    return selected || currencyDefault
 }
 
 export const updateCurrencies = async () => {
-    const { updatePromise } = updateCurrencies
-    if (lastUpdated && new Date() - lastUpdated < updateFrequencyMs) return
     try {
+        const { updatePromise } = updateCurrencies
+        const skip = lastUpdated && new Date() - lastUpdated < updateFrequencyMs
+        if (skip) return
         // prevents making multiple requests
         if (updatePromise) return await updatePromise
 
@@ -178,12 +187,14 @@ export const updateCurrencies = async () => {
         const p = fetchCurrencies(cached)
         // only use timeout if there is cached data available.
         // First time load must retrieve full list of currencies.
-        const tp = !!cached && PromisE.timeout(p, 3000)
+        const tp = cached?.length && PromisE
+            .timeout(p, 3000)
             // if request fails resolve with cached value
             .catch(() => cached)
         updateCurrencies.updatePromise = p
 
-        return await (tp || p)
+        const result = await (tp || p)
+        return result
     } catch (err) {
         console.trace('Failed to retrieve currencies:', err)
     }

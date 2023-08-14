@@ -430,8 +430,8 @@ const getInitialState = props => rxState => {
                         { label: textsCap.goods, value: 2 },
                     ],
                     radio: true,
+                    rxValue: new BehaviorSubject(0), // default: service
                     type: 'checkbox-group',
-                    value: 0, // default: service
                 },
                 {
                     customMessages: {

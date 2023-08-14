@@ -171,7 +171,10 @@ export class FormInput extends Component {
 			value = isFn(rxValueModifier)
 				? rxValueModifier(value)
 				: value
-			if (this.ignoreUpdate || this.value === value) return
+			if (this.ignoreUpdate || this.value === value) {
+				this.ignoreUpdate = false
+				return
+			}
 			this.handleChange({}, { ...this.props, value })
 		})
 		this.subscriptions.rxOptions = isSubjectLike(rxOptions)

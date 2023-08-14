@@ -951,8 +951,6 @@ const handleSubmit = (
         }
     })
 
-    console.log({ values: values.batchData, rx: rxBatchData.value })
-
     const records = !batch
         ? [{
             ...values,
@@ -1087,7 +1085,6 @@ export const handleSubmitTime = async (
     const { onSubmit } = props
     const { rxQueueId } = rxState.value
     const blockNumber = await subjectAsPromise(rxBlockNumber)[0]
-    console.log('before', { ...values })
     const {
         breakCount = 0,
         duration,
