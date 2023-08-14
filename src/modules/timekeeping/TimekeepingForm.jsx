@@ -236,7 +236,6 @@ const TimekeepingForm = React.memo(({
             : undefined,
     }
 
-
     return (
         <FormBuilder {...{
             ...props,
@@ -491,7 +490,12 @@ const getInitialState = (props, rxValues) => rxState => {
                 label: textsCap.batchTime,
                 value: true,
             }],
-            onChange: (_, values) => !!values[inputNames.batch] && addBatchLine(true),
+            onChange: (_, values) => {
+                !!values[inputNames.batch] && addBatchLine(true)
+
+                timer.pause()
+                if (!values.tsStarted) return
+            },
             rxValue: rxBatch,
             toggle: true,
             type: 'checkbox-group'
@@ -643,6 +647,7 @@ const getInitialState = (props, rxValues) => rxState => {
                             collapsing: true,
                             content: (_, key) => (
                                 <Button {...{
+                                    as: 'a',
                                     circular: true,
                                     icon: 'minus',
                                     onClick: e => {
@@ -670,6 +675,7 @@ const getInitialState = (props, rxValues) => rxState => {
                     // },
                     topLeftMenu: [
                         {
+                            as: 'a',
                             content: 'Import CSV',
                             icon: 'file excel outline',
                             onClick: async (_si, _d, e) => {
@@ -693,6 +699,7 @@ const getInitialState = (props, rxValues) => rxState => {
                             }
                         },
                         {
+                            as: 'a',
                             content: 'Add line',
                             icon: 'plus',
                             onClick: (_si, _d, e) => {
@@ -1124,10 +1131,6 @@ export const handleSubmitTime = async (
             description: qDesc,
         }
     )
-    console.log({
-        startedAt: blockToDate(blockNumber, blockStart),
-        finishedAt: blockToDate(blockNumber, blockEnd),
-    })
 
     const content = (
         <DataTableVertical {...{
@@ -1175,7 +1178,12 @@ export const handleSubmitTime = async (
         success: false,
     })
     // execute the transaction
-    const queueId = addToQueue(queueProps)
+    const queueId = addToQueue(
+        queueProps,
+        null,
+        null,
+        'TimekeepingForm'
+    )
     rxQueueId.next(queueId)
     // wait until the transaction is completed
     const success = await awaitComplete(queueId) === 'success'
