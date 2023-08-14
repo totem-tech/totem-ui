@@ -4,7 +4,7 @@ import { hasValue, isFn, objCreate } from '../utils/utils'
 import FormInput from '../components/FormInput'
 import { getConnection, query } from '../services/blockchain'
 import { translated } from '../utils/languageHelper'
-import { confirm } from '../services/modal'
+import { confirm, showInfo } from '../services/modal'
 import { RxSubjectView, iUseReducer, useQueryBlockchain, useRxSubject } from '../utils/reactjs'
 import client, {
 	getUser,
@@ -24,6 +24,7 @@ const textsCap = {
 	faucetDisable: 'disable faucet?',
 	faucetEnable: 'enable faulcet?',
 	faucetEnabled: 'faucet available',
+	faucetErr: 'failed to update faucet status!',
 	hostConneced: 'Connected to host',
 	hostDisconnected: 'Disconnected from host',
 	lag: 'lag',
@@ -189,7 +190,6 @@ export default function SystemStatus() {
 			</GridRow>
 
 			<RxSubjectView {...{
-				key: 'maintenancemode',
 				subject: [
 					rxIsConnected,
 					rxIsLoggedIn,
@@ -252,15 +252,32 @@ export default function SystemStatus() {
 								onClick: e => {
 									e.preventDefault()
 									e.stopPropagation()
-									isAdmin && confirm({
+									if (!isAdmin) return
+
+									const modalId = 'faucet-status'
+									confirm({
 										header: faucetEnabled
 											? textsCap.faucetDisable
 											: textsCap.faucetEnable,
 										// revert to original value
 										onCancel: () => rxFaucetEnabled.next(faucetEnabled),
-										onConfirm: () => client.faucetStatus(!faucetEnabled),
+										onConfirm: () => client
+											.faucetStatus(!faucetEnabled)
+											.catch(err =>
+												showInfo({
+													content: (
+														<pre style={{
+															whiteSpace: 'pre-wrap',
+															background: '#cdcdcd',
+														}}>
+															{err.stack}
+														</pre>
+													),
+													header: textsCap.faucetErr
+												}, modalId)
+											),
 										size: 'mini',
-									})
+									}, modalId)
 								},
 								value: faucetEnabled,
 							}} />

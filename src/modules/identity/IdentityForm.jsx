@@ -24,6 +24,7 @@ import {
 	isBool,
 	className,
 	generateHash,
+	getUrlParam,
 } from '../../utils/utils'
 import {
 	inputNames as activityInputNames,
@@ -53,6 +54,10 @@ import {
 	USAGE_TYPES,
 } from './identity'
 import IdentityIcon from './IdentityIcon'
+
+const deloitteEnabled = getUrlParam('deloitte').toLowerCase() === 'true'
+	// keep enabled on staging and dev environments
+	|| ['dev.totem.live', 'localhost:4430', 'localhost:8080'].includes(window.location.host)
 
 const textsCap = {
 	address: 'address',
@@ -835,7 +840,7 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 		rxInprogress.next(success && status)
 
 		// if (!success) return
-		// // update identity and store deloitteId obwith with 
+		// // update identity and store deloitteId 
 		// set(address, {
 		// 	deloitteId: {
 		// 		finalHash,
@@ -851,7 +856,7 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 export const UseDeloiteVerified = ({
 	address,
 	render
-}) => !address
+}) => !deloitteEnabled || !address
 		? render(false)
 		: (
 			<UseHook {...{
