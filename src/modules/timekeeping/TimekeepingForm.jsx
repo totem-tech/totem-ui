@@ -910,15 +910,14 @@ const handleSubmit = (
             // add missing seconds
             let { duration, tsStarted } = record
             if (duration?.length === 5) duration += ':00'
-            const ignore = !!batch && (
+            const ignore = (
                 !duration
                 || !tsStarted
                 || !BLOCK_DURATION_REGEX.test(duration)
                 || DURATION_ZERO === duration
                 || !isValidDate(tsStarted)
             )
-            if (ignore) return
-            return {
+            return !ignore && {
                 ...values,
                 ...tValues,
                 _batchItemId,
