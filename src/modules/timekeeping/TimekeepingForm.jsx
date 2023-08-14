@@ -1041,7 +1041,12 @@ export const handleSubmitTime = async (
             status: 'error',
         }
     })
-    const qDesc = `${textsCap.activity}: ${activityName} | ${textsCap.duration}: ${values.duration}`
+    const qDesc = [
+        `${textsCap.activity}: ${activityName}`,
+        `${textsCap.startTime}: ${format(tsStarted, true, false, true)}`,
+        `${textsCap.duration}: ${values.duration}`
+    ].join('\n')
+
     const queueProps = queueables.record.save(
         workerAddress,
         activityId,

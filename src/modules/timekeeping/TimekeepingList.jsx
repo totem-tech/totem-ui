@@ -262,6 +262,9 @@ const getInitialState = (props, rxRecords) => rxState => {
             data.get(recordId),
             recordId,
             approve,
+            approve
+                ? textsCap.approve
+                : textsCap.reject
         )
     )
     const topRightMenu = [
@@ -428,6 +431,7 @@ export const getActionButtons = ({
             title: textsCap.edit,
         },
         !archive && {
+            // approve button
             disabled: inProgress || !isSubmitted,
             hidden: !manage || approved,
             icon: 'check',
@@ -484,12 +488,13 @@ export const getActionButtons = ({
                     false,
                     textsCap.reject
                 ),
-                size: 'tiny'
+                size: 'mini'
             }),
             negative: true,
             title: textsCap.reject,
         },
         archive && {
+            // unarchive button
             disabled: inProgress,
             icon: 'reply all',
             loading: isBtnInprogress(textsCap.unarchive),
