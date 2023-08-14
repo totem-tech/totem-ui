@@ -9,7 +9,7 @@ import {
 } from 'semantic-ui-react'
 import { closeModal, newId } from '../services/modal'
 import { translated } from '../utils/languageHelper'
-import { Message, statuses } from '../utils/reactjs'
+import { Message, statuses, unsubscribe } from '../utils/reactjs'
 import {
 	hasValue,
 	isArr,
@@ -45,6 +45,7 @@ class FormBuilder extends Component {
 			inputs,
 			open,
 			rxValues = new BehaviorSubject(),
+			size,
 		} = props
 		if (!`${id || ''}`.startsWith(prefix)) id = prefix + id
 		const values = getValues(inputs)
@@ -53,14 +54,28 @@ class FormBuilder extends Component {
 			id,
 			open,
 			rxValues,
+			size: isSubjectLike(size)
+				? size.value
+				: size,
 			values,
 		}
 		this.originalSetState = this.setState
 		this.setState = (s, cb) => this._mounted && this.originalSetState(s, cb)
 	}
 
-	componentWillMount = () => this._mounted = true
-	componentWillUnmount = () => this._mounted = false
+	componentWillMount = () => {
+		this._mounted = true
+		const { size } = this.props
+		this.subscriptions = {
+			size: isSubjectLike(size) && size.subscribe(size =>
+				this.setState({ size })
+			)
+		}
+	}
+	componentWillUnmount = () => {
+		this._mounted = false
+		unsubscribe(this.subscriptions)
+	}
 
 	// recursive interceptor for infinite level of child inputs
 	addInterceptor = (values, parentIndex) => (input, index) => {
@@ -450,7 +465,7 @@ class FormBuilder extends Component {
 				onOpen: onOpen,
 				onSubmit: handleSubmit,
 				open: modalOpen,
-				size: size,
+				size,
 				trigger: trigger,
 			}}>
 				<div className='modal-close' style={styles.closeButton}>

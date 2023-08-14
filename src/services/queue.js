@@ -703,8 +703,10 @@ const setMessage = (task, msg = {}, duration, id, silent = false) => {
     const statusText = task.status !== SUSPENDED
         ? statusTitles[task.status]
         : textsCap.addedToQueue
-    const header = `${msg.header || task.title}: 
-        ${task.type.startsWith('tx_') ? textsCap.transaction : ''} ${statusText}`
+    const strTx = task.type.startsWith('tx_')
+        ? textsCap.transaction + ''
+        : ''
+    const header = `${msg.header || task.title}: ${strTx}${statusText}`
     const EL = ({ children }) => (
         <div style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
             {children}

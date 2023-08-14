@@ -55,9 +55,12 @@ import {
 } from './identity'
 import IdentityIcon from './IdentityIcon'
 
-const deloitteEnabled = getUrlParam('deloitte').toLowerCase() === 'true'
+const deloitteEnabled = getUrlParam('deloitte').toLowerCase() === 'true' || [
 	// keep enabled on staging and dev environments
-	|| ['dev.totem.live', 'localhost:4430', 'localhost:8080'].includes(window.location.host)
+	'dev.totem.live',
+	'localhost:4430',
+	'localhost:8080'
+].includes(window.location.host)
 
 const textsCap = {
 	address: 'address',

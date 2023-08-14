@@ -491,10 +491,16 @@ const getInitialState = (props, rxValues) => rxState => {
                 value: true,
             }],
             onChange: (_, values) => {
-                !!values[inputNames.batch] && addBatchLine(true)
+                const batch = !!values[inputNames.batch]
+                batch && addBatchLine(true)
 
                 timer.pause()
-                if (!values.tsStarted) return
+                rxState.next({
+                    size: batch
+                        ? 'small'
+                        : 'tiny'
+                })
+                // if (!values.tsStarted) return
             },
             rxValue: rxBatch,
             toggle: true,
