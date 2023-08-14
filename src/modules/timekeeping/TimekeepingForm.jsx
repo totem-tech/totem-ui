@@ -917,6 +917,7 @@ const handleSubmit = (
                 || DURATION_ZERO === duration
                 || !isValidDate(tsStarted)
             )
+            if (ignore) return
             return {
                 ...values,
                 ...tValues,
