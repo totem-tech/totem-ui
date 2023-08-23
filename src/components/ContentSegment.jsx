@@ -104,7 +104,7 @@ const ContentSegment = props => {
 				const printStyle = printSize && `
 				@media print { 
 					@page {
-						size: ${printSize}
+						size: ${printSize};
 					}
 				}`
 				const styles = `
