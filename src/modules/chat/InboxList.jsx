@@ -10,6 +10,7 @@ import {
     useMount,
     useRxState,
     useRxSubject,
+    useRxSubjectOrValue,
 } from '../../utils/reactjs'
 import {
     arrSort,
@@ -66,7 +67,8 @@ const textsCap = {
 }
 translated(textsCap, true)
 
-const InboxList = React.memo(({ inboxKey }) => {
+const InboxList = ({ inboxKey = rxOpenInboxKey }) => {
+    inboxKey = useRxSubjectOrValue(rxOpenInboxKey)
     const [loaded, setLoaded] = useState(false)
     useMount(() => setTimeout(() => setLoaded(true), 300))
     const [state, setState] = useRxState({}, s => ({
@@ -149,7 +151,7 @@ const InboxList = React.memo(({ inboxKey }) => {
                 </div>
             </div >
         )
-})
+}
 export default InboxList
 
 export const getInboxName = (inboxKey, settings, userId) => {
@@ -383,7 +385,7 @@ const InboxListItem = React.memo(({
                 if (isMobile && isOpen) return rxExpanded.next(!rxExpanded.value)
 
                 const key = openInboxKey === inboxKey
-                    ? null // close inbox
+                    ? undefined // close inbox
                     : inboxKey
                 // just makes sure an inbox storage is properly initiated
                 // needed for global chat and support
@@ -608,12 +610,14 @@ const InboxActions = React.memo(props => {
             icon: 'trash',
             onClick: e => {
                 e.stopPropagation()
-                isEmpty ? removeInbox(inboxKey) : confirm({
-                    confirmButton: <Button negative content={textsCap.trash} />,
-                    header: textsCap.removeConversation,
-                    onConfirm: () => removeInbox(inboxKey) | rxOpenInboxKey.next(),
-                    size: 'mini',
-                })
+                isEmpty
+                    ? removeInbox(inboxKey)
+                    : confirm({
+                        confirmButton: <Button negative content={textsCap.trash} />,
+                        header: textsCap.removeConversation,
+                        onConfirm: () => removeInbox(inboxKey),
+                        size: 'mini',
+                    })
             },
             title: textsCap.removeConversation
         },

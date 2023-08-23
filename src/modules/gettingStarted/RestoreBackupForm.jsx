@@ -222,7 +222,11 @@ export default class RestoreBackupForm extends Component {
 				const exists = !!this.existingData[key]
 				const numExists = (this.existingData[key] || []).length
 				const allowMerge = exists && MERGEABLES.includes(key)
-				const label = textCapitalize(key.split('totem_').join(''))
+				const label = textCapitalize(
+					key
+						.split('totem_')
+						.join('')
+				)
 				const options = [
 					{
 						label: !exists || numExists <= 0
@@ -384,6 +388,7 @@ export default class RestoreBackupForm extends Component {
 					inline: !isMobile,
 					label: <ILabel>{label}</ILabel>,
 					name: keyC,
+					onChange: console.warn,
 					options,
 					radio: true,
 					required: doMerge,

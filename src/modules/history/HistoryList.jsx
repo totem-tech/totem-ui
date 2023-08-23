@@ -159,6 +159,7 @@ export default function HistoryList(props) {
                             title: textsCap.delete,
                         },
                     ].map((props, i) => <Button {...props} key={i} />),
+                    print: 'no',
                     textAlign: 'center',
                     title: textsCap.action
                 },

@@ -30,7 +30,7 @@ export default function UtilitiesView() {
     useEffect(() => {
         let mounted = true
         query('api.query.sudo.key')
-            .then(adminAddress => 
+            .then(adminAddress =>
                 mounted && setIsAdmin(!!findIdentity(adminAddress))
             )
 
@@ -41,30 +41,35 @@ export default function UtilitiesView() {
             content: PageUtilitiesView,
             icon: '',
             header: texts.pageUtilsHeader,
+            print: false,
             subHeader: texts.pageUtilsSubheader,
         },
         {
             content: SystemStatusView,
             icon: '',
             header: texts.statusHeader,
+            print: false,
             subHeader: texts.statusSubheader,
         },
         BUILD_MODE && {
             content: AdminUtilsForm,
-            header: 'Admin Tools',
             contentProps: { style: { maxWidth: 400 } },
+            header: 'Admin Tools',
+            print: false,
         },
         // keeps runtime upgrade form hidden if user does not own the sudo key
         isAdmin && {
             content: RuntimeUpgradeForm,
             icon: 'wrench',
             header: texts.upgradeHeader,
+            print: false,
             subHeader: texts.upgradeSubheader,
         },
         {
             content: EventList,
             icon: '',
             header: texts.blockchainEvents,
+            print: false,
         },
         // {
         //     content: <TransactionsView />,

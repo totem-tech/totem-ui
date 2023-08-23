@@ -4,7 +4,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const path = require('path')
 const Dotenv = require('dotenv-webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const CompressionPlugin = require("compression-webpack-plugin");
+// const CompressionPlugin = require("compression-webpack-plugin");
 
 const protocol = (process.env.PROTOCOL || 'https').toLowerCase()
 const port = process.env.PORT || 8080

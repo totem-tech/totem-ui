@@ -1,6 +1,6 @@
 import { validateMnemonic } from 'bip39'
 import PropTypes from 'prop-types'
-import React, { Component } from 'react'
+import React, { Component, useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import imgDeloitteSignup from '../../assets/deloitte/signup-for-deloitte.svg'
 import { Button } from '../../components/buttons'
@@ -14,7 +14,9 @@ import {
 	RxSubjectView,
 	UseHook,
 	statuses,
-	useQueryBlockchain
+	useQueryBlockchain,
+	useRxSubject,
+	useUnmount
 } from '../../utils/reactjs'
 import {
 	isFn,
@@ -856,25 +858,54 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 	}
 }
 
+const subscriptions = {}
+const checkDeloitteVerified = (address) => {
+	if (!address) return
+
+	const id = getDeloitteId(address)
+
+	subscriptions[id] ??= {
+		count: 0,
+		rxVerified: new BehaviorSubject()
+	}
+	const entry = subscriptions[id]
+	entry.count++
+	if (!entry.unsubscribe) {
+		let handled = false
+		const handleResult = isVerified => {
+			entry.rxVerified.next(isVerified)
+			handled = true
+		}
+		const unsubscribePromise = query(
+			'api.query.bonsai.isValidRecord',
+			[id, handleResult],
+		)
+		entry.unsubscribe = () => {
+			entry.count--
+			if (entry.count > 1) return
+
+			unsubscribePromise
+				.then(u => u?.())
+				.catch(_ => handled = true)
+		}
+		// If connection fails or takes longer than 10 seconds set isVerified to false.
+		// This will stop the loading spinner.
+		setTimeout(() => !handled && entry.rxVerified.next(false), 10_000)
+	}
+
+	return [entry.rxVerified, entry.unsubscribe]
+}
+
 export const UseDeloiteVerified = ({
 	address,
 	render
-}) => !deloitteEnabled || !address
-		? render(false)
-		: (
-			<UseHook {...{
-				args: [{
-					args: [
-						// determinictic id for deloitte
-						getDeloitteId(address)
-					],
-					func: 'api.query.bonsai.isValidRecord',
-				}],
-				hook: useQueryBlockchain,
-				render: ({
-					message,
-					isLoading = message?.status === 'loading',
-					result: isVerified
-				} = {}) => render(!!isVerified, isLoading),
-			}} />
-		)
+}) => {
+	const [rxVerified, unsubscribe] = useMemo(() => checkDeloitteVerified(address) || [], [])
+	if (!deloitteEnabled || !rxVerified) return render(false)
+
+	useUnmount(unsubscribe)
+
+	const [isVerified] = useRxSubject(rxVerified)
+
+	return render(!!isVerified, isVerified === undefined)
+}

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import {
 	Divider,
@@ -8,12 +8,18 @@ import {
 	Rail,
 	Segment,
 } from 'semantic-ui-react'
+import uuid from 'uuid'
 import {
 	isMemo,
 	iUseReducer,
 	useRxSubject,
 } from '../utils/reactjs'
-import { isSubjectLike, isFn } from '../utils/utils'
+import printElement from '../utils/reactjs/printElement'
+import {
+	isSubjectLike,
+	isFn,
+	isStr
+} from '../utils/utils'
 import { toggleFullscreen } from '../utils/window'
 import ErrorBoundary from './CatchReactErrors'
 import { Invertible } from './Invertible'
@@ -35,6 +41,8 @@ const ContentSegment = props => {
 		inverted,
 		name,
 		onClose,
+		print = true, // css selector or true
+		printSize, // force print page layout to "portrait" or "landscape"
 		rxTrigger,
 		settings,
 		style,
@@ -43,6 +51,7 @@ const ContentSegment = props => {
 		title,
 		vertical,
 	} = props
+	const id = useMemo(() => `content-segment-${uuid.v1()}`, [])
 	const getContent = useCallback(() => {
 		const {
 			content: Content,
@@ -84,38 +93,80 @@ const ContentSegment = props => {
 		})
 	})
 
+	const printIcon = print && (
+		<Icon {...{
+			color: 'grey',
+			link: true,
+			name: 'print',
+			onClick: () => {
+				const content = document.getElementById(id)
+				if (!content) return
+				const printStyle = printSize && `
+				@media print { 
+					@page {
+						size: ${printSize}
+					}
+				}`
+				const styles = `
+				.no-print { display: none !important; }
+				.content-segment { height: initial !important; }
+				${printStyle || ''}				
+				`
+				printElement(
+					print && isStr(print)
+						? print
+						: '#' + id,
+					undefined,
+					styles,
+				)
+			},
+			size: 'mini',
+			style: { display: 'inline' },
+		}} />
+	)
+
 	return (
 		<Invertible {...{
-			El: Segment,
 			basic: basic,
+			className: 'content-segment',
 			color: color,
 			compact: !!compact,
+			El: Segment,
+			id,
 			inverted,
 			padded: true,
 			style: { ...styles.segment, ...style },
 			vertical: vertical,
 		}}>
-			<Rail internal position='right' close style={styles.closeButtonRail}>
-				{name && (
-					<Icon
-						color='grey'
-						link
-						name='expand'//'expand arrows alternate' 'compress'
-						onClick={() => toggleFullscreen(`#main-content div#${name}`)}
-						size='mini'
-						style={{ display: 'inline' }}
-					/>
+			<Rail {...{
+				className: 'no-print',
+				close: true,
+				internal: true,
+				position: 'right',
+				style: styles.topRightContainer
+			}}>
+				{printIcon}
+
+				{name && ( // full screen icon
+					<Icon {...{
+						color: 'grey',
+						link: true,
+						name: 'expand',//'expand arrows alternate' 'compress'
+						onClick: () => toggleFullscreen(`#main-content div#${name}`),
+						size: 'mini',
+						style: { display: 'inline' },
+					}} />
 				)}
 
-				{isFn(onClose) && (
-					<Icon
-						color='grey'
-						link
-						name='times circle outline'
-						onClick={() => onClose(name)}
-						size='mini'
-						style={{ display: 'inline' }}
-					/>
+				{isFn(onClose) && ( // close icon
+					<Icon {...{
+						color: 'grey',
+						link: true,
+						name: 'times circle outline',
+						onClick: () => onClose(name),
+						size: 'mini',
+						style: { display: 'inline' },
+					}} />
 				)}
 			</Rail>
 
@@ -127,36 +178,38 @@ const ContentSegment = props => {
 							<Text style={{ paddingRight: 5 }}>
 								{headerText}
 							</Text>
-							{subHeader && (
-								<Icon {...{
-									// className='text-deselect'
-									className: 'no-margin',
-									color: showSubHeader ? undefined : 'grey',
-									link: true,
-									loading: showSubHeader,
-									name: 'question circle outline',
-									onClick: () => setState({
-										showSettings: false,
-										showSubHeader: !showSubHeader,
-									}),
-									size: 'small',
-								}} />
-							)}
-							{!!_settings && (
-								<Icon {...{
-									// className='text-deselect'
-									className: 'no-margin',
-									color: showSettings ? undefined : 'grey',
-									link: true,
-									loading: showSettings,
-									name: 'cog',
-									onClick: () => setState({
-										showSettings: !showSettings,
-										showSubHeader: false,
-									}),
-									size: 'small',
-								}} />
-							)}
+							<span className='no-print'>
+								{subHeader && (
+									<Icon {...{
+										// className='text-deselect'
+										className: 'no-margin',
+										color: showSubHeader ? undefined : 'grey',
+										link: true,
+										loading: showSubHeader,
+										name: 'question circle outline',
+										onClick: () => setState({
+											showSettings: false,
+											showSubHeader: !showSubHeader,
+										}),
+										size: 'small',
+									}} />
+								)}
+								{!!_settings && (
+									<Icon {...{
+										// className='text-deselect'
+										className: 'no-margin',
+										color: showSettings ? undefined : 'grey',
+										link: true,
+										loading: showSettings,
+										name: 'cog',
+										onClick: () => setState({
+											showSettings: !showSettings,
+											showSubHeader: false,
+										}),
+										size: 'small',
+									}} />
+								)}
+							</span>
 						</div>
 					</Header.Content>
 					{showSubHeader && (
@@ -251,14 +304,15 @@ const styles = {
 	segment: {
 		overflow: 'auto',
 	},
-	closeButtonRail: {
-		marginTop: 0,
-		marginRight: 25,
-		padding: 0,
+	topRightContainer: {
 		fontSize: 50,
-		width: 50,
 		height: 40,
+		marginTop: 0,
+		// marginRight: 25,
+		padding: 0,
 		maxHeight: 40,
+		// width: 50,
+		width: 'auto',
 	},
 	subHeader: {
 		marginTop: 8

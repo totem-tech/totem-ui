@@ -146,9 +146,7 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
 
 // get selected currency code
 export function getSelected() {
-    const { selected } = rw()
-    console.log({ selected })
-    return selected || currencyDefault
+    return rw().selected || currencyDefault
 }
 
 // get list of currencies 

@@ -232,6 +232,7 @@ export const sidebarItems = [
         icon: 'users',
         header: textsCap.partnersHeader,
         name: 'partners',
+        printSize: 'landscape',
         subHeader: textsCap.partnersSubheader,
         subHeaderDetails: (
             <div>

@@ -5,7 +5,7 @@ import TimeSince from '../../components/TimeSince'
 import { getUser } from '../../utils/chatClient'
 import { translated } from '../../utils/languageHelper'
 // import { Message, useIsMobile } from '../../utils/reactjs'
-import { isObj } from '../../utils/utils'
+import { isArr, isObj } from '../../utils/utils'
 import { Message, useIsMobile } from '../../utils/reactjs'
 
 const textsCap = {
@@ -50,7 +50,7 @@ export default function InboxMessages(props) {
     } = props
     const userId = (getUser() || {}).id
 
-    return (
+    return isArr(messages) && (
         <div {...{ className, onScroll, }}>
             {messages.map((message, i) => (
                 <InboxMessage {...{

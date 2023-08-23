@@ -211,6 +211,8 @@ export const inboxesSettings = () => rw().inbox || {}
 
 // Jump to a specific message within an inbox. will hightlight and blink the message
 export const jumpToMessage = (inboxKey, msgId) => {
+    if (!inboxKey) return
+
     const isMobile = getLayout() === MOBILE
     if (rxOpenInboxKey.value !== inboxKey) {
         // makes sure inbox is not deleted or archived
@@ -446,7 +448,7 @@ setTimeout(() => {
         const visible = rxVisible.value
         const inboxKey = rxOpenInboxKey.value
         const expanded = rxExpanded.value
-        if (!visible || !inboxKey) return
+        if (!inboxKey || !visible || !inboxKey) return
 
         if (getLayout() == MOBILE && !expanded) return
         inboxSettings(inboxKey).unread > 0

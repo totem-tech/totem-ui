@@ -16,7 +16,8 @@ import {
     useIsMobile,
     useMount,
     useRxSubject,
-    useRxSubjectOrValue
+    useRxSubjectOrValue,
+    useRxSubjects
 } from '../../utils/reactjs'
 import { deferred, textEllipsis } from '../../utils/utils'
 import {
@@ -91,26 +92,35 @@ const rxLoaded = new BehaviorSubject(false)
 // delay only the first time inbox is opened
 setTimeout(() => rxLoaded.next(true), 300)
 
-export default function Inbox({ inboxKey }) {
+window.rxOpenInboxKey = rxOpenInboxKey
+export default function Inbox({ inboxKey = rxOpenInboxKey }) {
+    const [messages = []] = useRxSubjects(
+        [rxMsg, inboxKey],
+        ([[key] = [], openInboxKey]) => {
+            key ??= openInboxKey
+            // ignore if not 
+            if (!key || key !== openInboxKey) return IGNORE_UPDATE_SYMBOL
+
+            const msgs = getMessages(key)
+            setTimeout(() => scrollToBottom(isMobile), 200)
+            return msgs || []
+        }
+    )
+    inboxKey = useRxSubjectOrValue(inboxKey) || ''
     const receiverIds = inboxKey.split(',')
     const isTrollbox = receiverIds.includes(TROLLBOX)
     const isGroup = receiverIds.length > 1 || isTrollbox
     const [showMembers, setShowMembers] = useState(false)
     const isMobile = useIsMobile()
     const [loaded] = useRxSubject(rxLoaded)
-    const [messages = []] = useRxSubject(rxMsg, ([key = inboxKey] = []) => {
-        // ignore if not 
-        if (!key || key !== inboxKey) return IGNORE_UPDATE_SYMBOL
-
-        const msgs = getMessages(key)
-        setTimeout(() => scrollToBottom(isMobile), 200)
-        return msgs
-    })
 
     // focus and scoll down to latest msg
     useMount(() => scrollToBottom(isMobile))
 
-    return loaded && !!messages && (
+    const ready = !!inboxKey
+        && loaded
+        && !!messages
+    return ready && (
         <div className='inbox'>
             <div className='inbox-wrap'>
                 <InboxHeader {...{

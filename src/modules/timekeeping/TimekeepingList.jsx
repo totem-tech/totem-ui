@@ -321,6 +321,7 @@ const getInitialState = (props, rxRecords) => rxState => {
         }
     ]
     const state = {
+        ...props,
         rxRecords,
         recordIds,
 
@@ -330,7 +331,6 @@ const getInitialState = (props, rxRecords) => rxState => {
         defaultSort: '_end_block',
         defaultSortAsc: false,
         loading: false,
-        perPage: 10,
         onRowSelect: selectedIds => rxSelectedIds.next([...selectedIds]),
         rowProps: item => {
             const {

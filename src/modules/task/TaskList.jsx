@@ -295,6 +295,7 @@ export const getAssigneeView = (task = {}, taskId, _, props) => {
         && userId
         && applications.find(x => x.userId === userId)
     const applied = userId && !!application
+    applied && console.log({ application, task, userId, fulfiller, owner })
     const rejected = !!applied
         && application.status === 2
     if (isAssigned || !isMarket) return <AddressName {...{ address: fulfiller }} />

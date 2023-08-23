@@ -33,6 +33,7 @@ import storage from './utils/storageHelper'
 import { className } from './utils/utils'
 import { messages, setMessages } from './utils/validator'
 import windowService, { rxGridColumns, gridClasses } from './utils/window'
+import './utils/reactjs/printElement.js'
 
 const logoSrc = TotemButtonLogo
 

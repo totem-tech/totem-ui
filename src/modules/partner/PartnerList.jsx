@@ -12,19 +12,20 @@ import { useRxSubject } from '../../utils/reactjs'
 import { textEllipsis } from '../../utils/utils'
 import { MOBILE, rxLayout } from '../../utils/window'
 import IdentityRequestForm from '../identity/IdentityRequestForm'
-import CompanyForm from './CompanyForm'
+// import CompanyForm from './CompanyForm'
 import {
-	getAddressName,
 	remove,
 	rxPartners,
-	setPublic,
+	// setPublic,
 	visibilityTypes,
 } from './partner'
-import PartnerForm, { inputNames } from './PartnerForm'
+import PartnerForm from './PartnerForm'
 import PartnerIcon from './PartnerIcon'
+import AddressName from './AddressName'
 
-let textsCap = {
+const textsCap = {
 	add: 'add',
+	address: 'address',
 	chat: 'chat',
 	delete: 'delete',
 	edit: 'edit',
@@ -40,7 +41,7 @@ let textsCap = {
 	removePartner: 'remove partner',
 	usedBy: 'used by',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export default function PartnerList(props = {}) {
 	const [tableProps] = useRxSubject(rxLayout, getTableProps)
@@ -48,7 +49,6 @@ export default function PartnerList(props = {}) {
 		Array.from(map).map(([_, partnerOrg]) => {
 			const partner = { ...partnerOrg } // prevents unwanted data being writen to storage when caching is enabled
 			const {
-				associatedIdentity,
 				address,
 				name,
 				tags = [],
@@ -58,7 +58,6 @@ export default function PartnerList(props = {}) {
 			} = partner
 			const isPublic = visibilityTypes.PUBLIC === visibility
 			partner._address = textEllipsis(address, 15, 3)
-			partner._associatedIdentity = associatedIdentity && getAddressName(associatedIdentity)
 			partner._name = (
 				<div style={{
 					margin: !userId
@@ -126,11 +125,17 @@ const getTableProps = layout => {
 				style: { borderLeft: 'none' },
 				title: textsCap.partnerName,
 			},
+			{
+				key: 'address',
+				print: 'only', // only display when printing
+				title: textsCap.address,
+			},
 			!isMobile && {
-				draggableValueKey: 'associatedIdentity',
-				key: '_associatedIdentity',
-				title: textsCap.usedBy,
+				content: ({ associatedIdentity: identity }) => !!identity && <AddressName address={identity} />,
+				draggableValueKey: 'associatedIdentity', // value to be used when user drags the cell
+				print: 'no',
 				style: { maxWidth: 200 },
+				title: textsCap.usedBy,
 			},
 			!isMobile && {
 				key: '_tags',
@@ -142,6 +147,7 @@ const getTableProps = layout => {
 				collapsing: true,
 				content: getActions,
 				draggable: false,
+				print: 'no',
 				title: textsCap.edit,
 			},
 			// !isMobile && {

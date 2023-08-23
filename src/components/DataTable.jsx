@@ -8,6 +8,7 @@ import {
 	Segment,
 	Table,
 } from 'semantic-ui-react'
+import uuid from 'uuid'
 import {
 	arrMapSlice,
 	getKeys,
@@ -29,11 +30,11 @@ import {
 	statuses,
 	unsubscribe,
 } from '../utils/reactjs'
+import { rxPrint } from '../utils/reactjs/printElement'
 import { MOBILE, rxLayout } from '../utils/window'
 import { Button } from './buttons'
 import { Invertible } from './Invertible'
 import Paginator from './Paginator'
-
 
 const mapItemsByPage = (data, pageNo, perPage, callback) => {
 	const start = pageNo * perPage - perPage
@@ -41,16 +42,15 @@ const mapItemsByPage = (data, pageNo, perPage, callback) => {
 	return arrMapSlice(data, start, end, callback)
 }
 
-const textsCap = translated({
+const textsCap = {
 	actions: 'actions',
 	deselectAll: 'deselect all',
 	noDataAvailable: 'no data available',
 	noResultsMsg: 'your search yielded no results',
 	search: 'search',
 	selectAll: 'select all',
-},
-	true
-)[1]
+}
+translated(textsCap, true)
 
 export default class DataTable extends Component {
 	constructor(props) {
@@ -60,6 +60,7 @@ export default class DataTable extends Component {
 			columns,
 			defaultSort,
 			defaultSortAsc,
+			id,
 			pageNo,
 			sortBy,
 		} = props
@@ -70,6 +71,7 @@ export default class DataTable extends Component {
 			defaultSort = sortKey || key
 		}
 		this.state = {
+			id: id || `data-table-${uuid.v1()}`,
 			isMobile: rxLayout.value === MOBILE,
 			keywords: undefined,
 			pageNo: pageNo,
@@ -90,7 +92,53 @@ export default class DataTable extends Component {
 			if (this.state.isMobile === isMobile) return
 			this.setState({ isMobile })
 		})
+		this.subscriptions.print = rxPrint.subscribe(selector => {
+			if (!isStr(selector)) return
+
+			const { props } = this
+			const {
+				data: _data,
+				onPrintSetup,
+			} = this.props
+			let {
+				data = _data,
+				id,
+			} = this.state
+			data = isSubjectLike(data)
+				? data.value
+				: data
+			const perPage = data?.size || data?.length
+			try {
+				const container = document.getElementById(id)
+				const elToPrint = document.querySelector(selector)
+				const isEligible = !!container?.querySelector?.(selector)
+					|| elToPrint?.querySelector?.(`#${id}`)
+				if (!isEligible) return
+			} catch (err) {
+				console.warn(err)
+			}
+
+			// set table to print mode
+			this.setState({
+				printMode: true,
+				perPage,
+				selectable: false,
+			})
+			onPrintSetup?.(false, { ...props })
+
+			// revert to normal mode
+			setTimeout(() => {
+				this.setState({
+					printMode: undefined,
+					perPage: undefined,
+					selectable: undefined,
+				})
+				onPrintSetup?.(true, { ...props })
+			}, 3000)
+		})
+
 		if (!isSubjectLike(rxData)) return
+
 		this.subscriptions.data = rxData.subscribe(data => this.setState({ data }))
 	}
 
@@ -134,19 +182,28 @@ export default class DataTable extends Component {
 
 	getColumnsVisible = () => {
 		const { columns, columnsHidden } = this.props
+		const { printMode } = this.state
 		const hiddenIndexes = columns
-			.map((x, i) => {
-				let hidden = columnsHidden.includes(x.name || x.key)
+			.map((column, i) => {
+				let hidden = columnsHidden.includes(column.name || column.key)
 				if (!hidden) {
-					hidden = isFn(x.hidden)
-						? x.hidden(this.props, x)
-						: x.hidden
+					hidden = isFn(column.hidden)
+						? column.hidden(
+							this.props,
+							column,
+							printMode
+						)
+						: column.hidden
 				}
 				return !!hidden && i
 			})
 			.filter(isInteger)
-		const columnsVisible = columns.filter((_, i) =>
-			!hiddenIndexes.includes(i)
+		const columnsVisible = columns.filter(({ print }, i) =>
+			!hiddenIndexes.includes(i) && (
+				printMode
+					? print !== 'no'
+					: print !== 'only'
+			)
 		)
 
 		return columnsVisible
@@ -155,9 +212,10 @@ export default class DataTable extends Component {
 	getHeaders(totalRows, columns, selectedIndexes) {
 		let {
 			headers: showHeaders,
-			selectable,
+			selectable: _selectable,
 			tableProps,
 		} = this.props
+		const { selectable = _selectable } = this.state
 		if (!showHeaders) return
 
 		const { sortAsc, sortBy } = this.state
@@ -204,6 +262,7 @@ export default class DataTable extends Component {
 		})
 
 		if (!selectable) return headers
+
 		// include checkbox to select items
 		const n = selectedIndexes.length
 		const iconName = n <= 0
@@ -222,13 +281,18 @@ export default class DataTable extends Component {
 		const title = `${t} (${numRows})`
 		// add checkbox as the first column
 		headers.unshift(
-			<Table.HeaderCell
-				key='checkbox'
-				onClick={() => this.handleSelectAll(selectedIndexes)}
-				style={styles.checkboxCell}
-				title={title}
-			>
-				<Icon name={iconName} size='large' className='no-margin' />
+			<Table.HeaderCell {...{
+				className: 'selectable',
+				key: 'checkbox',
+				onClick: () => this.handleSelectAll(selectedIndexes),
+				style: styles.checkboxCell,
+				title,
+			}}>
+				<Icon {...{
+					className: 'no-margin',
+					name: iconName,
+					size: 'large',
+				}} />
 			</Table.HeaderCell>
 		)
 		return headers
@@ -237,13 +301,20 @@ export default class DataTable extends Component {
 	getRows(filteredData, columns, selectedIndexes, pageNo) {
 		let {
 			headers,
-			perPage,
+			perPage: _perPage,
 			rowProps,
-			selectable,
+			selectable: _selectable,
 			tableProps: { unstackable } = {}
 		} = this.props
+		const {
+			selectable = _selectable,
+			printMode
+		} = this.state
 
-		const { isMobile } = this.state
+		const {
+			isMobile,
+			perPage = _perPage,
+		} = this.state
 		const nonAttrs = [
 			'content',
 			'draggableValueKey',
@@ -261,6 +332,7 @@ export default class DataTable extends Component {
 				key,
 				items,
 				this.props,
+				printMode
 			) || {}
 			const cellProps = {
 				...column,
@@ -294,6 +366,7 @@ export default class DataTable extends Component {
 					key,
 					items,
 					this.props,
+					printMode
 				)
 				: content || item[contentKey]
 			const dragValue = draggableValueKey
@@ -343,6 +416,7 @@ export default class DataTable extends Component {
 							key,
 							items,
 							this.props,
+							printMode,
 						)
 						: rowProps || {}),
 				}}>
@@ -381,12 +455,15 @@ export default class DataTable extends Component {
 			searchable,
 			searchHideOnEmpty,
 			searchOnChange,
-			selectable,
+			selectable: _selectable,
 			showSelectedCount,
 			topLeftMenu: actionButtons,
 			topRightMenu: menuOnSelect,
 		} = this.props
-		const { data = dataP } = this.state
+		const {
+			data = dataP,
+			selectable = _selectable,
+		} = this.state
 		const {
 			isMobile,
 			keywords = keywordsP,
@@ -605,12 +682,16 @@ export default class DataTable extends Component {
 			emptyMessage,
 			footerContent,
 			keywords: keywordsP,
-			perPage,
+			perPage: _perPage,
 			searchExtraKeys,
 			style,
 			tableProps,
 		} = this.props
-		const { data = dataP } = this.state
+		const {
+			data = dataP,
+			id,
+			perPage = _perPage,
+		} = this.state
 		let {
 			keywords,
 			pageNo,
@@ -682,9 +763,10 @@ export default class DataTable extends Component {
 
 		return (
 			<Invertible {...{
-				El: Segment,
 				basic: true,
 				className: 'data-table',
+				El: Segment,
+				id,
 				style: {
 					margin: 0,
 					padding: 0,
@@ -754,10 +836,20 @@ DataTable.propTypes = {
 	columns: PropTypes.arrayOf(
 		PropTypes.shape({
 			// function/element/string: content to display for the each cell on this column.
-			// function props: currentItem, id/index, allItems, props
+			// function props:
+			// - object 	currentItem
+			// - any		key (id/index)
+			// - array/map	allItems
+			// - object		props
+			// - boolean	printMode
 			content: PropTypes.any,
 			// @dynamicProps func: dynamically add extra properties to cell based on cell content etc.
-			// Args: item, key, items, props
+			// Args: 
+			// - object		item
+			// - any		key
+			// - array/map	items
+			// - object		props
+			// - boolean	printMode
 			dynamicProps: PropTypes.func,
 			// indicates whether column cell should be draggable.
 			// Default: true
@@ -770,13 +862,22 @@ DataTable.propTypes = {
 			// whether to hide the column
 			hidden: PropTypes.oneOfType([
 				PropTypes.bool,
-				// function args: props, column
+				// function args: 
+				// - object props
+				// - object column
+				// - boolean printMode
 				PropTypes.func,
 			]),
 			// object property name. The value of the property will be displayed only if `content` is not provided.
 			key: PropTypes.string,
 			// (optional) specify a name for the column. Can be useful to hide the column externally using `columnsHidden` prop
 			name: PropTypes.string,
+			// Indicates whether to include column when a print window is opened and the table is to be printed
+			// Possive values:
+			// - "yes" (default) include column when printing
+			// - "no": to prevent the column from being printed
+			// - "only": only include the column when printing
+			print: PropTypes.string,
 			// (optional) specify a key to use for sorting this column. Can be used when column content is React Element
 			// if undefined, will use `key` for sorting purposes
 			sortKey: PropTypes.string,
@@ -806,6 +907,12 @@ DataTable.propTypes = {
 	keywords: PropTypes.string,
 	// total of page numbers to be visible including current
 	navLimit: PropTypes.number,
+	// Callback invoked both before and after opening the print window for the table content.
+	// Use this to prepare for table-specific configuration (eg: adding/removing columns)
+	// Arguments:
+	// - boolean windowOpened: indicates whether window opening has initiated
+	// - object	 props: props supplied to DataTable
+	onPrintSetup: PropTypes.func,
 	// event triggered whenever a row is de/selected.
 	// args: [selectedIndexes Array, currentIndex]
 	// If data is a Map, index is the key of the entry related to the row.
@@ -815,7 +922,16 @@ DataTable.propTypes = {
 	pageOnSelect: PropTypes.func,
 	// loading: PropTypes.bool,
 	perPage: PropTypes.number,
-	rowProps: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+	rowProps: PropTypes.oneOfType([
+		// Function arguments:
+		// - object		item
+		// - any		key
+		// - array/map	items
+		// - object 	props
+		// - boolean	printMode
+		PropTypes.func,
+		PropTypes.object,
+	]),
 	// Indicates whether table should be searchable and the search input be visible
 	// If element supplied, the `keywords` prop is expected to be set externally
 	searchable: PropTypes.oneOfType([PropTypes.bool, PropTypes.element]),

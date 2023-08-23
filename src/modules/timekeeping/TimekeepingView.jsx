@@ -59,22 +59,22 @@ const TimekeepingView = React.memo(({
                 },
                 records && {
                     content: TimekeepingList,
-                    contentProps: { hideTimer },
+                    contentProps: { ...props, hideTimer },
                     header: textsCap.myRecords,
                 },
                 manage && {
                     content: TimekeepingList,
-                    contentProps: { hideTimer, manage: true },
+                    contentProps: { ...props, hideTimer, manage: true },
                     header: textsCap.manageTeamTime,
                 },
                 recordsArchive && {
                     content: TimekeepingList,
-                    contentProps: { archive: true, hideTimer },
+                    contentProps: { ...props, archive: true, hideTimer },
                     header: textsCap.myRecordsArchive,
                 },
                 manageArchive && {
                     content: TimekeepingList,
-                    contentProps: { archive: true, hideTimer, manage: true },
+                    contentProps: { ...props, archive: true, hideTimer, manage: true },
                     header: textsCap.manageArchive,
                 },
             ].filter(Boolean)

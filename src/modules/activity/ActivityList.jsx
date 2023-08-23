@@ -91,32 +91,45 @@ const getInitialState = rxState => {
         selectable: true,
         columns: [
             {
-                content: (activity, _1, _2, { isMobile } = {}) => {
+                content: (
+                    activity,
+                    activityId,
+                    _2,
+                    { isMobile } = {},
+                    printMode
+                ) => {
                     const {
                         description,
                         name = textsCap.unnamed
                     } = activity
-                    if (!isMobile) return name
 
+                    const content = !isMobile || printMode
+                        ? name
+                        : (
+                            <div>
+                                {name}
+                                <Text {...{
+                                    children: (
+                                        <small>
+                                            {textEllipsis(
+                                                description,
+                                                64,
+                                                3,
+                                                false
+                                            )}
+                                        </small>
+                                    ),
+                                    color: 'grey',
+                                    El: 'div',
+                                    invertedColor: 'lightgrey',
+                                    style: { lineHeight: 1 },
+                                }} />
+                            </div>
+                        )
                     return (
                         <div>
-                            {name}
-                            <Text {...{
-                                children: (
-                                    <small>
-                                        {textEllipsis(
-                                            description,
-                                            64,
-                                            3,
-                                            false
-                                        )}
-                                    </small>
-                                ),
-                                color: 'grey',
-                                El: 'div',
-                                invertedColor: 'lightgrey',
-                                style: { lineHeight: 1 },
-                            }} />
+                            {content}
+                            {printMode && activityId}
                         </div>
                     )
                 },
@@ -165,7 +178,7 @@ const getInitialState = rxState => {
                     },
                     {
                         icon: { name: 'eye' },
-                        key: 'detials',
+                        key: 'details',
                         onClick: () => ActivityDetails.asModal({ activity, activityId }),
                         title: textsCap.viewDetails,
                     }
@@ -173,9 +186,14 @@ const getInitialState = rxState => {
                     .filter(Boolean)
                     .map(btn => <Button {...btn} />),
                 draggable: false,
+                print: 'no',
                 textAlign: 'center',
                 title: textsCap.actions,
             },
+            // { // include activity Id when printing
+            //     content: (_, activityId) => activityId,
+            //     print: 'only',
+            // },
         ],
         topLeftMenu: [{
             // create new activity button

@@ -192,6 +192,7 @@ const getTableProps = isMobile => {
 				content: getActions,
 				collapsing: true,
 				draggable: false,
+				print: 'no',
 				textAlign: 'center',
 				title: textsCap.actions,
 			},

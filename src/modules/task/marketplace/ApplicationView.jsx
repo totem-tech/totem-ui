@@ -76,7 +76,7 @@ ApplicationView.asModal = (props, modalProps) => {
         taskId,
     } = props
     const { isOwner } = task
-    modalId = modalId || newId('application_', taskId)
+    modalId ??= newId('application_', taskId)
     const content = (
         <ApplicationView {...{
             application,
