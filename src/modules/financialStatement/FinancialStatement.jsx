@@ -17,11 +17,12 @@ import useLedgerAcBalances from './useLedgerAcBalances'
 
 const MODULE_KEY = 'financialStatement'
 const rw = value => storage.settings.module(MODULE_KEY, value) || {}
-const textsCap = translated({
+const textsCap = {
     collapseAll: 'collapse all',
     expandAll: 'expand all',
     unknownTitle: 'unknown title'
-}, true)[1]
+}
+translated(textsCap, true)
 
 export default function FinancialStatementView(props) {
     const [nestedBalances = [], message] = useLedgerAcBalances(null, getNestedBalances)
@@ -34,6 +35,7 @@ export default function FinancialStatementView(props) {
         <div {...{ ...props, style: { whiteSpace: 'pre', ...props.style } }}>
             {nestedBalances.length > 0 && (
                 <Button {...{
+                    className: 'no-print',
                     content: !shouldExpand
                         ? textsCap.collapseAll
                         : textsCap.expandAll,

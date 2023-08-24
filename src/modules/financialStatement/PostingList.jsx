@@ -35,7 +35,7 @@ const PostingList = props => {
                 title: textsCap.date,
             },
             {
-                collapsing: true,
+                // collapsing: true,
                 content: ({ partnerAddress }) => (
                     <AddressName {...{
                         address: partnerAddress,
@@ -61,34 +61,41 @@ const PostingList = props => {
             },
             !isMobile && {
                 textAlign: 'center',
-                key: 'id',
+                key: '_id',
                 title: textsCap.postingId,
             },
             {
                 collapsing: true,
                 content: getActions,
+                print: 'no',
                 textAlign: 'center',
                 title: textsCap.actions,
             },
         ].filter(Boolean),
+        defaultSortAsc: false,
+        style: {
+            padding: undefined, // overrides 0 padding in DataTable component
+            paddingTop: 1,
+            marginTop: isMobile
+                ? undefined
+                : -10
+        },
+        tableProps: {
+            name: 'FiSt-PostingList',
+        }
     }))
-    const data = useLedgerAcPostings(address, ledgerAccount, postingModifier)
+    const data = useLedgerAcPostings(
+        address,
+        ledgerAccount,
+        postingModifier
+    )
 
     return (
         <DataTable {...{
             ...props,
             ...state,
             data,
-            defaultSort: 'id',
-            defaultSortAsc: false,
-            searchable: data.length > 10,
-            style: {
-                padding: undefined, // overrides 0 padding in DataTable component
-                paddingTop: 1,
-                marginTop: isMobile
-                    ? undefined
-                    : -10
-            }
+            searchable: data.length > 1,
         }} />
     )
 }
@@ -114,13 +121,14 @@ const postingModifier = (posting = {}) => {
         id,
         isCredit,
         amount,
-        partnerAddress,
+        // partnerAddress,
     } = posting
     posting.tsSubmitted = blockToDate(blockNrSubmitted, rxBlockNumber.value)
     posting.tsEffective = blockToDate(blockNrEffective, rxBlockNumber.value)
     posting.credit = isCredit && amount || 0
     posting.debit = !isCredit && amount || 0
     posting.key = id
+    posting._id = `${id}`
     // posting._partnerName = <AddressName {...{ address: partnerAddress }} />
     posting._credit = !isCredit
         ? 0

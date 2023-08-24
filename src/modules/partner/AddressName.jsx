@@ -61,6 +61,7 @@ const AddressName = React.memo(({
     } = identity || partner || {}
     const addBtn = !name && (
         <Button {...{
+            className: 'no-print',
             icon: 'user plus',
             onClick: e => {
                 e.preventDefault()
@@ -86,6 +87,7 @@ const AddressName = React.memo(({
                 whiteSpace: 'nowrap',
                 ...style,
             },
+            title: address,
         }}>
             {!!identity
                 ? <IdentityIcon {...{ address, usageType }} />
