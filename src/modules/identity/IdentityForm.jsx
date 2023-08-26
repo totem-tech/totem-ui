@@ -12,9 +12,7 @@ import { translated } from '../../utils/languageHelper'
 import PromisE from '../../utils/PromisE'
 import {
 	RxSubjectView,
-	UseHook,
 	statuses,
-	useQueryBlockchain,
 	useRxSubject,
 	useUnmount
 } from '../../utils/reactjs'
@@ -57,7 +55,7 @@ import {
 } from './identity'
 import IdentityIcon from './IdentityIcon'
 
-const deloitteEnabled = getUrlParam('deloitte').toLowerCase() === 'true' || [
+const deloitteIdEnabled = getUrlParam('deloitte').toLowerCase() === 'true' || [
 	// keep enabled on staging and dev environments
 	'dev.totem.live',
 	'localhost:4430',
@@ -278,7 +276,7 @@ export default class IdentityForm extends Component {
 						)
 					}} />
 				),
-				// hidden: !address,
+				hidden: !deloitteIdEnabled,
 				name: inputNames.btnDeloitte,
 				type: 'html',
 			},
@@ -796,17 +794,6 @@ const handleDeloitteSignup = (rxValues, rxInprogress) => async e => {
 					onSubmit: success => resolve(!!success),
 				}
 				const dummyRxState = new BehaviorSubject({})
-				console.log({
-					address,
-					name,
-					location,
-					phone,
-					email,
-					regNum,
-					vat,
-					finalHash,
-					activityValues,
-				})
 				await handleActivitySubmitCb(
 					activityFormProps,
 					dummyRxState
@@ -896,12 +883,9 @@ const checkDeloitteVerified = (address) => {
 	return [entry.rxVerified, entry.unsubscribe]
 }
 
-export const UseDeloiteVerified = ({
-	address,
-	render
-}) => {
+export const UseDeloiteVerified = ({ address, render }) => {
 	const [rxVerified, unsubscribe] = useMemo(() => checkDeloitteVerified(address) || [], [])
-	if (!deloitteEnabled || !rxVerified) return render(false)
+	if (!deloitteIdEnabled || !rxVerified) return render(false)
 
 	useUnmount(unsubscribe)
 
