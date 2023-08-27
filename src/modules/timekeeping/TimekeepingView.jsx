@@ -41,10 +41,7 @@ const TimekeepingView = React.memo(({
     const [state] = useRxState(getInitialState(props), {
         valueModifier: (state, prevState) => {
             state = { ...prevState, ...state }
-            const {
-                optionsInput,
-                viewOptions
-            } = state
+            const { optionsInput, viewOptions } = state
             const showSummary = viewOptions.includes('summary')
             const manage = viewOptions.includes('manage')
             const records = viewOptions.includes('records')
@@ -100,8 +97,10 @@ const TimekeepingView = React.memo(({
     } = state
     return (
         <div>
-            <Button {...timerButton} />
-            <CheckboxGroup {...optionsInput} />
+            <div className='no-print'>
+                <Button {...timerButton} />
+                <CheckboxGroup {...optionsInput} />
+            </div>
             {contents.map(item => (
                 <ContentSegment {...{
                     ...item,

@@ -130,22 +130,22 @@ const postingModifier = (posting = {}) => {
     posting.key = id
     posting._id = `${id}`
     // posting._partnerName = <AddressName {...{ address: partnerAddress }} />
-    posting._credit = !isCredit
-        ? 0
-        : (
-            <Currency {...{
-                unit: currencyDefault,
-                value: posting.credit,
-            }} />
-        )
-    posting._debit = isCredit
-        ? 0
-        : (
-            <Currency {...{
-                unit: currencyDefault,
-                value: posting.debit,
-            }} />
-        )
+    posting._credit = (
+        <Currency {...{
+            unit: currencyDefault,
+            value: !isCredit
+                ? 0
+                : posting.credit,
+        }} />
+    )
+    posting._debit = (
+        <Currency {...{
+            unit: currencyDefault,
+            value: isCredit
+                ? 0
+                : posting.debit,
+        }} />
+    )
 
     return posting
 }

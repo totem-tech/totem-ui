@@ -20,6 +20,7 @@ import useTkActivities from './useTKActivities'
 
 const textsCap = {
     activity: 'activity',
+    id: 'ID',
     loading: 'loading...',
     owner: 'activity owner',
     percentage: 'percentage',
@@ -50,6 +51,17 @@ const TimekeepingSummaryList = React.memo(({
     })
     const [state, setState] = useRxState(() => ({
         columns: [
+            {
+                content: ({ activityId }) => activityId,
+                print: 'only', // only show in print mode
+                title: textsCap.id,
+                style: { minWidth: 125 }
+            },
+            {
+                key: 'name',
+                title: textsCap.activity,
+                style: { minWidth: 125 }
+            },
             {
                 key: 'name',
                 title: textsCap.activity,

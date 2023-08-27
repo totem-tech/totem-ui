@@ -1,9 +1,7 @@
 import React, { useEffect } from 'react'
 import { Segment, Sidebar } from 'semantic-ui-react'
 // Assets
-import TotemButtonLogo from './assets/logos/button-288-colour.png' //button-240-colour.png'
-//'./assets/totem-button-grey.png'
-// import PlaceholderImage from './assets/totem-placeholder.png'
+import { TotemButtonLogo } from './assets'
 // Components
 import ErrorBoundary from './components/CatchReactErrors'
 import { Invertible } from './components/Invertible'
@@ -34,8 +32,6 @@ import { className } from './utils/utils'
 import { messages, setMessages } from './utils/validator'
 import windowService, { rxGridColumns, gridClasses } from './utils/window'
 import './utils/reactjs/printElement.js'
-
-const logoSrc = TotemButtonLogo
 
 // translate default error messages
 setMessages(translated(messages, true)[1])
@@ -99,7 +95,7 @@ export default function App() {
 	return (
 		<div className='wrapper'>
 			<ErrorBoundary>
-				<PageHeader logoSrc={logoSrc} />
+				<PageHeader logoSrc={TotemButtonLogo} />
 			</ErrorBoundary>
 
 			<ErrorBoundary>

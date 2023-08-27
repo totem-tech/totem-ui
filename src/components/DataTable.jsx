@@ -23,6 +23,7 @@ import {
 	hasValue,
 	isInteger,
 	isSubjectLike,
+	className,
 } from '../utils/utils'
 import { translated } from '../utils/languageHelper'
 import {
@@ -199,10 +200,10 @@ export default class DataTable extends Component {
 			})
 			.filter(isInteger)
 		const columnsVisible = columns.filter(({ print }, i) =>
-			!hiddenIndexes.includes(i) && (
+			!hiddenIndexes.includes(i) && !(
 				printMode
-					? print !== 'no'
-					: print !== 'only'
+					? print == 'no'
+					: ['csv', 'only'].includes(print)
 			)
 		)
 
@@ -218,7 +219,11 @@ export default class DataTable extends Component {
 		const { selectable = _selectable } = this.state
 		if (!showHeaders) return
 
-		const { sortAsc, sortBy } = this.state
+		const {
+			printMode,
+			sortAsc,
+			sortBy,
+		} = this.state
 		const { sortable } = {
 			...DataTable.defaultProps.tableProps,
 			...tableProps,
@@ -227,6 +232,7 @@ export default class DataTable extends Component {
 			let {
 				headerProps = {},
 				key,
+				print,
 				sortable: cSortable,
 				sortKey = key,
 				title,
@@ -244,6 +250,10 @@ export default class DataTable extends Component {
 			return (
 				<Table.HeaderCell {...{
 					...headerProps,
+					className: className([
+						headerProps.className,
+						printMode && print === 'csv' && 'no-print',
+					]),
 					content: title,
 					key: i,
 					onClick: handleClick,
@@ -349,6 +359,7 @@ export default class DataTable extends Component {
 				draggableValueKey,
 				includeTitleOnMobile,
 				key: contentKey,
+				print,
 				onDragStart,
 				style,
 				textAlign = 'left',
@@ -374,6 +385,10 @@ export default class DataTable extends Component {
 				: null
 			const props = {
 				...objWithoutKeys(column, nonAttrs),
+				className: className([
+					column.className,
+					printMode && print === 'csv' && 'no-print',
+				]),
 				draggable,
 				hidden: undefined,
 				key: key + j,
@@ -874,9 +889,10 @@ DataTable.propTypes = {
 			name: PropTypes.string,
 			// Indicates whether to include column when a print window is opened and the table is to be printed
 			// Possive values:
-			// - "yes" (default) include column when printing
-			// - "no": to prevent the column from being printed
-			// - "only": only include the column when printing
+			// - "no": to prevent the column from being printed. Only rendered when printMode = false.
+			// - "yes" (default) include column when printing. Only rendered when printMode = true.
+			// - "only": only include the column when printing. Only rendered when printMode = true.
+			// - "csv": only include the column when saving as CSV. Only rendered when printMode = true.
 			print: PropTypes.string,
 			// (optional) specify a key to use for sorting this column. Can be used when column content is React Element
 			// if undefined, will use `key` for sorting purposes

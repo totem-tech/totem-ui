@@ -13,7 +13,7 @@ import { MOBILE, rxLayout } from '../../utils/window'
 import { convertTo, rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
 
-const textsCap = translated({
+const textsCap = {
     addAsset: 'add',
     btnSubtract: 'subtract all',
     btnAdd: 'add all to folio',
@@ -25,7 +25,8 @@ const textsCap = translated({
     tableShow: 'Show Rates Table',
     toBeImplemented: 'feature not implemented yet!',
     totalValueOfAssets: 'Total Value of Assets'
-}, true)[1]
+}
+translated(textsCap, true)
 export const inputNames = {
     amount: 'amount',
     amountTotal: 'amountTotal',
@@ -73,6 +74,7 @@ export default function AssetsForm(props) {
 
         const notImplemented = () => setToast(textsCap.toBeImplemented, 2000, 'not-implemented')
         const searchInput = {
+            icon: 'search',
             name: inputNames.keywords,
             // forces table to be visible on search change
             onChange: () => rxShowList.next(true),
@@ -95,7 +97,7 @@ export default function AssetsForm(props) {
             width: 4,
         })
         return {
-            formProps: { className: 'assets-form' },
+            formProps: { className: 'assets-form no-print' },
             submitText: null,
             onChange: (e, values, invalid) => {
                 const { onChange } = props

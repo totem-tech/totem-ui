@@ -1,0 +1,1 @@
+export const TotemButtonLogo = require('./assets/logos/button-288-colour.png')

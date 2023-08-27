@@ -1,5 +1,6 @@
 export default [
     "./src/App.jsx",
+    "./src/assets.js",
     "./src/components/CatchReactErrors.jsx",
     "./src/components/CheckboxGroup.jsx",
     "./src/components/ContentSegment.jsx",

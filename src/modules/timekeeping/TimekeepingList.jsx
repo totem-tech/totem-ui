@@ -54,6 +54,7 @@ const textsCap = {
     unarchive: 'unarchive',
     worker: 'worker',
 
+    activityId: 'activity ID',
     activityName: 'activity name',
     activityUnnamed: 'unnamed activity',
     approveRecord: 'approve record',
@@ -75,6 +76,7 @@ const textsCap = {
     setAsDraft: 'set as draft',
     setAsDraftDetailed: 'set as draft and force user to submit again',
     unarchiveRecord: 'restore from archive',
+    workerAddress: 'worker address',
     workerIdentity: 'worker identity',
 }
 translated(textsCap, true)
@@ -91,7 +93,12 @@ export const statusTexts = {
 export const rxInProgressIds = new BehaviorSubject(new Map()) // key: recordId, value: button title
 
 const TimeKeepingList = React.memo(props => {
-    const [data = new Map(), rxRecords] = useTkRecords(
+    const [
+        data = new Map(),
+        rxRecords,
+        _,
+        identity,
+    ] = useTkRecords(
         objClean(props, [
             'activityId',
             'archive',
@@ -177,6 +184,9 @@ const TimeKeepingList = React.memo(props => {
                 ...props.style,
                 ...style,
             },
+            tableProps: {
+                'filename-suffix': identity
+            },
         }} />
     )
 })
@@ -248,10 +258,25 @@ const getInitialState = (props, rxRecords) => rxState => {
             collapsing: true,
             content: getActionButtons(props),
             draggable: false,
+            print: 'no',
             style: { padding: '0px 5px' },
             textAlign: 'center',
             title: textsCap.action,
-        }
+        },
+        { // extra column only to be included when saving table as CSV in the print window
+            // className: 'no-print',
+            // headerProps: { hidden: 'no-print' },
+            key: 'activityId',
+            print: 'csv',
+            title: textsCap.activityId,
+        },
+        { // extra column only to be included when saving table as CSV in the print window
+            // className: 'no-print',
+            // headerProps: { hidden: 'no-print' },
+            key: 'workerAddress',
+            print: 'csv',
+            title: textsCap.workerAddress,
+        },
     ]
 
     const handleApproveClickCb = (approve = true) => (

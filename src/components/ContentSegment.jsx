@@ -20,10 +20,17 @@ import {
 	isFn,
 	isStr
 } from '../utils/utils'
-import { toggleFullscreen } from '../utils/window'
+import { rxInverted, toggleFullscreen } from '../utils/window'
 import ErrorBoundary from './CatchReactErrors'
 import { Invertible } from './Invertible'
 import Text from './Text'
+import { translated } from '../utils/languageHelper'
+import { TotemButtonLogo } from '../assets'
+
+const textsCap = {
+	pageTitle: 'Totem Live Accounting'
+}
+translated(textsCap, false)
 
 const ContentSegment = props => {
 	const {
@@ -42,7 +49,7 @@ const ContentSegment = props => {
 		name,
 		onClose,
 		print = true, // css selector or true
-		printSize, // force print page layout to "portrait" or "landscape"
+		printSize = 'auto', // force print page layout to "portrait" or "landscape"
 		rxTrigger,
 		settings,
 		style,
@@ -101,24 +108,31 @@ const ContentSegment = props => {
 			onClick: () => {
 				const content = document.getElementById(id)
 				if (!content) return
-				const printStyle = printSize && `
-				@media print { 
-					@page {
-						size: ${printSize};
-					}
-				}`
+
 				const styles = `
-				.no-print { display: none !important; }
 				.content-segment { height: initial !important; }
-				${printStyle || ''}				
+				
+				@media print {
+					@page { size: ${printSize}; }
+				}
+				`
+				const inverted = rxInverted.value
+				rxInverted.next(false)
+				const title = `
+				<center>
+					<img src='${TotemButtonLogo}' style='height: 50px; vertical-align: middle;' />
+					<span> ${textsCap.pageTitle}</span>
+				</center>
 				`
 				printElement(
-					print && isStr(print)
+					isStr(print)
 						? print
 						: '#' + id,
 					undefined,
+					title,
 					styles,
 				)
+				setTimeout(() => rxInverted.next(inverted), 3000)
 			},
 			size: 'mini',
 			style: { display: 'inline' },
