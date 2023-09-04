@@ -136,7 +136,7 @@ const InboxList = ({ inboxKey = rxOpenInboxKey }) => {
                             active: inboxKey === item.inboxKey,
                             key: JSON.stringify(item),
                             openInboxKey: inboxKey,
-                            query: queryTrimmed,
+                            // query: queryTrimmed,
                             setShowActions,
                             showActions,
                         }} />
