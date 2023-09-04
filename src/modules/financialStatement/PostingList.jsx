@@ -17,6 +17,7 @@ const textsCap = {
     date: 'date',
     debit: 'debit',
     partner: 'partner',
+    partnerAddress: 'partner address',
     postingId: 'posting ID',
 }
 translated(textsCap, true)
@@ -46,6 +47,11 @@ const PostingList = props => {
                 key: 'partnerAddress',
                 textAlign: 'left',
                 title: textsCap.partner,
+            },
+            {
+                key: 'partnerAddress',
+                print: 'csv',
+                title: textsCap.partnerAddress,
             },
             {
                 textAlign: 'center',

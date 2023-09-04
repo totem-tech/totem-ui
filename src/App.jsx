@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Segment, Sidebar } from 'semantic-ui-react'
+import { Checkbox, Form, Input, Radio, Segment, Sidebar } from 'semantic-ui-react'
 // Assets
 import { TotemButtonLogo } from './assets'
 // Components
@@ -32,6 +32,7 @@ import { className } from './utils/utils'
 import { messages, setMessages } from './utils/validator'
 import windowService, { rxGridColumns, gridClasses } from './utils/window'
 import './utils/reactjs/printElement.js'
+import { FormBuilder, FormInput } from './utils/reactjs'
 
 // translate default error messages
 setMessages(translated(messages, true)[1])
@@ -117,6 +118,24 @@ export default function App() {
 					dimmed={false}
 					id='main-content'
 				>
+					{/* <FormInput {...{
+						components: {
+							Input: Form.Group,
+							OptionItem: o => console.log(o) || (
+								<Checkbox {...{ name: 'r', label: o.value, value: o.value }} />
+							)
+						},
+						label: 'Checkboxes',
+						name: 'checkbox-group',
+						inputProps: {
+							options: [
+								{ label: 'a', value: 'a' },
+								{ label: 'b', value: 'b' },
+								{ label: 'c', value: 'c' },
+							],
+							type: 'checkbox-group'
+						},
+					}} /> */}
 					{sidebarItems.map(({ name, rxTrigger }, i) => (
 						<MainContentItem {...{
 							key: i + name,
