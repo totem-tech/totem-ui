@@ -2,13 +2,21 @@ import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { fillValues, findInput, } from '../../components/FormBuilder'
-import { isFn, arrSort, textEllipsis, isArr, isStr, arrUnique, escapeStringRegexp } from '../../utils/utils'
-// services
-import { getUser, rxIsRegistered } from '../../utils/chatClient'
-import { translated } from '../../utils/languageHelper'
 import { showForm, closeModal } from '../../services/modal'
 import { addToQueue, QUEUE_TYPES } from '../../services/queue'
-import { useRxSubject } from '../../utils/reactjs'
+import { getUser, rxIsRegistered } from '../../utils/chatClient'
+import { translated } from '../../utils/languageHelper'
+import { useRxState, useRxSubject } from '../../utils/reactjs'
+import {
+    isFn,
+    arrSort,
+    textEllipsis,
+    isArr,
+    isStr,
+    arrUnique,
+    escapeStringRegexp
+} from '../../utils/utils'
+// services
 import {
     createInbox,
     getInboxKey,
@@ -22,7 +30,7 @@ import {
 import { getInboxName } from './InboxList'
 import RegistrationForm from './RegistrationForm'
 
-const [_, textsCap] = translated({
+const textsCap = {
     group: 'group',
     header: 'start chat',
     nameLabel: 'group name',
@@ -33,38 +41,23 @@ const [_, textsCap] = translated({
     totemTrollbox: 'Totem Trollbox',
     updateName: 'update group name',
     userIdsHint: 'To start a group chat enter multiple User IDs',
-}, true)
+}
+translated(textsCap, true)
 
 const inputNames = {
     name: 'name',
     userIds: 'userIds'
 }
 export default function NewInboxForm(props) {
-    const [isRegistered] = useRxSubject(rxIsRegistered)
-    if (!isRegistered) {
-        const values = props.values || {}
-        const params = [
-            'form=chat',
-            ...Object.keys(values)
-                .map(key => `${key}=${escapeStringRegexp(values[key])}`)
-        ].join('&')
-        const redirectTo = `${location.protocol}//${location.host}?${params}`
-
-        showForm(RegistrationForm, { values: { redirectTo, silent: true } })
-        return ''
-    }
-
-    const [success, setSuccess] = useState(false)
-    const [inputs] = useRxSubject(getRxInputs(props))
-
-    return (
-        <FormBuilder {...{
-            ...props,
-            inputs,
-            onSubmit: handleSubmit(setSuccess, props.onSubmit),
-            success,
-        }} />
+    const [state] = useRxState(getInitialState(props))
+    const [regForm] = useRxSubject(
+        rxIsRegistered,
+        isRegistered => !isRegistered && <RegistrationForm {...props} />,
+        false,
+        false,
     )
+
+    return regForm || <FormBuilder {...state} />
 }
 NewInboxForm.defaultProps = {
     closeOnSubmit: true,
@@ -78,7 +71,7 @@ NewInboxForm.propTypes = {
     values: PropTypes.object
 }
 
-const getRxInputs = props => {
+const getInitialState = props => rxState => {
     const { values = {} } = props || {}
     let { userids, userIds } = values
     userIds = userIds || userids
@@ -89,7 +82,10 @@ const getRxInputs = props => {
             .map(x => x.trim())
             .filter(Boolean)
 
-    const allInboxKeys = arrUnique([...Object.keys(inboxesSettings()), ...values.userIds])
+    const allInboxKeys = arrUnique([
+        ...Object.keys(inboxesSettings()),
+        ...values.userIds,
+    ])
     const userIdOptions = allInboxKeys.map(key => {
         const userIds = key.split(',')
         const isTrollbox = [TROLLBOX, TROLLBOX_ALT].includes(key)
@@ -99,15 +95,25 @@ const getRxInputs = props => {
         const members = textEllipsis(key.replace(/\,/g, ', '), 30, 3, false)
         const text = name || members
         return {
-            description: !isSupport && !isTrollbox && name && members,
-            icon: isSupport ? 'heartbeat' : isTrollbox ? 'globe' : (isGroup ? 'group' : 'chat'),
+            description: !isSupport
+                && !isTrollbox
+                && name
+                && members,
+            icon: isSupport
+                ? 'heartbeat'
+                : isTrollbox
+                    ? 'globe'
+                    : isGroup
+                        ? 'group'
+                        : 'chat',
             key,
             text: `${isGroup ? textsCap.group + ': ' : ''}${text}`,
             value: key,
         }
     })
 
-    const rxInputs = new BehaviorSubject(fillValues([
+    const ifNotGroup = values => values[inputNames.userIds]?.length <= 1
+    const inputs = fillValues([
         {
             autoFocus: true,
             excludeOwnId: true,
@@ -118,22 +124,24 @@ const getRxInputs = props => {
             name: inputNames.userIds,
             options: arrSort(userIdOptions, 'text'),
             onChange: (_, values) => {
-                const inputs = rxInputs.value
+                const { inputs } = rxState.value
                 const nameIn = findInput(inputs, inputNames.name)
                 const userIds = values[inputNames.userIds]
                     .map(x => x.split(','))
                     .flat()
                 const inboxKey = getInboxKey(userIds)
                 const [_ig, allowNaming] = checkGroup(userIds)
-                nameIn.hidden = !allowNaming
-                nameIn.rxValue.next(allowNaming && inboxSettings(inboxKey).name || '')
-                rxInputs.next([...inputs])
+                nameIn.rxValue.next(
+                    allowNaming && inboxSettings(inboxKey).name || ''
+                )
+                rxState.next({ inputs })
             },
             required: true,
             rxValue: new BehaviorSubject([]),
             type: 'UserIdInput',
         },
         {
+            hidden: ifNotGroup,
             label: textsCap.nameLabel,
             minLength: 3,
             maxLength: 32,
@@ -143,10 +151,15 @@ const getRxInputs = props => {
             rxValue: new BehaviorSubject(''),
             type: 'text',
         },
-    ], values))
-    return rxInputs
+    ], values)
+    return {
+        ...props,
+        inputs,
+        onSubmit: handleSubmit(rxState, props)
+    }
 }
-const handleSubmit = (setSuccess, onSubmit) => async (_, values) => {
+const handleSubmit = (rxState, props) => async (_, values) => {
+    const { onSubmit } = props || {}
     let userIds = arrUnique(
         values[inputNames.userIds]
             .map(x => x.split(','))
@@ -169,7 +182,7 @@ const handleSubmit = (setSuccess, onSubmit) => async (_, values) => {
         : null
     const inboxKey = createInbox(userIds, name, true)
     inboxKey && rxOpenInboxKey.next(inboxKey)
-    setSuccess(true)
+    rxState.next({ success: true })
     isFn(onSubmit) && onSubmit(true, { inboxKey, ...values })
 }
 
@@ -189,7 +202,14 @@ const checkGroup = keyOrIds => {
             : []
     userIds = arrUnique(userIds).filter(Boolean)
     const isGroup = userIds.length > 1
-    const allowNaming = isGroup && !userIds.find(x => [SUPPORT, TROLLBOX, TROLLBOX_ALT].includes(x))
+    const allowNaming = isGroup
+        && !userIds.find(x =>
+            [
+                SUPPORT,
+                TROLLBOX,
+                TROLLBOX_ALT
+            ].includes(x)
+        )
     return [isGroup, allowNaming, userIds]
 }
 /**

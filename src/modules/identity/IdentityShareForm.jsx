@@ -23,7 +23,7 @@ import {
 
 const notificationType = 'identity'
 const childType = 'share'
-let textsCap = {
+const textsCap = {
 	failedMsgHeader: 'submission failed!',
 	formHeader: 'share identity',
 	formSubheader: 'share with Totem users',
@@ -42,16 +42,16 @@ let textsCap = {
 	namePlaceholder: 'enter a name to be shared',
 	// partner: 'partner',
 	partners: 'partners',
-	requestLabel: 'request identity from selected users',
+	requestLabel: 'ask recipients to share their identity',
 	successMsgContent: 'identity has been sent to selected users',
 	successMsgHeader: 'identity sent!',
 	updateContact: 'update contact details',
 	updateLocation: 'update location',
-	userIdsLabel: 'recipients',
+	userIdsLabel: 'recipient IDs',
 	userIdsNoResultMsg: 'type user ID and press enter to add',
-	userIdsPlaceholder: 'enter user IDs',
+	userIdsPlaceholder: 'enter recipient user IDs',
 }
-textsCap = translated(textsCap, true)[1]
+translated(textsCap, true)
 
 export const inputNames = {
 	address: 'address',

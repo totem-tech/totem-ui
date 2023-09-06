@@ -319,7 +319,9 @@ class FormBuilder extends Component {
 		}
 		msg = sMsg || msg
 		const msgStyle = {
-			...(modal ? styles.messageModal : styles.messageInline),
+			...modal
+				? styles.messageModal
+				: styles.messageInline,
 			...(msg || {}).style,
 		}
 		const message = { ...msg, style: msgStyle }
@@ -837,7 +839,6 @@ const styles = {
 		padding: 15,
 	},
 	messageModal: {
-		display: 'flex',
 		margin: 0,
 		borderTopLeftRadius: 0,
 		borderTopRightRadius: 0,

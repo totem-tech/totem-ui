@@ -164,7 +164,7 @@ UserID.showModal = (userId, partnerAddress, onChatOpen, partnerName) => {
 		},
 		{
 			content: textsCap.identityRequest,
-			disabled: !isRegistered || !partner,
+			disabled: !isRegistered,
 			icon: 'download',
 			onClick: () => showForm(IdentityRequestForm, {
 				values: {

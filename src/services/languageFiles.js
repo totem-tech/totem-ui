@@ -60,6 +60,7 @@ export default [
     "./src/modules/chat/ChatBar.jsx",
     "./src/modules/chat/ChatClient.js",
     "./src/modules/chat/Inbox.jsx",
+    "./src/modules/chat/InboxList (copy 1).jsx",
     "./src/modules/chat/InboxList.jsx",
     "./src/modules/chat/InboxMessages.jsx",
     "./src/modules/chat/NewInboxForm.jsx",

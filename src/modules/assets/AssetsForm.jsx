@@ -7,8 +7,8 @@ import { Invertible } from '../../components/Invertible'
 import { randomHex } from '../../services/blockchain'
 import { setToast } from '../../services/toast'
 import { translated } from '../../utils/languageHelper'
-import { unsubscribe, useRxSubject } from '../../utils/reactjs'
-import { isFn, objWithoutKeys } from '../../utils/utils'
+import { unsubscribe, useRxSubject, useRxSubjects } from '../../utils/reactjs'
+import { className, isFn, objWithoutKeys } from '../../utils/utils'
 import { MOBILE, rxLayout } from '../../utils/window'
 import { convertTo, rxSelected } from '../currency/currency'
 import AssetConverterForm from './AssetConverterForm'
@@ -41,6 +41,7 @@ export const inputNames = {
     groupTotalValue: 'group4',
     groupButtons: 'groupButtons',
     htmlTotalValue: 'htmlTotalValue',
+    isMobile: 'isMobile',
     keywords: 'keywords',
     portfolioIds: 'portfolioIds',
     showList: 'showList',
@@ -56,7 +57,7 @@ const rxAssetFrom = new BehaviorSubject(rxSelected.value)
 const lineIdPrefix = 'lineId-'
 
 export default function AssetsForm(props) {
-    const [portfolioInputs] = useRxSubject(rxPortfolioInputs)
+    const [[portfolioInputs, showList]] = useRxSubjects([rxPortfolioInputs, rxShowList])
 
     const [state] = useState(() => {
         let formValues = {}
@@ -83,6 +84,7 @@ export default function AssetsForm(props) {
             type: 'search',
         }
         const btnListToggle = {
+            className: 'no-print',
             fluid: true,
             content: () => rxShowList.value
                 ? textsCap.tableHide
@@ -97,7 +99,6 @@ export default function AssetsForm(props) {
             width: 4,
         })
         return {
-            formProps: { className: 'assets-form no-print' },
             submitText: null,
             onChange: (e, values, invalid) => {
                 const { onChange } = props
@@ -105,6 +106,12 @@ export default function AssetsForm(props) {
                 isFn(onChange) && onChange(e, values, invalid)
             },
             inputs: [
+                // {
+                //     hidden: true,
+                //     name: inputNames.isMobile,
+                //     rxValue: rxLayout,
+                //     rxValueModifier: l => l === MOBILE,
+                // },
                 {
                     name: inputNames.groupDateSearch,
                     type: 'group',
@@ -167,7 +174,9 @@ export default function AssetsForm(props) {
                             content: (
                                 <AssetConverterForm {...{
                                     El: 'div',
-                                    formProps: { className: 'total-form', test: 'test' },
+                                    formProps: {
+                                        className: 'total-form',
+                                    },
                                     labels: { asset: textsCap.labelFE },
                                     inputsHidden: ['amountFrom'],
                                     rxDate,
@@ -201,12 +210,13 @@ export default function AssetsForm(props) {
                         },
                         {
                             // className: 'hide-on-mobile',
-                            hidden: isMobile,
+                            hidden: true,
                             name: inputNames.showList,
                             rxValue: rxShowList,
-                            type: 'hidden',
+                            // type: 'hidden',
                         },
                         {
+                            className: 'no-print',
                             containerProps: { className: 'btn-subtract' },
                             content: textsCap.btnSubtract,
                             fluid: true,
@@ -216,6 +226,7 @@ export default function AssetsForm(props) {
                             type: 'button',
                         },
                         {
+                            className: 'no-print',
                             containerProps: { className: 'btn-add' },
                             content: textsCap.btnAdd,
                             fluid: true,
@@ -286,7 +297,18 @@ export default function AssetsForm(props) {
         const input = findInput(state.inputs, inputNames.groupPortfolio)
         input.inputs = portfolioInputs
     }
-    return <FormBuilder {...{ ...props, ...state }} />
+    return (
+        <FormBuilder {...{
+            ...props,
+            ...state,
+            formProps: {
+                className: className([
+                    'assets-form',
+                    showList && 'no-print'
+                ])
+            },
+        }} />
+    )
 }
 
 const getGroupName = lineId => `group-${lineIdPrefix}-${lineId}`
