@@ -42,7 +42,9 @@ if (!REVERSE_PROXY) {
 	// when reverse proxy is used this is not needed.
 	// set up plain http server and have it listen on port 80 to redirect to https 
 	let cbRedirect = function (req, res) {
-		res.writeHead(307, { "Location": "https://" + req.headers['host'] + req.url })
+		res.writeHead(307, {
+			Location: `https://${req.headers['host']}${req.url}`
+		})
 		res.end()
 	}
 	let httpApp = undefined
@@ -62,11 +64,17 @@ if (!REVERSE_PROXY) {
 console.log(`Totem UI starting in ${mode.toUpperCase()} mode`)
 
 // create main https app server 
-const serverApp = https.createServer({
-	cert: fs.readFileSync(certPath),
-	key: fs.readFileSync(keyPath)
-}, app)
-serverApp.listen(HTTPS_PORT, () => console.log('\nApp https web server listening on port ', HTTPS_PORT))
+const serverApp = https.createServer(
+	{
+		cert: fs.readFileSync(certPath),
+		key: fs.readFileSync(keyPath)
+	},
+	app
+)
+serverApp.listen(
+	HTTPS_PORT,
+	() => console.log('\nApp https web server listening on port ', HTTPS_PORT)
+)
 
 const executeCmd = async (cmd, args) => {
 	const result = spawnSync(cmd, args)
@@ -74,7 +82,7 @@ const executeCmd = async (cmd, args) => {
 	const err = error
 		? error.message
 		: '' //stderr.toString()
-	if (err) throw new Error(err.split('Error: '))
+	if (err) throw new Error(err.replace('Error: ', ''))
 	return result
 }
 
@@ -94,7 +102,7 @@ const setupPullEndpoints = () => {
 		] = endpoint
 		// projects valid for this endpoint configuration
 		const projects = endpoint
-			.slice('3')
+			.slice(3)
 			.filter(Boolean)
 
 		const pullUrl = `/pull/${pullURLSuffix}`
@@ -116,7 +124,9 @@ const setupPullEndpoints = () => {
 			} catch (err) {
 				console.log('[PullError]', err.message)
 				response.json({
-					error: err.message.replace('Error: ', ''),
+					error: err
+						.message
+						.replace('Error: ', ''),
 					success: false,
 				})
 			}
