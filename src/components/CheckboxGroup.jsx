@@ -84,7 +84,6 @@ const getCheckboxes = (props, value, setValue) => {
                 : value
         value = arrUnique(value.flat())
     }
-    name.includes('totem_identities') && console.log(options, value)
     return options.map((option, i) => {
         const checked = allowMultiple
             ? (value || []).includes(option.value)
@@ -94,7 +93,6 @@ const getCheckboxes = (props, value, setValue) => {
             'blake2',
             32,
         )
-        // name.includes('totem_identities') && console.log(checked, { option0: option, option1: option.value, value })
         return !option.hidden && (
             <Checkbox {...{
                 ...commonProps,
@@ -107,7 +105,7 @@ const getCheckboxes = (props, value, setValue) => {
                         El: 'label',
                         children: option.label,
                         className: className({
-                            'checkbox-group-item': true,
+                            CheckboxGroupLabel: true,
                             checked,
                         }),
                         htmlFor: option.id

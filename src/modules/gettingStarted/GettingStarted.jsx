@@ -30,7 +30,7 @@ import IdentityForm from '../identity/IdentityForm'
 import BackupForm from './BackupForm'
 import RestoreBackupForm from './RestoreBackupForm'
 
-const texts = translated({
+const texts = {
 	backupTitle: 'Backup your account',
 	backupDescription: `
 		Creating a backup will help you make sure that you do not lose your account. 
@@ -67,7 +67,8 @@ const texts = translated({
 	// videoGuidTitle: 'Further essential steps:',
 	// video1Title: 'What am I looking at? Watch the video:',
 	// video2Title: 'Backup your account. Watch the video:',
-})[0]
+}
+translated(texts, false)
 
 export const MODULE_KEY = 'getting-started'
 // read/write to module settings

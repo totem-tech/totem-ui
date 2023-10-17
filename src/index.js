@@ -31,10 +31,20 @@ import {
 	MOBILE,
 	rxLayout,
 } from './utils/window'
-import { Icon, Message } from 'semantic-ui-react'
+import {
+	Button,
+	Checkbox,
+	Icon,
+	Message,
+} from 'semantic-ui-react'
 
 // setup common components to use Semantic UI (where applicable)
-setupDefaults('semantic-ui-react', { Icon, Message }) //require('semantic-ui-react'))
+setupDefaults('semantic-ui-react', {
+	Button,
+	Checkbox,
+	Icon,
+	Message,
+}) //require('semantic-ui-react'))
 QueueItemStatus.defaultProps.rxOnSave = rxOnSave
 
 const urlParams = getUrlParam()

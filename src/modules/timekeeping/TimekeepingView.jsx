@@ -3,7 +3,7 @@ import React from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { Button } from '../../components/buttons'
 import ContentSegment from '../../components/ContentSegment'
-import CheckboxGroup from '../../components/CheckboxGroup'
+import CheckboxGroup from '../../utils/reactjs/components/form/CheckboxGroup' //'../../components/CheckboxGroup'
 import { showForm } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import {
@@ -41,13 +41,13 @@ const TimekeepingView = React.memo(({
     const [state] = useRxState(getInitialState(props), {
         valueModifier: (state, prevState) => {
             state = { ...prevState, ...state }
-            const { optionsInput, viewOptions } = state
+            const { viewOptionsInput, viewOptions } = state
             const showSummary = viewOptions.includes('summary')
             const manage = viewOptions.includes('manage')
             const records = viewOptions.includes('records')
             const recordsArchive = viewOptions.includes('records-archive')
             const manageArchive = viewOptions.includes('manage-archive')
-            optionsInput.inline = !isMobile
+            viewOptionsInput.inline = !isMobile
             let hideTimer = true
             state.contents = [
                 showSummary && {
@@ -92,14 +92,15 @@ const TimekeepingView = React.memo(({
 
     const {
         contents,
-        optionsInput,
+        viewOptions,
+        viewOptionsInput,
         timerButton,
     } = state
     return (
         <div>
             <div className='no-print'>
                 <Button {...timerButton} />
-                <CheckboxGroup {...optionsInput} />
+                <CheckboxGroup {...viewOptionsInput} value={viewOptions} />
             </div>
             {contents.map(item => (
                 <ContentSegment {...{
@@ -136,8 +137,7 @@ const getInitialState = props => rxState => {
         ? viewOptions
         : ['records']
     const state = {
-        optionsInput: {
-            rxValue: new BehaviorSubject(viewOptions),
+        viewOptionsInput: {
             multiple: true,
             name: 'option',
             onChange: (_, { value: viewOptions }) => {
@@ -178,6 +178,7 @@ const getInitialState = props => rxState => {
                 paddingTop: 7,
                 textAlign: 'center',
             },
+            type: 'radio-group'
         },
         timerButton: {
             active: false,

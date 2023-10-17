@@ -72,9 +72,9 @@ const textsCap = {
 	submitNoAction: 'no actionable item selected',
 	success1: 'restored successfully!',
 	success2: 'reloading page.',
-	successRedirect: 'Redirecting back to',
+	successRedirect: 'redirecting back to',
 	titleConflict: 'you must make a choice to contiue',
-	titleNoConflict: 'existing entry',
+	titleNoConflict: 'remove existing entry or keep unchanged',
 	titleNew: 'from backup',
 	userCredentials: 'user credentials',
 }
@@ -352,7 +352,12 @@ export default class RestoreBackupForm extends Component {
 			margin,
 			padding,
 		}
-		const ILabel = props => <span {...{ ...props, style: { fontSize: '110%' } }} />
+		const ILabel = props => (
+			<span {...{
+				...props,
+				style: { fontSize: '110%' },
+			}} />
+		)
 		const dataInputs = current
 			.map(([keyC, valueC = {}]) => {
 				const valueB = backupMap.get(keyC)
@@ -369,9 +374,8 @@ export default class RestoreBackupForm extends Component {
 						label: textsCap.keepUnchanged,
 						value: valueC,
 					},
-					{
+					conflict && {
 						name: 'backup',
-						disabled: !conflict,
 						label: textsCap.restoreFromBackup,
 						value: valueB,
 					},
@@ -384,11 +388,12 @@ export default class RestoreBackupForm extends Component {
 				processed[keyC] = true
 				const label = valueC.name || valueB.name || keyC
 
+				if (options.find(x => x.value === undefined)) console.log({ options })
+
 				return {
 					inline: !isMobile,
 					label: <ILabel>{label}</ILabel>,
 					name: keyC,
-					onChange: console.warn,
 					options,
 					radio: true,
 					required: doMerge,

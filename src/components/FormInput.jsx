@@ -38,7 +38,7 @@ import validator, { TYPES } from '../utils/validator'
 import { rxInverted } from '../utils/window'
 import { randomHex } from '../services/blockchain'
 import { Button } from './buttons'
-import CheckboxGroup from './CheckboxGroup'
+import { CheckboxGroup } from '../utils/reactjs' //'./CheckboxGroup'
 import DateInput from './DateInput'
 import { Invertible } from './Invertible'
 import Text from './Text'
@@ -575,8 +575,12 @@ export class FormInput extends Component {
 				attrs.inline = inline
 				attrs.options = options || attrs.options
 				attrs.radio = typeLC === 'radio-group' || attrs.radio
-				attrs.rxValue = rxValue
-				attrs.value = (rxValue || {}).value || attrs.value
+				// attrs.rxValue = rxValue
+				// attrs.value = (rxValue || {}).value || attrs.value
+				delete attrs.rxValue
+				attrs.value = rxValue
+					? rxValue.value
+					: attrs.value
 				inputEl = <CheckboxGroup {...attrs} />
 				break
 			case 'date':

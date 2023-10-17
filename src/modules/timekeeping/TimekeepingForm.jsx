@@ -407,7 +407,11 @@ const getInitialState = (props, rxValues) => rxState => {
     } = props
     rxValues ??= new BehaviorSubject({})
     const values = timer.getValues()
-    values[inputNames.batchData] = new Map(values[inputNames.batchData] || [])
+    values[inputNames.batchData] = new Map(
+        isArr(values[inputNames.batchData])
+            ? values[inputNames.batchData]
+            : []
+    )
     const { breakCount, inprogress } = values
     const activityId = values[inputNames.activityId]
     const workerAddress = values[inputNames.workerAddress]

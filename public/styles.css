@@ -133,7 +133,6 @@
 } */
 
 @media only screen and
-
 /* iphone XR */
 (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2),
 /* iphone XS */
@@ -784,8 +783,8 @@ body.inverted .error>input {
 }
 
 /* checkbox/radio label when inverted */
-body.inverted .ui.checkbox input+label.checkbox-group-item,
-body.inverted .ui.checkbox input:focus+label.checkbox-group-item {
+body.inverted .ui.checkbox input+label.CheckboxGroupLabel,
+body.inverted .ui.checkbox input:focus+label.CheckboxGroupLabel {
 	color: white !important;
 }
 
