@@ -24,6 +24,7 @@ import {
 	objWithoutKeys,
 	hasValue,
 	textEllipsis,
+	arrSort,
 } from '../../utils/utils'
 import { MOBILE, rxLayout } from '../../utils/window'
 import BackupForm from './BackupForm'
@@ -374,21 +375,22 @@ export default class RestoreBackupForm extends Component {
 						label: textsCap.keepUnchanged,
 						value: valueC,
 					},
-					conflict && {
+					{
 						name: 'backup',
+						disabled: !conflict,
 						label: textsCap.restoreFromBackup,
-						value: valueB,
+						value: !conflict
+							? ''
+							: valueB,
 					},
 					{
 						name: 'remove',
 						label: textsCap.remove,
 						value: REMOVE,
 					}, // ignore option
-				].filter(Boolean)
+				]
 				processed[keyC] = true
 				const label = valueC.name || valueB.name || keyC
-
-				if (options.find(x => x.value === undefined)) console.log({ options })
 
 				return {
 					inline: !isMobile,
@@ -398,6 +400,7 @@ export default class RestoreBackupForm extends Component {
 					radio: true,
 					required: doMerge,
 					rxValue: new BehaviorSubject(value),
+					sort: label,
 					styleContainer: conflict
 						? styleConflict
 						: styleExisting,
@@ -421,6 +424,7 @@ export default class RestoreBackupForm extends Component {
 					radio: true,
 					required: doMerge,
 					rxValue: new BehaviorSubject(valueB),
+					sort: valueB.name || keyB,
 					styleContainer: styleNew,
 					title: textsCap.titleNew,
 					type: 'checkbox-group',
@@ -428,47 +432,71 @@ export default class RestoreBackupForm extends Component {
 				}).filter(Boolean)
 			)
 
-		const conflicts = dataInputs.filter(x => x.value === null)
-			.reduce((ar, input) => ([
-				...ar,
-				input,
-				{
-					accordion: {
-						collapsed: true,
-						style: { marginBottom: 15, marginTop: -5 },
-						styled: true,
-					},
-					label: textsCap.compare,
-					name: 'compare-' + input.name,
-					type: 'group',
-					inputs: [{
-						content: (
-							<div style={{
-								marginBottom: -25,
-								marginTop: -18,
-								overflowX: 'auto',
-								width: '100%',
-							}}>
-								{this.generateObjDiffHtml(
-									currentMap.get(input.name),
-									backupMap.get(input.name),
-									ignoredKeys,
-								)}
-							</div>
-						),
-						name: '',
-						type: 'html'
-					}]
-				}
-			]), [])
+		const conflicts = arrSort(
+			dataInputs
+				.filter(x => x.value === null),
+			'sort',
+		).reduce((ar, input) => ([
+			...ar,
+			input,
+			{
+				accordion: {
+					collapsed: true,
+					style: { marginBottom: 15, marginTop: -5 },
+					styled: true,
+				},
+				label: textsCap.compare,
+				name: 'compare-' + input.name,
+				type: 'group',
+				inputs: [{
+					content: (
+						<div style={{
+							marginBottom: -25,
+							marginTop: -18,
+							overflowX: 'auto',
+							width: '100%',
+						}}>
+							{this.generateObjDiffHtml(
+								currentMap.get(input.name),
+								backupMap.get(input.name),
+								ignoredKeys,
+							)}
+						</div>
+					),
+					name: '',
+					type: 'html'
+				}]
+			}
+		]), [])
 
 		return [
 			// place conflicts on top
 			...conflicts,
 			// new entries from backup
-			...dataInputs.filter(x => x.value !== null && x.options.length === 2),
+			...arrSort(
+				dataInputs.filter(x => x.value !== null && x.options.length === 2),
+				'sort',
+			),
 			// existing entries not in backup
-			...dataInputs.filter(x => x.value !== null && x.options.length > 2),
+			...arrSort(
+				dataInputs.filter(x => x.value !== null && x.options.length > 2),
+				'sort',
+			),
+		]
+
+		return [
+			// place conflicts on top
+			...arrSort(conflicts, 'sort'),
+			// new entries from backup
+			...arrSort(
+				dataInputs.filter(x => x.value !== null && x.options.length === 2),
+				'sort',
+			),
+			// existing entries not in backup
+			...arrSort(
+				dataInputs.filter(x => x.value !== null && x.options.length > 2),
+				'sort',
+			),
 		]
 	}
 
