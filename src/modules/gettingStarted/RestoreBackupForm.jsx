@@ -483,21 +483,6 @@ export default class RestoreBackupForm extends Component {
 				'sort',
 			),
 		]
-
-		return [
-			// place conflicts on top
-			...arrSort(conflicts, 'sort'),
-			// new entries from backup
-			...arrSort(
-				dataInputs.filter(x => x.value !== null && x.options.length === 2),
-				'sort',
-			),
-			// existing entries not in backup
-			...arrSort(
-				dataInputs.filter(x => x.value !== null && x.options.length > 2),
-				'sort',
-			),
-		]
 	}
 
 	handleFileChange = async (e) => {
