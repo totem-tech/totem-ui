@@ -60,7 +60,7 @@
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.21.0",
-		"@polkadot/api": "^0.100.1",
+		"@polkadot/api": "^1.0.1",
 		"@polkadot/keyring": "^1.8.1",
 		"@polkadot/util": "^1.8.1",
 		"@polkadot/wasm-crypto": "^0.14.1",
