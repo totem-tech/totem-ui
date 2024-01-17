@@ -6,6 +6,7 @@ const compression = require('compression')
 const { spawnSync } = require('child_process')
 
 const app = express()
+const APP_NAME = process.env.APP_NAME || 'Totem UI'
 const DIST_DIR = process.env.DIST_DIR || 'dist'
 const GENERATE_LIST = process.env.GENERATE_LIST !== 'FALSE'
 // Reverse Proxy config
@@ -31,7 +32,7 @@ const secondaryPages = (process.env.PAGES || '')
 app.use(compression())
 
 // Serve 'dist' directory
-app.use('/', express.static('dist'))
+app.use('/', express.static(DIST_DIR))
 secondaryPages
 	.forEach(([urlPath, distPath]) =>
 		urlPath && app.use(
@@ -63,7 +64,7 @@ if (!REVERSE_PROXY) {
 		)
 }
 
-console.log(`Totem UI starting in ${mode.toUpperCase()} mode`)
+console.log(`${APP_NAME} starting in ${mode.toUpperCase()} mode`)
 
 // create main https app server 
 const serverApp = https.createServer(
