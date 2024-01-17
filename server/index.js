@@ -10,6 +10,7 @@ const app = express()
 // HTTPS_PORT _must not_ be 443 if it is behind a reverse proxy
 const HTTPS_PORT = process.env.HTTPS_PORT || 443
 const HTTP_PORT = process.env.HTTP_PORT || 80
+const GENERATE_LIST = process.env.GENERATE_LIST !== 'FALSE'
 // SSL certificate file paths
 const certPath = process.env.CertPath || './sslcert/fullchain.pem'
 const keyPath = process.env.KeyPath || './sslcert/privkey.pem'
@@ -137,4 +138,4 @@ const setupPullEndpoints = () => {
 }
 setupPullEndpoints()
 
-require('./generateFilesList')
+GENERATE_LIST && require('./generateFilesList')
