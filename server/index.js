@@ -89,6 +89,7 @@ const executeCmd = async (cmd, args) => {
 	return result
 }
 
+
 const setupPullEndpoints = () => {
 	const endpoints = (pullEndpoints || '')
 		.split(',')
@@ -109,10 +110,14 @@ const setupPullEndpoints = () => {
 			.filter(Boolean)
 
 		const pullUrl = `/pull/${pullURLSuffix}`
+		// hash the secret for github
 		const handlePull = async (request, response, next) => {
 			try {
-				const token = request.header('X-Gitlab-Token')
-				if (token !== pullSecret) throw new Error('Invalid token')
+				const githubSecret = request.header('X-Hub-Signature-256')
+				if (!!githubSecret && verifySignature(githubSecret)) throw new Error('Invalid secret')
+
+				const gitlabToken = request.header('X-Gitlab-Token')
+				if (!githubSecret && pullSecret !== gitlabToken) throw new Error('Invalid token')
 
 				const project = typeof request.query === 'function'
 					? request.query('project')
@@ -141,3 +146,47 @@ const setupPullEndpoints = () => {
 setupPullEndpoints()
 
 GENERATE_LIST && require('./generateFilesList')
+
+async function verifySignature(secret, header, payload) {
+	let encoder = new TextEncoder()
+	let parts = header.split('=')
+	let sigHex = parts[1]
+
+	let algorithm = { name: 'HMAC', hash: { name: 'SHA-256' } }
+
+	let keyBytes = encoder.encode(secret)
+	let extractable = false
+	let key = await crypto.subtle.importKey(
+		'raw',
+		keyBytes,
+		algorithm,
+		extractable,
+		['sign', 'verify'],
+	)
+
+	let sigBytes = hexToBytes(sigHex)
+	let dataBytes = encoder.encode(payload)
+	let equal = await crypto.subtle.verify(
+		algorithm.name,
+		key,
+		sigBytes,
+		dataBytes,
+	)
+
+	return equal
+}
+
+function hexToBytes(hex) {
+	let len = hex.length / 2
+	let bytes = new Uint8Array(len)
+
+	let index = 0
+	for (let i = 0;i < hex.length;i += 2) {
+		let c = hex.slice(i, i + 2)
+		let b = parseInt(c, 16)
+		bytes[index] = b
+		index += 1
+	}
+
+	return bytes
+}
