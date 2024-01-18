@@ -136,9 +136,9 @@ const setupPullEndpoints = () => {
 					? request.query('project')
 					: request.query['project']
 				// ignore project if pull request for the project itself
-				const selfPull = projects.length === 0
-				const dir = `${pullBaseDir}${!selfPull && project || ''}`
-				valid = !selfPull || projects.includes(project)
+				const isSelfPull = projects.length === 0
+				const dir = `${pullBaseDir}${!isSelfPull && project || ''}`
+				valid = isSelfPull || projects.includes(project)
 				if (!valid || !fs.existsSync(dir)) throw new Error(`Invalid project: ${project}`)
 
 				const result = await executeCmd('git', ['-C', dir, 'pull'])
