@@ -127,10 +127,10 @@ const setupPullEndpoints = () => {
 				if (!valid || !fs.existsSync(dir)) throw new Error(`Invalid project: ${project}`)
 
 				const result = await executeCmd('git', ['-C', dir, 'pull'])
-				console.log(`[PullResult] [${project}] ${result.stdout.toString()}`)
+				console.log(new Date().toISOString(), `[PullResult] [${project}] ${result.stdout.toString()}`)
 				response.json({ success: true })
 			} catch (err) {
-				console.log('[PullError]', err.message)
+				console.log(new Date().toISOString(), '[PullError]', err.message)
 				response.json({
 					error: err
 						.message
