@@ -33,6 +33,10 @@ app.use(compression())
 
 // Serve 'dist' directory
 app.use('/', express.static(DIST_DIR))
+
+// parse request body as application/json
+app.use(express.json())
+
 secondaryPages
 	.forEach(([urlPath, distPath]) =>
 		urlPath && app.use(
@@ -113,17 +117,21 @@ const setupPullEndpoints = () => {
 		// hash the secret for github
 		const handlePull = async (request, response, next) => {
 			try {
+				let valid
 				const githubSecret = request.header('X-Hub-Signature-256')
-				if (!!githubSecret && verifySignature(githubSecret)) throw new Error('Invalid secret')
+				if (!!githubSecret) {
+					valid = verifySignature(pullSecret, githubSecret, request.body)
+					if (!valid) throw new Error('Invalid secret')
+				}
 
 				const gitlabToken = request.header('X-Gitlab-Token')
-				if (!githubSecret && pullSecret !== gitlabToken) throw new Error('Invalid token')
+				if (!valid && pullSecret !== gitlabToken) throw new Error('Invalid token')
 
 				const project = typeof request.query === 'function'
 					? request.query('project')
 					: request.query['project']
 				const dir = `${pullBaseDir}${project}`
-				const valid = !projects.length || projects.includes(project)
+				valid = !projects.length || projects.includes(project)
 				if (!valid || !fs.existsSync(dir)) throw new Error(`Invalid project: ${project}`)
 
 				const result = await executeCmd('git', ['-C', dir, 'pull'])
@@ -152,7 +160,10 @@ async function verifySignature(secret, header, payload) {
 	let parts = header.split('=')
 	let sigHex = parts[1]
 
-	let algorithm = { name: 'HMAC', hash: { name: 'SHA-256' } }
+	let algorithm = {
+		name: 'HMAC',
+		hash: { name: 'SHA-256' },
+	}
 
 	let keyBytes = encoder.encode(secret)
 	let extractable = false
