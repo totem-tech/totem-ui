@@ -56,7 +56,7 @@ app.get('*', (request, result, next) => {
 	if (url === '/') return next()
 
 	if (url.endsWith('/')) url = url.slice(0, -1)
-	const [path, distDir] = secondaryPages.find(([path]) => request.url.startsWith(path))
+	const [path, distDir] = secondaryPages.find(([path]) => request.url.startsWith(path)) || []
 	if (path === request.url) return next()
 
 	let filepath = DIST_DIR
