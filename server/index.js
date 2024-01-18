@@ -5,6 +5,7 @@ const https = require('https')
 const fs = require('fs')
 const compression = require('compression')
 const { spawnSync } = require('child_process')
+const path = require('path')
 
 const app = express()
 const APP_NAME = process.env.APP_NAME || 'Totem UI'
@@ -27,7 +28,11 @@ const pullEndpoints = process.env.GIT_PULL_ENDPOINTS
 const secondaryPages = (process.env.PAGES || '')
 	.split(',')
 	.filter(Boolean)
-	.map(x => x.trim().split(':'))
+	.map(x => {
+		const arr = x.trim().split(':')
+		if (!arr[0].startsWith('/')) arr[0] = '/' + arr[0]
+		return arr
+	})
 
 // compress all responses
 app.use(compression())
@@ -38,13 +43,24 @@ app.use('/', express.static(DIST_DIR))
 // parse request body as application/json
 app.use(express.json())
 
-secondaryPages
-	.forEach(([urlPath, distPath]) =>
-		urlPath && app.use(
-			`${urlPath.startsWith('/') ? '' : '/'}${urlPath}`,
-			express.static(distPath),
-		)
+secondaryPages.forEach(([urlPath, distPath]) =>
+	urlPath && app.use(
+		urlPath,
+		express.static(distPath),
 	)
+)
+
+// catch all other URLs and serve main page
+app.get('*', (request, result, next) => {
+	let { url } = request
+	if (url === '/') return next()
+
+	if (url.endsWith('/')) url = url.slice(0, -1)
+	const isSecondary = secondaryPages.find(([path]) => path === request.url)
+	if (isSecondary) return next()
+
+	result.sendFile(path.join(path.resolve(DIST_DIR), '/'))
+})
 
 if (!REVERSE_PROXY) {
 	// when reverse proxy is used this is not needed.
@@ -115,6 +131,7 @@ const setupPullEndpoints = () => {
 			.filter(Boolean)
 
 		const pullUrl = `/pull/${pullURLSuffix}`
+
 		// hash the secret for github
 		const handlePull = async (request, response, next) => {
 			try {
@@ -142,7 +159,7 @@ const setupPullEndpoints = () => {
 				if (!valid || !fs.existsSync(dir)) throw new Error(`Invalid project: ${project}`)
 
 				const result = await executeCmd('git', ['-C', dir, 'pull'])
-				console.log(new Date().toISOString(), `[PullResult] [${project}] ${result.stdout.toString()}`)
+				console.log(new Date().toISOString(), `[PullResult] [${project}] ${dir} ${result.stdout.toString()}`)
 				response.json({ success: true })
 			} catch (err) {
 				console.log(new Date().toISOString(), '[PullError]', err.message)
