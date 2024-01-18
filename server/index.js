@@ -121,7 +121,11 @@ const setupPullEndpoints = () => {
 				let valid
 				const githubSecret = request.header('X-Hub-Signature-256')
 				if (!!githubSecret) {
-					valid = verifySignature(pullSecret, githubSecret, request.body)
+					valid = verifySignature(
+						pullSecret,
+						githubSecret,
+						request.body
+					)
 					if (!valid) throw new Error('Invalid secret')
 				}
 
@@ -156,6 +160,16 @@ setupPullEndpoints()
 
 GENERATE_LIST && require('./generateFilesList')
 
+/**
+ * @name	verifySignature
+ * @summary verify github webhook secret
+ * 
+ * @param	{*} secret  // secret token
+ * @param	{*} header	// request.header('X-Hub-Signature-256')
+ * @param	{*} payload // request.body
+ * 
+ * @returns {Boolean}
+ */
 async function verifySignature(secret, header, payload) {
 	let encoder = new TextEncoder()
 	let parts = header.split('=')
@@ -168,9 +182,10 @@ async function verifySignature(secret, header, payload) {
 
 	let keyBytes = encoder.encode(secret)
 	let extractable = false
-	const { webcrypto } = crypto
-	const { subtle } = webcrypto
-	let key = await subtle.importKey(
+	const cryptoX = !!crypto.subtle
+		? crypto
+		: crypto.webcrypto
+	let key = await cryptoX.subtle.importKey(
 		'raw',
 		keyBytes,
 		algorithm,
@@ -180,7 +195,7 @@ async function verifySignature(secret, header, payload) {
 
 	let sigBytes = hexToBytes(sigHex)
 	let dataBytes = encoder.encode(payload)
-	let equal = await subtle.verify(
+	let equal = await cryptoX.subtle.verify(
 		algorithm.name,
 		key,
 		sigBytes,
