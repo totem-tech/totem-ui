@@ -168,7 +168,9 @@ async function verifySignature(secret, header, payload) {
 
 	let keyBytes = encoder.encode(secret)
 	let extractable = false
-	let key = await crypto.subtle.importKey(
+	const { webcrypto } = crypto
+	const { subtle } = webcrypto
+	let key = await subtle.importKey(
 		'raw',
 		keyBytes,
 		algorithm,
@@ -178,7 +180,7 @@ async function verifySignature(secret, header, payload) {
 
 	let sigBytes = hexToBytes(sigHex)
 	let dataBytes = encoder.encode(payload)
-	let equal = await crypto.subtle.verify(
+	let equal = await subtle.verify(
 		algorithm.name,
 		key,
 		sigBytes,
