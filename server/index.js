@@ -16,8 +16,8 @@ const GENERATE_LIST = process.env.GENERATE_LIST !== 'FALSE'
 const HTTPS_PORT = process.env.HTTPS_PORT || 443
 const HTTP_PORT = process.env.HTTP_PORT || 80
 // SSL certificate file paths
-const certPath = process.env.CertPath || './sslcert/fullchain.pem'
-const keyPath = process.env.KeyPath || './sslcert/privkey.pem'
+const certPath = process.env.CertPath || path.resolve('./sslcert/fullchain.pem')
+const keyPath = process.env.KeyPath || path.resolve('./sslcert/privkey.pem')
 // indicates whether or not reverse proxy is used
 const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
 const HTTP_REDIRECT = process.env.HTTP_REDIRECT !== 'FALSE'
@@ -38,7 +38,7 @@ const secondaryPages = (process.env.PAGES || '')
 app.use(compression())
 
 // Serve 'dist' directory
-app.use('/', express.static(DIST_DIR))
+app.use('/', express.static(path.resolve(DIST_DIR)))
 
 // parse request body as application/json
 app.use(express.json())
@@ -46,7 +46,7 @@ app.use(express.json())
 secondaryPages.forEach(([urlPath, distPath]) =>
 	urlPath && app.use(
 		urlPath,
-		express.static(distPath),
+		express.static(path.resolve(distPath)),
 	)
 )
 
@@ -56,10 +56,15 @@ app.get('*', (request, result, next) => {
 	if (url === '/') return next()
 
 	if (url.endsWith('/')) url = url.slice(0, -1)
-	const isSecondary = secondaryPages.find(([path]) => path === request.url)
-	if (isSecondary) return next()
+	const [path, distDir] = secondaryPages.find(([path]) => request.url.startsWith(path))
+	if (path === request.url) return next()
 
-	result.sendFile(path.join(path.resolve(DIST_DIR), '/'))
+	let filepath = DIST_DIR
+	// path is not exact match for secondary page but starts with it.
+	// serve the secondary page to allow for React routes
+	if (request.url.startsWith(path)) filepath = distDir
+
+	result.sendFile(path.join(path.resolve(filepath), '/'))
 })
 
 if (!REVERSE_PROXY) {
