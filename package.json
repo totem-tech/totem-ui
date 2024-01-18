@@ -72,6 +72,7 @@
 		"buffer": "^6.0.3",
 		"cli": "^1.0.1",
 		"compression": "^1.7.4",
+		"crypto": "^1.0.1",
 		"crypto-browserify": "^3.12.0",
 		"pbkdf2": "^3.0.17",
 		"react": "16.8.6",
