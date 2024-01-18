@@ -52,19 +52,23 @@ secondaryPages.forEach(([urlPath, distPath]) =>
 
 // catch all other URLs and serve main page
 app.get('*', (request, result, next) => {
-	let { url } = request
-	if (url === '/') return next()
+	try {
+		let { url } = request
+		if (url === '/') return next()
 
-	if (url.endsWith('/')) url = url.slice(0, -1)
-	const [path, distDir] = secondaryPages.find(([path]) => request.url.startsWith(path)) || []
-	if (path === request.url) return next()
+		if (url.endsWith('/')) url = url.slice(0, -1)
+		const [path, distDir] = secondaryPages.find(([path]) => request.url.startsWith(path)) || []
+		if (path && path === request.url) return next()
 
-	let filepath = DIST_DIR
-	// path is not exact match for secondary page but starts with it.
-	// serve the secondary page to allow for React routes
-	if (request.url.startsWith(path)) filepath = distDir
+		let filepath = DIST_DIR
+		// path is not exact match for secondary page but starts with it.
+		// serve the secondary page to allow for React routes
+		if (path && request.url.startsWith(path)) filepath = distDir
 
-	result.sendFile(path.join(path.resolve(filepath), '/'))
+		result.sendFile(path.join(path.resolve(filepath), '/'))
+	} catch (err) {
+		result.sendFile(path.join(path.resolve(DIST_DIR), '/'))
+	}
 })
 
 if (!REVERSE_PROXY) {
