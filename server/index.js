@@ -53,11 +53,15 @@ secondaryPages.forEach(([urlPath, distPath]) =>
 // catch all other URLs and serve main page
 app.get('*', (request, result, next) => {
 	try {
-		let { url } = request
+		let url = request.url
 		if (url === '/') return next()
 
 		if (url.endsWith('/')) url = url.slice(0, -1)
-		const [path, distDir] = secondaryPages.find(([path]) => request.url.startsWith(path)) || []
+		const spage = secondaryPages
+			.find(([path]) => request.url.startsWith(path))
+			|| []
+		const path = spage[0]
+		const distDir = spage[1]
 		if (path && path === request.url) return next()
 
 		let filepath = DIST_DIR
