@@ -10,7 +10,7 @@ import { statusTitles } from '../../services/queue'
 import { translated } from '../../utils/languageHelper'
 import { format } from '../../utils/time'
 import { isObj } from '../../utils/utils'
-import { currencyDefault } from '../currency/currency'
+import { currencyDefault } from '../currency/currencyjs'
 
 const textsCap = {
     action: 'action',

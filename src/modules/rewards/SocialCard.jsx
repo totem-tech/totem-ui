@@ -16,7 +16,7 @@ import {
     useInverted
 } from '../../utils/window'
 import Currency from '../currency/Currency'
-import { currencyDefault } from '../currency/currency'
+import { currencyDefault } from '../currency/currencyjs'
 import DiscordRewardWizard from './DiscordRewardWizard'
 import TwitterRewardWizard from './TwitterRewardWizard'
 import { markNewsleterDone, useRewards } from './rewards'

@@ -35,7 +35,7 @@ import {
     convertTo,
     currencyDefault,
     rxSelected as rxSelectedCurrency,
-} from '../currency/currency'
+} from '../currency/currencyjs'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { remove as removeNotif, setItemViewHandler } from '../notification/notification'
 import AddressName from '../partner/AddressName'

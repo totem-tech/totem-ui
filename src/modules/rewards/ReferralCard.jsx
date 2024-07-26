@@ -18,7 +18,7 @@ import {
     isDefined
 } from '../../utils/utils'
 import { useInverted } from '../../utils/window'
-import { currencyDefault } from '../currency/currency'
+import { currencyDefault } from '../currency/currencyjs'
 import Currency from '../currency/Currency'
 import { generateCrowdloanTweet } from './rewards'
 

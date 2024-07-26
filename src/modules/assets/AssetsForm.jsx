@@ -10,7 +10,7 @@ import { translated } from '../../utils/languageHelper'
 import { unsubscribe, useRxSubject, useRxSubjects } from '../../utils/reactjs'
 import { className, isFn, objWithoutKeys } from '../../utils/utils'
 import { MOBILE, rxLayout } from '../../utils/window'
-import { convertTo, rxSelected } from '../currency/currency'
+import { convertTo, rxSelected } from '../currency/currencyjs'
 import AssetConverterForm from './AssetConverterForm'
 
 const textsCap = {

@@ -3,7 +3,7 @@
 // import { translated } from '../../services/language'
 // import { useRxSubject } from '../../services/react'
 // import LocationForm, { inputNames as locInputNames } from '../location/LocationForm'
-// import { rxCrowdsaleData } from './crowdsale'
+// import { rxCrowdsaleData } from './crowdsalejs'
 // import { getInputs, inputNames } from './KYCForm'
 
 // const textsCap = translated({

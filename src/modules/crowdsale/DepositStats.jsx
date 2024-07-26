@@ -1,6 +1,6 @@
 // import React, { useEffect } from 'react'
 // import Currency from '../currency/Currency'
-// import { currencyDefault } from '../currency/currency'
+// import { currencyDefault } from '../currency/currencyjs'
 // import { translated } from '../../services/language'
 // import { iUseReducer, useRxSubject } from '../../services/react'
 // import {
@@ -8,7 +8,7 @@
 //     calculateToNextLevel,
 //     rxCrowdsaleData,
 //     Level_NEGOTIATE_Entry_XTX,
-// } from './crowdsale'
+// } from './crowdsalejs'
 
 // const [texts, textsCap] = translated({  
 //     amountAllocated: 'your allocation',

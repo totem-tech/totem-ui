@@ -14,7 +14,7 @@
 // import { get as getLocation, getAll as getLocations, rxLocations } from '../location/location'
 // import LocationForm from '../location/LocationForm'
 // import { getInputs as getDAAInputs, inputNames as daaInputNames, } from './DAAForm'
-// import { crowdsaleData, rxCrowdsaleData } from './crowdsale'
+// import { crowdsaleData, rxCrowdsaleData } from './crowdsalejs'
 // import { showFaqs } from './FAQ'
 // import { encryptionKeypair, encryptObj, randomBytes } from '../../utils/naclHelper'
 

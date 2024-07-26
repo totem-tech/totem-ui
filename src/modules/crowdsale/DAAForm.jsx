@@ -6,7 +6,7 @@
 // import { iUseReducer } from '../../services/react'
 // import client from '../chat/ChatClient'
 // import { isFn } from '../../utils/utils'
-// import { crowdsaleData } from './crowdsale'
+// import { crowdsaleData } from './crowdsalejs'
 // import PromisE from '../../utils/PromisE'
 
 // const textsCap = translated({
