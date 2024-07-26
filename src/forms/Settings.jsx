@@ -7,7 +7,7 @@ import { historyLimit as chatHistoryLimit } from '../modules/chat/chat'
 import {
     rxSelected as rxSelectedCurrency,
     setSelected as setSelectedCurrency
-} from '../modules/currency/currency'
+} from '../modules/currency/currencyjs'
 import { asInput } from '../modules/currency/CurrencyDropdown'
 import { limit as historyItemsLimit } from '../modules/history/history'
 import TimekeepingSettings from '../modules/timekeeping/TimekeepingSettings'

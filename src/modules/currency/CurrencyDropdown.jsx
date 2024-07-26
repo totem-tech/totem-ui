@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { Icon } from 'semantic-ui-react'
-import { getCurrencies } from './currency'
+import { getCurrencies } from './currencyjs'
 import { usePromise } from '../../utils/reactjs'
 import FormInput from '../../components/FormInput'
 import { Reveal } from '../../components/buttons'

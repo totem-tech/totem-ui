@@ -7,7 +7,7 @@
 // import storage from '../../services/storage'
 // // modules
 // import client, { rxIsLoggedIn } from '../chat/ChatClient'
-// import { convertTo, currencyDefault, getCurrencies } from '../currency/currency'
+// import { convertTo, currencyDefault, getCurrencies } from '../currency/currencyjs'
 
 // const MODULE_KEY = 'crowdsale'
 // export const rxCrowdsaleData = new BehaviorSubject(crowdsaleData() || {})

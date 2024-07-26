@@ -5,7 +5,7 @@ import '../public/styles.css' // global styles
 import './utils/log' // setup debug logger // keep it above all non-NPM imports
 import App from './App'
 import NewsletterSignup from './forms/NewsletterSignup'
-import { updateCurrencies } from './modules/currency/currency'
+import { updateCurrencies } from './modules/currency/currencyjs'
 import { getConnection } from './services/blockchain'
 import './services/language' // will setup language when in build mode 
 import { rxOnSave } from './services/queue'

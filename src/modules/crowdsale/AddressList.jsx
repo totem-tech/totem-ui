@@ -10,7 +10,7 @@
 // import { setToast } from '../../services/toast'
 // import { MOBILE, rxLayout } from '../../utils/window'
 // import CalculatorForm from './CalculatorForm'
-// import { BLOCKCHAINS, crowdsaleData, rxCrowdsaleData } from './crowdsale'
+// import { BLOCKCHAINS, crowdsaleData, rxCrowdsaleData } from './crowdsalejs'
 // import DAAForm from './DAAForm'
 // import { showFaqs } from './FAQ'
 // import KYCViewForm from './KYCViewForm'

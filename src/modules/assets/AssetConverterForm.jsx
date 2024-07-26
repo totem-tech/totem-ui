@@ -12,7 +12,7 @@ import {
     isFn
 } from '../../utils/utils'
 import { MOBILE, rxLayout } from '../../utils/window'
-import { convertTo } from '../currency/currency'
+import { convertTo } from '../currency/currencyjs'
 import { asInput } from '../currency/CurrencyDropdown'
 
 const textsCap = translated({

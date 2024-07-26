@@ -12,7 +12,7 @@ import { useRxSubject } from '../../utils/reactjs'
 import client from '../../utils/chatClient'
 import Converter from './Converter'
 import Currency from './Currency'
-import { getCurrencies, rxSelected } from './currency'
+import { getCurrencies, rxSelected } from './currencyjs'
 import { setToast } from '../../services/toast'
 
 const textsCap = translated({
