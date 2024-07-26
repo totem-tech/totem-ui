@@ -22,7 +22,7 @@ const keyPath = process.env.KeyPath || path.resolve('./sslcert/privkey.pem')
 const REVERSE_PROXY = process.env.REVERSE_PROXY === 'TRUE'
 const HTTP_REDIRECT = process.env.HTTP_REDIRECT !== 'FALSE'
 // value set in `webpack --mode`. Expected value: 'production' or 'developement'
-const mode = process.env.NODE_ENV || 'development';
+const mode = process.env.NODE_ENV || 'developement'
 // const isProd = mode === 'production'
 const pullEndpoints = process.env.GIT_PULL_ENDPOINTS
 const secondaryPages = (process.env.PAGES || '')

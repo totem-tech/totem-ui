@@ -88,5 +88,9 @@
 		"web3-utils": "^1.3.4",
 		"xxhashjs": "^0.2.2",
 		"yarn": "^1.22.10"
+	},
+	"browser": {
+		"child_process": false,
+		"fs": false
 	}
 }
