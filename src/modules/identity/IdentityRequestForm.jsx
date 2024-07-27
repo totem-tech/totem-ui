@@ -10,7 +10,7 @@ const notificationType = 'identity'
 const childType = 'request'
 export const reasons = [
     'custom',
-    'to add your Identity to my Partner list',
+    'to add your legal entity to my Partner list',
     'timekeeping on an Activity',
 ]
 let textsCap = {
@@ -21,14 +21,14 @@ let textsCap = {
     customReasonLabel: 'custom Reason',
     customReasonPlaceholder: 'enter a reason for your request',
     formHeader: 'request Partner Identity',
-    formSubheader: 'request one or more user(s) to share a Totem Identity with you.',
+    formSubheader: 'request one or more user(s) to share a Totem legal entity with you.',
     invalidUserId: 'invalid User ID',
     reason1: reasons[1],
     reason2: reasons[2],
     reason3: reasons[0],
     reasonPlaceholder: 'select a reason for this request',
     successMsg1: 'identity request has been sent to selected users.',
-    successMsg2: 'you will receive notification once they agree to share their Identity with you.',
+    successMsg2: 'you will receive notification once they agree to share their legal entity with you.',
     successMsgHeader: 'request sent!',
     errorMessageHeader: 'request failed!',
     userIds: 'user IDs',

@@ -37,7 +37,7 @@ const texts = {
 		Additionally, you will also be able to restore your account on another device.
 	`,
 	// keep the commas. they will be used to generate an unordered list
-	confirmBackupTypes: 'history, identities, locations, notifications, partners, recent chat messages, settings, user credentials',
+	confirmBackupTypes: 'history, legal entities, locations, notifications, partners, recent chat messages, settings, user credentials',
 	registrationSuccess: 'Registration successful!',
 	quickGuidePara1: `
 		Totem is currently under heavy development, but you can already use the Identities, Partners, Activities 
@@ -46,14 +46,14 @@ const texts = {
 	// 	Most of what you do in the application will consume Totem Transactions ($TOTEM for short) from your balance but don't worry, we are nice open source people, and we'll give you plenty to get you started.
 	// `,
 	quickGuidePara2: `Most of what you do in the application will consume "Totem Credits" from your balance but don't worry, we are nice open source people, and we'll give you plenty to get you started.`,
-	quickGuideTitle: 'A quick guide to getting started with Totem Live Accounting.',
+	quickGuideTitle: 'A quick guide to getting started with Company Digital Passport Control Panel.',
 	restoreTitle: 'Got a backup of an existing account?',
 	restoreBtnTitle: 'Restore backup',
-	step1Description: 'Identities are only known to you. You can create as many as you like in the Identities Module.',
-	step1Title: 'Edit Default Identity',
+	step1Description: 'You can add as many Legal Entities as you like in the Entities Module.',
+	step1Title: 'Name your Legal Entity',
 	stepsTitle: `Only 3 short steps to begin. Let's go!`,
 	step2Description: `
-		Chat is how you communicate with other Totem users. Choose a unique name (preferably not your own name!)
+		Chat is how you communicate with other Company Digital Passport users. Choose a unique name (preferably not your own name!)
 	`,
 	step2Title: 'Create Chat User ID',
 	step2Title2: 'Your User ID',
@@ -63,7 +63,7 @@ const texts = {
 	`,
 	supportChatDesc2: 'You can also reach us over on the following applications:',
 	supportContact: 'Contact Support',
-	trollbox: 'Join Totem Global Conversation',
+	trollbox: 'Join the Global Conversation',
 	// videoGuidTitle: 'Further essential steps:',
 	// video1Title: 'What am I looking at? Watch the video:',
 	// video2Title: 'Backup your account. Watch the video:',

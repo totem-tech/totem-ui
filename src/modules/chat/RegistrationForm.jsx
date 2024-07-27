@@ -13,16 +13,16 @@ import { rxSelected } from '../identity/identity'
 const textsCap = {
 	alreadyRegistered: 'you have already registered!',
 	createAccount: 'create account',
-	formHeader: 'register a memorable user name',
+	formHeader: 'register a memorable username (UserId)',
 	formSubheader:
-		'choose an unique alias for use with Totem messaging service.',
+		'choose an unique alias for use with the CDP App messaging service.',
 	referredByLabel: 'referral code',
 	referredByPlaceholder: 'if you have a referral code enter it here',
 	registrationComplete: 'registration complete',
 	registrationFailed: 'registration failed',
-	userId: 'User ID',
+	userId: 'UserID',
 	userIdCriteria:
-		'please enter an User ID that meets the following criteria:',
+		'please enter a UserID that meets the following criteria:',
 	userIdCriteria1: 'starts with a letter',
 	userIdCriteria2: 'contains minimum 3 characters',
 	userIdCriteria3: 'contains only alphanumeric characters',

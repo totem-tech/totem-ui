@@ -37,10 +37,10 @@ const textsCap = {
     namePlaceholder: 'enter a name for the group chat',
     open: 'open',
     subheader: 'start new or re-open archived chat',
-    totemSupport: 'Totem Support',
-    totemTrollbox: 'Totem Trollbox',
+    totemSupport: 'ask support',
+    totemTrollbox: 'global conversation',
     updateName: 'update group name',
-    userIdsHint: 'To start a group chat enter multiple User IDs',
+    userIdsHint: 'to start a group chat enter multiple UserIDs',
 }
 translated(textsCap, true)
 

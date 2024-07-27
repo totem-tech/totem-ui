@@ -12,7 +12,7 @@ import PartnerForm from './PartnerForm'
 
 const textsCap = {
     business: 'business',
-    deloitte: 'Partner identity is Deloitte verified!',
+    deloitte: 'Partner legal entity is Deloitte verified!',
     partner: 'partner',
     personal: 'personal',
     public: 'public',

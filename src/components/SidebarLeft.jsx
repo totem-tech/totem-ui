@@ -239,17 +239,20 @@ const styles = {
 	collapsed: {
 		overflowX: 'hidden',
 		width: 60,
+		background: '#101624',
 	},
 	dimmer: {
 		display: 'block',
 		position: 'absolute',
-		background: 'rgba(0, 0, 0, 0.84)',
+		// background: 'rgba(0, 0, 0, 0.84)',
+		background: '#101624',
 		height: '100%',
 		width: '100%',
 		zIndex: 3,
 	},
 	expanded: {
-		width: 265
+		width: 265,
+		background: '#101624',
 	},
 	menuItem: {
 		marginTop: 40
@@ -266,7 +269,8 @@ const styles = {
 		left: 0,
 		height: 40,
 		color: 'white',
-		background: '#4a4a4a',
+		// background: '#4a4a4a',
+		background: '#101624',
 		padding: '13px 18px',
 		cursor: 'pointer',
 		zIndex: 1,

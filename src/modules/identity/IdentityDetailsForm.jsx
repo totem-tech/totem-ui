@@ -36,7 +36,7 @@ const textsCap = {
 	removeWarningPart1: 'you are about to remove the following identity',
 	removeWarningPart2: 'if not backed up, this action is irreversible.',
 	removeWarningPart3: 'you will lose access to all activity/data related to this identity.',
-	identityDeleteWarningSelected: 'cannot remove identity you are currently using',
+	identityDeleteWarningSelected: 'cannot remove legal entity you are currently using',
 	identityDeleteWarningReward: 'cannot remove your rewards identity',
 	show: 'show',
 	showSeed: 'show seed phrase',

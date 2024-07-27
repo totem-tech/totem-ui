@@ -51,7 +51,7 @@ const textsCap = translated({
     historyTitle: 'history',
     historySubheader: 'List of actions recently taken by you. This data is only stored locally on your computer.',
 
-    identityTitle: 'identities',
+    identityTitle: 'legal entities',
     identitySubheader: 'Identities are like companies - and you can create as many as you like!',
     identitySubheaderDetails1: `
         In Totem, you can create multiple identities to suit your needs. 
@@ -214,7 +214,7 @@ export const sidebarItems = [
     {
         content: IdentityList,
         icon: 'id badge outline',
-        name: 'identities',
+        name: 'legal entities',
         subHeader: textsCap.identitySubheader,
         subHeaderDetails: (
             <div>

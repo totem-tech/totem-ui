@@ -51,7 +51,7 @@ const textsCap = {
 	fileLabel: 'select your backup JSON file',
 	formHeader: 'restore backup',
 	history: 'history',
-	identities: 'identities',
+	identities: 'legal entities',
 	ignore: 'ignore',
 	invalidFileType: 'invalid file type selected',
 	keepUnchanged: 'keep unchanged',

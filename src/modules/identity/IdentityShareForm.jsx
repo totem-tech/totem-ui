@@ -26,8 +26,8 @@ const childType = 'share'
 const textsCap = {
 	failedMsgHeader: 'submission failed!',
 	formHeader: 'share identity',
-	formSubheader: 'share with Totem users',
-	identities: 'identities',
+	formSubheader: 'share with Company Digital Passport users',
+	identities: 'legal entities',
 	identity: 'identity',
 	identityLabel: 'identity to be shared',
 	identityPlaceholder: 'select an identity',

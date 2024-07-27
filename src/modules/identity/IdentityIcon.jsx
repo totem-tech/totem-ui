@@ -14,8 +14,8 @@ import { UseDeloiteVerified } from './IdentityForm'
 
 const textsCap = {
     business: 'business',
-    deloitte: 'Your identity is Deloitte verified!',
-    identity: 'your identity',
+    deloitte: 'Your legal entity is verified!',
+    identity: 'your legal entity',
     personal: 'personal',
     rewardsIdentity: 'this is your rewards identity',
 }

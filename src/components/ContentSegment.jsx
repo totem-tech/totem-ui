@@ -28,7 +28,7 @@ import { translated } from '../utils/languageHelper'
 import { TotemButtonLogo } from '../assets'
 
 const textsCap = {
-	pageTitle: 'Totem Live Accounting'
+	pageTitle: 'Company Digital Passport Control Panel'
 }
 translated(textsCap, false)
 

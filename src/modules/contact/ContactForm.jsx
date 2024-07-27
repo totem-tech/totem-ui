@@ -32,7 +32,7 @@ const textsCap = {
 	subheaderUpdate: 'changes will be auto-saved',
 	nameLabel: 'contact name',
 	namePlaceholder: 'enter a name for this contact',
-	partnerIdentityLabel: 'associated partner',
+	partnerIdentityLabel: 'associate a partner',
 	phoneCodeLabel: 'phone number',
 	phoneCodePlaceholder: 'country',
 	remove: 'remove',
@@ -40,7 +40,7 @@ const textsCap = {
 	saveContact: 'save contact',
 	saved: 'saved',
 	update: 'update',
-	usedByIdentites: 'this contact is used by the following identities:',
+	usedByIdentites: 'this contact is used by the following entities:',
 }
 translated(textsCap, true)
 export const inputNames = {

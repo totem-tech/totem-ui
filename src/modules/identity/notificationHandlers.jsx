@@ -10,7 +10,7 @@ const textsCap = translated({
     ignore: 'ignore',
     share: 'share',
     reason: 'reason',
-    indentityIntroduceMsg: 'recommended you to share your identity with the following user:',
+    indentityIntroduceMsg: 'recommended you to share your legal entity with the following user:',
     identityRequestMsg: 'requested an identity',
     introducedBy: 'introduced by',
 }, true)[1]

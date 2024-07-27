@@ -43,14 +43,14 @@ const textsCap = {
     inboxHide: 'hide conversation',
     inboxShow: 'show conversation',
     inputPlaceholder: 'type something and press enter to send',
-    loginRequired: 'login/registration required',
+    loginRequired: 'login / registration required',
     messageError: 'error',
     offline: 'offline',
     online: 'online',
     returnToInbox: 'return to conversation',
     showMembers: 'show members',
     pmBtnTitle: 'open back-channel',
-    trollbox: 'Totem Global Conversation',
+    trollbox: 'Global Conversation',
     you: 'you',
 }
 const texts = translated(textsCap, true)[0]

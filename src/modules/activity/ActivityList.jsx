@@ -25,7 +25,7 @@ import ActivityTeamList from './ActivityTeamList'
 import useActivities from './useActivities'
 
 const textsCap = {
-    areYouSure: 'are you sure?',
+    areYouSure: 'are you sure you wish to proceed?',
     actions: 'actions',
     activity: 'activity',
     activityTeam: 'activity team',
@@ -35,9 +35,9 @@ const textsCap = {
     delete: 'delete',
     deleteConfirmHeader: 'delete activities',
     deleteConfirmMsg1: 'you are about to delete the following activities:',
-    deleteConfirmMsg2: `Warning: This action cannot be undone! 
-        You will lose access to this Activity data forever! 
-        A better option might be to archive the Activity.`,
+    deleteConfirmMsg2: `Warning: This action cannot be undone. 
+        If you continue you will lose access to this activity data forever.
+        A better option might be to archive the activity.`,
     description: 'description',
     loading: 'loading...',
     name: 'name',

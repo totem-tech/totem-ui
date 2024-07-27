@@ -36,7 +36,7 @@ const textsCap = {
 	usage: 'usage',
 	columnPublicTitle1: 'a public company cannot be changed to private.',
 	columnPublicTitle2:
-		'click to add a company with this identity to the public database',
+		'click to add a company with this legal entity to the public database',
 	partnerName: 'partner name',
 	removePartner: 'remove partner',
 	usedBy: 'used by',

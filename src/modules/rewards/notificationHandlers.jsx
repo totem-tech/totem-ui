@@ -8,7 +8,7 @@ import { remove, rxVisible, setItemViewHandler } from '../notification/notificat
 
 const textsCap = {
     chat: 'chat',
-    connectMsg: 'You can connect with the user by sharing your identity or chat to help them get onboard Totem!',
+    connectMsg: 'You can connect with the user by sharing your legal entity or chat to help them get onboard Totem!',
     referralSuccess: 'joined Totem using your referral code.',
     shareIdentity: 'share identity',
     signupRewardMsg: `

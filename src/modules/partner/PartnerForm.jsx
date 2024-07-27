@@ -51,14 +51,14 @@ import PartnerIcon from './PartnerIcon'
 
 const textsCap = {
 	addressAdditionLabel: 'use',
-	addressLabel: 'Company or partner Identity',
-	addressEmptySearchMessage: 'enter a compnay name to search',
-	addressPlaceholder: 'search by company name or enter identity',
+	addressLabel: 'Company or partner legal entity',
+	addressEmptySearchMessage: 'enter a company name to search',
+	addressPlaceholder: 'search by company name or other information',
 	addressValidationMsg1:
 		'partner already exists with the following name:',
-	addressValidationMsg2: 'please enter a valid Totem Identity',
-	associatedIdentityLabel: 'associated with your identity',
-	associatedIdentityPlaceholder: 'select one of your identities',
+	addressValidationMsg2: 'please enter a valid legal entity',
+	associatedIdentityLabel: 'associated with your legal entity',
+	associatedIdentityPlaceholder: 'select one of your legal entities',
 	autoSaved: 'changes will be auto saved',
 	business: 'business',
 	contactGroupLabel: 'contact details',

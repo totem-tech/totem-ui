@@ -15,14 +15,14 @@ const textsCap = {
     countryPlaceholder: 'select a country',
     header: 'make partner public',
     identity: 'identity',
-    identityValidationMsg: 'pelease enter a valid Totem identity',
+    identityValidationMsg: 'pelease enter a valid Legal Entity',
     nameLabel: 'company or entity Name',
     namePlaceholder: 'enter the trading name',
     regNumLabel: 'registered number',
     regNumPlaceholder: 'enter national registered number of entity',
     submitSuccessMsg: 'company added successfully',
     submitErrorHeader: 'submission failed',
-    subheader: 'warning: doing this makes this partner visible to all Totem users',
+    subheader: 'warning: doing this makes this partner visible to all Company Digital Passport users',
     success: 'success',
 }
 translated(textsCap, true)[1]

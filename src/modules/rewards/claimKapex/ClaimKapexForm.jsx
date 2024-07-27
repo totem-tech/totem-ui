@@ -51,7 +51,7 @@ let textsCap = {
 	// historyWarning: 'DO NOT remove history items before submitting your claim!',    
 	loading: 'loading...',
 	rewardIdLabel: 'your reward identity',
-	rewardIdLabelDetails: 'this is the identity you need to complete the tasks with',
+	rewardIdLabelDetails: 'this is the legal entity you need to complete the tasks with',
 	successMsg0: 'claim submitted successfully',
 	successMsg1: 'we have received your claim and will go through them in due time.',
 	successMsg2: 'read terms and condition for KAPEX migration',

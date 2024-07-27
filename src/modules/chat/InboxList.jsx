@@ -58,11 +58,11 @@ const textsCap = {
     online: 'online',
     remove: 'clear',
     removeMessages: 'clear all messages',
-    removeConversation: 'trash conversation',
+    removeConversation: 'delete conversation',
     searchPlaceholder: 'search conversations',
-    support: 'Totem Support',
-    trash: 'trash',
-    trollbox: 'Totem Global Conversation',
+    support: 'ask support',
+    trash: 'delete',
+    trollbox: 'global conversation',
     you: 'you',
 }
 translated(textsCap, true)

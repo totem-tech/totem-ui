@@ -4,15 +4,15 @@
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 	<meta charset="utf-8">
-	<title>Totem Live Accounting</title>
+	<title>CDP Control Panel</title>
 	<!-- <link rel="stylesheet" href="styles.css"> -->
 	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 	<link rel="manifest" href="/site.webmanifest">
 	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-	<meta name="apple-mobile-web-app-title" content="Totem Live Accounting">
-	<meta name="application-name" content="Totem Live Accounting">
+	<meta name="apple-mobile-web-app-title" content="CDP Control Panel">
+	<meta name="application-name" content="CDP Control Panel">
 	<meta name="msapplication-TileColor" content="#ffffff">
 	<meta name="theme-color" content="#ffffff">
 </head>
@@ -48,9 +48,10 @@
 
 			.lds-default div {
 				position: absolute;
-				width: 6px;
-				height: 6px;
-				background: deeppink;
+				width: 5px;
+				height: 5px;
+				/* background: deeppink; */
+				background: #141b2d;
 				border-radius: 50%;
 				animation: lds-default 1.2s linear infinite;
 			}
@@ -132,16 +133,15 @@
 			}
 
 			@keyframes lds-default {
-
 				0%,
 				20%,
 				80%,
 				100% {
-					transform: scale(1);
+					transform: scale(0.5);
 				}
 
 				50% {
-					transform: scale(1.5);
+					transform: scale(1);
 				}
 			}
 		</style>

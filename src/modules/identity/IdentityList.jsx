@@ -28,10 +28,10 @@ const textsCap = {
 	never: 'never',
 	tags: 'tags',
 	usage: 'usage',
-	emptyMessage: 'no matching identity found', // assumes there will always be an itentity
+	emptyMessage: 'no matching legal entity found', // assumes there will always be an itentity
 	lastBackup: 'last backup',
 	showDetails: 'show details',
-	shareIdentityDetails: 'share your identity with other Totem users',
+	shareIdentityDetails: 'share your legal entity with other users',
 	txAllocations: 'transaction balance',
 	updateIdentity: 'update your identity',
 }

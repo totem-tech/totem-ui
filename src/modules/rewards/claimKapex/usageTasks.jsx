@@ -26,10 +26,10 @@ import { listTypes } from '../../task/TaskList'
 import { statusCached } from './claimKapex'
 
 let textsCap = {
-	addIdentity: 'add identity shared by a friend',
+	addIdentity: 'add legal entity shared by a friend',
 	addSelf: 'add yourself as a team member by clicking on the "Add myself" button.',
 	amountClaimable: 'amount transferred will not affect the amount claimable.',
-	checkNotification: 'check your notification to see if your friend shared their identity with you and add their them as partner by clicking on "Add partner" button.',
+	checkNotification: 'check your notification to see if your friend shared their legal entity with you and add their them as partner by clicking on "Add partner" button.',
 	clickCreate: 'click on the "Create" button.',
 	clickDuration: 'click on "Manually enter duration"',
 	clickProceed: 'click on the "Proceed" button',
@@ -54,7 +54,7 @@ let textsCap = {
 	goToTimekeeping: 'go to Timekeeping module',
 	goToTransfer: 'go to Transfer module',
 	openTab: 'open in a new tab?',
-	requestIdentity: 'request identity from a friend',
+	requestIdentity: 'request legal entity from a friend',
 	selectActivity: 'select the activity you just created',
 	selectRecipient: 'select your friend from the recipient DropDown list',
 	step1Title: 'test the DApp',

@@ -20,7 +20,7 @@ const textsCap = translated({
     assetPlaceholder: 'select an asset',
     amountFromLabel: 'quantity',
     amountFromPlaceholder: 'enter quantity',
-    amountToLabel: 'Value in Functional Currency',
+    amountToLabel: 'Value in presentation currency',
 }, true)[1]
 const inputNames = {
     asset: 'asset',

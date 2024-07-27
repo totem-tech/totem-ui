@@ -50,7 +50,7 @@ import ApplicationView from './ApplicationView'
 let textsCap = {
     accept: 'accept',
     acceptApplication: 'accept application',
-    addPartner: 'add the applicant identity as your partner',
+    addPartner: 'add the applicant legal entity as your partner',
     applicant: 'applicant',
     appliedAt: 'applied at',
     emptyMessage: 'no applications received',

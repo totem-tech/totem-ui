@@ -47,7 +47,7 @@ const textsCap = {
 	actions: 'actions',
 	deselectAll: 'deselect all',
 	noDataAvailable: 'no data available',
-	noResultsMsg: 'your search yielded no results',
+	noResultsMsg: 'no result for your search',
 	search: 'search',
 	selectAll: 'select all',
 }

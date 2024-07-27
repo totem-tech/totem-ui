@@ -17,14 +17,14 @@ const textsCap = {
     addAsset: 'add',
     btnSubtract: 'subtract all',
     btnAdd: 'add all to folio',
-    labelFE: 'selection Functional Currency',
+    labelFE: 'select functional currency of the entity',
     latestPriceMsg: 'using latest available prices',
     removeAsset: 'remove',
     searchAssets: 'search assets',
-    tableHide: 'Hide Rates Table',
-    tableShow: 'Show Rates Table',
+    tableHide: 'hide rates table',
+    tableShow: 'show rates table',
     toBeImplemented: 'feature not implemented yet!',
-    totalValueOfAssets: 'Total Value of Assets'
+    totalValueOfAssets: 'total value of assets'
 }
 translated(textsCap, true)
 export const inputNames = {

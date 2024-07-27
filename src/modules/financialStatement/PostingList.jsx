@@ -16,8 +16,8 @@ const textsCap = {
     credit: 'credit',
     date: 'date',
     debit: 'debit',
-    partner: 'partner',
-    partnerAddress: 'partner address',
+    partner: 'business partner',
+    partnerAddress: 'business partner ID',
     postingId: 'posting ID',
 }
 translated(textsCap, true)

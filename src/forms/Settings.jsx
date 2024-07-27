@@ -29,10 +29,10 @@ import { gridColumns } from '../utils/window'
 
 const textsCap = {
     applyLater: 'apply later',
-    applyNow: 'apply now!',
-    chatHistoryWarning1: 'click on "Apply now!" button to purge excess messages from each inbox immediately.',
+    applyNow: 'apply now',
+    chatHistoryWarning1: 'click the "Apply now" button to immediately purge excess messages from each inbox.',
     chatHistoryWarning1a: 'you may want to create a back up before doing so.',
-    chatHistoryWarning2: 'click on "Apply later" button to apply changes as you send or receive new messages for each inbox.',
+    chatHistoryWarning2: 'click the "Apply later" button to apply changes as you send or receive new messages for each inbox.',
     chatLimitLabel: 'messages per chat',
     column: 'column',
     columns: 'columns',
@@ -51,18 +51,18 @@ const textsCap = {
     CAUTION: an invalid node URL will cause Blockchain connectivity to fail.
     Page will be reloaded to apply the change.
     
-    If you would like to revert to default node URL, remove it from the input field.
+    If you would like to revert to default node URL, remove your URL from the input field.
     `,
     nodeUrlCofirmBtn: 'Yes, proceed',
     nodeUrlLabel: 'blockchain node URL',
-    nodeUrlReset: 'Revert to default Node URL',
+    nodeUrlReset: 'Revert to default node URL',
     saved: 'saved',
     settings: 'settings',
     unlimited: 'unlimited',
     _c: 'toggle chat bar visibility',
     _d: 'toggle dark mode',
     _k: 'toggle keyboard shortcuts view',
-    _i: 'toggle identity dropdown visibility',
+    _i: 'toggle entity dropdown visibility',
     _n: 'toggle notification visibility',
     _s: 'toggle sidebar',
     _shiftC: 'start new chat',

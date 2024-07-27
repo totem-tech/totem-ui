@@ -11,7 +11,7 @@ let textsCap = {
     introducingUserIdConflict: 'you cannot introduce a user to themselves!',
     header: 'partner introduction',
     recipients: 'recipients',
-    subheader: 'recipients will receive a request for permission to share their identity with this user',
+    subheader: 'recipients will receive a request for permission to share their legal entity with this user',
     submitSuccessHeader: 'submitted successfully',
     submitSuccessMessage: 'notification sent to recipients',
     submitErrorHeader: 'submission failed',

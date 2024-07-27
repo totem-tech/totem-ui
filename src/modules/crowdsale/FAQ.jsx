@@ -207,7 +207,7 @@
 //                         Although Totem is part of the Polkadot Ecosystem, a so-called Initial Parachain Offering is designed to lock funds for the contributors and not the developers. This is a funding round is designed to grow the team and accelerate development towards MainNet.
 //                     `,
 //                     line2: `
-//                         Having said that, we will be encouraging the Polkadot Community to appraise the project against other projects in the space and invest in our parachain auction slot when the time is right. This will only be after Totem Live Accounting's MainNet launch.
+//                         Having said that, we will be encouraging the Polkadot Community to appraise the project against other projects in the space and invest in our parachain auction slot when the time is right. This will only be after Company Digital Passport Control Panel's MainNet launch.
 //                     `,
 //                 },
 //                 render: answer => (

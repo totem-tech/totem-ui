@@ -10,7 +10,7 @@ const textsCap = {
 	action: 'action',
 	add: 'add',
 	email: 'email',
-	id: 'ID',
+	id: 'UserID',
 	name: 'name',
 	phone: 'phone',
 	update: 'update',

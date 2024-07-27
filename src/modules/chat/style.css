@@ -94,7 +94,7 @@ body:not(.chat-visible) .chat-container {
 }
 
 .inverted .chat-container .inbox-list .tools .actions button:focus:not(.active):not(:hover) {
-	background: #2a2a2a !important;
+	background: #141b2d !important;
 }
 
 .chat-container .inbox-list .tools .actions button:hover,
@@ -170,7 +170,7 @@ body:not(.chat-visible) .chat-container {
 }
 
 .inverted .chat-container .inbox-list .list-item:not(:hover):not(.active) .left .label {
-	background: #DDDDDD;
+	background: #d0d1d5;
 	color: white;
 }
 
@@ -239,7 +239,7 @@ body:not(.chat-visible) .chat-container {
 }
 
 .chat-container .inbox .header {
-	background: #4c4c4c;
+	background: #3D4458;
 	color: white;
 	padding: 10px 15px;
 	position: relative;

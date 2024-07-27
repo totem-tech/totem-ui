@@ -65,15 +65,15 @@ import {
 } from '../utils/window'
 
 const textsCap = {
-	addressCopied: 'your identity copied to clipboard',
+	addressCopied: 'your identity was copied to clipboard',
 	changeCurrency: 'change display currency',
 	copyAddress: 'copy my identity',
 	darkMode: 'dark mode',
 	faucetRequest: 'faucet request',
 	faucetRequestDetails: 'requested transaction allocations',
 	requestFunds: 'request funds',
-	shareIdentity: 'share my identity',
-	updateIdentity: 'update identity',
+	shareIdentity: 'share entity information',
+	updateIdentity: 'update entity information',
 	unsubmittedTime: 'click to review and submit your time'
 }
 const texts = {

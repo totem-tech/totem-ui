@@ -20,19 +20,19 @@ import { copyRxSubject } from '../utils/reactjs'
 
 const textsCap = {
     add: 'add',
-    enterUserId: 'enter user ID',
-    enterUserIds: 'enter user IDs',
+    enterUserId: 'enter UserID',
+    enterUserIds: 'enter multiple UserIDs',
     fromChatHistory: 'from recent chats',
-    idCheckError: 'failed to check if user ID exists!',
+    idCheckError: 'failed to check if UserID exists',
     idCrAlphaNum: 'contains only letters and numbers',
-    idCrHeader: 'Enter an username matching the following criteria:',
+    idCrHeader: 'enter an UserID matching the following criteria:',
     idCrLength: 'between 3 and 16 characters',
     idCrStart: 'start with a letter',
-    invalidUserId: 'invalid user ID',
-    noResultsMessage: 'type a User ID and press enter to add',
+    invalidUserId: 'invalid chat UserID',
+    noResultsMessage: 'type a UserID and press enter to add',
     partner: 'partner',
-    validatingUserId: 'checking if user ID exists...',
-    ownIdEntered: 'please enter an ID other than your own',
+    validatingUserId: 'checking if UserID exists...',
+    ownIdEntered: 'please enter a UserID other than your own',
 }
 translated(textsCap, true)
 const noAttrs = [
