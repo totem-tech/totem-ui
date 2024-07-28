@@ -238,7 +238,7 @@ SidebarMenuItem.propTypes = {
 const styles = {
 	collapsed: {
 		overflowX: 'hidden',
-		width: 60,
+		width: 78,
 		background: '#101624',
 	},
 	dimmer: {

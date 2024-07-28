@@ -172,12 +172,29 @@ const PageHeaderView = React.memo(props => {
 				width: '100%',
 			}}
 		>
-			<Menu.Item onClick={
-				!isRegistered || !isMobile
+			<Menu.Item 
+				style={{
+					paddingTop: '15px',
+					paddingBottom: '15px',
+					paddingLeft: '16px',
+					paddingRight: '16px',
+				}}
+				onClick={
+					!isRegistered || !isMobile
 					? undefined
 					: toggleSidebarState
-			}>
-				<Image size='mini' src={logoSrc} />
+				}>
+				<Image 
+				style={{
+					height: '40px',
+					width: 'auto',
+					// paddingBottom: 0,
+					// paddingLeft: 13,
+					// paddingRight: 13,
+				}}
+				// size='tiny' 
+				src={logoSrc} 
+				/>
 			</Menu.Item>
 			<Menu.Item position='left'>
 			{!isMobile}

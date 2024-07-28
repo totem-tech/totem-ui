@@ -81,16 +81,16 @@ const textsCap = {
 	seed: 'seed',
 	tags: 'tags',
 	update: 'update',
-	headerCreate: 'create identity',
-	headerRestore: 'restore identity',
-	headerUpdate: 'update identity',
-	identityNamePlaceholder: 'enter a name for your Blockchain identity',
+	headerCreate: 'create entity',
+	headerRestore: 'restore entity',
+	headerUpdate: 'update entity',
+	identityNamePlaceholder: 'enter a name for your entity',
 	locationIdCreateTitle: 'create a new location',
 	locationIdLabel: 'location',
 	locationIdPlaceholder: 'select a location',
 	regNumberLabel: 'registered number',
 	regNumberPlaceholder: 'company registration number',
-	restoreInputLabel: 'restore my existing identity',
+	restoreInputLabel: 'restore an existing entity',
 	seedExists: 'seed already exists in the legal entity list with name:',
 	seedPlaceholder: 'enter existing seed or generate one',
 	tagsInputEmptyMessage: 'type a tag and press enter to add, to tags list',
@@ -156,7 +156,7 @@ export default class IdentityForm extends Component {
 				: textsCap.headerCreate
 		)
 		const rxValues = new BehaviorSubject()
-		const rxDeloitteSignupStatus = new BehaviorSubject()
+		
 		const inputs = [
 			{
 				hidden: this.doUpdate,
@@ -244,43 +244,6 @@ export default class IdentityForm extends Component {
 				selection: true,
 			},
 			{
-				content: (
-					<UseDeloiteVerified {...{
-						address,
-						render: isVerified => !isVerified && (
-							<RxSubjectView {...{
-								subject: rxDeloitteSignupStatus,
-								valueModifier: status => status !== 'success' && (
-									<div style={{ textAlign: 'center' }}>
-										<Button {...{
-											disabled: !address,
-											onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
-											style: {
-												borderRadius: 12,
-												margin: '-5px 0 8px',
-												padding: 0,
-												width: '60%',
-											},
-										}}>
-											<img {...{
-												className: className([
-													'ui image',
-													status && 'disabled',
-												]),
-												src: imgDeloitteSignup,
-											}} />
-										</Button>
-									</div>
-								)
-							}} />
-						)
-					}} />
-				),
-				hidden: !deloitteIdEnabled,
-				name: inputNames.btnDeloitte,
-				type: 'html',
-			},
-			{
 				accordion: {
 					collapsed: true,
 					styled: true,
@@ -364,7 +327,45 @@ export default class IdentityForm extends Component {
 					},
 				],
 			},
+			{
+				content: (
+					<UseDeloiteVerified {...{
+						address,
+						render: isVerified => !isVerified && (
+							<RxSubjectView {...{
+								subject: rxDeloitteSignupStatus,
+								valueModifier: status => status !== 'success' && (
+									<div style={{ textAlign: 'center' }}>
+										<Button {...{
+											disabled: !address,
+											onClick: handleDeloitteSignup(rxValues, rxDeloitteSignupStatus),
+											style: {
+												borderRadius: 12,
+												margin: '-5px 0 8px',
+												padding: 0,
+												width: '60%',
+											},
+										}}>
+											<img {...{
+												className: className([
+													'ui image',
+													status && 'disabled',
+												]),
+												src: imgDeloitteSignup,
+											}} />
+										</Button>
+									</div>
+								)
+							}} />
+						)
+					}} />
+				),
+				hidden: !deloitteIdEnabled,
+				name: inputNames.btnDeloitte,
+				type: 'html',
+			},
 		]
+		const rxDeloitteSignupStatus = new BehaviorSubject()
 		this.state = {
 			closeText: autoSave
 				? null // hide close button

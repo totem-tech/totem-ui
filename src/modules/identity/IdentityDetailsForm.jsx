@@ -22,10 +22,10 @@ const textsCap = {
 	autoSaved: 'changes will be auto-saved',
 	close: 'close',
 	copySeed: 'copy seed',
-	cryptoType: 'identity type',
+	cryptoType: 'entity type',
 	hideSeed: 'hide seed',
-	identity: 'identity',
-	identityDetails: 'identity details',
+	identity: 'entity',
+	identityDetails: 'entity details',
 	lastBackup: 'last backup',
 	loadingBalance: 'loading account balance',
 	never: 'never',
@@ -166,23 +166,24 @@ const getInitialState = props => rxState => {
 			type: 'text',
 			// value: textsCap.never,
 		},
-		{
-			content: (
-				<Balance {...{
-					address: address,
-					EL: 'label',
-					emptyMessage: textsCap.loadingBalance,
-					prefix: `${textsCap.availableBalance}: `,
-					showDetailed: true,
-					style: {
-						fontWeight: 'bold',
-						margin: '0 0 0 3px',
-					},
-				}} />
-			),
-			name: inputNames.txAllocations,
-			type: 'html',
-		},
+		// Temporary removal for CDP release later
+		// {
+		// 	content: (
+		// 		<Balance {...{
+		// 			address: address,
+		// 			EL: 'label',
+		// 			emptyMessage: textsCap.loadingBalance,
+		// 			prefix: `${textsCap.availableBalance}: `,
+		// 			showDetailed: true,
+		// 			style: {
+		// 				fontWeight: 'bold',
+		// 				margin: '0 0 0 3px',
+		// 			},
+		// 		}} />
+		// 	),
+		// 	name: inputNames.txAllocations,
+		// 	type: 'html',
+		// },
 		{
 			content: textsCap.removePermanently,
 			icon: 'trash',

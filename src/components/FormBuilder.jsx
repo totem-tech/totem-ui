@@ -486,7 +486,7 @@ class FormBuilder extends Component {
 							{headerIcon && (
 								isValidElement(headerIcon)
 									? headerIcon
-									: <Icon name={headerIcon} size='large' />
+									: <Icon name={headerIcon} size='large' style={paddingRight='30px'}/>
 							)}
 							{header}
 						</Header.Content>
