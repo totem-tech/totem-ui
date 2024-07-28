@@ -1,27 +1,32 @@
 import React from 'react'
 import { BehaviorSubject } from 'rxjs'
-import { Icon } from 'semantic-ui-react'
+// import { Icon } from 'semantic-ui-react'
 import uuid from 'uuid'
+
 // Views (including lists and forms)
-import ActivityList from '../modules/activity/ActivityList'
-import AssetFormView from '../modules/assets/AssetsFormView'
-import ClaimKAPEXForm from '../modules/rewards/claimKapex/ClaimKapexView'
-import FinancialStatement from '../modules/financialStatement/FinancialStatement'
+// Removed temporarily from CDP App, probably to be added as features later.
+// import ActivityList from '../modules/activity/ActivityList'
+// import AssetFormView from '../modules/assets/AssetsFormView'
+// import ClaimKAPEXForm from '../modules/rewards/claimKapex/ClaimKapexView'
+// import FinancialStatement from '../modules/financialStatement/FinancialStatement'
+// import Tasks from '../modules/task/Main'
+// import TimekeepingView from '../modules/timekeeping/TimekeepingView'
+// import TransferFundsForm from '../modules/identity/TransferFundsForm'
+// import TaskList from '../modules/task/TaskList'
+
+// Totem specific items - may be repurposed in CDP App
+// import RewardsView from '../modules/rewards/RewardsView'
+// import CrowdsaleView from '../modules/crowdsale/Crowdsale'
+
 import GettingStarted from '../modules/gettingStarted/GettingStarted'
 import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
 import PartnerList from '../modules/partner/PartnerList'
 import SettingsForm, { inputNames } from '../forms/Settings'
-import Tasks from '../modules/task/Main'
-import TimekeepingView from '../modules/timekeeping/TimekeepingView'
-import TransferFundsForm from '../modules/identity/TransferFundsForm'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 // import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
-import RewardsView from '../modules/rewards/RewardsView'
-// import CrowdsaleView from '../modules/crowdsale/Crowdsale'
 // utils
-import TaskList from '../modules/task/TaskList'
 import { rxIsRegistered } from '../utils/chatClient'
 import DataStorage from '../utils/DataStorage'
 import { translated } from '../utils/languageHelper'
@@ -188,15 +193,15 @@ export const sidebarItems = [
         name: gsName,
         title: textsCap.gettingStartedTitle,
     },
-    {
-        anchorStyle: { background: 'deeppink' },
-        anchorStyleActive: { background: undefined },
-        content: ClaimKAPEXForm,
-        contentProps: { style: { maxWidth: 600 } },
-        icon: 'gift',
-        name: 'claim-kapex',
-        title: textsCap.claimKapexTitle,
-    },
+    // {
+    //     anchorStyle: { background: 'deeppink' },
+    //     anchorStyleActive: { background: undefined },
+    //     content: ClaimKAPEXForm,
+    //     contentProps: { style: { maxWidth: 600 } },
+    //     icon: 'gift',
+    //     name: 'claim-kapex',
+    //     title: textsCap.claimKapexTitle,
+    // },
     // {
     //     content: KeyRegistryPlayground,
     //     icon: 'play circle outline',
@@ -244,83 +249,83 @@ export const sidebarItems = [
         ),
         title: textsCap.partnersTitle,
     },
-    {
-        content: ActivityList,
-        // headerDividerHidden: true,
-        icon: 'briefcase',
-        name: 'activities',
-        subHeader: textsCap.projectSubheader,
-        subHeaderDetails: (
-            <div>
-                <p>{textsCap.projectSubheaderDetails1}</p>
-                <p>{textsCap.projectSubheaderDetails2}</p>
-            </div>
-        ),
-        title: textsCap.projectTitle,
-    },
-    {
-        content: TimekeepingView,
-        icon: 'clock outline',
-        name: 'timekeeping',
-        settings: () => (
-            <SettingsForm {...{
-                // only show timekeeping settings
-                inputsHidden: Object
-                    .values(inputNames)
-                    .filter(x => x !== inputNames.timekeeping),
-                style: { maxWidth: 350 }
-            }} />
-        ),
-        subHeader: textsCap.timekeepingSubheader,
-        title: textsCap.timekeepingTitle,
-    },
-    {
-        content: Tasks,
-        icon: 'tasks',
-        name: 'tasks',
-        title: textsCap.tasksTitle,
-        subHeader: textsCap.tasksSubheader,
-    },
-    {
-        content: TaskList,
-        contentProps: {
-            type: 'marketplace'
-        },
-        // href: `${window.location.protocol}//${window.location.host}/?module=tasks&tab=marketplace`,
-        icon: 'shop',
-        name: 'marketplace',
-        // onClick: e => {
-        //     e.preventDefault()
-        //     const item = setContentProps(
-        //         'tasks',
-        //         { tab: 'marketplace' },)
-        //     console.log({ item })
-        // },
-        target: '_blank',
-        title: textsCap.marketplace,
-    },
-    {
-        content: TransferFundsForm,
-        contentProps: { style: { maxWidth: 450 } },
-        icon: 'send',
-        header: textsCap.transferHeader,
-        name: 'transfer',
-        subHeader: textsCap.transferSubheader,
-        subHeaderDetails: textsCap.transferSubheaderDetails,
-        title: textsCap.transferTitle,
-    },
-    {
-        content: FinancialStatement,
-        icon: 'list alternate outline',
-        name: 'financial-statement',
-        title: textsCap.financialStatementTitle,
-    },
-    {
-        content: AssetFormView,
-        icon: 'money bill alternate outline',
-        name: 'reference-rates',
-        title: textsCap.refereceRates,
-    },
+    // {
+    //     content: ActivityList,
+    //     // headerDividerHidden: true,
+    //     icon: 'briefcase',
+    //     name: 'activities',
+    //     subHeader: textsCap.projectSubheader,
+    //     subHeaderDetails: (
+    //         <div>
+    //             <p>{textsCap.projectSubheaderDetails1}</p>
+    //             <p>{textsCap.projectSubheaderDetails2}</p>
+    //         </div>
+    //     ),
+    //     title: textsCap.projectTitle,
+    // },
+    // {
+    //     content: TimekeepingView,
+    //     icon: 'clock outline',
+    //     name: 'timekeeping',
+    //     settings: () => (
+    //         <SettingsForm {...{
+    //             // only show timekeeping settings
+    //             inputsHidden: Object
+    //                 .values(inputNames)
+    //                 .filter(x => x !== inputNames.timekeeping),
+    //             style: { maxWidth: 350 }
+    //         }} />
+    //     ),
+    //     subHeader: textsCap.timekeepingSubheader,
+    //     title: textsCap.timekeepingTitle,
+    // },
+    // {
+    //     content: Tasks,
+    //     icon: 'tasks',
+    //     name: 'tasks',
+    //     title: textsCap.tasksTitle,
+    //     subHeader: textsCap.tasksSubheader,
+    // },
+    // {
+    //     content: TaskList,
+    //     contentProps: {
+    //         type: 'marketplace'
+    //     },
+    //     // href: `${window.location.protocol}//${window.location.host}/?module=tasks&tab=marketplace`,
+    //     icon: 'shop',
+    //     name: 'marketplace',
+    //     // onClick: e => {
+    //     //     e.preventDefault()
+    //     //     const item = setContentProps(
+    //     //         'tasks',
+    //     //         { tab: 'marketplace' },)
+    //     //     console.log({ item })
+    //     // },
+    //     target: '_blank',
+    //     title: textsCap.marketplace,
+    // },
+    // {
+    //     content: TransferFundsForm,
+    //     contentProps: { style: { maxWidth: 450 } },
+    //     icon: 'send',
+    //     header: textsCap.transferHeader,
+    //     name: 'transfer',
+    //     subHeader: textsCap.transferSubheader,
+    //     subHeaderDetails: textsCap.transferSubheaderDetails,
+    //     title: textsCap.transferTitle,
+    // },
+    // {
+    //     content: FinancialStatement,
+    //     icon: 'list alternate outline',
+    //     name: 'financial-statement',
+    //     title: textsCap.financialStatementTitle,
+    // },
+    // {
+    //     content: AssetFormView,
+    //     icon: 'money bill alternate outline',
+    //     name: 'reference-rates',
+    //     title: textsCap.refereceRates,
+    // },
     // {
     //     icon: 'file alternate',
     //     title: 'Invoice',
@@ -398,24 +403,24 @@ export const sidebarItems = [
         subHeader: textsCap.utilitiesSubheader,
         title: textsCap.utilitiesTitle,
     },
-    {
-        href: `${window.location.protocol}//${window.location.host}/crowdloan`,
-        icon: 'rocket',
-        name: 'crowdloan',
-        target: '_blank',
-        title: (
-            <span>
-                {textsCap.crowdloanTitle} <Icon name='forward mail' />
-            </span>
-        ),
-        titleStr: textsCap.crowdloanTitle,
-    },
-    {
-        content: RewardsView,
-        icon: 'gift',
-        name: 'rewards',
-        title: textsCap.rewards,
-    },
+    // {
+    //     href: `${window.location.protocol}//${window.location.host}/crowdloan`,
+    //     icon: 'rocket',
+    //     name: 'crowdloan',
+    //     target: '_blank',
+    //     title: (
+    //         <span>
+    //             {textsCap.crowdloanTitle} <Icon name='forward mail' />
+    //         </span>
+    //     ),
+    //     titleStr: textsCap.crowdloanTitle,
+    // },
+    // {
+    //     content: RewardsView,
+    //     icon: 'gift',
+    //     name: 'rewards',
+    //     title: textsCap.rewards,
+    // },
 ].map(item => {
     const {
         active = false,
