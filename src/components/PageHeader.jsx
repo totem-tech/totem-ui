@@ -179,6 +179,12 @@ const PageHeaderView = React.memo(props => {
 			}>
 				<Image size='mini' src={logoSrc} />
 			</Menu.Item>
+			<Menu.Item position='left'>
+			{!isMobile}
+			<>
+			<h3>Company Digital Passport - Control Panel</h3>
+			</>
+			</Menu.Item>
 			<Menu.Menu position='right'>
 				{!isMobile && isRegistered && buttons}
 				<Dropdown {...{
