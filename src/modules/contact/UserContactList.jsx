@@ -5,7 +5,7 @@ import { showInfo } from '../../services/modal'
 import { getAll, rxContacts } from './contact'
 import { ContactList } from './ContactList'
 
-const textsCap = translated({ header: 'my contact details' }, true)[1]
+const textsCap = translated({ header: 'contact List' }, true)[1]
 
 export const UserContactList = props => {
 	const [data] = useRxSubject(

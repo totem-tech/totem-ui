@@ -216,7 +216,10 @@ const getInitialState = props => rxState => {
 		}),
 		// closeText: { content: textsCap.close, negative: false },
 		seedVisible: false,
-		subheader: <i style={{ color: 'grey' }}>{textsCap.autoSaved}</i>,
+		subheader: <i style={{ 
+			color: 'grey',
+			marginLeft: '3.2em', 
+		}}>{textsCap.autoSaved}</i>,
 		submitText: null, // hide submit button
 		success: false, // sets true  when identity removed and modal will be auto closed
 	}

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import React, { Component, useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import imgDeloitteSignup from '../../assets/deloitte/signup-for-deloitte.svg'
+import DeloitteSignupForm from '../../components/DeloitteSignupForm';
 import { Button } from '../../components/buttons'
 import FormBuilder, { findInput, fillValues } from '../../components/FormBuilder'
 import { hashTypes, query, queueables } from '../../services/blockchain'
@@ -62,7 +63,7 @@ const deloitteIdEnabled = getUrlParam('deloitte').toLowerCase() === 'true' || [
 	'localhost:8080'
 ].includes(window.location.host)
 
-const textsCap = {
+export const textsCap = {
 	address: 'address',
 	autoSaved: 'changes will be auto-saved',
 	bip39Warning: 'The mnemonic you have entered is not BIP39 compatible. You may or may not be able to restore your identity on any other wallet applications. It is recommended that you use a BIP39 compatible mnemonic. If you choose to use BIP39 incompatible mnemonic, please use at your own risk!',
@@ -329,6 +330,7 @@ export default class IdentityForm extends Component {
 			},
 			{
 				content: (
+					// <DeloitteSignupForm {...{
 					<UseDeloiteVerified {...{
 						address,
 						render: isVerified => !isVerified && (
@@ -380,9 +382,14 @@ export default class IdentityForm extends Component {
 				}} />
 			),
 			inputs: fillValues(inputs, this.values),
-			subheader: this.doUpdate && autoSave
-				? textsCap.autoSaved
-				: undefined,
+			subheader: <i style={{ 
+				color: 'grey',
+				marginLeft: '3.2em', 
+			}}>{
+				this.doUpdate && autoSave
+					? textsCap.autoSaved
+					: undefined
+			}</i>,
 			message,
 			modalId: !address
 				? undefined
