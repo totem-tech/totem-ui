@@ -32,8 +32,8 @@ const textsCap = {
 	lastBackup: 'last backup',
 	showDetails: 'show details',
 	shareIdentityDetails: 'share your legal entity with other users',
-	txAllocations: 'transaction balance',
-	updateIdentity: 'update your identity',
+	txAllocations: 'balance',
+	updateIdentity: 'update your entity',
 }
 translated(textsCap, true)
 
@@ -168,6 +168,7 @@ const getTableProps = isMobile => {
 				title: textsCap.name,
 			},
 			!isMobile && {
+				hidden: true,
 				content: getBalance,
 				// collapsing: true,
 				draggable: false,

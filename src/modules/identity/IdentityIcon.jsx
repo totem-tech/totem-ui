@@ -13,10 +13,10 @@ import IdentityDetailsForm from './IdentityDetailsForm'
 import { UseDeloiteVerified } from './IdentityForm'
 
 const textsCap = {
-    business: 'business',
+    business: 'legal entity',
     deloitte: 'Your legal entity is verified!',
     identity: 'your legal entity',
-    personal: 'personal',
+    personal: 'individual',
     rewardsIdentity: 'this is your rewards identity',
 }
 translated(textsCap, true)

@@ -101,6 +101,7 @@ export default [
     "./src/modules/history/HistoryItemDetailsForm.jsx",
     "./src/modules/history/HistoryList.jsx",
     "./src/modules/history/history.js",
+    "./src/modules/identity/AppointmentsForm.js",
     "./src/modules/identity/Balance.jsx",
     "./src/modules/identity/IdentityDetailsForm.jsx",
     "./src/modules/identity/IdentityForm.jsx",

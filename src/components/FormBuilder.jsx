@@ -455,46 +455,48 @@ class FormBuilder extends Component {
 		if (!modal) return form
 
 		return (
-			<IModal {...{
-				as: 'form',
-				className: 'form', // fixes form input label and other styles
-				closeOnEscape: !!closeOnEscape,
-				closeOnDimmerClick: !!closeOnDimmerClick,
-				defaultOpen: defaultOpen,
-				dimmer: true,
-				id,
-				onClose: this.handleClose,
-				onOpen: onOpen,
-				onSubmit: handleSubmit,
-				open: modalOpen,
-				size,
-				trigger: trigger,
-			}}>
-				<div className='modal-close' style={styles.closeButton}>
-					<Icon {...{
-						className: 'no-margin',
-						color: 'grey',
-						link: true,
-						name: 'times circle outline',
-						onClick: this.handleClose,
-						size: 'large',
-					}} />
+			<IModal
+				as="form"
+				className="form" // fixes form input label and other styles
+				closeOnEscape={!!closeOnEscape}
+				closeOnDimmerClick={!!closeOnDimmerClick}
+				defaultOpen={defaultOpen}
+				dimmer={true}
+				id={id}
+				onClose={this.handleClose}
+				onOpen={onOpen}
+				onSubmit={handleSubmit}
+				open={modalOpen}
+				size={size}
+				trigger={trigger}
+			>
+				<div className="modal-close" style={styles.closeButton}>
+					<Icon
+						className="no-margin"
+						color="grey"
+						link={true}
+						name="times circle outline"
+						onClick={this.handleClose}
+						size="large"
+					/>
 				</div>
 				{header && (
 					<Header as={Modal.Header}>
 						<Header.Content style={styles.header}>
 							{headerIcon && (
-								isValidElement(headerIcon)
-									? headerIcon
-									: <Icon name={headerIcon} size='large' style={paddingRight='30px'}/>
+								isValidElement(headerIcon) ? (
+									headerIcon
+								) : (
+									<Icon name={headerIcon} size="large" style={{ paddingRight: '30px' }} />
+								)
 							)}
 							{header}
 						</Header.Content>
 						{subheader && (
-							<Header.Subheader {...{
-								children: subheader,
-								style: styles.subheader,
-							}} />
+							<Header.Subheader
+								children={subheader}
+								style={styles.subheader}
+							/>
 						)}
 					</Header>
 				)}
@@ -507,7 +509,7 @@ class FormBuilder extends Component {
 				)}
 				{!!msg && <Message {...message} />}
 			</IModal>
-		)
+		);
 	}
 }
 const arrayOrString = PropTypes.oneOfType([

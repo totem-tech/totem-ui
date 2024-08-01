@@ -189,19 +189,24 @@ const PageHeaderView = React.memo(props => {
 					height: '40px',
 					width: 'auto',
 					// paddingBottom: 0,
-					// paddingLeft: 13,
-					// paddingRight: 13,
 				}}
 				// size='tiny' 
 				src={logoSrc} 
 				/>
 			</Menu.Item>
-			<Menu.Item position='left'>
-			{!isMobile}
-			<>
-			<h3>Company Digital Passport - Control Panel</h3>
-			</>
-			</Menu.Item>
+			<div style={{
+				height: '70px',
+				width: 'auto',
+				lineHeight: '14px',
+				paddingLeft: 16,
+				paddingRight: 16,
+				color: 'white',
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+			}}>
+				<h3>Company Digital Passport - Control Panel</h3>
+			</div>
 			<Menu.Menu position='right'>
 				{!isMobile && isRegistered && buttons}
 				<Dropdown {...{

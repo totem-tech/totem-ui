@@ -13,8 +13,8 @@ import locations from '../location/location'
 const partners = new DataStorage('totem_partners')
 export const rxPartners = partners.rxData
 export const types = Object.freeze({
-    BUSINESS: 'business',
-    PERSONAL: 'personal',
+    BUSINESS: 'legal entity',
+    PERSONAL: 'individual',
 })
 export const visibilityTypes = {
     PRIVATE: 'private',

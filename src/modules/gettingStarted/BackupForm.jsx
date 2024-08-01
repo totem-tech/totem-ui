@@ -104,15 +104,15 @@ const textsCap = {
 	proceed: 'proceed',
 	reloadingPage: 'reloading page...',
 	settings: 'settings',
-	skipPasswordLabel: 'download and save without encryption',
-	skipPasswordWarn0: 'caution advised',
-	skipPasswordWarn1: 'we only recommend encrypted backups.',
-	skipPasswordWarn2: 'you are about to download your entire account data in plain text.',
-	skipPasswordWarn3: 'this includes your identities, partners, chat history and other information.',
-	skipPasswordWarn4: 'anyone who has access to your computer may have complete access to your entire account including legal entities and any funds you have stored in them!',
-	skipPasswordWarn5: 'you can proceed at your own risk!',
+	skipPasswordLabel: 'download and save without encrypting data',
+	skipPasswordWarn0: 'warning',
+	skipPasswordWarn1: 'we strongly advise you use encrypted backups.',
+	skipPasswordWarn2: 'you are about to download your entire account data in normal text.',
+	skipPasswordWarn3: 'this includes information about the account that should be kept secret.',
+	skipPasswordWarn4: 'anyone who has access to your backup file on your device will have complete access to your entire account.',
+	skipPasswordWarn5: 'proceed without encryption at your own risk',
 	userCredentials: 'user credentials',
-	warnBackupContent1: 'you are at risk of accidental data loss!',
+	warnBackupContent1: 'you are at risk of accidental data loss',
 	warnBackupContent2: 'the following items are not backed up:',
 	warnBackupContent3: 'click proceed to download a backup of your account now.',
 	warnBackupHeader: 'backup recommended!',
@@ -179,17 +179,19 @@ export default function BackupForm(props) {
 				autoComplete: 'new-password',
 				criteria: [
 					{
-						regex: /^.{8,64}$/,
+						// regex: /^.{8,64}$/, // 64 length is overkill
+						regex: /^.{8,32}$/,
 						text: textsCap.passwordCrLength,
 					},
-					{
-						regex: /[A-Z]/,
-						text: textsCap.passwordCrUpper,
-					},
-					{
-						regex: /[a-z]/,
-						text: textsCap.passwordCrLower,
-					},
+					// Removed because it prevents browser password managers from creating a valid password
+					// {
+					// 	regex: /[A-Z]/,
+					// 	text: textsCap.passwordCrUpper,
+					// },
+					// {
+					// 	regex: /[a-z]/,
+					// 	text: textsCap.passwordCrLower,
+					// },
 					{
 						regex: /[0-9]/,
 						text: textsCap.passwordCrNum,

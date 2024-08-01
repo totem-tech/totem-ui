@@ -11,10 +11,10 @@ import { types, visibilityTypes } from './partner'
 import PartnerForm from './PartnerForm'
 
 const textsCap = {
-    business: 'business',
+    business: 'legal entity',
     deloitte: 'Partner legal entity is Deloitte verified!',
     partner: 'partner',
-    personal: 'personal',
+    personal: 'individual',
     public: 'public',
 }
 translated(textsCap, true)

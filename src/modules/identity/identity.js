@@ -16,8 +16,8 @@ export const DERIVATION_PATH_PREFIX = '/totem/'
 export const rxIdentities = identities.rxData
 export const rxSelected = new BehaviorSubject()
 export const USAGE_TYPES = Object.freeze({
-	BUSINESS: 'business',
-	PERSONAL: 'personal',
+	BUSINESS: 'legal entity',
+	PERSONAL: 'individual',
 	REWARD: 'reward',
 })
 export const REQUIRED_KEYS = Object.freeze([
