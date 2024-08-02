@@ -22,6 +22,9 @@ import GettingStarted from '../modules/gettingStarted/GettingStarted'
 import HistoryList from '../modules/history/HistoryList'
 import IdentityList from '../modules/identity/IdentityList'
 import PartnerList from '../modules/partner/PartnerList'
+import LocationsList from '../modules/location/LocationsList'
+import ContactList from '../modules/contact/UserContactList'
+import DocumentUploadForm from '../modules/documents/DocumentUploadForm'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
@@ -107,6 +110,17 @@ const textsCap = translated({
         You can give each shared Partner Identity a new name, add tags, and define it any way you want.
         Once a partner is stored in this list you can use it all over Totem.
     `,
+    locationsTitle: 'locations',
+    locationsSubheader: 'manage the locations associated with entities and individuals',
+    locationsSubheaderDetails: 'Give each location a unique name and then you will be able to select it in other modules',
+
+    contactsTitle: 'contacts',
+    contactsSubheader: 'manage your own contacts details and that of others.',
+    contactsSubheaderDetails: 'Your own contact details can be shared when you share your details with either your company administrator or other users',
+
+    documentsTitle: 'documents',
+    documentsSubheader: 'upload important documents',
+    documentsSubheaderDetails: 'the documents uploaded here are secret, but can be shared with another party if you choose to accept their request',
 
     projectTitle: 'activities',
     projectSubheader: 'manage activities',
@@ -248,6 +262,48 @@ export const sidebarItems = [
             </div>
         ),
         title: textsCap.partnersTitle,
+    },
+    {
+        content: LocationsList,
+        icon: 'users',
+        header: textsCap.locationsHeader,
+        name: 'locations',
+        printSize: 'landscape',
+        subHeader: textsCap.locationsSubheader,
+        subHeaderDetails: (
+            <div>
+                <p>{textsCap.locationsSubheaderDetails}</p>
+            </div>
+        ),
+        title: textsCap.locationsTitle,
+    },
+    {
+        content: ContactList,
+        icon: 'users',
+        header: textsCap.contactsHeader,
+        name: 'contacts',
+        printSize: 'landscape',
+        subHeader: textsCap.contactsSubheader,
+        subHeaderDetails: (
+            <div>
+                <p>{textsCap.contactsSubheaderDetails}</p>
+            </div>
+        ),
+        title: textsCap.contactsTitle,
+    },
+    {
+        content: DocumentUploadForm,
+        icon: 'users',
+        header: textsCap.documentsHeader,
+        name: 'documents',
+        printSize: 'landscape',
+        subHeader: textsCap.documentsSubheader,
+        subHeaderDetails: (
+            <div>
+                <p>{textsCap.documentsSubheaderDetails}</p>
+            </div>
+        ),
+        title: textsCap.documentsTitle,
     },
     // {
     //     content: ActivityList,
