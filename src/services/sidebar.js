@@ -25,6 +25,8 @@ import PartnerList from '../modules/partner/PartnerList'
 import LocationsList from '../modules/location/LocationsList'
 import ContactList from '../modules/contact/UserContactList'
 import DocumentUploadForm from '../modules/documents/DocumentUploadForm'
+import FCASite from '../modules/outsideApp/FCASite'
+import CHSite from '../modules/outsideApp/CHSite'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
@@ -121,6 +123,14 @@ const textsCap = translated({
     documentsTitle: 'documents',
     documentsSubheader: 'upload important documents',
     documentsSubheaderDetails: 'the documents uploaded here are secret, but can be shared with another party if you choose to accept their request',
+
+    fcaTitle: 'FCA login',
+    fcaSubheader: 'manage FCA submissions',
+    fcaSubheaderDetails: 'only the registered FCA members can access these pages',
+
+    chTitle: 'Companies Hse',
+    chSubheader: 'manage Companies House activities',
+    chSubheaderDetails: 'access Companies house login',
 
     projectTitle: 'activities',
     projectSubheader: 'manage activities',
@@ -304,6 +314,34 @@ export const sidebarItems = [
             </div>
         ),
         title: textsCap.documentsTitle,
+    },
+    {
+        content: FCASite,
+        icon: 'users',
+        header: textsCap.fcaHeader,
+        name: 'fca',
+        printSize: 'landscape',
+        subHeader: textsCap.fcaSubheader,
+        subHeaderDetails: (
+            <div>
+                <p>{textsCap.fcaSubheaderDetails}</p>
+            </div>
+        ),
+        title: textsCap.fcaTitle,
+    },
+    {
+        content: CHSite,
+        icon: 'users',
+        header: textsCap.chHeader,
+        name: 'ch',
+        printSize: 'landscape',
+        subHeader: textsCap.chSubheader,
+        subHeaderDetails: (
+            <div>
+                <p>{textsCap.chSubheaderDetails}</p>
+            </div>
+        ),
+        title: textsCap.chTitle,
     },
     // {
     //     content: ActivityList,

@@ -1,8 +1,16 @@
 // Specification: 1.0
 // Scenario:
-// The admlinistrator of the company information will create a key personnel structure by inputing data about the appointments to the company.
-// Each appointment is a member of a group, has a title, and reports to another title or directly to the chairman, the board or the shareholders.
-// Note: Another react component will be required to define the actual structure, but for this mockup, it is hard coded here. The other component will also capture the dates on which this data was entered and updated.
+// The administrator of the company information will create a key personnel structure by inputing data about the appointments to the various executive and non-executive boards and commitees of the company.
+// Each appointment is a member of a group, has a title, and reports to another member or directly to the chairman, the board or the shareholders.
+// The administrator also records the start and end date of the appointment, the status of the appointment, and the name of the person appointed.
+// The entry will rely on a number of preconditions and other sources of data:
+// 1. with the exception of two parties ("The board of Directors" and "The Shareholders") all other parties must be available in the "People" variation of the Partners module. The distinction is that "people" are defined by their status as a "personal" partner.
+// 2. The entries will be associated only with the current selected entity.
+// 3. Pre-configuration of the shareholding of each of the entries is not a condition of this module, but the data could be visible here if it is preconfigured, for convenience reasons. 
+
+// NOTES
+// 1. Another react component will be required to define the actual reporting relationships between the parties so that it can be dynamic. However for the current version of this component the structure is fixed. The other component will also capture the start and end dates on which the reporting structure applied, so that a historical view can be applied.
+// 2. The shareholding will be defined in the "Shareholding" module, where the types of shares are defined and (who is) allocated the shares.
 
 // The administrator should already have requested from the appointee their identity and stored it in their partners list. 
 
