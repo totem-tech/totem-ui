@@ -27,11 +27,12 @@ import ContactList from '../modules/contact/UserContactList'
 import DocumentUploadForm from '../modules/documents/DocumentUploadForm'
 import FCASite from '../modules/outsideApp/FCASite'
 import CHSite from '../modules/outsideApp/CHSite'
+import ShareEntryForm from '../modules/shareEntry/shareEntryForm'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
 // import KeyRegistryPlayground from '../forms/KeyRegistryPlayGround'
-// utils
+// utilsF
 import { rxIsRegistered } from '../utils/chatClient'
 import DataStorage from '../utils/DataStorage'
 import { translated } from '../utils/languageHelper'
@@ -131,6 +132,10 @@ const textsCap = translated({
     chTitle: 'Companies Hse',
     chSubheader: 'manage Companies House activities',
     chSubheaderDetails: 'access Companies house login',
+
+    shareEntryTitle: 'Share Register',
+    shareEntrySubheader: 'manage shareholdings ',
+    shareEntrySubheaderDetails: 'add, edit, and delete shareholdings',
 
     projectTitle: 'activities',
     projectSubheader: 'manage activities',
@@ -342,6 +347,20 @@ export const sidebarItems = [
             </div>
         ),
         title: textsCap.chTitle,
+    },
+    {
+        content: ShareEntryForm,
+        icon: 'users',
+        header: textsCap.shareEntryHeader,
+        name: 'shareEntry',
+        printSize: 'landscape',
+        subHeader: textsCap.shareEntrySubheader,
+        subHeaderDetails: (
+            <div>
+                <p>{textsCap.shareEntrySubheaderDetails}</p>
+            </div>
+        ),
+        title: textsCap.shareEntryTitle,
     },
     // {
     //     content: ActivityList,
