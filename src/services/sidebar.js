@@ -25,8 +25,8 @@ import PartnerList from '../modules/partner/PartnerList'
 import LocationsList from '../modules/location/LocationsList'
 import ContactList from '../modules/contact/UserContactList'
 import DocumentUploadForm from '../modules/documents/DocumentUploadForm'
-import FCASite from '../modules/outsideApp/FCASite'
-import CHSite from '../modules/outsideApp/CHSite'
+// import FCASite from '../modules/outsideApp/FCASite'
+// import CHSite from '../modules/outsideApp/CHSite'
 import ShareEntryForm from '../modules/shareEntry/shareEntryForm'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import UtilitiesView from '../views/UtilitiesView'
@@ -320,34 +320,34 @@ export const sidebarItems = [
         ),
         title: textsCap.documentsTitle,
     },
-    {
-        content: FCASite,
-        icon: 'users',
-        header: textsCap.fcaHeader,
-        name: 'fca',
-        printSize: 'landscape',
-        subHeader: textsCap.fcaSubheader,
-        subHeaderDetails: (
-            <div>
-                <p>{textsCap.fcaSubheaderDetails}</p>
-            </div>
-        ),
-        title: textsCap.fcaTitle,
-    },
-    {
-        content: CHSite,
-        icon: 'users',
-        header: textsCap.chHeader,
-        name: 'ch',
-        printSize: 'landscape',
-        subHeader: textsCap.chSubheader,
-        subHeaderDetails: (
-            <div>
-                <p>{textsCap.chSubheaderDetails}</p>
-            </div>
-        ),
-        title: textsCap.chTitle,
-    },
+    // {
+    //     content: FCASite,
+    //     icon: 'users',
+    //     header: textsCap.fcaHeader,
+    //     name: 'fca',
+    //     printSize: 'landscape',
+    //     subHeader: textsCap.fcaSubheader,
+    //     subHeaderDetails: (
+    //         <div>
+    //             <p>{textsCap.fcaSubheaderDetails}</p>
+    //         </div>
+    //     ),
+    //     title: textsCap.fcaTitle,
+    // },
+    // {
+    //     content: CHSite,
+    //     icon: 'users',
+    //     header: textsCap.chHeader,
+    //     name: 'ch',
+    //     printSize: 'landscape',
+    //     subHeader: textsCap.chSubheader,
+    //     subHeaderDetails: (
+    //         <div>
+    //             <p>{textsCap.chSubheaderDetails}</p>
+    //         </div>
+    //     ),
+    //     title: textsCap.chTitle,
+    // },
     {
         content: ShareEntryForm,
         icon: 'users',
