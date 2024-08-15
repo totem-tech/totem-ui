@@ -1,6 +1,7 @@
 import React from 'react'
 import { render } from 'react-dom'
 import 'semantic-ui-css/semantic.min.css'
+import './services/chatClientURL' // keep this above all local imports
 import '../public/styles.css' // global styles
 import './utils/log' // setup debug logger // keep it above all non-NPM imports
 import App from './App'
@@ -110,7 +111,7 @@ const initPromise = PromisE.timeout((resolve, reject) => {
 		if (!countriesChecked) {
 			const countriesMap = await client
 				.countries(countriesHash)
-				.catch(() => {
+				.catch(err => {
 					console.log('Failed to retrieve countries list', err)
 					return null // ignore error
 				})
