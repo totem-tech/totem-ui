@@ -11,7 +11,7 @@ import {
 import { asInput } from '../modules/currency/CurrencyDropdown'
 import { limit as historyItemsLimit } from '../modules/history/history'
 import TimekeepingSettings from '../modules/timekeeping/TimekeepingSettings'
-import { nodes, nodesDefault, setNodes } from '../services/blockchain'
+import { nodes, nodesDefault, rxBlockNumber, setNodes } from '../services/blockchain'
 import { confirm, confirmAsPromise } from '../services/modal'
 import {
     getSelected as getSelectedLang,
@@ -26,16 +26,30 @@ import {
     isObj
 } from '../utils/utils'
 import { gridColumns } from '../utils/window'
+import chatClient, { rxIsConnected } from '../utils/chatClient'
+import { getChatClientURL, setChatClientURL } from '../services/chatClientURL'
+import { RxSubjectView } from '../utils/reactjs'
+import { Icon } from 'semantic-ui-react'
 
 const textsCap = {
     applyLater: 'apply later',
     applyNow: 'apply now!',
+    chatClientURLCofirmMsg: `
+    CAUTION: an invalid websocket URL will cause Messaging Service connectivity to fail.
+    Page will be reloaded to apply the change.
+    
+    If you would like to revert to default URL, click on the revert button on the left of the input.
+    `,
+    chatClientURLReset: 'Revert to default Messaging Service URL',
     chatHistoryWarning1: 'click on "Apply now!" button to purge excess messages from each inbox immediately.',
     chatHistoryWarning1a: 'you may want to create a back up before doing so.',
     chatHistoryWarning2: 'click on "Apply later" button to apply changes as you send or receive new messages for each inbox.',
     chatLimitLabel: 'messages per chat',
+    saveBtnTitle: 'click to save',
     column: 'column',
     columns: 'columns',
+    connected: 'connected',
+    disconnected: 'disconnected',
     error: 'error',
     gridLabel: 'main content columns',
     gsCurrencyLabel: 'display currency',
@@ -51,12 +65,12 @@ const textsCap = {
     CAUTION: an invalid node URL will cause Blockchain connectivity to fail.
     Page will be reloaded to apply the change.
     
-    If you would like to revert to default node URL, remove it from the input field.
-    `,
+    If you would like to revert to default node URL, click on the revert button on the left of the input`,
     nodeUrlCofirmBtn: 'Yes, proceed',
     nodeUrlLabel: 'blockchain node URL',
     nodeUrlReset: 'Revert to default Node URL',
     saved: 'saved',
+    chatClientURLLabel: 'messaging service URL',
     settings: 'settings',
     unlimited: 'unlimited',
     _c: 'toggle chat bar visibility',
@@ -84,6 +98,7 @@ export const inputNames = {
     historyLimit: 'historyLimit',
     kbShortcutsBtn: 'kbShortcutsBtn',
     languageCode: 'languageCode',
+    chatClientURL: 'chatClientURL',
     nodeUrl: 'nodeUrl',
     timekeeping: 'timekeeping',
 }
@@ -233,11 +248,60 @@ export default class SettingsForm extends Component {
                     value: gridColumns(),
                 },
                 {
-                    label: textsCap.nodeUrlLabel,
+                    label: (
+                        <>
+                            {textsCap.nodeUrlLabel + ' '}
+                            <RxSubjectView {...{
+                                subject: rxBlockNumber,
+                                render: blockNr => {
+                                    const { tsFirstUpdated, tsLastUpdated } = rxBlockNumber
+                                    const lastUpdatedMins = (new Date() - tsLastUpdated) / 1000 / 60
+                                    const isConnected = blockNr > 0
+                                        && (tsFirstUpdated === tsLastUpdated || lastUpdatedMins < 1)
+                                    return (
+                                        <Icon {...{
+                                            color: isConnected
+                                                ? 'green'
+                                                : 'red',
+                                            name: 'circle',
+                                            title: isConnected
+                                                ? textsCap.connected
+                                                : textsCap.disconnected,
+                                        }} />
+                                    )
+                                }
+                            }} />
+                        </>
+                    ),
                     name: inputNames.nodeUrl,
                     onChange: deferred((_, values) => this.setState({ values: { ...values } }), 100),
                     type: 'url',
                     value: this.connectedNodeUrl || this.defaultNodeUrl,
+                },
+                {
+                    label: (
+                        <>
+                            {textsCap.chatClientURLLabel + ' '}
+                            <RxSubjectView {...{
+                                subject: rxIsConnected,
+                                render: connected => (
+                                    <Icon {...{
+                                        color: connected
+                                            ? 'green'
+                                            : 'red',
+                                        name: 'circle',
+                                        title: connected
+                                            ? textsCap.connected
+                                            : textsCap.disconnected,
+                                    }} />
+                                )
+                            }} />
+                        </>
+                    ),
+                    name: inputNames.chatClientURL,
+                    onChange: deferred((_, values) => this.setState({ values: { ...values } }), 100),
+                    type: 'url',
+                    value: getChatClientURL() || chatClient.url,
                 },
                 {
                     content: <TimekeepingSettings El='div' />,
@@ -262,10 +326,28 @@ export default class SettingsForm extends Component {
     componentWillMount = () => this._mounted = true
     componentWillUnmount = () => this._mounted = false
 
-    handleCurrencyChange = async (_, values) => {
-        const currency = values[inputNames.currency]
-        await setSelectedCurrency(currency)
-        this.setInputMessage('currency', savedMsg)
+    handleChatClientURLSubmit = (reset = false) => {
+        const url = reset
+            ? null
+            : this
+                .state
+                .values[inputNames.chatClientURL]
+                .trim()
+        confirm({
+            confirmButton: {
+                content: textsCap.nodeUrlCofirmBtn,
+                negative: !reset,
+            },
+            content: reset
+                ? textsCap.nodeUrlReset
+                : textsCap.chatClientURLCofirmMsg,
+            header: textsCap.chatClientURLReset,
+            onConfirm: () => {
+                setChatClientURL(url)
+                window.location.reload()
+            },
+            size: 'mini',
+        })
     }
 
     handleChatLimitChange = async (_, values) => {
@@ -315,6 +397,12 @@ export default class SettingsForm extends Component {
         this.setInputMessage('chatMsgLimit', savedMsg)
     }
 
+    handleCurrencyChange = async (_, values) => {
+        const currency = values[inputNames.currency]
+        await setSelectedCurrency(currency)
+        this.setInputMessage('currency', savedMsg)
+    }
+
     handleGridCollumnsChange = (_, values) => {
         const gridCols = values[inputNames.gridCols]
         gridColumns(gridCols)
@@ -353,7 +441,8 @@ export default class SettingsForm extends Component {
         const nodes = reset
             ? []
             : [
-                this.state
+                this
+                    .state
                     .values[inputNames.nodeUrl]
                     .trim()
             ]
@@ -389,8 +478,9 @@ export default class SettingsForm extends Component {
     render = () => {
         const { values } = this.state
         const nodeUrl = values[inputNames.nodeUrl]
-        const input = findInput(this.state.inputs, inputNames.nodeUrl)
-        input.action = {
+        const nodeUrlIn = findInput(this.state.inputs, inputNames.nodeUrl)
+        const style = { cursor: 'pointer' }
+        nodeUrlIn.action = {
             disabled: !nodeUrl || [
                 !this.defaultNodeUrlChanged && this.defaultNodeUrl,
                 this.connectedNodeUrl
@@ -399,19 +489,51 @@ export default class SettingsForm extends Component {
                 .includes(nodeUrl),
             icon: 'check',
             onClick: () => this.handleNodeUrlSubmit(),
+            title: textsCap.saveBtnTitle
         }
-        input.inlineLabel = this.defaultNodeUrlChanged && {
+        nodeUrlIn.inlineLabel = this.defaultNodeUrlChanged && {
             icon: {
                 className: 'no-margin',
                 name: 'reply',
             },
-            title: textsCap.nodeUrlReset,
             onClick: () => {
                 const { values } = this.state
                 values[inputNames.nodeUrl] = ''
                 this.setState({ values })
                 this.handleNodeUrlSubmit(true)
             },
+            style,
+            title: textsCap.nodeUrlReset,
+        }
+
+        const chatClientURLIn = findInput(this.state.inputs, inputNames.chatClientURL)
+        const chatClientURL = values[inputNames.chatClientURL]
+        const clientURLSaved = getChatClientURL()
+        const clientUrlChanged = !!clientURLSaved && chatClient.url == clientURLSaved
+        chatClientURLIn.action = {
+            disabled: !chatClientURL || [
+                clientUrlChanged && clientURLSaved,
+                chatClient.url,
+            ]
+                .filter(Boolean)
+                .includes(chatClientURL),
+            icon: 'check',
+            onClick: () => this.handleChatClientURLSubmit(),
+            title: textsCap.saveBtnTitle
+        }
+        chatClientURLIn.inlineLabel = clientUrlChanged && {
+            icon: {
+                className: 'no-margin',
+                name: 'reply',
+            },
+            onClick: () => {
+                const { values } = this.state
+                values[inputNames.chatClientURL] = ''
+                this.setState({ values })
+                this.handleChatClientURLSubmit(true)
+            },
+            style,
+            title: textsCap.chatClientURLReset,
         }
         return <FormBuilder {...{ ...this.props, ...this.state }} />
     }

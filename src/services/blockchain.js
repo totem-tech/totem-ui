@@ -128,7 +128,12 @@ export const getConnection = async (force = false) => {
         }
 
         if (isFn(getCurrentBlock.unsubscribe)) getCurrentBlock.unsubscribe()
-        getCurrentBlock.unsubscribe = await getCurrentBlock(blockNumber => rxBlockNumber.next(blockNumber))
+        getCurrentBlock.unsubscribe = await getCurrentBlock(blockNumber => {
+            rxBlockNumber.next(blockNumber)
+            const now = new Date()
+            rxBlockNumber.tsFirstUpdated ??= now
+            rxBlockNumber.tsLastUpdated = now
+        })
 
         // none of these work!!!!
         // provider.websocket.addEventListener('disconnected', (err) => console.log('disconnected', err))
