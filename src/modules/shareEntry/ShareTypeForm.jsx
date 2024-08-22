@@ -1,6 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, Component } from 'react';
+import PropTypes from 'prop-types'
+import { BehaviorSubject } from 'rxjs'
+import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
+import FormInput from '../../components/FormInput'
+import { translated } from '../../utils/languageHelper'
+import { closeModal, confirm } from '../../services/modal'
+import { statuses } from '../../utils/reactjs'
+import storage from '../../utils/storageHelper'
+import {
+	arrSort,
+	deferred,
+	isBool,
+	isFn,
+} from '../../utils/utils'
+import identities from '../identity/identity'
+import partners from '../partner/partner'
+import { get, remove, set } from './shares'
 
-export default function shareEntryForm() {
+export default function ShareTypeForm() {
     const [shareholdings, setShareholdings] = useState([]);
     const [formState, setFormState] = useState({
       name: '',

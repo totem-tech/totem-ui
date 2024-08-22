@@ -27,7 +27,7 @@ import ContactList from '../modules/contact/UserContactList'
 import DocumentUploadForm from '../modules/documents/DocumentUploadForm'
 // import FCASite from '../modules/outsideApp/FCASite'
 // import CHSite from '../modules/outsideApp/CHSite'
-import ShareEntryForm from '../modules/shareEntry/shareEntryForm'
+import ShareTypeForm from '../modules/shareEntry/ShareTypeForm'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
@@ -349,7 +349,7 @@ export const sidebarItems = [
     //     title: textsCap.chTitle,
     // },
     {
-        content: ShareEntryForm,
+        content: ShareTypeForm,
         icon: 'users',
         header: textsCap.shareEntryHeader,
         name: 'shareEntry',
