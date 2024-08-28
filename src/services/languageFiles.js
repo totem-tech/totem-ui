@@ -118,6 +118,8 @@ export default [
     "./src/modules/location/LocationForm.jsx",
     "./src/modules/location/LocationsList.jsx",
     "./src/modules/location/location.js",
+    "./src/modules/moduleBoilerplate/customForm.jsx",
+    "./src/modules/moduleBoilerplate/customList.jsx",
     "./src/modules/notification/NotificationItem.jsx",
     "./src/modules/notification/NotificationView.jsx",
     "./src/modules/notification/notification.js",

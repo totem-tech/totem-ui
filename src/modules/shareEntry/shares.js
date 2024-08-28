@@ -6,10 +6,15 @@ import { generateHash, isObj, isStr, objClean, objHasKeys } from '../../utils/ut
 
 const shares = new DataStorage('totem_shares', true)
 export const rxShares = shares.rxData // RxJS Subject (because caching is disabled)
-export const requiredKeys = Object.freeze(Object.values(requiredFields))
+
+// ToDo The following two lines are problematic. This is because this file is imported into ShareTypeForm, but ShareTypeForm
+// is also imported here, so conceivably these values may be numm when initially exectured.
+export const requiredKeys = requiredFields ? Object.freeze(Object.values(requiredFields)) : [];
+export const optionalKeys = optionalFields ? Object.freeze(Object.values(optionalFields)) : [];
+
 export const validKeys = Object.freeze([
 	...requiredKeys,
-	...Object.values(optionalFields),
+	...Object.values(optionalKeys),
 	'fileBackupTS',
 ])
 

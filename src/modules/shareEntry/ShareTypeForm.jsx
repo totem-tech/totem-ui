@@ -1,14 +1,17 @@
-import React, { useState, Component } from 'react';
+import React, { 
+	// useState, 
+	Component 
+} from 'react';
 import PropTypes from 'prop-types'
 import { BehaviorSubject } from 'rxjs'
 import FormBuilder, { fillValues, findInput } from '../../components/FormBuilder'
-import FormInput from '../../components/FormInput'
+// import FormInput from '../../components/FormInput'
 import { translated } from '../../utils/languageHelper'
 import { closeModal, confirm } from '../../services/modal'
 import { statuses } from '../../utils/reactjs'
-import storage from '../../utils/storageHelper'
+// import storage from '../../utils/storageHelper'
 import {
-	arrSort,
+	// arrSort,
 	deferred,
 	isBool,
 	isFn,
@@ -27,13 +30,13 @@ const textsCap = {
 	partnerNameLabel: 'partner name',
 	priceLabel: 'price',
 	quantityLabel: 'quantity of shares',
-	remove: 'remove',
+	// remove: 'remove',
 	removeShareType: 'remove share type',
 	saved: 'saved',
 	saveShareType: 'save share type',
 	subCategoryLabel: 'share subcategory',
-	typeLabel: 'type',
-	typePlaceholder: 'give this share type a category name',
+	shareTypeLabel: 'share type',
+	shareTypePlaceholder: 'give this share type a descriptive name',
 	usedByIdentities: 'this share type is used by the following identities:',
 	usedByPartners: 'this share type is used by the following partners:',
 	vestingLabel: 'vesting',
@@ -42,7 +45,7 @@ const textsCap = {
 translated(textsCap, true)
 
 export const requiredFields = {
-	type: 'type',
+	shareType: 'shareTypeype',
 	category: 'category',
 	quantity: 'quantity',
 	voting: 'voting',
@@ -123,11 +126,11 @@ export default class ShareTypeForm extends Component {
 			},
 			// share type - text - required - min 3 - max 64
 			{
-				label: textsCap.typeLabel,
+				label: textsCap.shareTypeLabel,
 				minLength: 3,
 				maxLength: 64,
-				type: inputNames.type,
-				placeholder: textsCap.typePlaceholder,
+				name: inputNames.shareType,
+				placeholder: textsCap.shareTypePlaceholder,
 				required: true,
 				type: 'text',
 			},
@@ -347,7 +350,7 @@ export default class ShareTypeForm extends Component {
 				? textsCap.areYouSure
 				: content,
 			confirmButton: {
-				content: textsCap.remove,
+				content: textsCap.removeShareType,
 				negative: true,
 			},
 			header: textsCap.removeShareType,

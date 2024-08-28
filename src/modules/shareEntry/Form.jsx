@@ -61,7 +61,7 @@ export const inputNames = {
 	removeBtn: 'removeBtn',
 }
 
-export default class ShareTypeForm extends Component {
+export default class ShareTypeFormOld extends Component {
 	constructor(props) {
 		super(props)
 
@@ -381,14 +381,14 @@ export default class ShareTypeForm extends Component {
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-ShareTypeForm.propTypes = {
+ShareTypeFormOld.propTypes = {
 	autoSave: PropTypes.bool,
 	id: PropTypes.string,
 	// callback to be invoked when share is removed
 	onRemove: PropTypes.func,
 	values: PropTypes.object,
 }
-ShareTypeForm.defaultProps = {
+ShareTypeFormOld.defaultProps = {
 	closeOnSubmit: true,
 	size: 'tiny', // modal size
 }

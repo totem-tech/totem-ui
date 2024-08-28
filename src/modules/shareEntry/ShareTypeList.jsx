@@ -5,8 +5,8 @@ import DataTable from '../../components/DataTable'
 import { showForm, showInfo } from '../../services/modal'
 import { translated } from '../../utils/languageHelper'
 import { useRxSubject } from '../../utils/reactjs'
-import { getAll, rxShares } from './shares'
-import ShareTypeForm, { inputNames } from './ShareTypeForm'
+// import { getAll, rxShares } from './shares'
+// import ShareTypeForm, { inputNames } from './ShareTypeForm'
 
 const textsCap = {
 	actions: 'actions',
@@ -29,17 +29,17 @@ export default function ShareTypeList({
 	...props
 }) {
 	const [data = []] = useRxSubject(
-		rxShares,
+		// rxShares,
 		// due to cache being disabled first time may receive undefined.
-		(map = getAll()) => Array
-			.from(map)
-			.map(([id, share]) => {
-				const ownLocation = !share[inputNames.partnerIdentity]
-				return !includePartners && !ownLocation
-					? null
-					: { ...share, id, }
-			})
-			.filter(Boolean)
+		// (map = getAll()) => Array
+		// 	.from(map)
+		// 	.map(([id, share]) => {
+		// 		const ownLocation = !share[inputNames.partnerIdentity]
+		// 		return !includePartners && !ownLocation
+		// 			? null
+		// 			: { ...share, id, }
+		// 	})
+		// 	.filter(Boolean)
 	)
 	const [tableProps] = useState({
 		...props,
@@ -60,10 +60,10 @@ export default function ShareTypeList({
 				content: ({ id }) => (
 					<Button {...{
 						icon: 'pencil',
-						onClick: () => showForm(
-							ShareTypeForm,
-							{ autoSave: true, id }
-						),
+						// onClick: () => showForm(
+						// 	ShareTypeForm,
+						// 	{ autoSave: true, id }
+						// ),
 					}} />
 				),
 			},
@@ -71,7 +71,7 @@ export default function ShareTypeList({
 		topLeftMenu: [{
 			content: textsCap.add,
 			icon: 'plus',
-			onClick: () => showForm(ShareTypeForm),
+			// onClick: () => showForm(ShareTypeForm),
 		}],
 	})
 
