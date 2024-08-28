@@ -148,7 +148,7 @@ export default [
     "./src/modules/rewards/claimKapex/usageTasks.jsx",
     "./src/modules/rewards/notificationHandlers.jsx",
     "./src/modules/rewards/rewards.js",
-    "./src/modules/shareEntry/Form.jsx",
+    "./src/modules/shareEntry/DemoShareEntryForm.jsx",
     "./src/modules/shareEntry/ShareTypeForm.jsx",
     "./src/modules/shareEntry/ShareTypeList.jsx",
     "./src/modules/shareEntry/shares.js",
