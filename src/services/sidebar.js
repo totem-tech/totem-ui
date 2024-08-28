@@ -27,7 +27,8 @@ import ContactList from '../modules/contact/UserContactList'
 import DocumentUploadForm from '../modules/documents/DocumentUploadForm'
 // import FCASite from '../modules/outsideApp/FCASite'
 // import CHSite from '../modules/outsideApp/CHSite'
-import ShareTypeForm from '../modules/shareEntry/ShareTypeForm'
+import ShareTypeList from '../modules/shareEntry/ShareTypeList'
+import DemoShareEntryForm from '../modules/shareEntry/DemoShareEntryForm'
 import SettingsForm, { inputNames } from '../forms/Settings'
 import UtilitiesView from '../views/UtilitiesView'
 // temp
@@ -133,6 +134,7 @@ const textsCap = translated({
     chSubheader: 'manage Companies House activities',
     chSubheaderDetails: 'access Companies house login',
 
+    demoShareEntryTitle: 'Demo Share Register',
     shareEntryTitle: 'Share Register',
     shareEntrySubheader: 'manage shareholdings ',
     shareEntrySubheaderDetails: 'add, edit, and delete shareholdings',
@@ -349,7 +351,7 @@ export const sidebarItems = [
     //     title: textsCap.chTitle,
     // },
     {
-        content: ShareTypeForm,
+        content: ShareTypeList,
         icon: 'users',
         header: textsCap.shareEntryHeader,
         name: 'shareEntry',
@@ -362,6 +364,21 @@ export const sidebarItems = [
         ),
         title: textsCap.shareEntryTitle,
     },
+    {
+        content: DemoShareEntryForm,
+        icon: 'users',
+        header: textsCap.shareEntryHeader,
+        name: 'DemoShareEntry',
+        printSize: 'landscape',
+        subHeader: textsCap.shareEntrySubheader,
+        subHeaderDetails: (
+            <div>
+                <p>{textsCap.shareEntrySubheaderDetails}</p>
+            </div>
+        ),
+        title: textsCap.demoShareEntryTitle,
+    },
+
     // {
     //     content: ActivityList,
     //     // headerDividerHidden: true,
