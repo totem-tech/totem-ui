@@ -19,29 +19,27 @@ import { get, remove, set } from './shares'
 
 const textsCap = {
 	areYouSure: 'are you sure?',
-	categoryLabel: 'category',
+	categoryLabel: 'share category',
 	formHeaderCreate: 'add new share type',
 	formHeaderUpdate: 'update share type',
 	formSubheaderUpdate: 'changes will be auto-saved',
 	partnerIdentityLabel: 'partner user ID',
 	partnerNameLabel: 'partner name',
 	priceLabel: 'price',
-	quantityLabel: 'quantity',
+	quantityLabel: 'quantity of shares',
 	remove: 'remove',
 	removeShareType: 'remove share type',
 	saved: 'saved',
 	saveShareType: 'save share type',
-	subCategoryLabel: 'subcategory',
+	subCategoryLabel: 'share subcategory',
 	typeLabel: 'type',
-	typePlaceholder: 'Give this share type a name',
+	typePlaceholder: 'give this share type a category name',
 	usedByIdentities: 'this share type is used by the following identities:',
 	usedByPartners: 'this share type is used by the following partners:',
 	vestingLabel: 'vesting',
 	votingLabel: 'voting',
 }
 translated(textsCap, true)
-
-
 
 export const requiredFields = {
 	type: 'type',
@@ -79,12 +77,12 @@ export default class ShareTypeForm extends Component {
 			values,
 		} = props
 		this.id = id
-		const location = get(id)
-		values = { ...location, ...values }
+		const share = get(id)
+		values = { ...share, ...values }
 		const { partnerIdentity } = values
 		// const rxCountryCode = new BehaviorSubject()
 		this.rxAutoSave = new BehaviorSubject(!!autoSave)
-		this.isUpdate = !!location
+		this.isUpdate = !!share
 		const partner = partners.get(partnerIdentity)
 		// const noFlags = [
 		// 	'aq',
@@ -101,12 +99,14 @@ export default class ShareTypeForm extends Component {
 		// ].map(x => x.toUpperCase())
 		// const rxCountryDDOpen = new BehaviorSubject(false)
 		const inputs = [
+			// Partner Identity - text - hidden
 			{
 				hidden: true,
 				name: inputNames.partnerIdentity,
 				type: 'text',
 				value: partnerIdentity,
 			},
+			// Autosave
 			{
 				hidden: true,
 				name: inputNames.autoSave,
@@ -114,7 +114,6 @@ export default class ShareTypeForm extends Component {
 			},
 			// for display purposes only
 			{
-				// action: {}// remove location
 				hidden: !partner,
 				label: textsCap.partnerNameLabel,
 				name: inputNames.partnerName,
@@ -122,6 +121,7 @@ export default class ShareTypeForm extends Component {
 				type: 'text',
 				value: (partner || {}).name,
 			},
+			// share type - text - required - min 3 - max 64
 			{
 				label: textsCap.typeLabel,
 				minLength: 3,
@@ -131,127 +131,61 @@ export default class ShareTypeForm extends Component {
 				required: true,
 				type: 'text',
 			},
+			// share quantity - number - required - min 3 - max 64
 			{
-				label: textsCap.addressLine1Label,
-				minLength: 3,
-				maxLength: 64,
-				name: inputNames.addressLine1,
-				placeholder: textsCap.addressLine1Placeholder,
+				label: textsCap.quantityLabel,
+				min: 0,
+				maxLength: 18,
+				name: inputNames.quantity,
 				required: true,
 				rxValue: new BehaviorSubject(),
-				type: 'text',
+				type: 'number',
 			},
+			// Share category - dropdown - required
 			{
-				label: textsCap.addressLine2Label,
-				minLength: 3,
-				maxLength: 64,
-				name: inputNames.addressLine2,
-				required: false,
+				label: textsCap.categoryLabel,
+				// minLength: 3,
+				// maxLength: 64,
+				name: inputNames.category,
+				onChange: this.handleShareCategoryChange,
+				required: true,
 				rxValue: new BehaviorSubject(),
-				type: 'text',
+				type: 'dropdown',
 			},
+			// Share subcategory - dropdown - required
 			{
-				name: inputNames.groupCityPostcode,
-				type: 'group',
-				unstackable: true,
-				// widths: 'equal',
-				inputs: [
-					{
-						label: textsCap.cityLabel,
-						minLength: 3,
-						maxLength: 64,
-						name: inputNames.city,
-						placeholder: textsCap.cityPlaceholder,
-						required: true,
-						rxValue: new BehaviorSubject(),
-						type: 'text',
-						width: 8,
-					},
-					{
-						label: textsCap.postcodeLabel,
-						minLength: 3,
-						maxLength: 16,
-						name: inputNames.postcode,
-						placeholder: textsCap.postcodePlaceholder,
-						required: true,
-						rxValue: new BehaviorSubject(),
-						type: 'text',
-						width: 8,
-					},
-				],
+				label: textsCap.subCategoryLabel,
+				// minLength: 3,
+				// maxLength: 64,
+				name: inputNames.subCategory,
+				onChange: this.handleSubcategoryChange,
+				required: true,
+				rxValue: new BehaviorSubject(),
+				type: 'dropdown',
 			},
+			// Share voting - dropdown - required
 			{
-				name: inputNames.groupStateCountry,
-				type: 'group',
-				unstackable: true,
-				// widths: 'equal',
-				inputs: [
-					{
-						label: textsCap.stateLabel,
-						minLength: 2,
-						maxLength: 64,
-						name: inputNames.state,
-						placeholder: textsCap.statePlaceholder,
-						required: true,
-						rxValue: new BehaviorSubject(),
-						type: 'text',
-						width: 8,
-					},
-					{
-						hidden: true,
-						name: inputNames.countryCode,
-						rxValue: rxCountryCode,
-					},
-					{
-						content: (
-							<FormInput {...{
-								label: textsCap.countryLabel,
-								name: inputNames.countryCode,
-								onClose: () => rxCountryDDOpen.next(false),
-								onOpen: () => rxCountryDDOpen.next(true),
-								options: arrSort(
-									storage.countries.map(([_, c]) => ({
-										altspellings: c.altSpellings.join(' '),
-										description: c.name,
-										flag: !noFlags.includes(c.code)
-											? c.code.toLowerCase()
-											: '',
-										key: c.code,
-										name: c.name,
-										text: c.code,
-										// text: (
-										// 	<Reveal {...{
-										// 		content: c.code,
-										// 		contentHidden: ` - ${c.name}`,
-										// 		El: 'div',
-										// 		style: {
-										// 			display: 'inline-block',
-										// 			whiteSpace: 'pre-wrap'
-										// 		},
-										// 	}} />
-										// ),
-										value: c.code,
-									})),
-									'text'
-								),
-								placeholder: textsCap.countryPlaceholder,
-								required: true,
-								rxValue: rxCountryCode,
-								selection: true,
-								search: ['name', 'altspellings'],
-								style: {
-									minWidth: 120,
-								},
-								type: 'dropdown',
-								width: 8,
-							}} />
-						),
-						name: inputNames.countryCode + '-html',
-						type: 'html',
-					},
-				],
+				label: textsCap.votingLabel,
+				// minLength: 3,
+				// maxLength: 64,
+				name: inputNames.voting,
+				onChange: this.handleInputChange,
+				required: true,
+				rxValue: new BehaviorSubject(),
+				type: 'dropdown',
 			},
-			// show remove button if location is already saved
+			// Share vesting - dropdown - required
+			{
+				label: textsCap.vestingLabel,
+				// minLength: 3,
+				// maxLength: 64,
+				name: inputNames.vesting,
+				onChange: this.handleInputChange,
+				required: true,
+				rxValue: new BehaviorSubject(),
+				type: 'dropdown',
+			},
+			// show remove button if share is already saved
 			{
 				content: textsCap.removeShareType,
 				fluid: true,
@@ -313,7 +247,7 @@ export default class ShareTypeForm extends Component {
 		if (!saved) return
 
 		if (!this.isUpdate) {
-			// new location created
+			// new share created
 			this.isUpdate = true
 			this.setState({
 				subheader: textsCap.formSubheaderUpdate,
@@ -328,10 +262,10 @@ export default class ShareTypeForm extends Component {
 		const { id, modalId, onRemove } = this.props
 		// find identities and partners that are associated with this locaiton
 		const identityMatches = Array.from(
-			identities.search({ locationId: id })
+			identities.search({ shareId: id })
 		)
 		const partnerMatches = Array.from(
-			partners.search({ locationId: id })
+			partners.search({ shareId: id })
 		)
 		const total = identityMatches.length + partnerMatches.length
 		const content = (
@@ -388,22 +322,22 @@ export default class ShareTypeForm extends Component {
 			// close if on a modal
 			modalId && closeModal(modalId)
 
-			// remove location from storage
+			// remove share from storage
 			remove(id)
 
-			// remove location ID from associated identitites and partners
+			// remove share ID from associated identitites and partners
 			identityMatches
 				.forEach(([key, value]) =>
 					identities.set(key, {
 						...value,
-						locationId: null,
+						shareId: null,
 					})
 				)
 			partnerMatches
 				.forEach(([key, value]) =>
 					partners.set({
 						...value,
-						locationId: null,
+						shareId: null,
 					})
 				)
 			isFn(onRemove) && onRemove(id, this.values)
@@ -425,7 +359,7 @@ export default class ShareTypeForm extends Component {
 	handleSubmit = deferred((_, values) => {
 		const { onSubmit } = this.props
 		this.id = set(values, this.id)
-		// new location created
+		// new share created
 		!this.isUpdate && this.setState({
 			message: !this.rxAutoSave.value
 				? undefined
@@ -447,14 +381,14 @@ export default class ShareTypeForm extends Component {
 
 	render = () => <FormBuilder {...{ ...this.props, ...this.state }} />
 }
-LocationForm.propTypes = {
+ShareTypeForm.propTypes = {
 	autoSave: PropTypes.bool,
 	id: PropTypes.string,
-	// callback to be invoked when location is removed
+	// callback to be invoked when share is removed
 	onRemove: PropTypes.func,
 	values: PropTypes.object,
 }
-LocationForm.defaultProps = {
+ShareTypeForm.defaultProps = {
 	closeOnSubmit: true,
 	size: 'tiny', // modal size
 }
