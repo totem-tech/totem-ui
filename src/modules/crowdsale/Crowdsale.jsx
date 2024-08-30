@@ -7,7 +7,7 @@
 // import { MOBILE, rxLayout } from '../../utils/window'
 // import client, { rxIsLoggedIn, rxIsRegistered } from '../chat/ChatClient'
 // import RegistrationForm from '../chat/RegistrationForm'
-// import { getDeposits } from './crowdsale'
+// import { getDeposits } from './crowdsalejs'
 // import AddressList from './AddressList'
 // import DepositStats from './DepositStats'
 // import KYCForm from './KYCForm'

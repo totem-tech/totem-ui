@@ -170,7 +170,7 @@ body:not(.chat-visible) .chat-container {
 }
 
 .inverted .chat-container .inbox-list .list-item:not(:hover):not(.active) .left .label {
-	background: #80808026;
+	background: #DDDDDD;
 	color: white;
 }
 
@@ -239,7 +239,7 @@ body:not(.chat-visible) .chat-container {
 }
 
 .chat-container .inbox .header {
-	background: #464646;
+	background: #4c4c4c;
 	color: white;
 	padding: 10px 15px;
 	position: relative;

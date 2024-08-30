@@ -41,7 +41,7 @@ import {
     convertTo,
     currencyDefault,
     rxSelected as rxSelectedCurrency,
-} from '../currency/currency'
+} from '../currency/currencyjs'
 import Currency from '../currency/Currency'
 import { asInlineLabel } from '../currency/CurrencyDropdown'
 import { getById } from '../history/history'

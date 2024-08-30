@@ -5,7 +5,7 @@ import Text from '../../components/Text'
 import { translated } from '../../utils/languageHelper'
 import { className } from '../../utils/utils'
 import { useInverted } from '../../utils/window'
-import { currencyDefault } from '../currency/currency'
+import { currencyDefault } from '../currency/currencyjs'
 import Currency from '../currency/Currency'
 
 const textsCap = translated({

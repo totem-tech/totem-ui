@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { isValidNumber, isFn, isDefined } from '../../utils/utils'
 import { unsubscribe, useRxSubject } from '../../utils/reactjs'
-import { convertTo, currencyDefault, rxSelected } from './currency'
+import { convertTo, currencyDefault, rxSelected } from './currencyjs'
 
 function Currency(props) {
     let {

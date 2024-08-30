@@ -10,7 +10,7 @@ import SidebarLeft, { MainContentItem } from './components/SidebarLeft'
 // Services
 import activity from './modules/activity/activity'
 import ChatBar from './modules/chat/ChatBar'
-import currency from './modules/currency/currency'
+import currency from './modules/currency/currencyjs'
 import { generatePassword } from './modules/gettingStarted'
 import identity from './modules/identity/identity'
 import NotificationView from './modules/notification/NotificationView'

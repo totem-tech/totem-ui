@@ -7,7 +7,7 @@ import { translated } from '../../utils/languageHelper'
 import { useIsMobile } from '../../utils/reactjs'
 import { blockToDate } from '../../utils/time'
 import Currency from '../currency/Currency'
-import { currencyDefault } from '../currency/currency'
+import { currencyDefault } from '../currency/currencyjs'
 import AddressName from '../partner/AddressName'
 import useLedgerAcPostings from './useLedgerAcPostings'
 

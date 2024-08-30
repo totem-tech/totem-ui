@@ -5,8 +5,8 @@
 // import FormBuilder, { findInput } from '../../components/FormBuilder'
 // import { translated } from '../../services/language'
 // import { iUseReducer } from '../../services/react'
-// import { convertTo, currencyDefault, rxSelected } from '../currency/currency'
-// import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel, rxCrowdsaleData } from './crowdsale'
+// import { convertTo, currencyDefault, rxSelected } from '../currency/currencyjs'
+// import { BLOCKCHAINS, calculateAllocation, calculateToNextLevel, rxCrowdsaleData } from './crowdsalejs'
 
 // const textsCap = translated({
 //     allocatedLabel: 'amount allocated',

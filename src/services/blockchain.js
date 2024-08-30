@@ -1,6 +1,6 @@
 import uuid from 'uuid'
 import { BehaviorSubject } from 'rxjs'
-import { currencyDefault } from '../modules/currency/currency'
+import { currencyDefault } from '../modules/currency/currencyjs'
 import { translated } from '../utils/languageHelper'
 import PromisE from '../utils/PromisE'
 import {
