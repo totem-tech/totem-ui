@@ -145,6 +145,7 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
     } else {
         // Generate a hash of the currency data held in cache
         const hash = generateHash(cached);
+        console.log('default', hash);
         // The hash is then used to get the latest currency list from the server
         const currencies = await client.currencyList(hash);
         // No currencies are returned if the hash is the same, therefore use cached values.
@@ -159,12 +160,8 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
         }
     }
     // If cache is empty or no new currencies were fetched, use defaultCurrencies
-    const currencies = defaultCurrencies;
-    // Save to cache storage
-    rwCache('currencies', currencies);
-    console.log('Currency list updated', currencies);
-    rxCurrencies.next(currencies);
-    return currencies;
+    rxCurrencies.next(defaultCurrencies);
+    return defaultCurrencies;
 }
 
 // get selected currency code
