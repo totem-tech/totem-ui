@@ -140,7 +140,9 @@ export const convertTo = async (
  */
 const fetchCurrencies = async (cached = rwCache().currencies) => {
     // Check if the cache has values
-    if (cached && cached.length > 0) {
+    if (!cached || cached.length === 0) {
+        // fallback to default currencies.
+    } else {
         // Generate a hash of the currency data held in cache
         const hash = generateHash(cached);
         // The hash is then used to get the latest currency list from the server
@@ -156,7 +158,6 @@ const fetchCurrencies = async (cached = rwCache().currencies) => {
             return sortedCurrencies;
         }
     }
-
     // If cache is empty or no new currencies were fetched, use defaultCurrencies
     const currencies = defaultCurrencies;
     // Save to cache storage
