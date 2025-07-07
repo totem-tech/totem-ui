@@ -11,6 +11,7 @@ import {
     isValidDate,
     isValidNumber,
 } from '../../utils/utils'
+import defaultCurrencies from './fallbackCurrencies';
 
 const [texts, textsCap] = translated({
     invalidCurency: 'invalid or unsupported currency supplied',
@@ -124,24 +125,43 @@ export const convertTo = async (
     ]
 }
 
+/**
+ * Fetches the list of currencies.
+ * 
+ * This function attempts to fetch the latest list of currencies from the server.
+ * If the cache contains values, it generates a hash of the cached data and uses it
+ * to request the latest currency list from the server. If the server returns a new list,
+ * it sorts the list by ticker, updates the cache, and returns the sorted list.
+ * If the cache is empty or the server returns no new currencies, it falls back to using
+ * a default list of currencies, updates the cache with the default list, and returns it.
+ * 
+ * @param {Array} cached - The cached list of currencies. Defaults to the result of rwCache().currencies.
+ * @returns {Array} - The list of currencies.
+ */
 const fetchCurrencies = async (cached = rwCache().currencies) => {
-    const hash = generateHash(cached)
-    let currencies = await client.currencyList(hash)
-
-    // currencies list is the same as in the server => use cached
-    if (!currencies || currencies.length === 0) return cached
-
-    // sort by ticker
-    currencies = arrSort(currencies, 'ticker')
-
-    // save to cache storage
-    rwCache('currencies', currencies)
-
-    // save timestamp to auto update if application is open for long period of time
-    lastUpdated = new Date()
-    console.log('Currency list updated', currencies)
-    rxCurrencies.next(currencies)
-    return currencies
+    // Check if the cache has values
+    if (!cached || cached.length === 0) {
+        // fallback to default currencies.
+    } else {
+        // Generate a hash of the currency data held in cache
+        const hash = generateHash(cached);
+        console.log('default', hash);
+        // The hash is then used to get the latest currency list from the server
+        const currencies = await client.currencyList(hash);
+        // No currencies are returned if the hash is the same, therefore use cached values.
+        if (currencies && currencies.length > 0) {
+            // Sort new list by ticker
+            const sortedCurrencies = arrSort(currencies, 'ticker');
+            // Save to cache storage
+            rwCache('currencies', sortedCurrencies);
+            console.log('Currency list updated', sortedCurrencies);
+            rxCurrencies.next(sortedCurrencies);
+            return sortedCurrencies;
+        }
+    }
+    // If cache is empty or no new currencies were fetched, use defaultCurrencies
+    rxCurrencies.next(defaultCurrencies);
+    return defaultCurrencies;
 }
 
 // get selected currency code
